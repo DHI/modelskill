@@ -292,9 +292,8 @@ def match(
         ):
             raise ValueError(
                 """
-                In case of multiple observations, multiple models can _only_ 
-                be matched if they are _all_ of SpatialField type, e.g. DfsuModelResult 
-                or GridModelResult. 
+                When matching multiple observations with multiple models, all models
+                must be one of the following types: DfsuModelResult, GridModelResult or NetworkModelResult.
                 
                 If you want match multiple point observations with multiple point model results, 
                 please match one observation at a time and then create a collection of these 
