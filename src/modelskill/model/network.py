@@ -15,7 +15,7 @@ from ..types import PointType
 class NodeModelResult(TimeSeries):
     """Model result for a single network node.
 
-    Construct a NodeModelResult from timeseries data for a specific node ID.
+    Construct a NodeModelResult from timeseries data for a specific node.
     This is a simple timeseries class designed for network node data.
 
     Parameters
@@ -62,7 +62,10 @@ class NodeModelResult(TimeSeries):
                 aux_items=aux_items,
             )
 
-        assert isinstance(data, xr.Dataset)
+        if not isinstance(data, xr.Dataset):
+            raise ValueError("'NodeModelResult' requires xarray.Dataset")
+        if data.coords.get("node") is None:
+            raise ValueError("'node' coordinate not found in data")
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
@@ -71,8 +74,6 @@ class NodeModelResult(TimeSeries):
     def node(self) -> int:
         """Node ID of model result"""
         node_val = self.data.coords.get("node")
-        if node_val is None:
-            raise ValueError("Node coordinate not found in data")
         return int(node_val.item())
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
@@ -120,12 +121,14 @@ class NetworkModelResult(Network1D):
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
     ) -> None:
-        assert isinstance(
-            data, xr.Dataset
-        ), "NetworkModelResult requires xarray.Dataset"
-        assert "time" in data.dims, "Dataset must have time dimension"
-        assert "node" in data.dims, "Dataset must have node dimension"
-        assert len(data.data_vars) > 0, "Dataset must have at least one data variable"
+        if not isinstance(data, xr.Dataset):
+            raise ValueError("'NetworkModelResult' requires xarray.Dataset")
+        if len(data.data_vars) == 0:
+            raise ValueError("Dataset must have at least one data variable")
+
+        for coord in ["time", "node"]:
+            if coord not in data.dims:
+                raise ValueError(f"Dataset must have '{coord}' as coordinate.")
 
         sel_items = SelectedItems.parse(
             list(data.data_vars), item=item, aux_items=aux_items
