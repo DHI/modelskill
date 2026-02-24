@@ -8,7 +8,6 @@ from typing import (
     List,
     Literal,
     Mapping,
-    Optional,
     Union,
     Iterable,
     Sequence,
@@ -484,9 +483,10 @@ class Comparer:
     def from_matched_data(
         data: xr.Dataset | pd.DataFrame,
         raw_mod_data: Dict[
-                str,
-                PointModelResult | TrackModelResult | NodeModelResult,
-            ] | None = None,
+            str,
+            PointModelResult | TrackModelResult | NodeModelResult,
+        ]
+        | None = None,
         obs_item: str | int | None = None,
         mod_items: Iterable[str | int] | None = None,
         aux_items: Iterable[str | int] | None = None,
