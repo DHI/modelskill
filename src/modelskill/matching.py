@@ -374,9 +374,7 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 def _match_space_time(
     observation: Observation,
-    raw_mod_data: Mapping[
-        str, PointModelResult | TrackModelResult | NetworkModelResult | NodeModelResult
-    ],
+    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult | NodeModelResult],
     max_model_gap: float | None,
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
