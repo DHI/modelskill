@@ -50,7 +50,7 @@ MRTypes = Union[
     NetworkModelResult,
     DummyModelResult,
 ]
-Fieldypes = Union[
+FieldTypes = Union[
     GridModelResult,
     DfsuModelResult,
 ]
