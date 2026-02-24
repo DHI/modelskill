@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Sequence
+from typing import Sequence
 from typing_extensions import Self
 import pandas as pd
 import xarray as xr
@@ -22,7 +22,7 @@ class NodeModelResult(TimeSeries):
     ----------
     data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
         filename (.dfs0 or .nc) or object with the data
-    name : Optional[str], optional
+    name : str, optional
         The name of the model result,
         by default None (will be set to file name or item name)
     node : int, optional
@@ -32,7 +32,7 @@ class NodeModelResult(TimeSeries):
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
         Model quantity, for MIKE files this is inferred from the EUM information
-    aux_items : Optional[list[int | str]], optional
+    aux_items : list[int | str], optional
         Auxiliary items, by default None
 
     Examples
@@ -47,10 +47,10 @@ class NodeModelResult(TimeSeries):
         data: PointType,
         node: int,
         *,
-        name: Optional[str] = None,
+        name: str | None = None,
         item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[Sequence[int | str]] = None,
+        quantity: Quantity | None = None,
+        aux_items: Sequence[int | str] | None = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_network_node_input(
@@ -92,7 +92,7 @@ class NetworkModelResult(Network1D):
     ----------
     data : xr.Dataset
         xarray.Dataset with time and node coordinates
-    name : Optional[str], optional
+    name : str, optional
         The name of the model result,
         by default None (will be set to first data variable name)
     item : str | int | None, optional
@@ -100,7 +100,7 @@ class NetworkModelResult(Network1D):
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
         Model quantity
-    aux_items : Optional[list[int | str]], optional
+    aux_items : list[int | str], optional
         Auxiliary items, by default None
 
     Examples
@@ -115,10 +115,10 @@ class NetworkModelResult(Network1D):
         self,
         data: xr.Dataset,
         *,
-        name: Optional[str] = None,
+        name: str | None = None,
         item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[Sequence[int | str]] = None,
+        quantity: Quantity | None = None,
+        aux_items: Sequence[int | str] | None = None,
     ) -> None:
         assert isinstance(
             data, xr.Dataset
