@@ -406,10 +406,6 @@ class NodeObservation(Observation):
                 aux_items=aux_items,
             )
 
-        # Keeping for mypy
-        if data.coords.get("node") is None:
-            raise ValueError("'node' coordinate not found in data")
-
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
 
