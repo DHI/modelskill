@@ -1,7 +1,7 @@
 from __future__ import annotations
 import inspect
 from pathlib import Path
-from typing import Literal, Optional, get_args, cast
+from typing import Literal, get_args, cast
 
 import mikeio
 import numpy as np
@@ -39,10 +39,10 @@ class DfsuModelResult(SpatialField):
         self,
         data: UnstructuredType,
         *,
-        name: Optional[str] = None,
-        item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
+        name: str | None = None,
+        item: int | str | None = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
     ) -> None:
         filename = None
 
@@ -112,7 +112,7 @@ class DfsuModelResult(SpatialField):
         return self.data.geometry.contains([x, y])  # type: ignore
 
     def extract(
-        self, observation: Observation, spatial_method: Optional[str] = None
+        self, observation: Observation, spatial_method: str | None = None
     ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
@@ -163,7 +163,7 @@ class DfsuModelResult(SpatialField):
             return METHOD_MAP[method]
 
     def _extract_point(
-        self, observation: PointObservation, spatial_method: Optional[str] = None
+        self, observation: PointObservation, spatial_method: str | None = None
     ) -> PointModelResult:
         """Extract point.
 
@@ -242,7 +242,7 @@ class DfsuModelResult(SpatialField):
             )
 
     def _extract_track(
-        self, observation: TrackObservation, spatial_method: Optional[str] = None
+        self, observation: TrackObservation, spatial_method: str | None = None
     ) -> TrackModelResult:
         """Extract track.
 

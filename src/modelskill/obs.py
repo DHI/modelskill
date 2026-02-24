@@ -12,7 +12,7 @@ An observation can be created by explicitly invoking one of the above classes or
 
 from __future__ import annotations
 
-from typing import Literal, Optional, Any, Union
+from typing import Literal, Any, Union
 from typing_extensions import Self
 
 import warnings
@@ -35,7 +35,7 @@ Serializable = Union[str, int, float]
 def observation(
     data: DataInputType,
     *,
-    gtype: Optional[Literal["point", "track", "node", "network"]] = None,
+    gtype: Literal["point", "track", "node", "network"] | None = None,
     **kwargs,
 ) -> PointObservation | TrackObservation | NodeObservation:
     """Create an appropriate observation object.
@@ -51,7 +51,7 @@ def observation(
     ----------
     data : DataInputType
         The data to be used for creating the Observation object.
-    gtype : Optional[Literal["point", "track", "node", "network"]]
+    gtype : Literal["point", "track", "node", "network"] | None
         The geometry type of the data. If not specified, it will be guessed from the data.
         Note: "node" and "network" are equivalent and both create NodeObservation.
     **kwargs
@@ -98,7 +98,7 @@ def _guess_gtype(**kwargs) -> GeometryType:
         return GeometryType.POINT
 
 
-def _validate_attrs(data_attrs: dict, attrs: Optional[dict]) -> None:
+def _validate_attrs(data_attrs: dict, attrs: dict | None) -> None:
     # See similar method in xarray https://github.com/pydata/xarray/blob/main/xarray/backends/api.py#L165
 
     if attrs is None:
@@ -120,7 +120,7 @@ class Observation(TimeSeries):
         data: xr.Dataset,
         weight: float,
         color: str = "#d62728",  # TODO: cannot currently be set by user
-        attrs: Optional[dict] = None,
+        attrs: dict | None = None,
     ) -> None:
         assert isinstance(data, xr.Dataset)
 
@@ -207,15 +207,15 @@ class PointObservation(Observation):
         self,
         data: PointType,
         *,
-        item: Optional[int | str] = None,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
-        z: Optional[float] = None,
-        name: Optional[str] = None,
+        item: int | str | None = None,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
+        name: str | None = None,
         weight: float = 1.0,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
-        attrs: Optional[dict] = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_xyz_point_input(
@@ -326,15 +326,15 @@ class TrackObservation(Observation):
         self,
         data: TrackType,
         *,
-        item: Optional[int | str] = None,
-        name: Optional[str] = None,
+        item: int | str | None = None,
+        name: str | None = None,
         weight: float = 1.0,
-        x_item: Optional[int | str] = 0,
-        y_item: Optional[int | str] = 1,
+        x_item: int | str | None = 0,
+        y_item: int | str | None = 1,
         keep_duplicates: Literal["first", "last", False] = "first",
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
-        attrs: Optional[dict] = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_track_input(
@@ -389,12 +389,12 @@ class NodeObservation(Observation):
         data: PointType,
         node: int,
         *,
-        item: Optional[int | str] = None,
-        name: Optional[str] = None,
+        item: int | str | None = None,
+        name: str | None = None,
         weight: float = 1.0,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
-        attrs: Optional[dict] = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_network_node_input(

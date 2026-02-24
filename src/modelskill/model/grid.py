@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Optional, Sequence, get_args
+from typing import Sequence, get_args
 
 import mikeio
 import pandas as pd
@@ -38,10 +38,10 @@ class GridModelResult(SpatialField):
         self,
         data: GridType,
         *,
-        name: Optional[str] = None,
-        item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
+        name: str | None = None,
+        item: int | str | None = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
     ) -> None:
         assert isinstance(
             data, get_args(GridType)
@@ -125,7 +125,7 @@ class GridModelResult(SpatialField):
     def extract(
         self,
         observation: PointObservation | TrackObservation,
-        spatial_method: Optional[str] = None,
+        spatial_method: str | None = None,
     ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
@@ -155,7 +155,7 @@ class GridModelResult(SpatialField):
             )
 
     def _extract_point(
-        self, observation: PointObservation, spatial_method: Optional[str] = None
+        self, observation: PointObservation, spatial_method: str | None = None
     ) -> PointModelResult:
         """Extract point.
 
@@ -204,7 +204,7 @@ class GridModelResult(SpatialField):
         )
 
     def _extract_track(
-        self, observation: TrackObservation, spatial_method: Optional[str] = None
+        self, observation: TrackObservation, spatial_method: str | None = None
     ) -> TrackModelResult:
         """Extract track.
 

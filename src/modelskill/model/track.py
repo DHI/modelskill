@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Literal, Optional, Sequence
+from typing import Literal, Sequence
 import warnings
 
 import numpy as np
@@ -46,13 +46,13 @@ class TrackModelResult(TimeSeries):
         self,
         data: TrackType,
         *,
-        name: Optional[str] = None,
+        name: str | None = None,
         item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
+        quantity: Quantity | None = None,
         x_item: str | int = 0,
         y_item: str | int = 1,
         keep_duplicates: Literal["first", "last", False] = "first",
-        aux_items: Optional[Sequence[int | str]] = None,
+        aux_items: Sequence[int | str] | None = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_track_input(

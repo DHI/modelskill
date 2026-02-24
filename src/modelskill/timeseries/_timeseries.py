@@ -1,7 +1,7 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import ClassVar, Literal, Optional, TypeVar, Any
+from typing import ClassVar, Literal, TypeVar, Any
 from typing_extensions import Self
 import warnings
 import numpy as np
@@ -340,8 +340,8 @@ class TimeSeries:
 
     def trim(
         self: T,
-        start_time: Optional[pd.Timestamp] = None,
-        end_time: Optional[pd.Timestamp] = None,
+        start_time: pd.Timestamp | None = None,
+        end_time: pd.Timestamp | None = None,
         buffer: str = "1s",
         no_overlap: Literal["ignore", "error", "warn"] = "error",
     ) -> T:

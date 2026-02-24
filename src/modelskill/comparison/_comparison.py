@@ -188,8 +188,8 @@ class ItemSelection:
     obs: str
     model: Sequence[str]
     aux: Sequence[str]
-    x: Optional[str] = None
-    y: Optional[str] = None
+    x: str | None = None
+    y: str | None = None
 
     def __post_init__(self) -> None:
         # check that obs, model and aux are unique, and that they are not overlapping
@@ -210,8 +210,8 @@ class ItemSelection:
     def parse(
         items: Sequence[str],
         obs_item: str | int | None = None,
-        mod_items: Optional[Iterable[str | int]] = None,
-        aux_items: Optional[Iterable[str | int]] = None,
+        mod_items: Iterable[str | int] | None = None,
+        aux_items: Iterable[str | int] | None = None,
         x_item: str | int | None = None,
         y_item: str | int | None = None,
     ) -> ItemSelection:
@@ -309,15 +309,15 @@ def _inside_polygon(polygon: Any, xy: np.ndarray) -> np.ndarray:
 def _matched_data_to_xarray(
     df: pd.DataFrame,
     obs_item: int | str | None = None,
-    mod_items: Optional[Iterable[str | int]] = None,
-    aux_items: Optional[Iterable[str | int]] = None,
-    name: Optional[str] = None,
-    x: Optional[float] = None,
-    y: Optional[float] = None,
-    z: Optional[float] = None,
+    mod_items: Iterable[str | int] | None = None,
+    aux_items: Iterable[str | int] | None = None,
+    name: str | None = None,
+    x: float | None = None,
+    y: float | None = None,
+    z: float | None = None,
     x_item: str | int | None = None,
     y_item: str | int | None = None,
-    quantity: Optional[Quantity] = None,
+    quantity: Quantity | None = None,
 ) -> xr.Dataset:
     """Convert matched data to accepted xarray.Dataset format"""
     assert isinstance(df, pd.DataFrame)
@@ -483,23 +483,21 @@ class Comparer:
     @staticmethod
     def from_matched_data(
         data: xr.Dataset | pd.DataFrame,
-        raw_mod_data: Optional[
-            Dict[
+        raw_mod_data: Dict[
                 str,
                 PointModelResult | TrackModelResult | NodeModelResult,
-            ]
-        ] = None,
+            ] | None = None,
         obs_item: str | int | None = None,
-        mod_items: Optional[Iterable[str | int]] = None,
-        aux_items: Optional[Iterable[str | int]] = None,
-        name: Optional[str] = None,
+        mod_items: Iterable[str | int] | None = None,
+        aux_items: Iterable[str | int] | None = None,
+        name: str | None = None,
         weight: float = 1.0,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
-        z: Optional[float] = None,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
         x_item: str | int | None = None,
         y_item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
+        quantity: Quantity | None = None,
     ) -> "Comparer":
         """Initialize from compared data"""
         if not isinstance(data, xr.Dataset):
@@ -821,11 +819,11 @@ class Comparer:
 
     def sel(
         self,
-        model: Optional[IdxOrNameTypes] = None,
-        start: Optional[TimeTypes] = None,
-        end: Optional[TimeTypes] = None,
-        time: Optional[TimeTypes] = None,
-        area: Optional[List[float]] = None,
+        model: IdxOrNameTypes | None = None,
+        start: TimeTypes | None = None,
+        end: TimeTypes | None = None,
+        time: TimeTypes | None = None,
+        area: List[float] | None = None,
     ) -> "Comparer":
         """Select data based on model, time and/or area.
 

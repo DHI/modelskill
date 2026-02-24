@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Union, List, Optional
+from typing import Union, List
 from dataclasses import dataclass
 import pandas as pd
 import xarray as xr
@@ -97,5 +97,5 @@ NetworkType = pd.DataFrame
 class Period:
     """Period of data, defined by start and end time, can be open ended"""
 
-    start: Optional[pd.Timestamp] = None
-    end: Optional[pd.Timestamp] = None
+    start: pd.Timestamp | None = None
+    end: pd.Timestamp | None = None

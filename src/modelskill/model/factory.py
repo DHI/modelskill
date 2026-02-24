@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Literal, Optional, Any
+from typing import Literal, Any
 
 import pandas as pd
 import xarray as xr
@@ -24,8 +24,8 @@ _modelresult_lookup = {
 def model_result(
     data: DataInputType,
     *,
-    aux_items: Optional[list[int | str]] = None,
-    gtype: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
+    aux_items: list[int | str] | None = None,
+    gtype: Literal["point", "track", "unstructured", "grid"] | None = None,
     **kwargs: Any,
 ) -> PointModelResult | TrackModelResult | DfsuModelResult | GridModelResult:
     """A factory function for creating an appropriate object based on the data input.

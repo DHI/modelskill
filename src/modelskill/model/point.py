@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Any
+from typing import Sequence, Any
 import numpy as np
 
 import xarray as xr
@@ -121,13 +121,13 @@ class PointModelResult(TimeSeries):
         self,
         data: PointType,
         *,
-        name: Optional[str] = None,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
-        z: Optional[float] = None,
+        name: str | None = None,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
         item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[Sequence[int | str]] = None,
+        quantity: Quantity | None = None,
+        aux_items: Sequence[int | str] | None = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_xyz_point_input(
