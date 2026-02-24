@@ -12,7 +12,7 @@ An observation can be created by explicitly invoking one of the above classes or
 
 from __future__ import annotations
 
-from typing import Literal, Optional, Any, Union
+from typing import Literal, Optional, Any, Union, Self
 import warnings
 import pandas as pd
 import xarray as xr
@@ -385,9 +385,9 @@ class NodeObservation(Observation):
     def __init__(
         self,
         data: PointType,
+        node: int,
         *,
         item: Optional[int | str] = None,
-        node: Optional[int] = None,
         name: Optional[str] = None,
         weight: float = 1.0,
         quantity: Optional[Quantity] = None,
@@ -404,6 +404,9 @@ class NodeObservation(Observation):
                 aux_items=aux_items,
             )
 
+        if node is None:
+            raise ValueError("'node' argument cannot be empty.")
+
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
 
@@ -414,6 +417,11 @@ class NodeObservation(Observation):
         if node_val is None:
             raise ValueError("Node coordinate not found in data")
         return int(node_val.item())
+
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Extract node from data and create new instance"""
+        node = int(data.coords["node"].item())
+        return self.__class__(data, node=node)
 
 
 def unit_display_name(name: str) -> str:

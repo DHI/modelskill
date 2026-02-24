@@ -1,7 +1,7 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import ClassVar, Literal, Optional, TypeVar, Any
+from typing import ClassVar, Literal, Optional, TypeVar, Any, Self
 import warnings
 import numpy as np
 import pandas as pd
@@ -333,7 +333,7 @@ class TimeSeries:
 
     def sel(self: T, **kwargs: Any) -> T:
         """Select data by label"""
-        return self.__class__(self.data.sel(**kwargs))
+        return self._create_new_instance(self.data.sel(**kwargs))
 
     def trim(
         self: T,
@@ -371,4 +371,11 @@ class TimeSeries:
                 case _:
                     pass
 
+        return self._create_new_instance(data)
+
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Create a new instance of this class with the given data.
+
+        Subclasses can override this to handle their specific constructor requirements.
+        """
         return self.__class__(data)
