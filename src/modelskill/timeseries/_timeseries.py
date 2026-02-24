@@ -1,7 +1,8 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import ClassVar, Literal, Optional, TypeVar, Any, Self
+from typing import ClassVar, Literal, Optional, TypeVar, Any
+from typing_extensions import Self
 import warnings
 import numpy as np
 import pandas as pd
