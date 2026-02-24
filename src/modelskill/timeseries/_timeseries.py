@@ -329,7 +329,7 @@ class TimeSeries:
             priority = {"x": 0, "y": 1}
             cols = sorted(df.columns, key=lambda col: (priority.get(col, 999), col))
             return df[cols]
-        if self.gtype == str(GeometryType.NODE):
+        elif self.gtype == str(GeometryType.NODE):
             return self.data.drop_vars(["node"]).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
