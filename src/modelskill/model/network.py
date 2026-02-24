@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Optional, Sequence
+from typing_extensions import Self
 import pandas as pd
 import xarray as xr
 
@@ -44,9 +45,9 @@ class NodeModelResult(TimeSeries):
     def __init__(
         self,
         data: PointType,
+        node: int,
         *,
         name: Optional[str] = None,
-        node: Optional[int] = None,
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
         aux_items: Optional[Sequence[int | str]] = None,
@@ -73,6 +74,11 @@ class NodeModelResult(TimeSeries):
         if node_val is None:
             raise ValueError("Node coordinate not found in data")
         return int(node_val.item())
+
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Extract node from data and create new instance"""
+        node = int(data.coords["node"].item())
+        return self.__class__(data, node=node)
 
 
 class NetworkModelResult(Network1D):
