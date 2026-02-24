@@ -73,7 +73,7 @@ class NodeModelResult(TimeSeries):
     @property
     def node(self) -> int:
         """Node ID of model result"""
-        node_val = self.data.coords.get("node")
+        node_val = self.data.coords["node"]
         return int(node_val.item())
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
