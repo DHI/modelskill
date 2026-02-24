@@ -36,6 +36,28 @@ def sample_network_data():
 
 
 @pytest.fixture
+def dataset_without_node():
+    time = pd.date_range("2010-01-01", periods=10, freq="h")
+
+    # Create sample data
+    np.random.seed(42)  # For reproducible tests
+    data = np.random.randn(len(time))
+
+    ds = xr.Dataset(
+        {
+            "WaterLevel": (["time"], data),
+        },
+        coords={
+            "time": time,
+        },
+    )
+    ds["WaterLevel"].attrs["units"] = "m"
+    ds["WaterLevel"].attrs["long_name"] = "Water Level"
+
+    return ds
+
+
+@pytest.fixture
 def sample_node_data():
     """Sample node observation data"""
     time = pd.date_range("2010-01-01", periods=10, freq="h")
@@ -163,16 +185,6 @@ class TestNodeObservation:
         assert obs.node == 456
         assert obs.name == "Node_456"
         assert len(obs.time) == 10
-
-    def test_node_property_missing_coordinate(self, sample_node_data):
-        """Test node property when coordinate is missing"""
-        obs = NodeObservation(sample_node_data, node=123, name="Node_123")
-
-        # Manually remove the node coordinate to test error handling
-        del obs.data.coords["node"]
-
-        with pytest.raises(ValueError, match="Node coordinate not found"):
-            _ = obs.node
 
     def test_node_attrs(self, sample_node_data):
         """Test attrs property"""

@@ -406,8 +406,9 @@ class NodeObservation(Observation):
                 aux_items=aux_items,
             )
 
-        if node is None:
-            raise ValueError("'node' argument cannot be empty.")
+        # Keeping for mypy
+        if data.coords.get("node") is None:
+            raise ValueError("'node' coordinate not found in data")
 
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
@@ -415,9 +416,7 @@ class NodeObservation(Observation):
     @property
     def node(self) -> int:
         """Node ID of observation"""
-        node_val = self.data.coords.get("node")
-        if node_val is None:
-            raise ValueError("Node coordinate not found in data")
+        node_val = self.data.coords["node"]
         return int(node_val.item())
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
