@@ -135,7 +135,7 @@ class GridModelResult(SpatialField):
         ----------
         observation : <PointObservation> or <TrackObservation>
             positions (and times) at which modelresult should be extracted
-        spatial_method : Optional[str], optional
+        spatial_method : str | None, optional
             method in xarray.Dataset.interp, typically either "nearest" or
             "linear", by default None = 'linear'
 

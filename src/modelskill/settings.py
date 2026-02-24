@@ -74,7 +74,6 @@ from typing import (
     Iterable,
     List,
     NamedTuple,
-    Optional,
     Dict,
     Tuple,
     Type,
