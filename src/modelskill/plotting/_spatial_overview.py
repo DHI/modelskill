@@ -14,15 +14,16 @@ from ._misc import _get_ax
 
 def spatial_overview(
     obs: Observation | Iterable[Observation],
-    mod: Optional[
+    mod: (
         DfsuModelResult
         | GeometryFM2D
         | Iterable[DfsuModelResult]
         | Iterable[GeometryFM2D]
-    ] = None,
+    )
+    | None = None,
     ax=None,
-    figsize: Optional[Tuple] = None,
-    title: Optional[str] = None,
+    figsize: Tuple | None = None,
+    title: str | None = None,
 ) -> matplotlib.axes.Axes:
     """Plot observation points on a map showing the model domain
 

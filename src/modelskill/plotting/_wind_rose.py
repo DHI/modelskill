@@ -497,7 +497,7 @@ def _calc_mag_step(magmax: float) -> float:
     return mag_step
 
 
-def _calc_radial_ticks(*, counts: np.ndarray, step: float, stop: Optional[float]):
+def _calc_radial_ticks(*, counts: np.ndarray, step: float, stop: float | None):
     cmax = counts.sum(axis=0).max()
     if stop is None:
         rmax = np.ceil((cmax + step) / step) * step

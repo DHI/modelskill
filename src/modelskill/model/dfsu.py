@@ -23,7 +23,7 @@ class DfsuModelResult(SpatialField):
     ----------
     data : types.UnstructuredType
         the input data or file path
-    name : Optional[str], optional
+    name : str | None, optional
         The name of the model result,
         by default None (will be set to file name or item name)
     item : str | int | None, optional
@@ -31,7 +31,7 @@ class DfsuModelResult(SpatialField):
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
         Model quantity, for MIKE files this is inferred from the EUM information
-    aux_items : Optional[list[int | str]], optional
+    aux_items : list[int | str] | None, optional
         Auxiliary items, by default None
     """
 
@@ -122,7 +122,7 @@ class DfsuModelResult(SpatialField):
         ----------
         observation : <PointObservation> or <TrackObservation>
             positions (and times) at which modelresult should be extracted
-        spatial_method : Optional[str], optional
+        spatial_method : str | None, optional
             spatial selection/interpolation method, 'contained' (=isel),
             'nearest', 'inverse_distance' (with 5 nearest points),
             by default None = 'inverse_distance'

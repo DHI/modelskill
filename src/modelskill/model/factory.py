@@ -34,9 +34,9 @@ def model_result(
     ----------
     data : DataInputType
         The data to be used for creating the ModelResult object.
-    aux_items : Optional[list[int | str]]
+    aux_items : list[int | str] | None
         Auxiliary items, by default None
-    gtype : Optional[Literal["point", "track", "unstructured", "grid"]]
+    gtype : Literal["point", "track", "unstructured", "grid"] | None
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
         Additional keyword arguments to be passed to the ModelResult constructor.

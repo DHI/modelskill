@@ -21,7 +21,7 @@ class PointModelResult(TimeSeries):
     ----------
     data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
         filename (.dfs0 or .nc) or object with the data
-    name : Optional[str], optional
+    name : str | None, optional
         The name of the model result,
         by default None (will be set to file name or item name)
     x : float, optional
@@ -35,7 +35,7 @@ class PointModelResult(TimeSeries):
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
         Model quantity, for MIKE files this is inferred from the EUM information
-    aux_items : Optional[list[int | str]], optional
+    aux_items : list[int | str] | None, optional
         Auxiliary items, by default None
     """
 

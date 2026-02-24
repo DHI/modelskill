@@ -30,7 +30,7 @@ class GridModelResult(SpatialField):
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
         Model quantity, for MIKE files this is inferred from the EUM information
-    aux_items : Optional[list[int | str]], optional
+    aux_items : list[int | str] | None, optional
         Auxiliary items, by default None
     """
 
