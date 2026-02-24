@@ -294,7 +294,7 @@ def match(
                 When matching multiple observations with multiple models, all models
                 must be one of the following types: DfsuModelResult, GridModelResult or NetworkModelResult.
                 
-                If you want match multiple point observations with multiple point model results, 
+                If you want to match multiple point observations with multiple point model results, 
                 please match one observation at a time and then create a collection of these 
                 using modelskill.ComparerCollection(cmp_list) afterwards. The same applies to track data.
                 """

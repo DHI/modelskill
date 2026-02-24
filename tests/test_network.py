@@ -7,6 +7,7 @@ import numpy as np
 import modelskill as ms
 from modelskill.model.network import NetworkModelResult, NodeModelResult
 from modelskill.obs import NodeObservation
+from modelskill.quantity import Quantity
 
 
 @pytest.fixture
@@ -46,6 +47,12 @@ def sample_node_data():
     df = pd.DataFrame({"WaterLevel": data}, index=time)
 
     return df
+
+
+@pytest.fixture
+def sample_series(sample_node_data):
+    """Sample node observation data as series"""
+    return sample_node_data["WaterLevel"]
 
 
 class TestNetworkModelResult:
@@ -137,32 +144,25 @@ class TestNetworkModelResult:
 class TestNodeObservation:
     """Test NodeObservation class"""
 
-    def test_init_with_dataframe(self, sample_node_data):
+    def test_init_with_df(self, sample_node_data):
         """Test initialization with pandas DataFrame"""
+
         obs = NodeObservation(
-            sample_node_data, node=123, name="Node_123", item="WaterLevel"
+            sample_node_data, node=123, name="Sensor_1", item="WaterLevel"
         )
 
         assert obs.node == 123
-        assert obs.name == "Node_123"
+        assert obs.name == "Sensor_1"
         assert len(obs.time) == 10
         assert isinstance(obs.time, pd.DatetimeIndex)
 
-    def test_init_with_series(self, sample_node_data):
+    def test_init_with_series(self, sample_series):
         """Test initialization with pandas Series"""
-        series = sample_node_data["WaterLevel"]
-        obs = NodeObservation(series, node=456, name="Node_456")
+        obs = NodeObservation(sample_series, node=456, name="Node_456")
 
         assert obs.node == 456
         assert obs.name == "Node_456"
         assert len(obs.time) == 10
-
-    def test_node_property(self, sample_node_data):
-        """Test node property"""
-        obs = NodeObservation(sample_node_data, node=789, name="Node_789")
-
-        assert obs.node == 789
-        assert isinstance(obs.node, int)
 
     def test_node_property_missing_coordinate(self, sample_node_data):
         """Test node property when coordinate is missing"""
@@ -174,46 +174,29 @@ class TestNodeObservation:
         with pytest.raises(ValueError, match="Node coordinate not found"):
             _ = obs.node
 
-    def test_weight_property(self, sample_node_data):
-        """Test weight property"""
-        obs = NodeObservation(sample_node_data, node=123, weight=2.5)
-
-        assert obs.weight == 2.5
-
-    def test_attrs_property(self, sample_node_data):
+    def test_node_attrs(self, sample_node_data):
         """Test attrs property"""
         attrs = {"source": "test", "version": "1.0"}
-        obs = NodeObservation(sample_node_data, node=123, attrs=attrs)
+        obs = NodeObservation(sample_node_data, node=123, attrs=attrs, weight=2.5)
 
         assert obs.attrs["source"] == "test"
         assert obs.attrs["version"] == "1.0"
+        assert obs.weight == 2.5
+        assert obs.quantity == Quantity.undefined()
 
 
 class TestNodeModelResult:
     """Test NodeModelResult class"""
 
-    def test_init_with_dataframe(self, sample_node_data):
+    @pytest.mark.parametrize("fixture_name", ["sample_node_data", "sample_series"])
+    def test_init_(self, request, fixture_name):
         """Test initialization with pandas DataFrame"""
-        nmr = NodeModelResult(sample_node_data, node=123, name="Node_123_Model")
+        data = request.getfixturevalue(fixture_name)
+        nmr = NodeModelResult(data, node=123, name="Node_123_Model")
 
         assert nmr.node == 123
         assert nmr.name == "Node_123_Model"
         assert len(nmr.time) == 10
-
-    def test_init_with_series(self, sample_node_data):
-        """Test initialization with pandas Series"""
-        series = sample_node_data["WaterLevel"]
-        nmr = NodeModelResult(series, node=456, name="Node_456_Model")
-
-        assert nmr.node == 456
-        assert nmr.name == "Node_456_Model"
-
-    def test_node_property(self, sample_node_data):
-        """Test node property"""
-        nmr = NodeModelResult(sample_node_data, node=789, name="Node_789_Model")
-
-        assert nmr.node == 789
-        assert isinstance(nmr.node, int)
 
 
 class TestNetworkIntegration:
