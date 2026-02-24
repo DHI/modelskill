@@ -14,7 +14,7 @@ class GeometryType(Enum):
     TRACK = "track"
     UNSTRUCTURED = "unstructured"
     GRID = "grid"
-    NETWORK = "network"
+    NODE = "node"
 
     def __str__(self) -> str:
         return self.name.lower()
@@ -38,8 +38,8 @@ class GeometryType(Enum):
         <GeometryType.UNSTRUCTURED: 'unstructured'>
         >>> GeometryType.from_string("grid")
         <GeometryType.GRID: 'grid'>
-        >>> GeometryType.from_string("network")
-        <GeometryType.NETWORK: 'network'>
+        >>> GeometryType.from_string("node")
+        <GeometryType.NODE: 'node'>
         """
 
         try:

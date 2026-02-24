@@ -110,7 +110,7 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
     if "gtype" not in data.attrs:
         # Determine gtype based on available coordinates
         if "node" in data.coords:
-            data.attrs["gtype"] = str(GeometryType.NETWORK)
+            data.attrs["gtype"] = str(GeometryType.NODE)
         else:
             data.attrs["gtype"] = str(GeometryType.POINT)
     # assert "gtype" in data.attrs, "data must have a gtype attribute"
@@ -1255,7 +1255,7 @@ class Comparer:
             other_cols = [c for c in df.columns if c not in ["x", "y"]]
             cols = coord_cols + other_cols
             return df[cols]
-        elif self.gtype == str(GeometryType.NETWORK):
+        elif self.gtype == str(GeometryType.NODE):
             # For network data, drop node coordinate like other geometries drop their coordinates
             return _drop_scalar_coords(self.data).to_dataframe()
         else:

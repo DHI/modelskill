@@ -113,10 +113,10 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     if ds.attrs["gtype"] not in [
         str(GeometryType.POINT),
         str(GeometryType.TRACK),
-        str(GeometryType.NETWORK),
+        str(GeometryType.NODE),
     ]:
         raise ValueError(
-            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK}, or {GeometryType.NETWORK}"
+            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK}, or {GeometryType.NODE}"
         )
     if "long_name" not in da.attrs:
         da.attrs["long_name"] = Quantity.undefined().name

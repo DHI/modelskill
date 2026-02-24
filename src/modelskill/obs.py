@@ -90,7 +90,7 @@ def _guess_gtype(**kwargs) -> GeometryType:
     elif "x_item" in kwargs or "y_item" in kwargs:
         return GeometryType.TRACK
     elif "node" in kwargs:
-        return GeometryType.NETWORK
+        return GeometryType.NODE
     else:
         warnings.warn(
             "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation, TrackObservation, or NodeObservation to be explicit."
@@ -450,5 +450,5 @@ def unit_display_name(name: str) -> str:
 _obs_class_lookup = {
     GeometryType.POINT: PointObservation,
     GeometryType.TRACK: TrackObservation,
-    GeometryType.NETWORK: NodeObservation,
+    GeometryType.NODE: NodeObservation,
 }

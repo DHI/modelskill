@@ -166,7 +166,10 @@ def _include_attributes(
 ) -> xr.Dataset:
     ds = ds.copy()
 
-    ds.attrs["gtype"] = str(GeometryType.POINT)
+    if "node" in ds.coords:
+        ds.attrs["gtype"] = str(GeometryType.NODE)
+    else:
+        ds.attrs["gtype"] = str(GeometryType.POINT)
 
     ds[name].attrs["long_name"] = quantity.name
     ds[name].attrs["units"] = quantity.unit
@@ -248,8 +251,8 @@ def _parse_point_input(
     varname = _select_variable_name(name, sel_items)
 
     ds = _convert_to_dataset(data, varname, sel_items)
-    ds = _include_attributes(ds, varname, quantity, sel_items)
     ds = _include_coords(ds, coords=coords)
+    ds = _include_attributes(ds, varname, quantity, sel_items)
     return ds
 
 
