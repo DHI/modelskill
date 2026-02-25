@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Literal, Optional, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
+from typing import Literal, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -29,21 +29,21 @@ def scatter(
     quantiles: int | Sequence[float] | None = None,
     fit_to_quantiles: bool = False,
     show_points: bool | int | float | None = None,
-    show_hist: Optional[bool] = None,
-    show_density: Optional[bool] = None,
-    norm: Optional[colors.Normalize] = None,
+    show_hist: bool | None = None,
+    show_density: bool | None = None,
+    norm: colors.Normalize | None = None,
     backend: Literal["matplotlib", "plotly"] = "matplotlib",
     figsize: Tuple[float, float] = (8, 8),
-    xlim: Optional[Tuple[float, float]] = None,
-    ylim: Optional[Tuple[float, float]] = None,
+    xlim: Tuple[float, float] | None = None,
+    ylim: Tuple[float, float] | None = None,
     reg_method: str | bool = "ols",
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_table: Optional[str | Sequence[str] | Mapping[str, str] | bool] = False,
+    skill_table: str | Sequence[str] | Mapping[str, str] | bool | None = False,
     skill_scores: Mapping[str, float] | None = None,
-    skill_score_unit: Optional[str] = "",
-    ax: Optional[Axes] = None,
+    skill_score_unit: str | None = "",
+    ax: Axes | None = None,
     **kwargs,
 ) -> Axes:
     """Scatter plot tailored for model skill comparison.
@@ -649,7 +649,7 @@ def _plot_summary_table(
     skill_scores: Mapping[str, float],
     units: str,
     ax,
-    cbar_width: Optional[float] = None,
+    cbar_width: float | None = None,
 ) -> None:
     # If colorbar, get extents from colorbar label:
     x0 = options.plot.scatter.skill_table.x_position

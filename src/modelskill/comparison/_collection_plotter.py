@@ -6,7 +6,6 @@ from typing import (
     List,
     Literal,
     Mapping,
-    Optional,
     Sequence,
     Tuple,
     Union,
@@ -60,19 +59,19 @@ class ComparerCollectionPlotter:
         quantiles: int | Sequence[float] | None = None,
         fit_to_quantiles: bool = False,
         show_points: bool | int | float | None = None,
-        show_hist: Optional[bool] = None,
-        show_density: Optional[bool] = None,
-        norm: Optional[colors.Normalize] = None,
+        show_hist: bool | None = None,
+        show_density: bool | None = None,
+        norm: colors.Normalize | None = None,
         backend: Literal["matplotlib", "plotly"] = "matplotlib",
         figsize: Tuple[float, float] = (8, 8),
-        xlim: Optional[Tuple[float, float]] = None,
-        ylim: Optional[Tuple[float, float]] = None,
+        xlim: Tuple[float, float] | None = None,
+        ylim: Tuple[float, float] | None = None,
         reg_method: str | bool = "ols",
-        title: Optional[str] = None,
-        xlabel: Optional[str] = None,
-        ylabel: Optional[str] = None,
-        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]] = None,
-        ax: Optional[Axes] = None,
+        title: str | None = None,
+        xlabel: str | None = None,
+        ylabel: str | None = None,
+        skill_table: Union[str, List[str], Mapping[str, str], bool] | None = None,
+        ax: Axes | None = None,
         **kwargs,
     ) -> Axes | list[Axes]:
         """Scatter plot tailored for comparing model output with observations.
@@ -190,17 +189,17 @@ class ComparerCollectionPlotter:
         quantiles: int | Sequence[float] | None,
         fit_to_quantiles: bool,
         show_points: bool | int | float | None,
-        show_hist: Optional[bool],
-        show_density: Optional[bool],
+        show_hist: bool | None,
+        show_density: bool | None,
         backend: Literal["matplotlib", "plotly"],
         figsize: Tuple[float, float],
-        xlim: Optional[Tuple[float, float]],
-        ylim: Optional[Tuple[float, float]],
+        xlim: Tuple[float, float] | None,
+        ylim: Tuple[float, float] | None,
         reg_method: str | bool,
-        title: Optional[str],
-        xlabel: Optional[str],
-        ylabel: Optional[str],
-        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]],
+        title: str | None,
+        xlabel: str | None,
+        ylabel: str | None,
+        skill_table: Union[str, List[str], Mapping[str, str], bool] | None,
         ax,
         **kwargs,
     ):
@@ -344,11 +343,11 @@ class ComparerCollectionPlotter:
         bins: int | Sequence = 100,
         *,
         model: str | int | None = None,
-        title: Optional[str] = None,
+        title: str | None = None,
         density: bool = True,
         alpha: float = 0.5,
         ax=None,
-        figsize: Optional[Tuple[float, float]] = None,
+        figsize: Tuple[float, float] | None = None,
         **kwargs,
     ):
         """Plot histogram of specific model and all observations.
@@ -409,11 +408,11 @@ class ComparerCollectionPlotter:
         *,
         mod_name: str,
         bins: int | Sequence,
-        title: Optional[str],
+        title: str | None,
         density: bool,
         alpha: float,
         ax,
-        figsize: Optional[Tuple[float, float]],
+        figsize: Tuple[float, float] | None,
         **kwargs,
     ):
         from ._comparison import MOD_COLORS
@@ -464,7 +463,7 @@ class ComparerCollectionPlotter:
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
-    ) -> Optional[Figure]:
+    ) -> Figure | None:
         """Taylor diagram for model skill comparison.
 
         Taylor diagram showing model std and correlation to observation
@@ -783,8 +782,8 @@ class ComparerCollectionPlotter:
     def spatial_overview(
         self,
         ax=None,
-        figsize: Optional[Tuple] = None,
-        title: Optional[str] = None,
+        figsize: Tuple | None = None,
+        title: str | None = None,
     ) -> Axes:
         """Plot observation points on a map showing the model domain
 

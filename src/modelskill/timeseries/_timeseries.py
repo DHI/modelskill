@@ -1,7 +1,8 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import ClassVar, Literal, Optional, TypeVar, Any
+from typing import ClassVar, Literal, TypeVar, Any
+from typing_extensions import Self
 import warnings
 import numpy as np
 import pandas as pd
@@ -112,10 +113,10 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     if ds.attrs["gtype"] not in [
         str(GeometryType.POINT),
         str(GeometryType.TRACK),
-        str(GeometryType.NETWORK),
+        str(GeometryType.NODE),
     ]:
         raise ValueError(
-            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK}, or {GeometryType.NETWORK}"
+            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK}, or {GeometryType.NODE}"
         )
     if "long_name" not in da.attrs:
         da.attrs["long_name"] = Quantity.undefined().name
@@ -328,17 +329,19 @@ class TimeSeries:
             priority = {"x": 0, "y": 1}
             cols = sorted(df.columns, key=lambda col: (priority.get(col, 999), col))
             return df[cols]
+        elif self.gtype == str(GeometryType.NODE):
+            return self.data.drop_vars(["node"]).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def sel(self: T, **kwargs: Any) -> T:
         """Select data by label"""
-        return self.__class__(self.data.sel(**kwargs))
+        return self._create_new_instance(self.data.sel(**kwargs))
 
     def trim(
         self: T,
-        start_time: Optional[pd.Timestamp] = None,
-        end_time: Optional[pd.Timestamp] = None,
+        start_time: pd.Timestamp | None = None,
+        end_time: pd.Timestamp | None = None,
         buffer: str = "1s",
         no_overlap: Literal["ignore", "error", "warn"] = "error",
     ) -> T:
@@ -371,4 +374,11 @@ class TimeSeries:
                 case _:
                     pass
 
+        return self._create_new_instance(data)
+
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Create a new instance of this class with the given data.
+
+        Subclasses can override this to handle their specific constructor requirements.
+        """
         return self.__class__(data)

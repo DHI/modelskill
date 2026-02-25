@@ -7,6 +7,7 @@ import mikeio
 import modelskill as ms
 from modelskill.comparison._comparison import ItemSelection
 from modelskill.model.dfsu import DfsuModelResult
+import xarray as xr
 
 
 @pytest.fixture
@@ -69,6 +70,106 @@ def mr2():
 def mr3():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v3.dfsu"
     return ms.model_result(fn, item=0, name="SW_3")
+
+
+# Network-related fixtures
+@pytest.fixture
+def network_data():
+    """Network data as xr.Dataset with multiple nodes"""
+    time = pd.date_range("2017-10-27", periods=20, freq="h")
+    nodes = [100, 200, 300]
+
+    # Create realistic water level data with some variation
+    np.random.seed(42)
+    data = np.random.normal(1.5, 0.3, (len(time), len(nodes)))
+
+    ds = xr.Dataset(
+        {
+            "WaterLevel": (["time", "node"], data),
+        },
+        coords={
+            "time": time,
+            "node": nodes,
+        },
+    )
+    ds["WaterLevel"].attrs["units"] = "m"
+    ds["WaterLevel"].attrs["long_name"] = "Water Level"
+
+    return ds
+
+
+@pytest.fixture
+def network_mr(network_data):
+    """NetworkModelResult fixture"""
+    return ms.NetworkModelResult(network_data, name="Network_Model")
+
+
+@pytest.fixture
+def node_obs1():
+    """NodeObservation for node 100"""
+    time = pd.date_range("2017-10-27", periods=18, freq="h")
+    # Add some noise to make it different from model
+    np.random.seed(123)
+    data = np.random.normal(1.4, 0.2, len(time))
+    df = pd.DataFrame({"WaterLevel": data}, index=time)
+    return ms.NodeObservation(df, node=100, name="Station_A")
+
+
+@pytest.fixture
+def node_obs2():
+    """NodeObservation for node 200"""
+    time = pd.date_range("2017-10-27", periods=15, freq="h")
+    np.random.seed(456)
+    data = np.random.normal(1.6, 0.25, len(time))
+    df = pd.DataFrame({"WaterLevel": data}, index=time)
+    return ms.NodeObservation(df, node=200, name="Station_B")
+
+
+@pytest.fixture
+def node_obs_invalid():
+    """NodeObservation for node that doesn't exist in network"""
+    time = pd.date_range("2017-10-27", periods=10, freq="h")
+    data = np.random.normal(1.5, 0.2, len(time))
+    df = pd.DataFrame({"WaterLevel": data}, index=time)
+    return ms.NodeObservation(df, node=999, name="Node_999_Obs")
+
+
+@pytest.fixture
+def network_mr1(network_data):
+    """First NetworkModelResult fixture"""
+    return ms.NetworkModelResult(network_data, name="Network_1")
+
+
+@pytest.fixture
+def network_mr2(network_data):
+    """Second NetworkModelResult fixture with modified data"""
+    network_data2 = network_data.copy()
+    network_data2["WaterLevel"] = network_data2["WaterLevel"] + 0.1
+    return ms.NetworkModelResult(network_data2, name="Network_2")
+
+
+@pytest.fixture
+def node_obs_gaps():
+    """NodeObservation with time gaps"""
+    time = pd.date_range("2017-10-27", periods=10, freq="2h")  # Different frequency
+    data = np.random.normal(1.5, 0.2, len(time))
+    df = pd.DataFrame({"WaterLevel": data}, index=time)
+    return ms.NodeObservation(df, node=100, name="Node_100_Gaps")
+
+
+@pytest.fixture
+def network_mr_gaps(network_data):
+    """NetworkModelResult for gap testing"""
+    return ms.NetworkModelResult(network_data, name="Network_Gaps")
+
+
+@pytest.fixture
+def point_obs_error():
+    """PointObservation for error testing (should not work with NetworkModelResult)"""
+    df = pd.DataFrame(
+        {"WL": [1, 2, 3]}, index=pd.date_range("2017-10-27", periods=3, freq="h")
+    )
+    return ms.PointObservation(df, x=0.0, y=0.0)
 
 
 def test_properties_after_match(o1, mr1):
@@ -522,7 +623,10 @@ def test_multiple_obs_not_allowed_with_non_spatial_modelresults():
     assert "m2" in cmp.mod_names
 
     # but this is not allowed
-    with pytest.raises(ValueError, match="SpatialField type"):
+    with pytest.raises(
+        ValueError,
+        match="When matching multiple observations with multiple models, all models",
+    ):
         ms.match(obs=[o1, o2], mod=[m1, m2, m3])
 
 
@@ -608,3 +712,87 @@ def test_multiple_models_same_name(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="HKZN_local_2017_DutchCoast"):
         ms.match(obs, [mr1, mr2])
+
+
+def test_match_node_obs_with_network_model(node_obs1, network_mr):
+    cmp = ms.match(node_obs1, network_mr)
+    assert cmp is not None
+    assert cmp.n_points > 0
+    assert "Network_Model" in cmp.mod_names
+
+    assert cmp.n_models == 1
+    assert cmp.n_points == 18
+    assert cmp.name == "Station_A"
+    assert cmp.gtype == "node"
+    assert cmp.mod_names == ["Network_Model"]
+
+
+def test_match_multiple_node_obs_with_network(node_obs1, node_obs2, network_mr):
+    cc = ms.match([node_obs1, node_obs2], network_mr)
+    assert cc.n_models == 1
+    assert cc.n_observations == 2
+    assert "Station_A" in cc
+    assert "Station_B" in cc
+    assert cc["Station_A"].n_points == 18  # Limited by shortest time overlap
+    assert cc["Station_B"].n_points == 15
+
+
+def test_match_node_obs_with_multiple_network_models(
+    node_obs1, network_mr1, network_mr2
+):
+    # Test matching one observation with multiple network models
+    cmp = ms.match(node_obs1, [network_mr1, network_mr2])
+    assert cmp.n_models == 2
+    assert cmp.mod_names == ["Network_1", "Network_2"]
+
+
+def test_match_network_invalid_node_error(node_obs_invalid, network_mr):
+    with pytest.raises(ValueError, match="Node 999 not found"):
+        ms.match(node_obs_invalid, network_mr)
+
+
+def test_skill_index(node_obs1, node_obs2, network_mr):
+    """Test that NetworkModelResult correctly extracts node data during matching"""
+    cmp = ms.match([node_obs1, node_obs2], network_mr)
+    # Test that we can get skill metrics
+    skill = cmp.skill()
+    assert "Station_A" in skill.index
+    assert "Station_B" in skill.index
+
+
+def test_network_match_with_time_gaps(node_obs_gaps, network_mr_gaps):
+    """Test network matching with gaps in observation data"""
+    cmp = ms.match(node_obs_gaps, network_mr_gaps)
+    assert cmp.n_points > 0  # Should still match some points
+
+
+def test_network_match_multi_obs_multi_model_comprehensive(
+    node_obs1, node_obs2, network_mr1, network_mr2
+):
+    """Test comprehensive multi-observation multi-model network matching"""
+    # Match multiple observations with multiple network models
+    cc = ms.match([node_obs1, node_obs2], [network_mr1, network_mr2])
+
+    assert cc.n_models == 2
+    assert cc.n_observations == 2
+    assert cc["Station_A"].n_models == 2
+    assert cc["Station_B"].n_models == 2
+    assert cc["Station_A"].mod_names == ["Network_1", "Network_2"]
+    assert cc["Station_B"].mod_names == ["Network_1", "Network_2"]
+
+
+def test_network_match_error_non_node_observation(network_mr, point_obs_error):
+    """Test that non-NodeObservation raises appropriate error"""
+    with pytest.raises(
+        TypeError, match="NetworkModelResult only supports NodeObservation"
+    ):
+        ms.match(point_obs_error, network_mr)
+
+
+def test_match_nodeobs_with_other_result(node_obs1, mr1):
+    """Test matching attempt between a node observation and non-network model"""
+    with pytest.raises(
+        NotImplementedError,
+        match="Extraction from .* to <class 'modelskill.obs.NodeObservation'> is not implemented.",
+    ):
+        ms.match(node_obs1, mr1)
