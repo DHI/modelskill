@@ -722,7 +722,7 @@ def test_match_node_obs_with_network_model(node_obs1, network_mr):
 
     assert cmp.n_models == 1
     assert cmp.n_points == 18
-    assert cmp.name == "Node_100_Obs"
+    assert cmp.name == "Station_A"
     assert cmp.gtype == "node"
     assert cmp.mod_names == ["Network_Model"]
 
