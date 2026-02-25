@@ -17,9 +17,14 @@ from ..types import PointType
 
 
 def validate_data_as_network(data: xr.Dataset):
-    assert "time" in data.dims, "Dataset must have time dimension"
-    assert "node" in data.dims, "Dataset must have node dimension"
-    assert len(data.data_vars) > 0, "Dataset must have at least one data variable"
+    if isinstance(data, xr.Dataset):
+        assert "time" in data.coords, "Dataset must have time dimension"
+        assert "node" in data.coords, "Dataset must have node dimension"
+        assert len(data.data_vars) > 0, "Dataset must have at least one data variable"
+    else:
+        raise NotImplementedError(
+            "Currently networks can only be specified as an xarray Dataset. with a 'time' and 'node' coords"
+        )
 
 
 class NodeModelResult(TimeSeries):
