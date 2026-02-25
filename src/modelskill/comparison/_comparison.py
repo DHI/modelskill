@@ -763,7 +763,7 @@ class Comparer:
                 quantity=self.quantity,
                 # TODO: add attrs
             )
-        elif self.gtype == "network":
+        elif self.gtype == "node":
             df = _drop_scalar_coords(self.data)[self._obs_str].to_dataframe()
             return NodeObservation(
                 data=df,

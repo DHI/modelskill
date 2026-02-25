@@ -35,7 +35,7 @@ Serializable = Union[str, int, float]
 def observation(
     data: DataInputType,
     *,
-    gtype: Literal["point", "track", "node", "network"] | None = None,
+    gtype: Literal["point", "track", "node"] | None = None,
     **kwargs,
 ) -> PointObservation | TrackObservation | NodeObservation:
     """Create an appropriate observation object.
@@ -51,9 +51,8 @@ def observation(
     ----------
     data : DataInputType
         The data to be used for creating the Observation object.
-    gtype : Literal["point", "track", "node", "network"] | None
+    gtype : Literal["point", "track", "node"] | None
         The geometry type of the data. If not specified, it will be guessed from the data.
-        Note: "node" and "network" are equivalent and both create NodeObservation.
     **kwargs
         Additional keyword arguments to be passed to the Observation constructor.
 
@@ -72,9 +71,7 @@ def observation(
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
     else:
-        # Map "node" to "network" for backward compatibility
-        gtype_mapped = "network" if gtype == "node" else gtype
-        geometry = GeometryType(gtype_mapped)
+        geometry = GeometryType(gtype)
 
     return _obs_class_lookup[geometry](
         data=data,
