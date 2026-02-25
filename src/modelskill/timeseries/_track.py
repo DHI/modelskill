@@ -2,7 +2,7 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, get_args, Optional, List, Sequence
+from typing import Literal, get_args, List, Sequence
 import warnings
 import pandas as pd
 import xarray as xr
@@ -32,7 +32,7 @@ def _parse_track_items(
     x_item: int | str | None,
     y_item: int | str | None,
     item: int | str | None,
-    aux_items: Optional[Sequence[int | str]] = None,
+    aux_items: Sequence[int | str] | None = None,
 ) -> TrackItem:
     """If input has exactly 3 items we accept item=None"""
     if len(items) < 3:
@@ -64,14 +64,14 @@ def _parse_track_items(
 
 def _parse_track_input(
     data: TrackType,
-    name: Optional[str],
+    name: str | None,
     item: str | int | None,
-    quantity: Optional[Quantity],
+    quantity: Quantity | None,
     x_item: str | int | None,
     y_item: str | int | None,
     keep_duplicates: Literal["first", "last", False] = "first",
     offset_duplicates: float = 0.001,
-    aux_items: Optional[Sequence[int | str]] = None,
+    aux_items: Sequence[int | str] | None = None,
 ) -> xr.Dataset:
     assert isinstance(
         data, get_args(TrackType)
