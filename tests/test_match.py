@@ -787,3 +787,12 @@ def test_network_match_error_non_node_observation(network_mr, point_obs_error):
         TypeError, match="NetworkModelResult only supports NodeObservation"
     ):
         ms.match(point_obs_error, network_mr)
+
+
+def test_match_nodeobs_with_other_result(node_obs1, mr1):
+    """Test matching attempt between a node observation and non-network model"""
+    with pytest.raises(
+        NotImplementedError,
+        match="Extraction from .* to <class 'modelskill.obs.NodeObservation'> is not implemented.",
+    ):
+        ms.match(node_obs1, mr1)
