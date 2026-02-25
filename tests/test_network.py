@@ -116,7 +116,7 @@ class TestNetworkModelResult:
         """Test that initialization fails with non-xarray.Dataset"""
         with pytest.raises(
             NotImplementedError,
-            match="Currently networks can only be specified as an xarray Dataset",
+            match="'NetworkModelResult' requires xarray.Dataset",
         ):
             NetworkModelResult(pd.DataFrame({"a": [1, 2, 3]}))
 

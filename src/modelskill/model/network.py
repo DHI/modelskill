@@ -16,17 +16,6 @@ from ..quantity import Quantity
 from ..types import PointType
 
 
-def validate_data_as_network(data: xr.Dataset):
-    if isinstance(data, xr.Dataset):
-        assert "time" in data.coords, "Dataset must have time dimension"
-        assert "node" in data.coords, "Dataset must have node dimension"
-        assert len(data.data_vars) > 0, "Dataset must have at least one data variable"
-    else:
-        raise NotImplementedError(
-            "Currently networks can only be specified as an xarray Dataset. with a 'time' and 'node' coords"
-        )
-
-
 class NodeModelResult(TimeSeries):
     """Model result for a single network node.
 
@@ -136,9 +125,8 @@ class NetworkModelResult(Network1D):
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
     ) -> None:
-        validate_data_as_network(data)
         if not isinstance(data, xr.Dataset):
-            raise ValueError("'NetworkModelResult' requires xarray.Dataset")
+            raise NotImplementedError("Currently, 'NetworkModelResult' requires xarray.Dataset")
         if len(data.data_vars) == 0:
             raise ValueError("Dataset must have at least one data variable")
 
