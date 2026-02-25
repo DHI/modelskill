@@ -92,15 +92,16 @@ class TestNetworkModelResult:
     def test_init_with_dataframe(self):
         """Test successful initialization with properly formatted DataFrame"""
         # Create a valid DataFrame with MultiIndex columns
-        time = pd.date_range("2010-01-01", periods=5, freq="h")
         arrays = [[123, 456], ["WaterLevel", "WaterLevel"]]
         columns = pd.MultiIndex.from_arrays(arrays, names=["node", "quantity"])
-        
+
         data = np.random.randn(5, 2)
-        df = pd.DataFrame(data, index=time, columns=columns)
-        
+        df = pd.DataFrame(data, columns=columns)
+        df["time"] = pd.date_range("2010-01-01", periods=5, freq="h")
+        df.set_index("time", inplace=True)
+
         nmr = NetworkModelResult(df, name="DataFrame_Network")
-        
+
         assert nmr.name == "DataFrame_Network"
         assert len(nmr.time) == 5
         assert isinstance(nmr.time, pd.DatetimeIndex)

@@ -40,9 +40,13 @@ def _to_network_dataset(data: NetworkType) -> xr.Dataset:
             )
         if len(data.columns) == 0:
             raise ValueError("DataFrame must have at least one column.")
-            # Conversion from DataFrame will be implemented here
 
-        return data.to_xarray()
+        # Ensure quantity is on top of the MultiIndex columns
+        if data.columns.names == ["node", "quantity"]:
+            data = data.swaplevel(axis=1)  # Swap to [quantity, node]
+        
+        # Transform data by stacking and converting to xarray
+        return data.stack().to_xarray()
 
     elif isinstance(data, xr.Dataset):
         if len(data.data_vars) == 0:
