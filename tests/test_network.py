@@ -89,6 +89,25 @@ class TestNetworkModelResult:
         assert isinstance(nmr.time, pd.DatetimeIndex)
         assert list(sample_network_data.node.values) == [123, 456, 789]
 
+    def test_init_with_dataframe(self):
+        """Test successful initialization with properly formatted DataFrame"""
+        # Create a valid DataFrame with MultiIndex columns
+        time = pd.date_range("2010-01-01", periods=5, freq="h")
+        arrays = [[123, 456], ["WaterLevel", "WaterLevel"]]
+        columns = pd.MultiIndex.from_arrays(arrays, names=["node", "quantity"])
+        
+        data = np.random.randn(5, 2)
+        df = pd.DataFrame(data, index=time, columns=columns)
+        
+        nmr = NetworkModelResult(df, name="DataFrame_Network")
+        
+        assert nmr.name == "DataFrame_Network"
+        assert len(nmr.time) == 5
+        assert isinstance(nmr.time, pd.DatetimeIndex)
+        # After conversion, the nodes should be accessible
+        assert 123 in nmr.nodes
+        assert 456 in nmr.nodes
+
     def test_init_with_item_selection(self, sample_network_data):
         """Test initialization with specific item"""
         # Add another variable
@@ -112,13 +131,63 @@ class TestNetworkModelResult:
         ):
             NetworkModelResult(data_no_time)
 
-    def test_init_fails_with_non_dataset(self):
-        """Test that initialization fails with non-xarray.Dataset"""
+    def test_init_fails_with_invalid_dataframe_index(self):
+        """Test that initialization fails with non-DatetimeIndex DataFrame"""
+        df = pd.DataFrame({"a": [1, 2, 3]})  # Regular RangeIndex
         with pytest.raises(
-            NotImplementedError,
-            match="'NetworkModelResult' requires xarray.Dataset",
+            TypeError,
+            match="DataFrame index must be a pd.DatetimeIndex",
         ):
-            NetworkModelResult(pd.DataFrame({"a": [1, 2, 3]}))
+            NetworkModelResult(df)
+
+    def test_init_fails_with_invalid_dataframe_columns(self):
+        """Test that initialization fails with non-MultiIndex columns"""
+        df = pd.DataFrame(
+            {"a": [1, 2, 3]}, index=pd.date_range("2010-01-01", periods=3, freq="h")
+        )
+        with pytest.raises(
+            TypeError,
+            match="DataFrame columns must be a pd.MultiIndex",
+        ):
+            NetworkModelResult(df)
+
+    def test_init_fails_with_wrong_multiindex_levels(self):
+        """Test that initialization fails with wrong MultiIndex level names"""
+        arrays = [[123, 456], ["WL", "WL"]]
+        columns = pd.MultiIndex.from_arrays(arrays, names=["wrong", "level"])
+        df = pd.DataFrame(
+            np.random.randn(3, 2),
+            index=pd.date_range("2010-01-01", periods=3, freq="h"),
+            columns=columns,
+        )
+        with pytest.raises(
+            ValueError,
+            match="DataFrame column level names must be 'node' and 'quantity'",
+        ):
+            NetworkModelResult(df)
+
+    def test_init_fails_with_wrong_multiindex_nlevels(self):
+        """Test that initialization fails with wrong number of MultiIndex levels"""
+        arrays = [[123, 456], ["WL", "WL"], ["extra", "level"]]
+        columns = pd.MultiIndex.from_arrays(arrays, names=["node", "quantity", "extra"])
+        df = pd.DataFrame(
+            np.random.randn(3, 2),
+            index=pd.date_range("2010-01-01", periods=3, freq="h"),
+            columns=columns,
+        )
+        with pytest.raises(
+            ValueError,
+            match="DataFrame columns must have exactly 2 levels",
+        ):
+            NetworkModelResult(df)
+
+    def test_init_fails_with_unsupported_type(self):
+        """Test that initialization fails with unsupported data types"""
+        with pytest.raises(
+            TypeError,
+            match="NetworkModelResult expects a pd.DataFrame or xr.Dataset",
+        ):
+            NetworkModelResult([1, 2, 3])  # List is not supported
 
     def test_repr(self, sample_network_data):
         """Test string representation"""

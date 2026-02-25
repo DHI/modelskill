@@ -42,6 +42,8 @@ def _to_network_dataset(data: NetworkType) -> xr.Dataset:
             raise ValueError("DataFrame must have at least one column.")
             # Conversion from DataFrame will be implemented here
 
+        return data.to_xarray()
+
     elif isinstance(data, xr.Dataset):
         if len(data.data_vars) == 0:
             raise ValueError("Dataset must have at least one data variable")
@@ -96,7 +98,7 @@ class NodeModelResult(TimeSeries):
         item: str | int | None = None,
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
-    ) -> None:
+    ):
         if not self._is_input_validated(data):
             data = _parse_network_node_input(
                 data,
@@ -165,7 +167,7 @@ class NetworkModelResult(Network1D):
         item: str | int | None = None,
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
-    ) -> None:
+    ):
         data = _to_network_dataset(data)
         sel_items = SelectedItems.parse(
             list(data.data_vars), item=item, aux_items=aux_items
