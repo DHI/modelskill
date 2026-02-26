@@ -516,9 +516,9 @@ class MultiNodeObservation(Collection):
             f"MultiNodeObservation({len(self)} observations: {[o.name for o in self]})"
         )
 
-    def __contains__(self, item) -> bool:
+    def __contains__(self, item: NodeObservation) -> bool:
         """Check if an observation is in the collection."""
-        return item in self._observations
+        return any(obs.node == item.node for obs in self._observations)
 
 
 def unit_display_name(name: str) -> str:
