@@ -429,43 +429,45 @@ class NodeObservation(Observation):
         node = int(data.coords["node"].item())
         return self.__class__(data, node=node)
 
-
-class MultiNodeObservation(Collection):
-    """A collection of NodeObservation objects created from a single data source.
-
-    Parameters
-    ----------
-    data : PointType
-        data source with time series for the nodes
-    nodes : list[int]
-        node IDs (integers), one per observation; the number of nodes must match
-        the number of columns in the data
-    quantity : Quantity, optional
-        physical quantity metadata, by default None
-    aux_items : list[int | str], optional
-        list of names or indices of auxiliary items to include alongside the
-        main variable, by default None
-    attrs : dict, optional
-        additional attributes to be added to every observation, by default None
-
-    Examples
-    --------
-    >>> import modelskill as ms
-    >>> # Create observations for nodes matching data columns
-    >>> obs = ms.MultiNodeObservation(df, nodes=[123, 456, 789])
-    >>> # With quantity metadata
-    >>> obs = ms.MultiNodeObservation(df, nodes=[123, 456], quantity=ms.Quantity("Water Level", "m"))
-    """
-
-    def __init__(
-        self,
+    @classmethod
+    def from_multiple(
+        cls,
         data: PointType,
         nodes: list[int] | dict[int, str],
         *,
+        item: int | str | None = None,
+        name: str | None = None,
+        weight: float = 1.0,
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
-    ) -> None:
+    ) -> list[NodeObservation]:
+        """Create multiple NodeObservation objects from a single data source.
+
+        Parameters
+        ----------
+        data : PointType
+            data source with time series for the nodes
+        nodes : list[int] | dict[int, str]
+            node IDs as list (auto-assigns items) or dict mapping node_id -> item
+        item : int | str | None, optional
+            item to use for all nodes (only used if nodes is a list and auto-assign fails)
+        name : str | None, optional
+            name prefix for observations
+        weight : float, optional
+            weighting factor for all observations, by default 1.0
+        quantity : Quantity | None, optional
+            physical quantity metadata, by default None
+        aux_items : list[int | str] | None, optional
+            auxiliary items, by default None
+        attrs : dict | None, optional
+            additional attributes, by default None
+
+        Returns
+        -------
+        list[NodeObservation]
+            List of NodeObservation objects
+        """
         if isinstance(data, pd.DataFrame):
             n_cols = len(data.columns)
         elif isinstance(data, xr.Dataset):
@@ -480,45 +482,30 @@ class MultiNodeObservation(Collection):
 
         # In case a list is passed, we transform it to dictionary
         if isinstance(nodes, list):
-            if n_cols == len(nodes):
+            if n_cols is not None and len(nodes) == n_cols:
+                # Auto-assign items: node_id -> column_index
                 nodes = {node_i: i for i, node_i in enumerate(nodes)}
+            elif item is not None:
+                # Use provided item for all nodes
+                nodes = {node_i: item for node_i in nodes}
             else:
                 raise ValueError(
-                    f"Nodes are passed as list of length {len(nodes)}, but they must match the number of columns in data ({n_cols})."
+                    f"Nodes are passed as list of length {len(nodes)}, but they must match the number of columns in data ({n_cols}) or 'item' must be specified."
                 )
 
-        self._observations = [
-            NodeObservation(
+        return [
+            cls(
                 data,
                 node=node_i,
                 item=item_i,
+                name=name,
+                weight=weight,
                 quantity=quantity,
                 aux_items=aux_items,
                 attrs=attrs,
             )
             for node_i, item_i in nodes.items()
         ]
-
-    def __getitem__(self, index):
-        """Get observation(s) by index or slice."""
-        return self._observations[index]
-
-    def __len__(self):
-        """Return number of observations."""
-        return len(self._observations)
-
-    def __iter__(self):
-        """Iterate over observations."""
-        return iter(self._observations)
-
-    def __repr__(self) -> str:
-        return (
-            f"MultiNodeObservation({len(self)} observations: {[o.name for o in self]})"
-        )
-
-    def __contains__(self, item: NodeObservation) -> bool:
-        """Check if an observation is in the collection."""
-        return any(obs.node == item.node for obs in self._observations)
 
 
 def unit_display_name(name: str) -> str:
