@@ -126,7 +126,9 @@ class NetworkModelResult(Network1D):
         aux_items: Sequence[int | str] | None = None,
     ) -> None:
         if not isinstance(data, xr.Dataset):
-            raise NotImplementedError("Currently, 'NetworkModelResult' requires xarray.Dataset")
+            raise NotImplementedError(
+                "Currently, 'NetworkModelResult' requires xarray.Dataset"
+            )
         if len(data.data_vars) == 0:
             raise ValueError("Dataset must have at least one data variable")
 

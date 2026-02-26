@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from typing import Literal, Any, Union
 from typing_extensions import Self
+from collections.abc import Collection
 import warnings
 import pandas as pd
 import xarray as xr
@@ -429,7 +430,7 @@ class NodeObservation(Observation):
         return self.__class__(data, node=node)
 
 
-class MultiNodeObservation:
+class MultiNodeObservation(Collection):
     """A collection of NodeObservation objects created from a single data source.
 
     Parameters
@@ -472,13 +473,18 @@ class MultiNodeObservation:
         else:
             n_cols = None
 
+        if not isinstance(nodes, (dict, list)):
+            raise ValueError(
+                f"'nodes' argument must be either a list or a dict but {type(nodes)} was passed."
+            )
+
         # In case a list is passed, we transform it to dictionary
         if isinstance(nodes, list):
             if n_cols == len(nodes):
                 nodes = {node_i: i for i, node_i in enumerate(nodes)}
             else:
                 raise ValueError(
-                    f"Nodes are passed as list of length {len(nodes)}, they must match the number of columns in data ({n_cols})."
+                    f"Nodes are passed as list of length {len(nodes)}, but they must match the number of columns in data ({n_cols})."
                 )
 
         self._observations = [
@@ -493,6 +499,10 @@ class MultiNodeObservation:
             for node_i, item_i in nodes.items()
         ]
 
+    def __getitem__(self, index):
+        """Get observation(s) by index or slice."""
+        return self._observations[index]
+
     def __len__(self):
         """Return number of observations."""
         return len(self._observations)
@@ -505,6 +515,10 @@ class MultiNodeObservation:
         return (
             f"MultiNodeObservation({len(self)} observations: {[o.name for o in self]})"
         )
+
+    def __contains__(self, item) -> bool:
+        """Check if an observation is in the collection."""
+        return item in self._observations
 
 
 def unit_display_name(name: str) -> str:
