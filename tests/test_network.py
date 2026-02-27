@@ -6,7 +6,7 @@ import xarray as xr
 import numpy as np
 import modelskill as ms
 from modelskill.model.network import NetworkModelResult, NodeModelResult
-from modelskill.obs import NodeObservation, MultiNodeObservation
+from modelskill.obs import NodeObservation
 from modelskill.quantity import Quantity
 
 
@@ -237,6 +237,17 @@ class TestNetworkModelResult:
 class TestNodeObservation:
     """Test NodeObservation class"""
 
+    @pytest.fixture
+    def multi_data(self, sample_node_data):
+        """Multi-column DataFrame with 3 stations"""
+        return pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+                "station_2": sample_node_data["WaterLevel"] + 0.2,
+            }
+        )
+
     def test_init_with_df(self, sample_node_data):
         """Test initialization with pandas DataFrame"""
 
@@ -280,40 +291,21 @@ class TestNodeObservation:
 
         # Only provide nodes - items should be auto-assigned [0, 1, 2]
         nodes = [123, 456, 789]
-        obs_list = MultiNodeObservation(multi_data, nodes=nodes)
+        multi_obs = NodeObservation.from_multiple(multi_data, nodes=nodes)
 
         # Should return a list of NodeObservation objects
-        assert isinstance(obs_list, list)
-        assert len(obs_list) == 3
-        assert all(isinstance(obs, NodeObservation) for obs in obs_list)
+        assert len(multi_obs) == 3
+        assert all(isinstance(obs, NodeObservation) for obs in multi_obs)
 
         # Check that nodes are assigned correctly
-        assert obs_list[0].node == 123
-        assert obs_list[1].node == 456
-        assert obs_list[2].node == 789
+        assert multi_obs[0].node == 123
+        assert multi_obs[1].node == 456
+        assert multi_obs[2].node == 789
 
         # Check default names (str(node_id))
-        assert obs_list[0].name == "station_0"
-        assert obs_list[1].name == "station_1"
-        assert obs_list[2].name == "station_2"
-
-    def test_multiple_nodes_auto_assign_mismatched_count(self, sample_node_data):
-        """Test error when nodes don't match column count for auto-assignment"""
-        multi_data = pd.DataFrame(
-            {
-                "station_0": sample_node_data["WaterLevel"],
-                "station_1": sample_node_data["WaterLevel"] + 0.1,
-            }
-        )
-
-        # Provide 3 nodes but only 2 columns - should fail
-        nodes = [123, 456, 789]
-
-        with pytest.raises(
-            ValueError,
-            match="must match the number of columns in data",
-        ):
-            MultiNodeObservation(multi_data, nodes=nodes)  # No item provided
+        assert multi_obs[0].name == "station_0"
+        assert multi_obs[1].name == "station_1"
+        assert multi_obs[2].name == "station_2"
 
     def test_multiple_nodes_creation(self, sample_node_data):
         """Test creating multiple NodeObservations with lists"""
@@ -327,62 +319,31 @@ class TestNodeObservation:
         )
 
         nodes = [123, 456, 789]
-        obs_list = MultiNodeObservation(multi_data, nodes=nodes)
+        multi_obs = NodeObservation.from_multiple(multi_data, nodes=nodes)
 
         # Should return a list of NodeObservation objects
-        assert isinstance(obs_list, list)
-        assert len(obs_list) == 3
-        assert all(isinstance(obs, NodeObservation) for obs in obs_list)
+        assert len(multi_obs) == 3
+        assert all(isinstance(obs, NodeObservation) for obs in multi_obs)
 
         # Check that nodes are assigned correctly
-        assert obs_list[0].node == 123
-        assert obs_list[1].node == 456
-        assert obs_list[2].node == 789
+        assert multi_obs[0].node == 123
+        assert multi_obs[1].node == 456
+        assert multi_obs[2].node == 789
 
         # Check default names (str(node_id))
-        assert obs_list[0].name == "station_0"
-        assert obs_list[1].name == "station_1"
-        assert obs_list[2].name == "station_2"
-
-    def test_only_one_list_provided(self, sample_node_data):
-        """Test error when lists are passed to NodeObservation instead of MultiNodeObservation"""
-        with pytest.raises(ValueError, match="Use MultiNodeObservation"):
-            NodeObservation(sample_node_data, node=[123, 456], item=0)
-
-        with pytest.raises(ValueError, match="Use MultiNodeObservation"):
-            NodeObservation(sample_node_data, node=123, item=[0, 1])
-
-
-class TestMultiNodeObservation:
-    """Test MultiNodeObservation class"""
-
-    @pytest.fixture
-    def multi_data(self, sample_node_data):
-        """Multi-column DataFrame with 3 stations"""
-        return pd.DataFrame(
-            {
-                "station_0": sample_node_data["WaterLevel"],
-                "station_1": sample_node_data["WaterLevel"] + 0.1,
-                "station_2": sample_node_data["WaterLevel"] + 0.2,
-            }
-        )
-
-    def test_returns_list_of_node_observations(self, multi_data):
-        obs_list = MultiNodeObservation(multi_data, nodes=[123, 456, 789])
-
-        assert isinstance(obs_list, list)
-        assert len(obs_list) == 3
-        assert all(isinstance(o, NodeObservation) for o in obs_list)
+        assert multi_obs[0].name == "station_0"
+        assert multi_obs[1].name == "station_1"
+        assert multi_obs[2].name == "station_2"
 
     def test_node_ids_are_assigned_correctly(self, multi_data):
-        obs_list = MultiNodeObservation(multi_data, nodes=[123, 456, 789])
+        obs_list = NodeObservation.from_multiple(multi_data, nodes=[123, 456, 789])
 
         assert obs_list[0].node == 123
         assert obs_list[1].node == 456
         assert obs_list[2].node == 789
 
     def test_names_derived_from_column_names(self, multi_data):
-        obs_list = MultiNodeObservation(multi_data, nodes=[123, 456, 789])
+        obs_list = NodeObservation.from_multiple(multi_data, nodes=[123, 456, 789])
 
         assert obs_list[0].name == "station_0"
         assert obs_list[1].name == "station_1"
@@ -396,34 +357,25 @@ class TestMultiNodeObservation:
             },
             coords={"time": sample_node_data.index},
         )
-        obs_list = MultiNodeObservation(ds, nodes=[123, 456])
+        obs_list = NodeObservation.from_multiple(ds, nodes=[123, 456])
 
         assert len(obs_list) == 2
         assert obs_list[0].node == 123
         assert obs_list[1].node == 456
 
     def test_nodes_must_be_list(self, multi_data):
-        with pytest.raises(ValueError, match="node must be a list"):
-            MultiNodeObservation(multi_data, nodes=123)
-
-    def test_nodes_length_must_match_columns(self, multi_data):
-        with pytest.raises(ValueError, match="Length of nodes"):
-            MultiNodeObservation(multi_data, nodes=[123, 456])  # 2 nodes, 3 columns
+        with pytest.raises(ValueError, match="'nodes' argument must be either"):
+            NodeObservation.from_multiple(multi_data, nodes=123)
 
     def test_attrs_propagated_to_all_observations(self, multi_data):
         attrs = {"source": "sensor_array", "version": 2}
-        obs_list = MultiNodeObservation(multi_data, nodes=[1, 2, 3], attrs=attrs)
+        obs_list = NodeObservation.from_multiple(
+            multi_data, nodes=[1, 2, 3], attrs=attrs
+        )
 
         for obs in obs_list:
             assert obs.attrs["source"] == "sensor_array"
             assert obs.attrs["version"] == 2
-
-    def test_repr(self, multi_data):
-        obs_list = MultiNodeObservation(multi_data, nodes=[1, 2, 3])
-        r = repr(obs_list)
-
-        assert "MultiNodeObservation" in r
-        assert "3" in r
 
 
 class TestNodeModelResult:
@@ -493,9 +445,11 @@ class TestNetworkIntegration:
             }
         )
 
-        # Create multiple NodeObservations using MultiNodeObservation (auto-assign items)
+        # Create multiple NodeObservations using .from_multiple (auto-assign items)
         nodes = [123, 456, 789]
-        obs_list = MultiNodeObservation(multi_data, nodes=nodes)  # Items auto-assigned
+        obs_list = NodeObservation.from_multiple(
+            multi_data, nodes=nodes
+        )  # Items auto-assigned
 
         # Test that matching works
         comparer_collection = ms.match(obs_list, nmr)

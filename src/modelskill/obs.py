@@ -6,7 +6,6 @@ ModelSkill supports three types of observations:
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
 * [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs.
-* [`MultiNodeObservation`](`modelskill.MultiNodeObservation`) - multiple network node timeseries created from a single data source.
 
 An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
@@ -355,7 +354,7 @@ class NodeObservation(Observation):
     The node ID is specified as an integer.
 
     To create multiple NodeObservation objects from a single data source,
-    use :class:`MultiNodeObservation`.
+    use :method:`from_multiple`.
 
     Parameters
     ----------
@@ -384,7 +383,7 @@ class NodeObservation(Observation):
     >>> o2 = ms.NodeObservation(df, item="Water Level", node=456)
     >>>
     >>> # Multiple node observations from single DataFrame
-    >>> obs = ms.MultiNodeObservation(df, node=[123, 456, 789])
+    >>> obs = ms.NodeObservation.from_multiple(data, nodes=[123, 456, 789])
     """
 
     def __init__(
@@ -399,11 +398,6 @@ class NodeObservation(Observation):
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> None:
-        if isinstance(item, list) or isinstance(node, list):
-            raise ValueError(
-                "Use MultiNodeObservation() to create multiple observations at once."
-            )
-
         if not self._is_input_validated(data):
             data = _parse_network_node_input(
                 data,
@@ -428,87 +422,64 @@ class NodeObservation(Observation):
         node = int(data.coords["node"].item())
         return self.__class__(data, node=node)
 
-
-class MultiNodeObservation(list):
-    """A collection of NodeObservation objects created from a single data source.
-
-    Parameters
-    ----------
-    data : PointType
-        data source with time series for the nodes
-    item : list[int | str] or int or str, optional
-        indices or names of the wanted columns, one per node, by default None;
-        if None and len(node) matches the number of data columns, items are
-        auto-assigned as [0, 1, 2, ...]
-    node : list[int]
-        node IDs (integers), one per observation
-    name : str or list[str], optional
-        user-defined name(s); a plain string is used as a prefix (e.g. "S"
-        gives "S_0", "S_1", ...); a list must match the length of node;
-        by default str(node_id) is used for each observation
-    weight : list[float] or None, optional
-        weighting factors, one per observation; if None, all weights default to 1.0
-    quantity : Quantity, optional
-        physical quantity metadata, by default None
-    aux_items : list, optional
-        auxiliary items to include alongside the main variable, by default None
-    attrs : dict, optional
-        additional attributes to be added to every observation, by default None
-
-    Examples
-    --------
-    >>> import modelskill as ms
-    >>> # Auto-assign items when node count matches column count
-    >>> obs = ms.MultiNodeObservation(df, node=[123, 456, 789])
-    >>> # Explicit item selection
-    >>> obs = ms.MultiNodeObservation(df, item=[0, 1, 2], node=[123, 456, 789])
-    >>> # String prefix for names
-    >>> obs = ms.MultiNodeObservation(df, node=[123, 456], name="S")  # gives "S_0", "S_1"
-    """
-
-    def __init__(
-        self,
+    @classmethod
+    def from_multiple(
+        cls,
         data: PointType,
-        nodes: list[int],
+        nodes: list[int] | dict[int, str],
         *,
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
-    ) -> None:
-        if not isinstance(nodes, list):
+    ) -> list[NodeObservation]:
+        """Create multiple NodeObservation objects from a single data source.
+
+        Parameters
+        ----------
+        data : PointType
+            data source with time series for the nodes
+        nodes : list[int] | dict[int, str]
+            node IDs as list (auto-assigns items) or dict mapping node_id -> item
+        quantity : Quantity | None, optional
+            physical quantity metadata, by default None
+        aux_items : list[int | str] | None, optional
+            auxiliary items, by default None
+        attrs : dict | None, optional
+            additional attributes, by default None
+
+        Returns
+        -------
+        list[NodeObservation]
+            List of NodeObservation objects
+        """
+        if not isinstance(nodes, (dict, list)):
             raise ValueError(
-                "node must be a list. Use NodeObservation() for a single node."
+                f"'nodes' argument must be either a list or a dict but {type(nodes)} was passed."
             )
 
-        if isinstance(data, pd.DataFrame):
-            n_cols = len(data.columns)
-        elif isinstance(data, xr.Dataset):
-            n_cols = len(data.data_vars)
+        # In case a list is passed, we transform it to dictionary
+        if isinstance(nodes, list):
+            items = range(len(nodes))
+            warnings.warn(
+                f"'nodes' was passed as a list of length {len(nodes)} so, only the first {len(nodes)} items of 'data'"
+                " will be selected to match the nodes. You can pass 'nodes' as a dictionary to assign an item to each node.",
+                stacklevel=2,
+            )
         else:
-            n_cols = None
+            items = nodes.values()
+            nodes = nodes.keys()
 
-        if n_cols is not None and len(nodes) != n_cols:
-            raise ValueError(
-                f"Length of nodes ({len(nodes)}) must match the number of columns in data ({n_cols})."
-            )
-
-        observations = [
-            NodeObservation(
+        return [
+            cls(
                 data,
                 node=node_i,
-                item=i,
+                item=item_i,
                 quantity=quantity,
                 aux_items=aux_items,
                 attrs=attrs,
             )
-            for i, node_i in enumerate(nodes)
+            for node_i, item_i in zip(nodes, items)
         ]
-        super().__init__(observations)
-
-    def __repr__(self) -> str:
-        return (
-            f"MultiNodeObservation({len(self)} observations: {[o.name for o in self]})"
-        )
 
 
 def unit_display_name(name: str) -> str:
