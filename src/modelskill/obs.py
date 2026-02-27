@@ -6,7 +6,6 @@ ModelSkill supports three types of observations:
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
 * [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs.
-* [`MultiNodeObservation`](`modelskill.MultiNodeObservation`) - multiple network node timeseries created from a single data source.
 
 An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
@@ -355,7 +354,7 @@ class NodeObservation(Observation):
     The node ID is specified as an integer.
 
     To create multiple NodeObservation objects from a single data source,
-    use :class:`MultiNodeObservation`.
+    use :method:`from_multiple`.
 
     Parameters
     ----------
@@ -384,7 +383,7 @@ class NodeObservation(Observation):
     >>> o2 = ms.NodeObservation(df, item="Water Level", node=456)
     >>>
     >>> # Multiple node observations from single DataFrame
-    >>> obs = ms.MultiNodeObservation(df, node=[123, 456, 789])
+    >>> obs = ms.NodeObservation.from_multiple(data, nodes=[123, 456, 789])
     """
 
     def __init__(
@@ -399,11 +398,6 @@ class NodeObservation(Observation):
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> None:
-        if isinstance(item, list) or isinstance(node, list):
-            raise ValueError(
-                "Use MultiNodeObservation() to create multiple observations at once."
-            )
-
         if not self._is_input_validated(data):
             data = _parse_network_node_input(
                 data,
@@ -434,9 +428,6 @@ class NodeObservation(Observation):
         data: PointType,
         nodes: list[int] | dict[int, str],
         *,
-        item: int | str | None = None,
-        name: str | None = None,
-        weight: float = 1.0,
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
@@ -449,12 +440,6 @@ class NodeObservation(Observation):
             data source with time series for the nodes
         nodes : list[int] | dict[int, str]
             node IDs as list (auto-assigns items) or dict mapping node_id -> item
-        item : int | str | None, optional
-            item to use for all nodes (only used if nodes is a list and auto-assign fails)
-        name : str | None, optional
-            name prefix for observations
-        weight : float, optional
-            weighting factor for all observations, by default 1.0
         quantity : Quantity | None, optional
             physical quantity metadata, by default None
         aux_items : list[int | str] | None, optional
@@ -467,13 +452,6 @@ class NodeObservation(Observation):
         list[NodeObservation]
             List of NodeObservation objects
         """
-        if isinstance(data, pd.DataFrame):
-            n_cols = len(data.columns)
-        elif isinstance(data, xr.Dataset):
-            n_cols = len(data.data_vars)
-        else:
-            n_cols = None
-
         if not isinstance(nodes, (dict, list)):
             raise ValueError(
                 f"'nodes' argument must be either a list or a dict but {type(nodes)} was passed."
@@ -481,29 +459,26 @@ class NodeObservation(Observation):
 
         # In case a list is passed, we transform it to dictionary
         if isinstance(nodes, list):
-            if n_cols is not None and len(nodes) == n_cols:
-                # Auto-assign items: node_id -> column_index
-                nodes = {node_i: i for i, node_i in enumerate(nodes)}
-            elif item is not None:
-                # Use provided item for all nodes
-                nodes = {node_i: item for node_i in nodes}
-            else:
-                raise ValueError(
-                    f"Nodes are passed as list of length {len(nodes)}, but they must match the number of columns in data ({n_cols}) or 'item' must be specified."
-                )
+            items = range(len(nodes))
+            warnings.warn(
+                f"'nodes' was passed as a list of length {len(nodes)} so only the first {len(nodes)} items of 'data' will be selected to, respectively, match the passed nodes."
+                "You can pass 'nodes' as a dictionary to assign a specific item to each node.",
+                stacklevel=2,
+            )
+        else:
+            items = nodes.values()
+            nodes = nodes.keys()
 
         return [
             cls(
                 data,
                 node=node_i,
                 item=item_i,
-                name=name,
-                weight=weight,
                 quantity=quantity,
                 aux_items=aux_items,
                 attrs=attrs,
             )
-            for node_i, item_i in nodes.items()
+            for node_i, item_i in zip(nodes, items)
         ]
 
 
