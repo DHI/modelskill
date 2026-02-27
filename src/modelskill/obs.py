@@ -12,7 +12,7 @@ An observation can be created by explicitly invoking one of the above classes or
 
 from __future__ import annotations
 
-from typing import Literal, Any, Union
+from typing import Literal, Any, Union, overload
 from typing_extensions import Self
 import warnings
 import pandas as pd
@@ -422,12 +422,35 @@ class NodeObservation(Observation):
         node = int(data.coords["node"].item())
         return self.__class__(data, node=node)
 
+    @overload
     @classmethod
     def from_multiple(
         cls,
-        nodes: list[int] | dict[int, PointType],
-        data: PointType | None = None,
         *,
+        data: PointType,
+        nodes: list[int] | dict[int, str | int],
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[NodeObservation]: ...
+
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        nodes: dict[int, PointType],
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[NodeObservation]: ...
+
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType | None = None,
+        nodes: list[int] | dict[int, PointType] | None = None,
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
@@ -436,10 +459,10 @@ class NodeObservation(Observation):
 
         Parameters
         ----------
-        nodes : list[int] | dict[int, str]
-            node IDs as list (auto-assigns items) or dict mapping node_id -> item
         data : PointType, optional
-            data source with time series for the nodes
+            data source with time series for the nodes (required when nodes is a list)
+        nodes : list[int] | dict[int, PointType]
+            node IDs as list (requires data parameter) or dict mapping node_id -> data_source
         quantity : Quantity | None, optional
             physical quantity metadata, by default None
         aux_items : list[int | str] | None, optional
@@ -451,7 +474,17 @@ class NodeObservation(Observation):
         -------
         list[NodeObservation]
             List of NodeObservation objects
+
+        Examples
+        --------
+        # Single data source with multiple nodes
+        >>> obs = ms.NodeObservation.from_multiple(data=df, nodes=[123, 456, 789])
+
+        # Multiple data sources
+        >>> obs = ms.NodeObservation.from_multiple(nodes={123: df1, 456: df2})
         """
+        if nodes is None:
+            raise ValueError("'nodes' argument is required")
         if not isinstance(nodes, (dict, list)):
             raise ValueError(
                 f"'nodes' argument must be either a list or a dict but {type(nodes)} was passed."
@@ -461,7 +494,7 @@ class NodeObservation(Observation):
         if data is None:
             if not isinstance(nodes, dict):
                 raise ValueError(
-                    "When 'data' argument is not passed, 'nodes' must be a dictionary of nodes and data sources."
+                    "When 'data' argument is None, 'nodes' must be a dictionary of nodes and data sources."
                 )
 
             data = nodes.values()
@@ -478,8 +511,8 @@ class NodeObservation(Observation):
                 for data_i, node_i, item_i in zip(data, nodes, items)
             ]
         else:
-            # In case a list is passed, we transform it to dictionary
             if isinstance(nodes, list):
+                # data is provided and nodes is a list
                 items = range(len(nodes))
                 warnings.warn(
                     f"'nodes' was passed as a list of length {len(nodes)} so, only the first {len(nodes)} items of 'data'"
