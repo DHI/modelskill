@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 import pandas as pd
 
@@ -50,7 +50,7 @@ class DummyModelResult:
     def extract(
         self,
         observation: PointObservation | TrackObservation,
-        spatial_method: Optional[str] = None,
+        spatial_method: str | None = None,
     ) -> PointModelResult | TrackModelResult:
         if spatial_method is not None:
             raise NotImplementedError(

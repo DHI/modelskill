@@ -1,17 +1,19 @@
 """
 # Observations
 
-ModelSkill supports two types of observations:
+ModelSkill supports three types of observations:
 
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
+* [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs.
 
 An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
 
 from __future__ import annotations
 
-from typing import Literal, Optional, Any, Union
+from typing import Literal, Any, Union, overload
+from typing_extensions import Self
 import warnings
 import pandas as pd
 import xarray as xr
@@ -22,6 +24,7 @@ from .timeseries import (
     TimeSeries,
     _parse_xyz_point_input,
     _parse_track_input,
+    _parse_network_node_input,
 )
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
@@ -31,9 +34,9 @@ Serializable = Union[str, int, float]
 def observation(
     data: DataInputType,
     *,
-    gtype: Optional[Literal["point", "track"]] = None,
+    gtype: Literal["point", "track", "node"] | None = None,
     **kwargs,
-) -> PointObservation | TrackObservation:
+) -> PointObservation | TrackObservation | NodeObservation:
     """Create an appropriate observation object.
 
     A factory function for creating an appropriate observation object
@@ -41,19 +44,20 @@ def observation(
 
     If 'x' or 'y' is given, a PointObservation is created.
     If 'x_item' or 'y_item' is given, a TrackObservation is created.
+    If 'node' is given, a NodeObservation is created.
 
     Parameters
     ----------
     data : DataInputType
         The data to be used for creating the Observation object.
-    gtype : Optional[Literal["point", "track"]]
+    gtype : Literal["point", "track", "node"] | None
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
         Additional keyword arguments to be passed to the Observation constructor.
 
     Returns
     -------
-    PointObservation or TrackObservation
+    PointObservation or TrackObservation or NodeObservation
         An observation object of the appropriate type
 
     Examples
@@ -61,6 +65,7 @@ def observation(
     >>> import modelskill as ms
     >>> o_pt = ms.observation(df, item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o_tr = ms.observation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
+    >>> o_node = ms.observation(df, item="Water Level", node=123, name="123")
     """
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
@@ -80,14 +85,16 @@ def _guess_gtype(**kwargs) -> GeometryType:
         return GeometryType.POINT
     elif "x_item" in kwargs or "y_item" in kwargs:
         return GeometryType.TRACK
+    elif "node" in kwargs:
+        return GeometryType.NODE
     else:
         warnings.warn(
-            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation or TrackObservation to be explicit."
+            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation, TrackObservation, or NodeObservation to be explicit."
         )
         return GeometryType.POINT
 
 
-def _validate_attrs(data_attrs: dict, attrs: Optional[dict]) -> None:
+def _validate_attrs(data_attrs: dict, attrs: dict | None) -> None:
     # See similar method in xarray https://github.com/pydata/xarray/blob/main/xarray/backends/api.py#L165
 
     if attrs is None:
@@ -109,7 +116,7 @@ class Observation(TimeSeries):
         data: xr.Dataset,
         weight: float,
         color: str = "#d62728",  # TODO: cannot currently be set by user
-        attrs: Optional[dict] = None,
+        attrs: dict | None = None,
     ) -> None:
         assert isinstance(data, xr.Dataset)
 
@@ -196,15 +203,15 @@ class PointObservation(Observation):
         self,
         data: PointType,
         *,
-        item: Optional[int | str] = None,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
-        z: Optional[float] = None,
-        name: Optional[str] = None,
+        item: int | str | None = None,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
+        name: str | None = None,
         weight: float = 1.0,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
-        attrs: Optional[dict] = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_xyz_point_input(
@@ -315,15 +322,15 @@ class TrackObservation(Observation):
         self,
         data: TrackType,
         *,
-        item: Optional[int | str] = None,
-        name: Optional[str] = None,
+        item: int | str | None = None,
+        name: str | None = None,
         weight: float = 1.0,
-        x_item: Optional[int | str] = 0,
-        y_item: Optional[int | str] = 1,
+        x_item: int | str | None = 0,
+        y_item: int | str | None = 1,
         keep_duplicates: Literal["first", "last", False] = "first",
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
-        attrs: Optional[dict] = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_track_input(
@@ -338,6 +345,193 @@ class TrackObservation(Observation):
             )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
+
+
+class NodeObservation(Observation):
+    """Class for observations at network nodes.
+
+    Create a NodeObservation from a DataFrame or other data source.
+    The node ID is specified as an integer.
+
+    To create multiple NodeObservation objects from a single data source,
+    use :method:`from_multiple`.
+
+    Parameters
+    ----------
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        data source with time series for the node
+    item : (int, str), optional
+        index or name of the wanted item/column, by default None
+        if data contains more than one item, item must be given
+    node : int, optional
+        node ID (integer), by default None
+    name : str, optional
+        user-defined name for easy identification in plots etc, by default derived from data
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
+    quantity : Quantity, optional
+        The quantity of the observation, for validation with model results
+    aux_items : list, optional
+        list of names or indices of auxiliary items, by default None
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> o1 = ms.NodeObservation(data, node=123, name="123")
+    >>> o2 = ms.NodeObservation(df, item="Water Level", node=456)
+    >>>
+    >>> # Multiple node observations from single DataFrame
+    >>> obs = ms.NodeObservation.from_multiple(data, nodes=[123, 456, 789])
+    """
+
+    def __init__(
+        self,
+        data: PointType,
+        node: int,
+        *,
+        item: int | str | None = None,
+        name: str | None = None,
+        weight: float = 1.0,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> None:
+        if not self._is_input_validated(data):
+            data = _parse_network_node_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                node=node,
+                aux_items=aux_items,
+            )
+
+        assert isinstance(data, xr.Dataset)
+        super().__init__(data=data, weight=weight, attrs=attrs)
+
+    @property
+    def node(self) -> int:
+        """Node ID of observation"""
+        node_val = self.data.coords["node"]
+        return int(node_val.item())
+
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Extract node from data and create new instance"""
+        node = int(data.coords["node"].item())
+        return self.__class__(data, node=node)
+
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType,
+        nodes: list[int] | dict[int, str | int],
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[NodeObservation]: ...
+
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        nodes: dict[int, PointType],
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[NodeObservation]: ...
+
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType | None = None,
+        nodes: list[int] | dict[int, PointType] | None = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[NodeObservation]:
+        """Create multiple NodeObservation objects from a single data source.
+
+        Parameters
+        ----------
+        data : PointType, optional
+            data source with time series for the nodes (required when nodes is a list)
+        nodes : list[int] | dict[int, PointType]
+            node IDs as list (requires data parameter) or dict mapping node_id -> data_source
+        quantity : Quantity | None, optional
+            physical quantity metadata, by default None
+        aux_items : list[int | str] | None, optional
+            auxiliary items, by default None
+        attrs : dict | None, optional
+            additional attributes, by default None
+
+        Returns
+        -------
+        list[NodeObservation]
+            List of NodeObservation objects
+
+        Examples
+        --------
+        # Single data source with multiple nodes
+        >>> obs = ms.NodeObservation.from_multiple(data=df, nodes=[123, 456, 789])
+
+        # Multiple data sources
+        >>> obs = ms.NodeObservation.from_multiple(nodes={123: df1, 456: df2})
+        """
+        if nodes is None:
+            raise ValueError("'nodes' argument is required")
+        if not isinstance(nodes, (dict, list)):
+            raise ValueError(
+                f"'nodes' argument must be either a list or a dict but {type(nodes)} was passed."
+            )
+
+        shared_kwargs = dict(quantity=quantity, aux_items=aux_items, attrs=attrs)
+        if data is None:
+            if not isinstance(nodes, dict):
+                raise ValueError(
+                    "When 'data' argument is None, 'nodes' must be a dictionary of nodes and data sources."
+                )
+
+            data = nodes.values()
+            nodes = nodes.keys()
+            items = [None] * len(nodes)
+
+            return [
+                cls(
+                    data_i,
+                    node=node_i,
+                    item=item_i,
+                    **shared_kwargs,
+                )
+                for data_i, node_i, item_i in zip(data, nodes, items)
+            ]
+        else:
+            if isinstance(nodes, list):
+                # data is provided and nodes is a list
+                items = range(len(nodes))
+                warnings.warn(
+                    f"'nodes' was passed as a list of length {len(nodes)} so, only the first {len(nodes)} items of 'data'"
+                    " will be selected to match the nodes. You can pass 'nodes' as a dictionary to assign an item to each node.",
+                    stacklevel=2,
+                )
+            else:
+                items = nodes.values()
+                nodes = nodes.keys()
+
+            return [
+                cls(
+                    data,
+                    node=node_i,
+                    item=item_i,
+                    **shared_kwargs,
+                )
+                for node_i, item_i in zip(nodes, items)
+            ]
 
 
 def unit_display_name(name: str) -> str:
@@ -364,4 +558,5 @@ def unit_display_name(name: str) -> str:
 _obs_class_lookup = {
     GeometryType.POINT: PointObservation,
     GeometryType.TRACK: TrackObservation,
+    GeometryType.NODE: NodeObservation,
 }

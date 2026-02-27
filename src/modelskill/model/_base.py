@@ -1,7 +1,7 @@
 from __future__ import annotations
 from collections import Counter
 from collections.abc import Hashable
-from typing import List, Optional, Protocol, Sequence, TYPE_CHECKING
+from typing import List, Protocol, Sequence, TYPE_CHECKING
 from dataclasses import dataclass
 import warnings
 
@@ -10,9 +10,10 @@ import pandas as pd
 if TYPE_CHECKING:
     from .point import PointModelResult
     from .track import TrackModelResult
+    from .network import NodeModelResult
 
 from ..utils import _get_name
-from ..obs import Observation, PointObservation, TrackObservation
+from ..obs import Observation, PointObservation, TrackObservation, NodeObservation
 
 
 @dataclass
@@ -28,7 +29,7 @@ class SelectedItems:
     def parse(
         avail_items: Sequence[Hashable],
         item: int | str | None,
-        aux_items: Optional[Sequence[int | str]] = None,
+        aux_items: Sequence[int | str] | None = None,
     ) -> SelectedItems:
         return _parse_items(avail_items, item, aux_items)
 
@@ -36,7 +37,7 @@ class SelectedItems:
 def _parse_items(
     avail_items: Sequence[Hashable],
     item: int | str | None,
-    aux_items: Optional[Sequence[int | str]] = None,
+    aux_items: Sequence[int | str] | None = None,
 ) -> SelectedItems:
     """If input has exactly 1 item we accept item=None"""
     if item is None:
@@ -76,13 +77,20 @@ class SpatialField(Protocol):
     def extract(
         self,
         observation: PointObservation | TrackObservation,
-        spatial_method: Optional[str] = None,
+        spatial_method: str | None = None,
     ) -> PointModelResult | TrackModelResult: ...
 
     def _extract_point(
-        self, observation: PointObservation, spatial_method: Optional[str] = None
+        self, observation: PointObservation, spatial_method: str | None = None
     ) -> PointModelResult: ...
 
     def _extract_track(
-        self, observation: TrackObservation, spatial_method: Optional[str] = None
+        self, observation: TrackObservation, spatial_method: str | None = None
     ) -> TrackModelResult: ...
+
+
+class Network1D(Protocol):
+    def extract(
+        self,
+        observation: NodeObservation,
+    ) -> NodeModelResult: ...

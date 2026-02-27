@@ -7,7 +7,6 @@ from typing import (
     Iterable,
     Literal,
     Mapping,
-    Optional,
     Sequence,
     TypeVar,
     Union,
@@ -27,20 +26,32 @@ from .comparison import Comparer, ComparerCollection
 from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
+from .model.network import NetworkModelResult, NodeModelResult
 from .model.track import TrackModelResult
-from .obs import Observation, PointObservation, TrackObservation
+from .model.point import align_data
+from .obs import (
+    Observation,
+    PointObservation,
+    TrackObservation,
+    NodeObservation,
+)
 from .timeseries import TimeSeries
 from .types import Period
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
-IdxOrNameTypes = Optional[Union[int, str]]
-GeometryTypes = Optional[Literal["point", "track", "unstructured", "grid"]]
+IdxOrNameTypes = Union[int, str] | None
+GeometryTypes = Literal["point", "track", "unstructured", "grid"] | None
 MRTypes = Union[
     PointModelResult,
     GridModelResult,
     DfsuModelResult,
     TrackModelResult,
+    NetworkModelResult,
     DummyModelResult,
+]
+FieldTypes = Union[
+    GridModelResult,
+    DfsuModelResult,
 ]
 MRInputType = Union[
     str,
@@ -56,7 +67,11 @@ MRInputType = Union[
     TimeSeries,
     MRTypes,
 ]
-ObsTypes = Union[PointObservation, TrackObservation]
+ObsTypes = Union[
+    PointObservation,
+    TrackObservation,
+    NodeObservation,
+]
 ObsInputType = Union[
     str,
     Path,
@@ -67,7 +82,6 @@ ObsInputType = Union[
     pd.Series,
     ObsTypes,
 ]
-
 T = TypeVar("T", bound="TimeSeries")
 
 
@@ -75,14 +89,14 @@ def from_matched(
     data: Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset],
     *,
     obs_item: str | int | None = 0,
-    mod_items: Optional[Iterable[str | int]] = None,
-    aux_items: Optional[Iterable[str | int]] = None,
-    quantity: Optional[Quantity] = None,
-    name: Optional[str] = None,
+    mod_items: Iterable[str | int] | None = None,
+    aux_items: Iterable[str | int] | None = None,
+    quantity: Quantity | None = None,
+    name: str | None = None,
     weight: float = 1.0,
-    x: Optional[float] = None,
-    y: Optional[float] = None,
-    z: Optional[float] = None,
+    x: float | None = None,
+    y: float | None = None,
+    z: float | None = None,
     x_item: str | int | None = None,
     y_item: str | int | None = None,
 ) -> Comparer:
@@ -176,8 +190,8 @@ def match(
     obs: ObsTypes,
     mod: MRTypes | Sequence[MRTypes],
     *,
-    max_model_gap: Optional[float] = None,
-    spatial_method: Optional[str] = None,
+    max_model_gap: float | None = None,
+    spatial_method: str | None = None,
     spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> Comparer: ...
@@ -188,8 +202,8 @@ def match(
     obs: Iterable[ObsTypes],
     mod: MRTypes | Sequence[MRTypes],
     *,
-    max_model_gap: Optional[float] = None,
-    spatial_method: Optional[str] = None,
+    max_model_gap: float | None = None,
+    spatial_method: str | None = None,
     spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> ComparerCollection: ...
@@ -200,7 +214,7 @@ def match(
     mod,
     *,
     max_model_gap=None,
-    spatial_method: Optional[str] = None,
+    spatial_method: str | None = None,
     spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ):
@@ -248,6 +262,7 @@ def match(
     --------
     from_matched - Create a Comparer from observation and model results that are already matched
     """
+
     if isinstance(obs, get_args(ObsInputType)):
         return _match_single_obs(
             obs,
@@ -267,16 +282,23 @@ def match(
 
     if len(obs) > 1 and isinstance(mod, Collection) and len(mod) > 1:
         if not all(
-            isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
+            isinstance(
+                m,
+                (
+                    DfsuModelResult,
+                    GridModelResult,
+                    NetworkModelResult,
+                    DummyModelResult,
+                ),
+            )
             for m in mod
         ):
             raise ValueError(
                 """
-                In case of multiple observations, multiple models can _only_ 
-                be matched if they are _all_ of SpatialField type, e.g. DfsuModelResult 
-                or GridModelResult. 
+                When matching multiple observations with multiple models, all models
+                must be one of the following types: DfsuModelResult, GridModelResult or NetworkModelResult.
                 
-                If you want match multiple point observations with multiple point model results, 
+                If you want to match multiple point observations with multiple point model results, 
                 please match one observation at a time and then create a collection of these 
                 using modelskill.ComparerCollection(cmp_list) afterwards. The same applies to track data.
                 """
@@ -317,14 +339,19 @@ def _match_single_obs(
     if len(names) != len(set(names)):
         raise ValueError(f"Duplicate model names found: {names}")
 
-    raw_mod_data = {
-        m.name: (
-            m.extract(obs, spatial_method=spatial_method)
-            if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
-            else m
-        )
-        for m in models
-    }
+    raw_mod_data: dict[str, PointModelResult | TrackModelResult | NodeModelResult] = {}
+    for m in models:
+        is_field = isinstance(m, (GridModelResult, DfsuModelResult))
+        is_dummy = isinstance(m, DummyModelResult)
+        is_network = isinstance(m, NetworkModelResult)
+        if is_field or is_dummy:
+            matching_obs = m.extract(obs, spatial_method=spatial_method)
+        elif is_network:
+            matching_obs = m.extract(obs)
+        else:
+            matching_obs = m
+
+        raw_mod_data[m.name] = matching_obs
 
     matched_data = _match_space_time(
         observation=obs,
@@ -341,7 +368,7 @@ def _match_single_obs(
 
 
 def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
-    assert all([len(x) > 0 for x in idxs])
+    assert all([len(x) > 0 for x in idxs]), "All datetime indices must be non-empty"
 
     starts = [x[0] for x in idxs]
     ends = [x[-1] for x in idxs]
@@ -351,11 +378,11 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 def _match_space_time(
     observation: Observation,
-    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult],
+    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult | NodeModelResult],
     max_model_gap: float | None,
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
-) -> Optional[xr.Dataset]:
+) -> xr.Dataset | None:
     idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
 
@@ -374,7 +401,10 @@ def _match_space_time(
                     observation, spatial_tolerance=spatial_tolerance
                 )
             case PointModelResult() as pmr, PointObservation():
-                aligned = pmr.align(observation, max_gap=max_model_gap)
+                aligned = align_data(pmr.data, observation, max_gap=max_model_gap)
+            case NodeModelResult() as nmr, NodeObservation():
+                # mr is the extracted NodeModelResult
+                aligned = align_data(nmr.data, observation, max_gap=max_model_gap)
             case _:
                 raise TypeError(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"

@@ -10,7 +10,6 @@ from typing import (
     Iterator,
     List,
     Union,
-    Optional,
     Mapping,
     Iterable,
     overload,
@@ -286,13 +285,13 @@ class ComparerCollection(Mapping):
 
     def sel(
         self,
-        model: Optional[IdxOrNameTypes] = None,
-        observation: Optional[IdxOrNameTypes] = None,
-        quantity: Optional[IdxOrNameTypes] = None,
-        start: Optional[TimeTypes] = None,
-        end: Optional[TimeTypes] = None,
-        time: Optional[TimeTypes] = None,
-        area: Optional[List[float]] = None,
+        model: IdxOrNameTypes | None = None,
+        observation: IdxOrNameTypes | None = None,
+        quantity: IdxOrNameTypes | None = None,
+        start: TimeTypes | None = None,
+        end: TimeTypes | None = None,
+        time: TimeTypes | None = None,
+        area: List[float] | None = None,
         **kwargs: Any,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
@@ -572,7 +571,7 @@ class ComparerCollection(Mapping):
         binsize: float | None = None,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        n_min: Optional[int] = None,
+        n_min: int | None = None,
         **kwargs: Any,
     ) -> SkillGrid:
         """Skill assessment of model(s) on a regular spatial grid.
