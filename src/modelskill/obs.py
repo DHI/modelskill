@@ -461,8 +461,8 @@ class NodeObservation(Observation):
         if isinstance(nodes, list):
             items = range(len(nodes))
             warnings.warn(
-                f"'nodes' was passed as a list of length {len(nodes)} so only the first {len(nodes)} items of 'data' will be selected to, respectively, match the passed nodes."
-                "You can pass 'nodes' as a dictionary to assign a specific item to each node.",
+                f"'nodes' was passed as a list of length {len(nodes)} so, only the first {len(nodes)} items of 'data'"
+                " will be selected to match the nodes. You can pass 'nodes' as a dictionary to assign an item to each node.",
                 stacklevel=2,
             )
         else:
