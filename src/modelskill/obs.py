@@ -425,8 +425,8 @@ class NodeObservation(Observation):
     @classmethod
     def from_multiple(
         cls,
-        data: PointType,
-        nodes: list[int] | dict[int, str],
+        nodes: list[int] | dict[int, PointType],
+        data: PointType | None = None,
         *,
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
@@ -436,10 +436,10 @@ class NodeObservation(Observation):
 
         Parameters
         ----------
-        data : PointType
-            data source with time series for the nodes
         nodes : list[int] | dict[int, str]
             node IDs as list (auto-assigns items) or dict mapping node_id -> item
+        data : PointType, optional
+            data source with time series for the nodes
         quantity : Quantity | None, optional
             physical quantity metadata, by default None
         aux_items : list[int | str] | None, optional
@@ -457,29 +457,48 @@ class NodeObservation(Observation):
                 f"'nodes' argument must be either a list or a dict but {type(nodes)} was passed."
             )
 
-        # In case a list is passed, we transform it to dictionary
-        if isinstance(nodes, list):
-            items = range(len(nodes))
-            warnings.warn(
-                f"'nodes' was passed as a list of length {len(nodes)} so, only the first {len(nodes)} items of 'data'"
-                " will be selected to match the nodes. You can pass 'nodes' as a dictionary to assign an item to each node.",
-                stacklevel=2,
-            )
-        else:
-            items = nodes.values()
-            nodes = nodes.keys()
+        shared_kwargs = dict(quantity=quantity, aux_items=aux_items, attrs=attrs)
+        if data is None:
+            if not isinstance(nodes, dict):
+                raise ValueError(
+                    "When 'data' argument is not passed, 'nodes' must be a dictionary of nodes and data sources."
+                )
 
-        return [
-            cls(
-                data,
-                node=node_i,
-                item=item_i,
-                quantity=quantity,
-                aux_items=aux_items,
-                attrs=attrs,
-            )
-            for node_i, item_i in zip(nodes, items)
-        ]
+            data = nodes.values()
+            nodes = nodes.keys()
+            items = [None] * len(nodes)
+
+            return [
+                cls(
+                    data_i,
+                    node=node_i,
+                    item=item_i,
+                    **shared_kwargs,
+                )
+                for data_i, node_i, item_i in zip(data, nodes, items)
+            ]
+        else:
+            # In case a list is passed, we transform it to dictionary
+            if isinstance(nodes, list):
+                items = range(len(nodes))
+                warnings.warn(
+                    f"'nodes' was passed as a list of length {len(nodes)} so, only the first {len(nodes)} items of 'data'"
+                    " will be selected to match the nodes. You can pass 'nodes' as a dictionary to assign an item to each node.",
+                    stacklevel=2,
+                )
+            else:
+                items = nodes.values()
+                nodes = nodes.keys()
+
+            return [
+                cls(
+                    data,
+                    node=node_i,
+                    item=item_i,
+                    **shared_kwargs,
+                )
+                for node_i, item_i in zip(nodes, items)
+            ]
 
 
 def unit_display_name(name: str) -> str:
