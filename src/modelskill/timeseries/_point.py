@@ -208,6 +208,8 @@ def _open_and_name(
         elif suffix == ".nc":
             data = xr.open_dataset(data)
             name = name if name_is_arg else data.attrs.get("name") or stem
+        elif suffix == ".csv":
+            data = pd.read_csv(data, parse_dates=True, index_col=0)
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
 
