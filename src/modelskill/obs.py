@@ -450,7 +450,7 @@ class NodeObservation(Observation):
         cls,
         *,
         data: PointType | None = None,
-        nodes: list[int] | dict[int, PointType] | None = None,
+        nodes: list[int] | dict[int, Any] | None = None,
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
@@ -490,47 +490,50 @@ class NodeObservation(Observation):
                 f"'nodes' argument must be either a list or a dict but {type(nodes)} was passed."
             )
 
-        shared_kwargs = dict(quantity=quantity, aux_items=aux_items, attrs=attrs)
         if data is None:
             if not isinstance(nodes, dict):
                 raise ValueError(
                     "When 'data' argument is None, 'nodes' must be a dictionary of nodes and data sources."
                 )
 
-            data = nodes.values()
-            nodes = nodes.keys()
-            items = [None] * len(nodes)
+            node_ids = list(nodes.keys())
+            data_sources: list[PointType] = list(nodes.values())  # type: ignore[list-item]
 
             return [
                 cls(
                     data_i,
                     node=node_i,
-                    item=item_i,
-                    **shared_kwargs,
+                    item=None,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    attrs=attrs,
                 )
-                for data_i, node_i, item_i in zip(data, nodes, items)
+                for data_i, node_i in zip(data_sources, node_ids)
             ]
         else:
+            node_items: list[int | str | None]
             if isinstance(nodes, list):
-                # data is provided and nodes is a list
-                items = range(len(nodes))
+                node_ids = nodes
+                node_items = list(range(len(nodes)))
                 warnings.warn(
                     f"'nodes' was passed as a list of length {len(nodes)} so, only the first {len(nodes)} items of 'data'"
                     " will be selected to match the nodes. You can pass 'nodes' as a dictionary to assign an item to each node.",
                     stacklevel=2,
                 )
             else:
-                items = nodes.values()
-                nodes = nodes.keys()
+                node_items = list(nodes.values())  # type: ignore[list-item]
+                node_ids = list(nodes.keys())
 
             return [
                 cls(
                     data,
                     node=node_i,
                     item=item_i,
-                    **shared_kwargs,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    attrs=attrs,
                 )
-                for node_i, item_i in zip(nodes, items)
+                for node_i, item_i in zip(node_ids, node_items)
             ]
 
 
