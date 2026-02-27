@@ -67,7 +67,11 @@ MRInputType = Union[
     TimeSeries,
     MRTypes,
 ]
-ObsTypes = Union[PointObservation, TrackObservation, NodeObservation]
+ObsTypes = Union[
+    PointObservation,
+    TrackObservation,
+    NodeObservation,
+]
 ObsInputType = Union[
     str,
     Path,

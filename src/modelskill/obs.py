@@ -5,7 +5,7 @@ ModelSkill supports three types of observations:
 
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
-* [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs
+* [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs.
 
 An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
@@ -14,7 +14,6 @@ from __future__ import annotations
 
 from typing import Literal, Any, Union
 from typing_extensions import Self
-
 import warnings
 import pandas as pd
 import xarray as xr
@@ -66,7 +65,7 @@ def observation(
     >>> import modelskill as ms
     >>> o_pt = ms.observation(df, item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o_tr = ms.observation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
-    >>> o_node = ms.observation(df, item="Water Level", node=123, name="Node_123")
+    >>> o_node = ms.observation(df, item="Water Level", node=123, name="123")
     """
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
@@ -349,10 +348,13 @@ class TrackObservation(Observation):
 
 
 class NodeObservation(Observation):
-    """Class for observations at network nodes
+    """Class for observations at network nodes.
 
     Create a NodeObservation from a DataFrame or other data source.
     The node ID is specified as an integer.
+
+    To create multiple NodeObservation objects from a single data source,
+    use :method:`from_multiple`.
 
     Parameters
     ----------
@@ -377,8 +379,11 @@ class NodeObservation(Observation):
     Examples
     --------
     >>> import modelskill as ms
-    >>> o1 = ms.NodeObservation(data, node=123, name="Node_123")
+    >>> o1 = ms.NodeObservation(data, node=123, name="123")
     >>> o2 = ms.NodeObservation(df, item="Water Level", node=456)
+    >>>
+    >>> # Multiple node observations from single DataFrame
+    >>> obs = ms.NodeObservation.from_multiple(data, nodes=[123, 456, 789])
     """
 
     def __init__(
@@ -416,6 +421,84 @@ class NodeObservation(Observation):
         """Extract node from data and create new instance"""
         node = int(data.coords["node"].item())
         return self.__class__(data, node=node)
+
+    @classmethod
+    def from_multiple(
+        cls,
+        nodes: list[int] | dict[int, PointType],
+        data: PointType | None = None,
+        *,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[NodeObservation]:
+        """Create multiple NodeObservation objects from a single data source.
+
+        Parameters
+        ----------
+        nodes : list[int] | dict[int, str]
+            node IDs as list (auto-assigns items) or dict mapping node_id -> item
+        data : PointType, optional
+            data source with time series for the nodes
+        quantity : Quantity | None, optional
+            physical quantity metadata, by default None
+        aux_items : list[int | str] | None, optional
+            auxiliary items, by default None
+        attrs : dict | None, optional
+            additional attributes, by default None
+
+        Returns
+        -------
+        list[NodeObservation]
+            List of NodeObservation objects
+        """
+        if not isinstance(nodes, (dict, list)):
+            raise ValueError(
+                f"'nodes' argument must be either a list or a dict but {type(nodes)} was passed."
+            )
+
+        shared_kwargs = dict(quantity=quantity, aux_items=aux_items, attrs=attrs)
+        if data is None:
+            if not isinstance(nodes, dict):
+                raise ValueError(
+                    "When 'data' argument is not passed, 'nodes' must be a dictionary of nodes and data sources."
+                )
+
+            data = nodes.values()
+            nodes = nodes.keys()
+            items = [None] * len(nodes)
+
+            return [
+                cls(
+                    data_i,
+                    node=node_i,
+                    item=item_i,
+                    **shared_kwargs,
+                )
+                for data_i, node_i, item_i in zip(data, nodes, items)
+            ]
+        else:
+            # In case a list is passed, we transform it to dictionary
+            if isinstance(nodes, list):
+                items = range(len(nodes))
+                warnings.warn(
+                    f"'nodes' was passed as a list of length {len(nodes)} so, only the first {len(nodes)} items of 'data'"
+                    " will be selected to match the nodes. You can pass 'nodes' as a dictionary to assign an item to each node.",
+                    stacklevel=2,
+                )
+            else:
+                items = nodes.values()
+                nodes = nodes.keys()
+
+            return [
+                cls(
+                    data,
+                    node=node_i,
+                    item=item_i,
+                    **shared_kwargs,
+                )
+                for node_i, item_i in zip(nodes, items)
+            ]
 
 
 def unit_display_name(name: str) -> str:

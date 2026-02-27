@@ -89,6 +89,26 @@ class TestNetworkModelResult:
         assert isinstance(nmr.time, pd.DatetimeIndex)
         assert list(sample_network_data.node.values) == [123, 456, 789]
 
+    def test_init_with_dataframe(self):
+        """Test successful initialization with properly formatted DataFrame"""
+        # Create a valid DataFrame with MultiIndex columns
+        arrays = [[123, 456], ["WaterLevel", "WaterLevel"]]
+        columns = pd.MultiIndex.from_arrays(arrays, names=["node", "quantity"])
+
+        data = np.random.randn(5, 2)
+        df = pd.DataFrame(data, columns=columns)
+        df["time"] = pd.date_range("2010-01-01", periods=5, freq="h")
+        df.set_index("time", inplace=True)
+
+        nmr = NetworkModelResult(df, name="DataFrame_Network")
+
+        assert nmr.name == "DataFrame_Network"
+        assert len(nmr.time) == 5
+        assert isinstance(nmr.time, pd.DatetimeIndex)
+        # After conversion, the nodes should be accessible
+        assert 123 in nmr.nodes
+        assert 456 in nmr.nodes
+
     def test_init_with_item_selection(self, sample_network_data):
         """Test initialization with specific item"""
         # Add another variable
@@ -112,12 +132,63 @@ class TestNetworkModelResult:
         ):
             NetworkModelResult(data_no_time)
 
-    def test_init_fails_with_non_dataset(self):
-        """Test that initialization fails with non-xarray.Dataset"""
+    def test_init_fails_with_invalid_dataframe_index(self):
+        """Test that initialization fails with non-DatetimeIndex DataFrame"""
+        df = pd.DataFrame({"a": [1, 2, 3]})  # Regular RangeIndex
         with pytest.raises(
-            ValueError, match="'NetworkModelResult' requires xarray.Dataset"
+            TypeError,
+            match="DataFrame index must be a pd.DatetimeIndex",
         ):
-            NetworkModelResult(pd.DataFrame({"a": [1, 2, 3]}))
+            NetworkModelResult(df)
+
+    def test_init_fails_with_invalid_dataframe_columns(self):
+        """Test that initialization fails with non-MultiIndex columns"""
+        df = pd.DataFrame(
+            {"a": [1, 2, 3]}, index=pd.date_range("2010-01-01", periods=3, freq="h")
+        )
+        with pytest.raises(
+            TypeError,
+            match="DataFrame columns must be a pd.MultiIndex",
+        ):
+            NetworkModelResult(df)
+
+    def test_init_fails_with_wrong_multiindex_levels(self):
+        """Test that initialization fails with wrong MultiIndex level names"""
+        arrays = [[123, 456], ["WL", "WL"]]
+        columns = pd.MultiIndex.from_arrays(arrays, names=["wrong", "level"])
+        df = pd.DataFrame(
+            np.random.randn(3, 2),
+            index=pd.date_range("2010-01-01", periods=3, freq="h"),
+            columns=columns,
+        )
+        with pytest.raises(
+            ValueError,
+            match="DataFrame column level names must be 'node' and 'quantity'",
+        ):
+            NetworkModelResult(df)
+
+    def test_init_fails_with_wrong_multiindex_nlevels(self):
+        """Test that initialization fails with wrong number of MultiIndex levels"""
+        arrays = [[123, 456], ["WL", "WL"], ["extra", "level"]]
+        columns = pd.MultiIndex.from_arrays(arrays, names=["node", "quantity", "extra"])
+        df = pd.DataFrame(
+            np.random.randn(3, 2),
+            index=pd.date_range("2010-01-01", periods=3, freq="h"),
+            columns=columns,
+        )
+        with pytest.raises(
+            ValueError,
+            match="DataFrame columns must have exactly 2 levels",
+        ):
+            NetworkModelResult(df)
+
+    def test_init_fails_with_unsupported_type(self):
+        """Test that initialization fails with unsupported data types"""
+        with pytest.raises(
+            TypeError,
+            match="NetworkModelResult expects a pd.DataFrame or xr.Dataset",
+        ):
+            NetworkModelResult([1, 2, 3])  # List is not supported
 
     def test_repr(self, sample_network_data):
         """Test string representation"""
@@ -166,6 +237,17 @@ class TestNetworkModelResult:
 class TestNodeObservation:
     """Test NodeObservation class"""
 
+    @pytest.fixture
+    def multi_data(self, sample_node_data):
+        """Multi-column DataFrame with 3 stations"""
+        return pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+                "station_2": sample_node_data["WaterLevel"] + 0.2,
+            }
+        )
+
     def test_init_with_df(self, sample_node_data):
         """Test initialization with pandas DataFrame"""
 
@@ -195,6 +277,113 @@ class TestNodeObservation:
         assert obs.attrs["version"] == "1.0"
         assert obs.weight == 2.5
         assert obs.quantity == Quantity.undefined()
+
+    def test_multiple_nodes_returns_list_of_observations(self, multi_data):
+        """Test that from_multiple returns a list of NodeObservation objects"""
+        obs_list = NodeObservation.from_multiple(data=multi_data, nodes=[123, 456, 789])
+
+        assert len(obs_list) == 3
+        assert all(isinstance(obs, NodeObservation) for obs in obs_list)
+
+    def test_node_ids_are_assigned_correctly(self, multi_data):
+        obs_list = NodeObservation.from_multiple(data=multi_data, nodes=[123, 456, 789])
+
+        assert obs_list[0].node == 123
+        assert obs_list[1].node == 456
+        assert obs_list[2].node == 789
+
+    def test_names_derived_from_column_names(self, multi_data):
+        obs_list = NodeObservation.from_multiple(data=multi_data, nodes=[123, 456, 789])
+
+        assert obs_list[0].name == "station_0"
+        assert obs_list[1].name == "station_1"
+        assert obs_list[2].name == "station_2"
+
+    def test_from_xarray_dataset(self, sample_node_data):
+        ds = xr.Dataset(
+            {
+                "station_0": ("time", sample_node_data["WaterLevel"].values),
+                "station_1": ("time", sample_node_data["WaterLevel"].values + 0.1),
+            },
+            coords={"time": sample_node_data.index},
+        )
+        obs_list = NodeObservation.from_multiple(data=ds, nodes=[123, 456])
+
+        assert len(obs_list) == 2
+        assert obs_list[0].node == 123
+        assert obs_list[1].node == 456
+
+    def test_nodes_must_be_list(self, multi_data):
+        with pytest.raises(ValueError, match="'nodes' argument must be either"):
+            NodeObservation.from_multiple(data=multi_data, nodes=123)
+
+    def test_attrs_propagated_to_all_observations(self, multi_data):
+        attrs = {"source": "sensor_array", "version": 2}
+        obs_list = NodeObservation.from_multiple(
+            data=multi_data, nodes=[1, 2, 3], attrs=attrs
+        )
+
+        for obs in obs_list:
+            assert obs.attrs["source"] == "sensor_array"
+            assert obs.attrs["version"] == 2
+
+    def test_init_from_csv(self):
+        obs = NodeObservation(
+            "tests/testdata/network_sensor_1.csv", node=1, item="water_level@sens1"
+        )
+
+        assert obs.node == 1
+        assert len(obs.time) == 110
+        assert isinstance(obs.time, pd.DatetimeIndex)
+
+    def test_from_multiple_csvs_via_dict(self):
+        obs_list = NodeObservation.from_multiple(
+            nodes={
+                1: "tests/testdata/network_sensor_1.csv",
+                2: "tests/testdata/network_sensor_2.csv",
+                3: "tests/testdata/network_sensor_3.csv",
+            }
+        )
+
+        assert len(obs_list) == 3
+        assert all(isinstance(obs, NodeObservation) for obs in obs_list)
+        assert obs_list[0].node == 1
+        assert obs_list[1].node == 2
+        assert obs_list[2].node == 3
+        for obs in obs_list:
+            assert len(obs.time) > 0
+
+    def test_list_nodes_emits_warning(self, multi_data):
+        with pytest.warns(UserWarning, match="nodes.*was passed as a list"):
+            NodeObservation.from_multiple(data=multi_data, nodes=[123, 456, 789])
+
+    def test_nodes_dict_maps_node_to_item(self, multi_data):
+        obs_list = NodeObservation.from_multiple(
+            data=multi_data, nodes={123: "station_0", 456: "station_1"}
+        )
+
+        assert len(obs_list) == 2
+        assert obs_list[0].node == 123
+        assert obs_list[1].node == 456
+        assert obs_list[0].name == "station_0"
+        assert obs_list[1].name == "station_1"
+
+    def test_nodes_none_raises(self, multi_data):
+        with pytest.raises(ValueError, match="'nodes' argument is required"):
+            NodeObservation.from_multiple(data=multi_data, nodes=None)
+
+    def test_data_none_with_list_nodes_raises(self):
+        with pytest.raises(ValueError, match="'nodes' must be a dictionary"):
+            NodeObservation.from_multiple(nodes=[123, 456])
+
+    def test_single_node_list(self, sample_node_data):
+        obs_list = NodeObservation.from_multiple(
+            data=sample_node_data, nodes=[123]
+        )
+
+        assert len(obs_list) == 1
+        assert isinstance(obs_list[0], NodeObservation)
+        assert obs_list[0].node == 123
 
 
 class TestNodeModelResult:
@@ -247,3 +436,36 @@ class TestNetworkIntegration:
         assert comparer is not None
         assert "Network_Model" in comparer.mod_names
         assert comparer.n_points > 0
+
+    def test_matching_workflow_multiple_nodes(
+        self, sample_network_data, sample_node_data
+    ):
+        """Test matching workflow with multiple node observations using enhanced NodeObservation"""
+        # Create network model result
+        nmr = NetworkModelResult(sample_network_data, name="Network_Model")
+
+        # Create multi-column observation data
+        multi_data = pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+                "station_2": sample_node_data["WaterLevel"] + 0.2,
+            }
+        )
+
+        # Create multiple NodeObservations using .from_multiple (auto-assign items)
+        nodes = [123, 456, 789]
+        obs_list = NodeObservation.from_multiple(
+            data=multi_data, nodes=nodes
+        )  # Items auto-assigned
+
+        # Test that matching works
+        comparer_collection = ms.match(obs_list, nmr)
+
+        assert comparer_collection is not None
+        assert len(comparer_collection) == 3  # Should have 3 comparers
+
+        # Check that all model names are correct
+        for comparer in comparer_collection:
+            assert "Network_Model" in comparer.mod_names
+            assert comparer.n_points > 0

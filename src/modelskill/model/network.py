@@ -1,6 +1,10 @@
 from __future__ import annotations
+
 from typing import Sequence
 from typing_extensions import Self
+
+import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import xarray as xr
 
@@ -9,7 +13,54 @@ from modelskill.timeseries import TimeSeries, _parse_network_node_input
 from ._base import Network1D, SelectedItems
 from ..obs import NodeObservation
 from ..quantity import Quantity
-from ..types import PointType
+from ..types import PointType, NetworkType
+
+
+def _to_network_dataset(data: NetworkType) -> xr.Dataset:
+    """Validate and convert a NetworkType input to an xr.Dataset."""
+    if isinstance(data, pd.DataFrame):
+        if not isinstance(data.index, pd.DatetimeIndex):
+            raise TypeError(
+                f"DataFrame index must be a pd.DatetimeIndex, got {type(data.index).__name__!r}"
+            )
+        if not isinstance(data.columns, pd.MultiIndex):
+            raise TypeError(
+                "DataFrame columns must be a pd.MultiIndex with levels 'node' and 'quantity'"
+            )
+        if data.columns.nlevels != 2:
+            raise ValueError(
+                f"DataFrame columns must have exactly 2 levels ('node' and 'quantity'), "
+                f"got {data.columns.nlevels}"
+            )
+        col_level_names = set(data.columns.names)
+        if col_level_names != {"node", "quantity"}:
+            raise ValueError(
+                f"DataFrame column level names must be 'node' and 'quantity', "
+                f"got {sorted(col_level_names)}"
+            )
+        if len(data.columns) == 0:
+            raise ValueError("DataFrame must have at least one column.")
+
+        # Ensure quantity is on top of the MultiIndex columns
+        if data.columns.names == ["node", "quantity"]:
+            data = data.swaplevel(axis=1)  # Swap to [quantity, node]
+        
+        # Transform data by stacking and converting to xarray
+        return data.stack().to_xarray()
+
+    elif isinstance(data, xr.Dataset):
+        if len(data.data_vars) == 0:
+            raise ValueError("Dataset must have at least one data variable")
+        for coord in ["time", "node"]:
+            if coord not in data.coords:
+                raise ValueError(f"Dataset must have '{coord}' as coordinate.")
+
+        return data
+    else:
+        raise TypeError(
+            f"NetworkModelResult expects a pd.DataFrame or xr.Dataset, "
+            f"got {type(data).__name__}"
+        )
 
 
 class NodeModelResult(TimeSeries):
@@ -51,7 +102,7 @@ class NodeModelResult(TimeSeries):
         item: str | int | None = None,
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
-    ) -> None:
+    ):
         if not self._is_input_validated(data):
             data = _parse_network_node_input(
                 data,
@@ -114,28 +165,20 @@ class NetworkModelResult(Network1D):
 
     def __init__(
         self,
-        data: xr.Dataset,
+        data: NetworkType,
         *,
         name: str | None = None,
         item: str | int | None = None,
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
-    ) -> None:
-        if not isinstance(data, xr.Dataset):
-            raise ValueError("'NetworkModelResult' requires xarray.Dataset")
-        if len(data.data_vars) == 0:
-            raise ValueError("Dataset must have at least one data variable")
-
-        for coord in ["time", "node"]:
-            if coord not in data.coords:
-                raise ValueError(f"Dataset must have '{coord}' as coordinate.")
-
+    ):
+        data = _to_network_dataset(data)
         sel_items = SelectedItems.parse(
             list(data.data_vars), item=item, aux_items=aux_items
         )
         name = name or sel_items.values
 
-        self.data: xr.Dataset = data[sel_items.all]
+        self.data = data[sel_items.all]
         self.name = name
         self.sel_items = sel_items
 
@@ -154,6 +197,11 @@ class NetworkModelResult(Network1D):
     def time(self) -> pd.DatetimeIndex:
         """Return the time coordinate as a pandas.DatetimeIndex."""
         return pd.DatetimeIndex(self.data.time.to_index())
+
+    @property
+    def nodes(self) -> npt.NDArray[np.intp]:
+        """Return the node IDs as a numpy array of integers."""
+        return self.data.node.values
 
     def extract(
         self,
@@ -179,7 +227,7 @@ class NetworkModelResult(Network1D):
         node_id = observation.node
         if node_id not in self.data.node:
             raise ValueError(
-                f"Node {node_id} not found. Available: {list(self.data.node.values[:5])}..."
+                f"Node {node_id} not found. Available: {list(self.nodes[:5])}..."
             )
 
         return NodeModelResult(
