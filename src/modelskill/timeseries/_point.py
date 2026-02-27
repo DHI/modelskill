@@ -208,6 +208,8 @@ def _open_and_name(
         elif suffix == ".nc":
             data = xr.open_dataset(data)
             name = name if name_is_arg else data.attrs.get("name") or stem
+        elif suffix == ".csv":
+            data = pd.read_csv(data, parse_dates=True, index_col=0)
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
 
@@ -243,7 +245,11 @@ def _parse_point_input(
     *,
     coords: XYZCoords | NetworkCoords,
 ) -> xr.Dataset:
-    """Convert accepted input data to an xr.Dataset"""
+    """Convert accepted input data to an xr.Dataset."""
+
+    # name -> the name of the model result
+    # item -> the name of the element of interest in the data
+    # quantity -> the physical quantity that the variable of interest represents
 
     data, name = _open_and_name(data, name)
     sel_items = _select_items(data, item, aux_items)
@@ -279,6 +285,8 @@ def _parse_network_node_input(
     node: int | None,
     aux_items: Sequence[int | str] | None,
 ) -> xr.Dataset:
+    if node is None:
+        raise ValueError("'node' argument cannot be empty.")
     coords = NetworkCoords(node=node)
     ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds

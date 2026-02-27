@@ -1,6 +1,10 @@
 from __future__ import annotations
+
 from typing import Sequence
 from typing_extensions import Self
+
+import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import xarray as xr
 
@@ -122,7 +126,9 @@ class NetworkModelResult(Network1D):
         aux_items: Sequence[int | str] | None = None,
     ) -> None:
         if not isinstance(data, xr.Dataset):
-            raise ValueError("'NetworkModelResult' requires xarray.Dataset")
+            raise NotImplementedError(
+                "Currently, 'NetworkModelResult' requires xarray.Dataset"
+            )
         if len(data.data_vars) == 0:
             raise ValueError("Dataset must have at least one data variable")
 
@@ -155,6 +161,11 @@ class NetworkModelResult(Network1D):
         """Return the time coordinate as a pandas.DatetimeIndex."""
         return pd.DatetimeIndex(self.data.time.to_index())
 
+    @property
+    def nodes(self) -> npt.NDArray[np.intp]:
+        """Return the node IDs as a numpy array of integers."""
+        return self.data.node.values
+
     def extract(
         self,
         observation: NodeObservation,
@@ -179,7 +190,7 @@ class NetworkModelResult(Network1D):
         node_id = observation.node
         if node_id not in self.data.node:
             raise ValueError(
-                f"Node {node_id} not found. Available: {list(self.data.node.values[:5])}..."
+                f"Node {node_id} not found. Available: {list(self.nodes[:5])}..."
             )
 
         return NodeModelResult(
