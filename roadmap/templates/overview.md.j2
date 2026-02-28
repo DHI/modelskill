@@ -1,0 +1,19 @@
+# ModelSkill Roadmap
+
+This roadmap outlines the current and future direction of ModelSkill.
+
+---
+{% for status in statuses %}
+{%- if features_by_status[status] %}
+
+## {{ status }}
+
+{% if status == "Not Planned" -%}
+See [features considered out of scope](features/{{ features_by_status[status][0].filename }}).
+{%- else -%}
+{% for f in features_by_status[status] %}
+- **[{{ f.title }}](features/{{ f.filename }})** — {{ f.summary }}
+{%- endfor %}
+{%- endif %}
+{%- endif %}
+{%- endfor %}
