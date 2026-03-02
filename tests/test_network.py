@@ -404,11 +404,13 @@ class TestNetworkIntegration:
             }
         )
 
-        node_ids = {
-            sample_network.find(node=nid): col
-            for nid, col in zip(["123", "456", "789"], ["station_0", "station_1", "station_2"])
-        }
-        obs_list = NodeObservation.from_multiple(data=multi_data, nodes=node_ids)
+        # Create multiple NodeObservations using .from_multiple (auto-assign items)
+        nodes = [123, 456, 789]
+        obs_list = NodeObservation.from_multiple(
+            data=multi_data, nodes=nodes
+        )  # Items auto-assigned
+
+        # Test that matching works
         comparer_collection = ms.match(obs_list, nmr)
 
         assert comparer_collection is not None
