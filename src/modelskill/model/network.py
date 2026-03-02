@@ -181,20 +181,11 @@ class Network:
         xr.Dataset
             Timeseries contained in graph nodes
         """
-        df = self.to_dataframe()
-        df = df.reorder_levels(["quantity", "node"], axis=1).melt(ignore_index=False)
-
-        duplicate_check = df.reset_index().duplicated()
-        if duplicate_check.any():
-            raise ValueError("Duplicated values found")
-
-        df = df.pivot_table(
-            index=["time", "node"],
-            columns="quantity",
-            values="value",
-            aggfunc="first",
+        df = self.to_dataframe().reorder_levels(["quantity", "node"], axis=1)
+        quantities = df.columns.get_level_values("quantity").unique()
+        return xr.Dataset(
+            {q: xr.DataArray(df[q], dims=["time", "node"]) for q in quantities}
         )
-        return df.to_xarray()
 
     @property
     def graph(self) -> nx.Graph:
