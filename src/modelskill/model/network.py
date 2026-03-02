@@ -1,66 +1,510 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence, Any, Protocol
 from typing_extensions import Self
+from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import xarray as xr
+import networkx as nx
 
 from modelskill.timeseries import TimeSeries, _parse_network_node_input
 
-from ._base import Network1D, SelectedItems
+if TYPE_CHECKING:
+    from mikeio1d.result_network import ResultNode, ResultGridPoint, ResultReach
+    from mikeio1d import Res1D
+
+from ._base import SelectedItems
 from ..obs import NodeObservation
 from ..quantity import Quantity
-from ..types import PointType, NetworkType
+from ..types import PointType
 
 
-def _to_network_dataset(data: NetworkType) -> xr.Dataset:
-    """Validate and convert a NetworkType input to an xr.Dataset."""
-    if isinstance(data, pd.DataFrame):
-        if not isinstance(data.index, pd.DatetimeIndex):
-            raise TypeError(
-                f"DataFrame index must be a pd.DatetimeIndex, got {type(data.index).__name__!r}"
-            )
-        if not isinstance(data.columns, pd.MultiIndex):
-            raise TypeError(
-                "DataFrame columns must be a pd.MultiIndex with levels 'node' and 'quantity'"
-            )
-        if data.columns.nlevels != 2:
+class NetworkNode(Protocol):
+    """Node in the simplified network."""
+
+    @property
+    def id(self) -> str: ...
+
+    @property
+    def data(self) -> pd.DataFrame: ...
+
+    @property
+    def boundary(self) -> dict[str, Any]: ...
+
+    @property
+    def quantities(self) -> list[str]:
+        return list(self.data.columns)
+
+
+class EdgeBreakPoint(Protocol):
+    """Edge break point."""
+
+    @property
+    def id(self) -> tuple[str, float]: ...
+
+    @property
+    def data(self) -> pd.DataFrame: ...
+
+    @property
+    def distance(self) -> float:
+        return self.id[1]
+
+    @property
+    def quantities(self) -> list[str]:
+        return list(self.data.columns)
+
+
+class NetworkEdge(Protocol):
+    """Edge of a network."""
+
+    @property
+    def id(self) -> str: ...
+
+    @property
+    def start(self) -> NetworkNode: ...
+
+    @property
+    def end(self) -> NetworkNode: ...
+
+    @property
+    def length(self) -> float: ...
+
+    @property
+    def breakpoints(self) -> list[EdgeBreakPoint]: ...
+
+    @property
+    def n_breakpoints(self) -> int:
+        """Number of break points in the edge."""
+        return len(self.breakpoints)
+
+
+def _simplify_res1d_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
+    # We remove suffixes and indexes so the columns contain only the quantity names
+    df = node.to_dataframe()
+    quantities = node.quantities
+    renamer_dict = {}
+    for quantity in quantities:
+        relevant_columns = [col for col in df.columns if quantity in col]
+        if len(relevant_columns) != 1:
             raise ValueError(
-                f"DataFrame columns must have exactly 2 levels ('node' and 'quantity'), "
-                f"got {data.columns.nlevels}"
+                f"There must be exactly one column per quantity, found {relevant_columns}."
             )
-        col_level_names = set(data.columns.names)
-        if col_level_names != {"node", "quantity"}:
-            raise ValueError(
-                f"DataFrame column level names must be 'node' and 'quantity', "
-                f"got {sorted(col_level_names)}"
-            )
-        if len(data.columns) == 0:
-            raise ValueError("DataFrame must have at least one column.")
+        renamer_dict[relevant_columns[0]] = quantity
+    return df.rename(columns=renamer_dict).copy()
 
-        # Ensure quantity is on top of the MultiIndex columns
-        if data.columns.names == ["node", "quantity"]:
-            data = data.swaplevel(axis=1)  # Swap to [quantity, node]
-        
-        # Transform data by stacking and converting to xarray
-        return data.stack().to_xarray()
 
-    elif isinstance(data, xr.Dataset):
-        if len(data.data_vars) == 0:
-            raise ValueError("Dataset must have at least one data variable")
-        for coord in ["time", "node"]:
-            if coord not in data.coords:
-                raise ValueError(f"Dataset must have '{coord}' as coordinate.")
+class Res1DNode(NetworkNode):
+    def __init__(self, node: ResultNode, boundary: dict[str, ResultGridPoint]):
+        self._id = node.id
+        self._data = _simplify_res1d_colnames(node)
+        self._boundary = {
+            key: _simplify_res1d_colnames(point) for key, point in boundary.items()
+        }
 
-        return data
-    else:
-        raise TypeError(
-            f"NetworkModelResult expects a pd.DataFrame or xr.Dataset, "
-            f"got {type(data).__name__}"
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def data(self) -> pd.DataFrame:
+        return self._data
+
+    @property
+    def boundary(self) -> dict[str, pd.DataFrame]:
+        return self._boundary
+
+
+class GridPoint(EdgeBreakPoint):
+    def __init__(self, point: ResultGridPoint):
+        self._id = (point.reach_name, point.chainage)
+        self._data = _simplify_res1d_colnames(point)
+
+    @property
+    def id(self) -> tuple[str, float]:
+        return self._id
+
+    @property
+    def data(self) -> pd.DataFrame:
+        return self._data
+
+
+class Res1DReach(NetworkEdge):
+    """Edge of a network."""
+
+    def __init__(
+        self, reach: ResultReach, start_node: ResultNode, end_node: ResultNode
+    ):
+        self._id = reach.name
+
+        if start_node.id != reach.start_node:
+            raise ValueError("Incorrect starting node.")
+        if end_node.id != reach.end_node:
+            raise ValueError("Incorrect ending node.")
+
+        start_gridpoint = reach.gridpoints[0]
+        end_gridpoint = reach.gridpoints[-1]
+        intermediate_gridpoints = (
+            reach.gridpoints[1:-1] if len(reach.gridpoints) > 2 else []
         )
+
+        self._start = Res1DNode(start_node, {reach.name: start_gridpoint})
+        self._end = Res1DNode(end_node, {reach.name: end_gridpoint})
+        self._length = reach.length
+        self._breakpoints = [
+            GridPoint(gridpoint) for gridpoint in intermediate_gridpoints
+        ]
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def start(self) -> Res1DNode:
+        return self._start
+
+    @property
+    def end(self) -> Res1DNode:
+        return self._end
+
+    @property
+    def length(self) -> float:
+        return self._length
+
+    @property
+    def breakpoints(self) -> list[GridPoint]:
+        return self._breakpoints
+
+
+class Network:
+    """Network built from a set of edges, with coordinate lookup and data access."""
+
+    def __init__(self, edges: list[NetworkEdge]):
+        self._edges: dict[str, NetworkEdge] = {e.id: e for e in edges}
+        self._graph = self._initialize_graph()
+        self._alias_map = self._initialize_alias_map()
+        self._df = self._build_dataframe()
+
+    @classmethod
+    def from_res1d(cls, res: str | Path | Res1D) -> Network:
+        """Create a Network from a Res1D file or object.
+
+        Parameters
+        ----------
+        res : str, Path or Res1D
+            Path to a .res1d file, or an already-opened :class:`mikeio1d.Res1D` object.
+
+        Returns
+        -------
+        Network
+
+        Examples
+        --------
+        >>> from modelskill.model.network import Network
+        >>> network = Network.from_res1d("model.res1d")
+        >>> network = Network.from_res1d(Res1D("model.res1d"))
+        """
+        from mikeio1d import Res1D as _Res1D
+
+        if isinstance(res, (str, Path)):
+            path = Path(res)
+            if path.suffix.lower() != ".res1d":
+                raise NotImplementedError(
+                    f"Unsupported file extension '{path.suffix}'. Only .res1d files are supported."
+                )
+            res = _Res1D(path)
+        elif not isinstance(res, _Res1D):
+            raise TypeError(
+                f"Expected a str, Path or Res1D object, got {type(res).__name__!r}"
+            )
+
+        edges = [
+            Res1DReach(
+                reach, res.nodes[reach.start_node], res.nodes[reach.end_node]
+            )
+            for reach in res.reaches.values()
+        ]
+        return cls(edges)
+
+    def _initialize_alias_map(self)-> dict[str | tuple[str, float], int]:
+        return {self.graph.nodes[id]["alias"]: id for id in self.graph.nodes()}
+
+    def _build_dataframe(self) -> pd.DataFrame:
+        df = pd.concat({k: v["data"] for k, v in self._graph.nodes.items()}, axis=1)
+        df.columns = df.columns.set_names(["node", "quantity"])
+        df.index.name = "time"
+        return df.copy()
+
+    def to_dataframe(self, sel: str | None = None) -> pd.DataFrame:
+        """Dataframe using node ids as column names.
+
+        It will be multiindex unless 'sel' is passed.
+
+        Parameters
+        ----------
+        sel : Optional[str], optional
+            Quantity to select, by default None
+
+        Returns
+        -------
+        pd.DataFrame
+            Timeseries contained in graph nodes
+        """
+        df = self._df.copy()
+        if sel is None:
+            return df
+        else:
+            df.attrs["quantity"] = sel
+            return df.reorder_levels(["quantity", "node"], axis=1).loc[:, sel]
+
+    def to_dataset(self) -> xr.Dataset:
+        """Dataset using node ids as coords.
+
+        Returns
+        -------
+        xr.Dataset
+            Timeseries contained in graph nodes
+        """
+        df = self.to_dataframe()
+        df = df.reorder_levels(["quantity", "node"], axis=1).melt(ignore_index=False)
+
+        duplicate_check = df.reset_index().duplicated()
+        if duplicate_check.any():
+            raise ValueError("Duplicated values found")
+
+        df = df.pivot_table(
+            index=["time", "node"],
+            columns="quantity",
+            values="value",
+            aggfunc="first",
+        )
+        return df.to_xarray()
+
+    @property
+    def graph(self) -> nx.Graph:
+        """Graph of the network."""
+        return self._graph
+
+    @property
+    def quantities(self) -> list[str]:
+        """Quantities present in data.
+
+        Returns
+        -------
+        List[str]
+            List of quantities
+        """
+        return list(self.to_dataframe().columns.get_level_values(1).unique())
+
+    def _initialize_graph(self) -> nx.Graph:
+        g0 = nx.Graph()
+        for edge in self._edges.values():
+            # 1) Add start and end nodes
+            for node in [edge.start, edge.end]:
+                node_key = node.id
+                if node_key in g0.nodes:
+                    g0.nodes[node_key]["boundary"].update(node.boundary)
+                else:
+                    g0.add_node(node_key, data=node.data, boundary=node.boundary)
+
+            # 2) Add edges connecting start/end nodes to their adjacent breakpoints
+            start_key = edge.start.id
+            end_key = edge.end.id
+            if edge.n_breakpoints == 0:
+                g0.add_edge(start_key, end_key, length=edge.length)
+            else:
+                bp_keys = [bp.id for bp in edge.breakpoints]
+                for bp, bp_key in zip(edge.breakpoints, bp_keys):
+                    g0.add_node(bp_key, data=bp.data)
+
+                g0.add_edge(start_key, bp_keys[0], length=edge.breakpoints[0].distance)
+                g0.add_edge(
+                    bp_keys[-1],
+                    end_key,
+                    length=edge.length - edge.breakpoints[-1].distance,
+                )
+
+            # 3) Connect consecutive intermediate breakpoints
+            for i in range(edge.n_breakpoints - 1):
+                current_ = edge.breakpoints[i]
+                next_ = edge.breakpoints[i + 1]
+                length = next_.distance - current_.distance
+                g0.add_edge(
+                    current_.id,
+                    next_.id,
+                    length=length,
+                )
+
+        return nx.convert_node_labels_to_integers(g0, label_attribute="alias")
+
+    def find(
+        self,
+        node: str | list[str] | None = None,
+        edge: str | list[str] | None = None,
+        distance: str | float | list[str | float] | None = None,
+    ) -> int | list[int]:
+        """Find node or breakpoint id in the generic network.
+
+        Parameters
+        ----------
+        node : str | List[str], optional
+            Node id(s) in the original network, by default None
+        edge : str | List[str], optional
+            Edge id(s) for breakpoint lookup or edge endpoint lookup, by default None
+        distance : str | float | List[str | float], optional
+            Distance(s) along edge for breakpoint lookup, or "start"/"end"
+            for edge endpoints, by default None
+
+        Returns
+        -------
+        int | List[int]
+            Node or breakpoint id(s) in the generic network
+
+        Raises
+        ------
+        ValueError
+            If invalid combination of parameters is provided
+        KeyError
+            If requested node/breakpoint is not found in the network
+        """
+        # Determine lookup mode
+        by_node = node is not None
+        by_breakpoint = edge is not None or distance is not None
+
+        if by_node and by_breakpoint:
+            raise ValueError(
+                "Cannot specify both 'node' and 'edge'/'distance' parameters simultaneously"
+            )
+
+        if not by_node and not by_breakpoint:
+            raise ValueError(
+                "Must specify either 'node' or both 'edge' and 'distance' parameters"
+            )
+
+        if by_node:
+            # Handle node lookup
+            if not isinstance(node, list):
+                node = [node]
+            ids = list(node)
+
+        else:
+            # Handle breakpoint/edge endpoint lookup
+            if edge is None or distance is None:
+                raise ValueError(
+                    "Both 'edge' and 'distance' parameters are required for breakpoint/endpoint lookup"
+                )
+
+            if not isinstance(edge, list):
+                edge = [edge]
+
+            if not isinstance(distance, list):
+                distance = [distance]
+
+            # We can pass one edge and multiple breakpoints/endpoints
+            if len(edge) == 1:
+                edge = edge * len(distance)
+
+            if len(edge) != len(distance):
+                raise ValueError(
+                    "Incompatible lengths of 'edge' and 'distance' arguments. One 'edge' admits multiple distances, otherwise they must be the same length."
+                )
+
+            ids = []
+            for edge_i, distance_i in zip(edge, distance):
+                if distance_i in ["start", "end"]:
+                    # Handle edge endpoint lookup
+                    if edge_i not in self._edges:
+                        raise KeyError(f"Edge '{edge_i}' not found in the network.")
+
+                    network_edge = self._edges[edge_i]
+                    if distance_i == "start":
+                        ids.append(network_edge.start.id)
+                    else:  # distance_i == "end"
+                        ids.append(network_edge.end.id)
+                else:
+                    # Handle breakpoint lookup
+                    if not isinstance(distance_i, (int, float)):
+                        raise ValueError(
+                            "Invalid 'distance' value for breakpoint lookup: "
+                            f"{distance_i!r}. Expected a numeric value or 'start'/'end'."
+                        )
+                    ids.append((edge_i, distance_i))
+
+        # Check if all ids exist in the network
+        _CHAINAGE_TOLERANCE = 1e-3
+
+        def _resolve_id(id):
+            if id in self._alias_map:
+                return self._alias_map[id]
+            if isinstance(id, tuple):
+                edge_id, distance = id
+                for key, val in self._alias_map.items():
+                    if (
+                        isinstance(key, tuple)
+                        and key[0] == edge_id
+                        and abs(key[1] - distance) <= _CHAINAGE_TOLERANCE
+                    ):
+                        return val
+            return None
+
+        resolved = [_resolve_id(id) for id in ids]
+        missing_ids = [ids[i] for i, v in enumerate(resolved) if v is None]
+        if missing_ids:
+            raise KeyError(
+                f"Node/breakpoint(s) {missing_ids} not found in the network. Available nodes are {set(self._alias_map.keys())}"
+            )
+        if len(resolved) == 1:
+            return resolved[0]
+        return resolved
+
+    def recall(self, id: int | list[int]) -> dict[str, Any] | list[dict[str, Any]]:
+        """Recall the original coordinates from generic network node id(s).
+
+        Parameters
+        ----------
+        id : int | List[int]
+            Node id(s) in the generic network
+
+        Returns
+        -------
+        Dict[str, Any] | List[Dict[str, Any]]
+            Original coordinates. For single input returns dict, for multiple inputs returns list of dicts.
+            Dict contains coordinates:
+            - For nodes: 'node' key with node id
+            - For breakpoints: 'edge' and 'distance' keys with edge id and distance
+
+        Raises
+        ------
+        KeyError
+            If node id is not found in the network
+        ValueError
+            If node id string format is invalid
+        """
+        # Convert to list for uniform processing
+        if not isinstance(id, list):
+            id = [id]
+
+        # Create reverse lookup map
+        reverse_alias_map = {v: k for k, v in self._alias_map.items()}
+
+        results = []
+        for node_id in id:
+            if node_id not in reverse_alias_map:
+                raise KeyError(f"Node ID {node_id} not found in the network.")
+
+            key = reverse_alias_map[node_id]
+            if isinstance(key, str):
+                results.append({"node": key})
+            else:  # tuple[str, float]
+                results.append({"edge": key[0], "distance": key[1]})
+
+        # Return single dict if single input, list otherwise
+        if len(results) == 1:
+            return results[0]
+        else:
+            return results
 
 
 class NodeModelResult(TimeSeries):
@@ -133,17 +577,18 @@ class NodeModelResult(TimeSeries):
         return self.__class__(data, node=node)
 
 
-class NetworkModelResult(Network1D):
+class NetworkModelResult:
     """Model result for network data with time and node dimensions.
 
-    Construct a NetworkModelResult from an xarray.Dataset with time and node coordinates
-    and arbitrary number of data variables. Users must provide exact node IDs (integers)
-    when creating observations - no spatial interpolation is performed.
+    Construct a NetworkModelResult from a Network object containing
+    timeseries data for each node. Users must provide exact node IDs
+    (integers obtained via ``Network.find()``) when creating observations —
+    no spatial interpolation is performed.
 
     Parameters
     ----------
-    data : xr.Dataset
-        xarray.Dataset with time and node coordinates
+    data : Network
+        Network object containing timeseries data for each node.
     name : str, optional
         The name of the model result,
         by default None (will be set to first data variable name)
@@ -158,27 +603,33 @@ class NetworkModelResult(Network1D):
     Examples
     --------
     >>> import modelskill as ms
-    >>> mr = ms.NetworkModelResult(network_data, name="Network_Model")
-    >>> obs = ms.NodeObservation(data, node=123)
+    >>> from modelskill.model.network import Network
+    >>> network = Network(edges)  # edges is a list[NetworkEdge]
+    >>> mr = ms.NetworkModelResult(network, name="MyModel")
+    >>> obs = ms.NodeObservation(data, node=network.find(node="node_A"))
     >>> extracted = mr.extract(obs)
     """
 
     def __init__(
         self,
-        data: NetworkType,
+        data: Network,
         *,
         name: str | None = None,
         item: str | int | None = None,
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
     ):
-        data = _to_network_dataset(data)
+        if not isinstance(data, Network):
+            raise TypeError(
+                f"NetworkModelResult expects a Network object, got {type(data).__name__!r}"
+            )
+        ds = data.to_dataset()
         sel_items = SelectedItems.parse(
-            list(data.data_vars), item=item, aux_items=aux_items
+            list(ds.data_vars), item=item, aux_items=aux_items
         )
         name = name or sel_items.values
 
-        self.data = data[sel_items.all]
+        self.data = ds[sel_items.all]
         self.name = name
         self.sel_items = sel_items
 
