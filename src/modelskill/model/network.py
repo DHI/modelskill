@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence, Any, Protocol
+from typing import TYPE_CHECKING, Sequence, Any
+from abc import ABC, abstractmethod
 from typing_extensions import Self
 from pathlib import Path
 
@@ -21,16 +22,19 @@ from ..quantity import Quantity
 from ..types import PointType
 
 
-class NetworkNode(Protocol):
+class NetworkNode(ABC):
     """Node in the simplified network."""
 
     @property
+    @abstractmethod
     def id(self) -> str: ...
 
     @property
+    @abstractmethod
     def data(self) -> pd.DataFrame: ...
 
     @property
+    @abstractmethod
     def boundary(self) -> dict[str, Any]: ...
 
     @property
@@ -38,13 +42,15 @@ class NetworkNode(Protocol):
         return list(self.data.columns)
 
 
-class EdgeBreakPoint(Protocol):
+class EdgeBreakPoint(ABC):
     """Edge break point."""
 
     @property
+    @abstractmethod
     def id(self) -> tuple[str, float]: ...
 
     @property
+    @abstractmethod
     def data(self) -> pd.DataFrame: ...
 
     @property
@@ -56,22 +62,27 @@ class EdgeBreakPoint(Protocol):
         return list(self.data.columns)
 
 
-class NetworkEdge(Protocol):
+class NetworkEdge(ABC):
     """Edge of a network."""
 
     @property
+    @abstractmethod
     def id(self) -> str: ...
 
     @property
+    @abstractmethod
     def start(self) -> NetworkNode: ...
 
     @property
+    @abstractmethod
     def end(self) -> NetworkNode: ...
 
     @property
+    @abstractmethod
     def length(self) -> float: ...
 
     @property
+    @abstractmethod
     def breakpoints(self) -> list[EdgeBreakPoint]: ...
 
     @property

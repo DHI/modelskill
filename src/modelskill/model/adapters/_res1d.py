@@ -105,7 +105,3 @@ class Res1DReach(NetworkEdge):
     @property
     def breakpoints(self) -> list[GridPoint]:
         return self._breakpoints
-
-    @property
-    def n_breakpoints(self) -> int:
-        return len(self._breakpoints)
