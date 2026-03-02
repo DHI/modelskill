@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence, Any
+from typing import TYPE_CHECKING, Sequence, Any, overload
 from abc import ABC, abstractmethod
 from typing_extensions import Self
 from pathlib import Path
@@ -244,6 +244,42 @@ class Network:
 
         return nx.convert_node_labels_to_integers(g0, label_attribute="alias")
 
+    @overload
+    def find(
+        self,
+        *,
+        node: str,
+        edge: None = None,
+        distance: None = None,
+    ) -> int: ...
+
+    @overload
+    def find(
+        self,
+        *,
+        node: list[str],
+        edge: None = None,
+        distance: None = None,
+    ) -> list[int]: ...
+
+    @overload
+    def find(
+        self,
+        *,
+        node: None = None,
+        edge: str | list[str],
+        distance: str | float,
+    ) -> int: ...
+
+    @overload
+    def find(
+        self,
+        *,
+        node: None = None,
+        edge: str | list[str],
+        distance: list[str | float],
+    ) -> list[int]: ...
+
     def find(
         self,
         node: str | list[str] | None = None,
@@ -363,6 +399,12 @@ class Network:
         if len(resolved) == 1:
             return resolved[0]
         return resolved
+
+    @overload
+    def recall(self, id: int) -> dict[str, Any]: ...
+
+    @overload
+    def recall(self, id: list[int]) -> list[dict[str, Any]]: ...
 
     def recall(self, id: int | list[int]) -> dict[str, Any] | list[dict[str, Any]]:
         """Recall the original coordinates from generic network node id(s).
