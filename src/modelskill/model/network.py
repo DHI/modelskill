@@ -128,7 +128,7 @@ class Network:
                 raise NotImplementedError(
                     f"Unsupported file extension '{path.suffix}'. Only .res1d files are supported."
                 )
-            res = _Res1D(path)
+            res = _Res1D(str(path))
         elif not isinstance(res, _Res1D):
             raise TypeError(
                 f"Expected a str, Path or Res1D object, got {type(res).__name__!r}"
