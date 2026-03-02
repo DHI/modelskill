@@ -5,9 +5,27 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 import modelskill as ms
-from modelskill.model.network import NetworkModelResult, NodeModelResult
+from modelskill.model.network import (
+    Network,
+    NetworkModelResult,
+    NodeModelResult,
+    BasicNode,
+    BasicEdge,
+)
 from modelskill.obs import NodeObservation
 from modelskill.quantity import Quantity
+
+
+def _make_network(node_ids, time, data, quantity="WaterLevel"):
+    nodes = [
+        BasicNode(nid, pd.DataFrame({quantity: data[:, i]}, index=time))
+        for i, nid in enumerate(node_ids)
+    ]
+    edges = [
+        BasicEdge(f"e{i}", nodes[i], nodes[i + 1], length=100.0)
+        for i in range(len(nodes) - 1)
+    ]
+    return Network(edges)
 
 
 @pytest.fixture
@@ -33,6 +51,35 @@ def sample_network_data():
     ds["WaterLevel"].attrs["long_name"] = "Water Level"
 
     return ds
+
+
+@pytest.fixture
+def sample_network():
+    """Sample Network with 3 nodes (WaterLevel quantity)"""
+    time = pd.date_range("2010-01-01", periods=10, freq="h")
+    np.random.seed(42)
+    data = np.random.randn(10, 3)
+    return _make_network(["123", "456", "789"], time, data)
+
+
+@pytest.fixture
+def sample_network_multivars():
+    """Sample Network with 2 nodes and 2 quantities (WaterLevel + Discharge)"""
+    time = pd.date_range("2010-01-01", periods=10, freq="h")
+    np.random.seed(42)
+    raw = np.random.randn(10, 2)
+    nodes = [
+        BasicNode(
+            nid,
+            pd.DataFrame(
+                {"WaterLevel": raw[:, i], "Discharge": raw[:, i] * 10},
+                index=time,
+            ),
+        )
+        for i, nid in enumerate(["123", "456"])
+    ]
+    edges = [BasicEdge("e1", nodes[0], nodes[1], length=100.0)]
+    return Network(edges)
 
 
 @pytest.fixture
@@ -80,149 +127,66 @@ def sample_series(sample_node_data):
 class TestNetworkModelResult:
     """Test NetworkModelResult class"""
 
-    def test_init_with_xarray_dataset(self, sample_network_data):
-        """Test initialization with xr.Dataset"""
-        nmr = NetworkModelResult(sample_network_data)
+    def test_init_with_network(self, sample_network):
+        """Test initialization with a Network object"""
+        nmr = NetworkModelResult(sample_network)
 
-        assert nmr.name == "WaterLevel"
         assert len(nmr.time) == 10
         assert isinstance(nmr.time, pd.DatetimeIndex)
-        assert list(sample_network_data.node.values) == [123, 456, 789]
+        assert len(nmr.nodes) == 3
 
-    def test_init_with_dataframe(self):
-        """Test successful initialization with properly formatted DataFrame"""
-        # Create a valid DataFrame with MultiIndex columns
-        arrays = [[123, 456], ["WaterLevel", "WaterLevel"]]
-        columns = pd.MultiIndex.from_arrays(arrays, names=["node", "quantity"])
+    def test_init_with_name(self, sample_network):
+        """Test initialization with explicit name"""
+        nmr = NetworkModelResult(sample_network, name="Test_Network")
+        assert nmr.name == "Test_Network"
 
-        data = np.random.randn(5, 2)
-        df = pd.DataFrame(data, columns=columns)
-        df["time"] = pd.date_range("2010-01-01", periods=5, freq="h")
-        df.set_index("time", inplace=True)
-
-        nmr = NetworkModelResult(df, name="DataFrame_Network")
-
-        assert nmr.name == "DataFrame_Network"
-        assert len(nmr.time) == 5
-        assert isinstance(nmr.time, pd.DatetimeIndex)
-        # After conversion, the nodes should be accessible
-        assert 123 in nmr.nodes
-        assert 456 in nmr.nodes
-
-    def test_init_with_item_selection(self, sample_network_data):
-        """Test initialization with specific item"""
-        # Add another variable
-        sample_network_data["Discharge"] = sample_network_data["WaterLevel"] * 10
-
+    def test_init_with_item_selection(self, sample_network_multivars):
+        """Test initialization with specific item selection"""
         nmr = NetworkModelResult(
-            sample_network_data, item="WaterLevel", name="Network_WL"
+            sample_network_multivars, item="WaterLevel", name="Network_WL"
         )
 
         assert nmr.name == "Network_WL"
         assert "WaterLevel" in nmr.data.data_vars
         assert "Discharge" not in nmr.data.data_vars
 
-    @pytest.mark.parametrize("coord", ["time", "node"])
-    def test_init_fails_without_coord(self, coord, sample_network_data):
-        """Test that initialization fails without time dimension"""
-        data_no_time = sample_network_data.rename_vars({coord: "another_name"})
-
-        with pytest.raises(
-            ValueError, match=f"Dataset must have '{coord}' as coordinate"
-        ):
-            NetworkModelResult(data_no_time)
-
-    def test_init_fails_with_invalid_dataframe_index(self):
-        """Test that initialization fails with non-DatetimeIndex DataFrame"""
-        df = pd.DataFrame({"a": [1, 2, 3]})  # Regular RangeIndex
-        with pytest.raises(
-            TypeError,
-            match="DataFrame index must be a pd.DatetimeIndex",
-        ):
-            NetworkModelResult(df)
-
-    def test_init_fails_with_invalid_dataframe_columns(self):
-        """Test that initialization fails with non-MultiIndex columns"""
-        df = pd.DataFrame(
-            {"a": [1, 2, 3]}, index=pd.date_range("2010-01-01", periods=3, freq="h")
-        )
-        with pytest.raises(
-            TypeError,
-            match="DataFrame columns must be a pd.MultiIndex",
-        ):
-            NetworkModelResult(df)
-
-    def test_init_fails_with_wrong_multiindex_levels(self):
-        """Test that initialization fails with wrong MultiIndex level names"""
-        arrays = [[123, 456], ["WL", "WL"]]
-        columns = pd.MultiIndex.from_arrays(arrays, names=["wrong", "level"])
-        df = pd.DataFrame(
-            np.random.randn(3, 2),
-            index=pd.date_range("2010-01-01", periods=3, freq="h"),
-            columns=columns,
-        )
-        with pytest.raises(
-            ValueError,
-            match="DataFrame column level names must be 'node' and 'quantity'",
-        ):
-            NetworkModelResult(df)
-
-    def test_init_fails_with_wrong_multiindex_nlevels(self):
-        """Test that initialization fails with wrong number of MultiIndex levels"""
-        arrays = [[123, 456], ["WL", "WL"], ["extra", "level"]]
-        columns = pd.MultiIndex.from_arrays(arrays, names=["node", "quantity", "extra"])
-        df = pd.DataFrame(
-            np.random.randn(3, 2),
-            index=pd.date_range("2010-01-01", periods=3, freq="h"),
-            columns=columns,
-        )
-        with pytest.raises(
-            ValueError,
-            match="DataFrame columns must have exactly 2 levels",
-        ):
-            NetworkModelResult(df)
-
     def test_init_fails_with_unsupported_type(self):
-        """Test that initialization fails with unsupported data types"""
-        with pytest.raises(
-            TypeError,
-            match="NetworkModelResult expects a pd.DataFrame or xr.Dataset",
-        ):
-            NetworkModelResult([1, 2, 3])  # List is not supported
+        """Test that passing a non-Network object raises TypeError"""
+        with pytest.raises(TypeError, match="NetworkModelResult expects a Network"):
+            NetworkModelResult(xr.Dataset())  # type: ignore[arg-type]
 
-    def test_repr(self, sample_network_data):
+    def test_repr(self, sample_network):
         """Test string representation"""
-        nmr = NetworkModelResult(sample_network_data, name="Test_Network")
+        nmr = NetworkModelResult(sample_network, name="Test_Network")
         repr_str = repr(nmr)
 
         assert "NetworkModelResult" in repr_str
         assert "Test_Network" in repr_str
 
-    def test_extract_valid_node(self, sample_network_data, sample_node_data):
-        """Test extraction of valid node"""
-        nmr = NetworkModelResult(sample_network_data)
-        obs = NodeObservation(sample_node_data, node=123, name="Node_123")
+    def test_extract_valid_node(self, sample_network, sample_node_data):
+        """Test extraction of a valid node"""
+        nmr = NetworkModelResult(sample_network)
+        node_id = sample_network.find(node="123")
+        obs = NodeObservation(sample_node_data, node=node_id, name="Node_123")
 
         extracted = nmr.extract(obs)
 
         assert isinstance(extracted, NodeModelResult)
-        assert extracted.node == 123
-        assert extracted.name == "WaterLevel"
+        assert extracted.node == node_id
         assert len(extracted.time) == 10
 
-    def test_extract_invalid_node(self, sample_network_data, sample_node_data):
-        """Test extraction of invalid node"""
-        nmr = NetworkModelResult(sample_network_data)
+    def test_extract_invalid_node(self, sample_network, sample_node_data):
+        """Test extraction of a node not present in the network"""
+        nmr = NetworkModelResult(sample_network)
         obs = NodeObservation(sample_node_data, node=999, name="Node_999")
 
         with pytest.raises(ValueError, match="Node 999 not found"):
             nmr.extract(obs)
 
-    def test_extract_wrong_observation_type(self, sample_network_data):
+    def test_extract_wrong_observation_type(self, sample_network):
         """Test extraction with wrong observation type"""
-        nmr = NetworkModelResult(sample_network_data)
+        nmr = NetworkModelResult(sample_network)
 
-        # Create a proper PointObservation with DataFrame
         df = pd.DataFrame(
             {"WL": [1, 2, 3]}, index=pd.date_range("2010-01-01", periods=3, freq="h")
         )
@@ -403,48 +367,35 @@ class TestNodeModelResult:
 class TestNetworkIntegration:
     """Test integration between network models and observations"""
 
-    def test_network_to_node_extraction(self, sample_network_data, sample_node_data):
+    def test_network_to_node_extraction(self, sample_network, sample_node_data):
         """Test complete workflow from network model to node extraction"""
-        # Create network model result
-        nmr = NetworkModelResult(sample_network_data, name="Network_Model")
+        nmr = NetworkModelResult(sample_network, name="Network_Model")
+        node_id = sample_network.find(node="123")
+        obs = NodeObservation(sample_node_data, node=node_id, name="Node_123_Obs")
 
-        # Create node observation
-        obs = NodeObservation(sample_node_data, node=123, name="Node_123_Obs")
-
-        # Extract node model result
         extracted = nmr.extract(obs)
 
-        # Verify extraction worked
         assert isinstance(extracted, NodeModelResult)
-        assert extracted.node == 123
+        assert extracted.node == node_id
         assert extracted.name == "Network_Model"
-
-        # Verify time alignment possibilities exist
         assert len(extracted.time) == len(obs.time)
 
-    def test_matching_workflow(self, sample_network_data, sample_node_data):
+    def test_matching_workflow(self, sample_network, sample_node_data):
         """Test matching workflow with network data"""
-        # Create network model result
-        nmr = NetworkModelResult(sample_network_data, name="Network_Model")
+        nmr = NetworkModelResult(sample_network, name="Network_Model")
+        node_id = sample_network.find(node="123")
+        obs = NodeObservation(sample_node_data, node=node_id, name="Node_123_Obs")
 
-        # Create node observation
-        obs = NodeObservation(sample_node_data, node=123, name="Node_123_Obs")
-
-        # Test that matching works
         comparer = ms.match(obs, nmr)
 
         assert comparer is not None
         assert "Network_Model" in comparer.mod_names
         assert comparer.n_points > 0
 
-    def test_matching_workflow_multiple_nodes(
-        self, sample_network_data, sample_node_data
-    ):
-        """Test matching workflow with multiple node observations using enhanced NodeObservation"""
-        # Create network model result
-        nmr = NetworkModelResult(sample_network_data, name="Network_Model")
+    def test_matching_workflow_multiple_nodes(self, sample_network, sample_node_data):
+        """Test matching workflow with multiple node observations"""
+        nmr = NetworkModelResult(sample_network, name="Network_Model")
 
-        # Create multi-column observation data
         multi_data = pd.DataFrame(
             {
                 "station_0": sample_node_data["WaterLevel"],
@@ -453,19 +404,16 @@ class TestNetworkIntegration:
             }
         )
 
-        # Create multiple NodeObservations using .from_multiple (auto-assign items)
-        nodes = [123, 456, 789]
-        obs_list = NodeObservation.from_multiple(
-            data=multi_data, nodes=nodes
-        )  # Items auto-assigned
-
-        # Test that matching works
+        node_ids = {
+            sample_network.find(node=nid): col
+            for nid, col in zip(["123", "456", "789"], ["station_0", "station_1", "station_2"])
+        }
+        obs_list = NodeObservation.from_multiple(data=multi_data, nodes=node_ids)
         comparer_collection = ms.match(obs_list, nmr)
 
         assert comparer_collection is not None
-        assert len(comparer_collection) == 3  # Should have 3 comparers
+        assert len(comparer_collection) == 3
 
-        # Check that all model names are correct
         for comparer in comparer_collection:
             assert "Network_Model" in comparer.mod_names
             assert comparer.n_points > 0

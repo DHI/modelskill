@@ -91,6 +91,104 @@ class NetworkEdge(ABC):
         return len(self.breakpoints)
 
 
+class BasicNode(NetworkNode):
+    """Concrete :class:`NetworkNode` for programmatic network construction.
+
+    Parameters
+    ----------
+    id : str
+        Unique node identifier.
+    data : pd.DataFrame
+        Time-indexed DataFrame with one column per quantity.
+    boundary : dict, optional
+        Boundary condition metadata, by default empty.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> time = pd.date_range("2020", periods=3, freq="h")
+    >>> node = BasicNode("junction_1", pd.DataFrame({"WaterLevel": [1.0, 1.1, 1.2]}, index=time))
+    """
+
+    def __init__(
+        self,
+        id: str,
+        data: pd.DataFrame,
+        boundary: dict[str, Any] | None = None,
+    ) -> None:
+        self._id = id
+        self._data = data
+        self._boundary: dict[str, Any] = boundary or {}
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def data(self) -> pd.DataFrame:
+        return self._data
+
+    @property
+    def boundary(self) -> dict[str, Any]:
+        return self._boundary
+
+
+class BasicEdge(NetworkEdge):
+    """Concrete :class:`NetworkEdge` for programmatic network construction.
+
+    Parameters
+    ----------
+    id : str
+        Unique edge identifier.
+    start : NetworkNode
+        Start node.
+    end : NetworkNode
+        End node.
+    length : float
+        Edge length.
+    breakpoints : list[EdgeBreakPoint], optional
+        Intermediate break points, by default empty.
+
+    Examples
+    --------
+    >>> edge = BasicEdge("reach_1", node_a, node_b, length=250.0)
+    """
+
+    def __init__(
+        self,
+        id: str,
+        start: NetworkNode,
+        end: NetworkNode,
+        length: float,
+        breakpoints: list[EdgeBreakPoint] | None = None,
+    ) -> None:
+        self._id = id
+        self._start = start
+        self._end = end
+        self._length = length
+        self._breakpoints: list[EdgeBreakPoint] = breakpoints or []
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def start(self) -> NetworkNode:
+        return self._start
+
+    @property
+    def end(self) -> NetworkNode:
+        return self._end
+
+    @property
+    def length(self) -> float:
+        return self._length
+
+    @property
+    def breakpoints(self) -> list[EdgeBreakPoint]:
+        return self._breakpoints
+
+
 class Network:
     """Network built from a set of edges, with coordinate lookup and data access."""
 
