@@ -62,14 +62,28 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
         ds.time.to_index().is_monotonic_increasing
     ), "time must be increasing (please check for duplicate times))"
 
+    if "gtype" not in ds.attrs:
+        raise ValueError("data must have a gtype attribute")
+    gtype = ds.attrs["gtype"]
+    valid_gtypes = {
+        str(GeometryType.POINT),
+        str(GeometryType.TRACK),
+        str(GeometryType.VERTICAL),
+    }
+    if gtype not in valid_gtypes:
+        raise ValueError(
+            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK} or {GeometryType.VERTICAL}"
+        )
+
     # Validate coordinates
     if "x" not in ds.coords:
         raise ValueError("data must have an x-coordinate")
     if "y" not in ds.coords:
         raise ValueError("data must have a y-coordinate")
     if "z" not in ds.coords:
+        if gtype == str(GeometryType.VERTICAL):
+            raise ValueError("data with gtype 'vertical' must have a z-coordinate")
         ds.coords["z"] = np.nan
-    # assert "z" in ds.coords, "data must have a z-coordinate"
 
     # Validate data
     vars = [v for v in ds.data_vars]
@@ -103,15 +117,6 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     da = ds[name]
 
     # Validate attrs
-    if "gtype" not in ds.attrs:
-        raise ValueError("data must have a gtype attribute")
-    if ds.attrs["gtype"] not in [
-        str(GeometryType.POINT),
-        str(GeometryType.TRACK),
-    ]:
-        raise ValueError(
-            f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
-        )
     if "long_name" not in da.attrs:
         da.attrs["long_name"] = Quantity.undefined().name
     if "units" not in da.attrs:
@@ -304,6 +309,8 @@ class TimeSeries:
             # make sure that x, y cols are first
             cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
             return df[cols]
+        elif self.gtype == str(GeometryType.VERTICAL):
+            return self.data.drop_vars(["x", "y"]).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
