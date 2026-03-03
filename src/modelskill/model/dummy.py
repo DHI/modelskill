@@ -6,7 +6,7 @@ import pandas as pd
 
 from modelskill.model.point import PointModelResult
 from modelskill.model.track import TrackModelResult
-from modelskill.obs import PointObservation, TrackObservation
+from modelskill.obs import PointObservation, TrackObservation, VerticalObservation
 
 
 @dataclass
@@ -49,7 +49,7 @@ class DummyModelResult:
 
     def extract(
         self,
-        observation: PointObservation | TrackObservation,
+        observation: PointObservation | TrackObservation | VerticalObservation,
         spatial_method: Optional[str] = None,
     ) -> PointModelResult | TrackModelResult:
         if spatial_method is not None:
@@ -57,6 +57,10 @@ class DummyModelResult:
                 "spatial interpolation not possible when matching point model results with point observations"
             )
 
+        if isinstance(observation, VerticalObservation):
+            raise NotImplementedError(
+                "DummyModelResult does not support VerticalObservation yet"
+            )
         da = observation.data[observation.name].copy()
         if self.strategy == "mean":
             da[:] = da.mean()

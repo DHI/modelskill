@@ -28,7 +28,7 @@ from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
-from .obs import Observation, PointObservation, TrackObservation
+from .obs import Observation, PointObservation, TrackObservation, VerticalObservation
 from .timeseries import TimeSeries
 from .types import Period
 
@@ -56,7 +56,7 @@ MRInputType = Union[
     TimeSeries,
     MRTypes,
 ]
-ObsTypes = Union[PointObservation, TrackObservation]
+ObsTypes = Union[PointObservation, TrackObservation, VerticalObservation]
 ObsInputType = Union[
     str,
     Path,
