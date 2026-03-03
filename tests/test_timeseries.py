@@ -4,6 +4,7 @@ import pandas as pd
 import xarray as xr
 import modelskill as ms
 from modelskill.timeseries import TimeSeries
+from modelskill.timeseries._timeseries import _validate_dataset
 from modelskill.types import GeometryType
 
 
@@ -38,6 +39,24 @@ def ds_track():
     )
     ds.attrs["gtype"] = str(GeometryType.TRACK)
     ds["dataitem"].attrs["kind"] = "model"
+    return ds
+
+
+@pytest.fixture
+def ds_vertical():
+    x = 0
+    y = 3
+    z = [0, -5, -10]
+    time = pd.date_range("2000-01-01", periods=3)
+    data = np.random.rand(3)
+    ds = xr.Dataset(
+        {"dataitem": (["time"], data)},
+        coords={"time": time, "z": (["time"], z)},
+    )
+    ds.coords["x"] = x
+    ds.coords["y"] = y
+    ds.attrs["gtype"] = str(GeometryType.VERTICAL)
+    ds["dataitem"].attrs["kind"] = "observation"
     return ds
 
 
@@ -87,6 +106,20 @@ def test_timeseries_validation_fails_xy(ds_point):
     ds_without_y = ds_point.drop_vars("y")
     with pytest.raises(ValueError, match="data must have a y-coordinate"):
         TimeSeries(ds_without_y)
+
+
+def test_validate_dataset_vertical_with_z_coord(ds_vertical):
+    ds = _validate_dataset(ds_vertical)
+    assert ds.attrs["gtype"] == str(GeometryType.VERTICAL)
+    assert "z" in ds.coords
+    assert tuple(ds["z"].dims) == ("time",)
+    assert tuple(ds["z"].values) == (0, -5, -10)
+
+
+def test_validate_dataset_vertical_without_z_coord_raises(ds_vertical):
+    ds_without_z = ds_vertical.drop_vars("z")
+    with pytest.raises(ValueError, match="vertical.*z-coordinate"):
+        _validate_dataset(ds_without_z)
 
 
 def test_timeseries_point_properties(ds_point):
