@@ -523,7 +523,7 @@ class Network:
         edge: str | list[str] | None = None,
         distance: str | float | list[str | float] | None = None,
     ) -> int | list[int]:
-        """Find node or breakpoint id in the generic network.
+        """Find node or breakpoint id in the Network object based on former coordinates.
 
         Parameters
         ----------
@@ -644,7 +644,7 @@ class Network:
     def recall(self, id: list[int]) -> list[dict[str, Any]]: ...
 
     def recall(self, id: int | list[int]) -> dict[str, Any] | list[dict[str, Any]]:
-        """Recall the original coordinates from generic network node id(s).
+        """Recall the original coordinates from node id(s) in the Network object.
 
         Parameters
         ----------
