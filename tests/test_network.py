@@ -244,20 +244,26 @@ class TestNodeObservation:
 
     def test_multiple_nodes_returns_list_of_observations(self, multi_data):
         """Test that from_multiple returns a list of NodeObservation objects"""
-        obs_list = NodeObservation.from_multiple(data=multi_data, nodes=[123, 456, 789])
+        obs_list = NodeObservation.from_multiple(
+            data=multi_data, nodes={123: "station_0", 456: "station_1", 789: "station_2"}
+        )
 
         assert len(obs_list) == 3
         assert all(isinstance(obs, NodeObservation) for obs in obs_list)
 
     def test_node_ids_are_assigned_correctly(self, multi_data):
-        obs_list = NodeObservation.from_multiple(data=multi_data, nodes=[123, 456, 789])
+        obs_list = NodeObservation.from_multiple(
+            data=multi_data, nodes={123: "station_0", 456: "station_1", 789: "station_2"}
+        )
 
         assert obs_list[0].node == 123
         assert obs_list[1].node == 456
         assert obs_list[2].node == 789
 
     def test_names_derived_from_column_names(self, multi_data):
-        obs_list = NodeObservation.from_multiple(data=multi_data, nodes=[123, 456, 789])
+        obs_list = NodeObservation.from_multiple(
+            data=multi_data, nodes={123: "station_0", 456: "station_1", 789: "station_2"}
+        )
 
         assert obs_list[0].name == "station_0"
         assert obs_list[1].name == "station_1"
@@ -271,20 +277,24 @@ class TestNodeObservation:
             },
             coords={"time": sample_node_data.index},
         )
-        obs_list = NodeObservation.from_multiple(data=ds, nodes=[123, 456])
+        obs_list = NodeObservation.from_multiple(
+            data=ds, nodes={123: "station_0", 456: "station_1"}
+        )
 
         assert len(obs_list) == 2
         assert obs_list[0].node == 123
         assert obs_list[1].node == 456
 
-    def test_nodes_must_be_list(self, multi_data):
-        with pytest.raises(ValueError, match="'nodes' argument must be either"):
+    def test_nodes_must_be_dict(self, multi_data):
+        with pytest.raises(TypeError, match="'nodes' must be a dict"):
             NodeObservation.from_multiple(data=multi_data, nodes=123)
 
     def test_attrs_propagated_to_all_observations(self, multi_data):
         attrs = {"source": "sensor_array", "version": 2}
         obs_list = NodeObservation.from_multiple(
-            data=multi_data, nodes=[1, 2, 3], attrs=attrs
+            data=multi_data,
+            nodes={1: "station_0", 2: "station_1", 3: "station_2"},
+            attrs=attrs,
         )
 
         for obs in obs_list:
@@ -317,10 +327,6 @@ class TestNodeObservation:
         for obs in obs_list:
             assert len(obs.time) > 0
 
-    def test_list_nodes_emits_warning(self, multi_data):
-        with pytest.warns(UserWarning, match="nodes.*was passed as a list"):
-            NodeObservation.from_multiple(data=multi_data, nodes=[123, 456, 789])
-
     def test_nodes_dict_maps_node_to_item(self, multi_data):
         obs_list = NodeObservation.from_multiple(
             data=multi_data, nodes={123: "station_0", 456: "station_1"}
@@ -336,13 +342,9 @@ class TestNodeObservation:
         with pytest.raises(ValueError, match="'nodes' argument is required"):
             NodeObservation.from_multiple(data=multi_data, nodes=None)
 
-    def test_data_none_with_list_nodes_raises(self):
-        with pytest.raises(ValueError, match="'nodes' must be a dictionary"):
-            NodeObservation.from_multiple(nodes=[123, 456])
-
-    def test_single_node_list(self, sample_node_data):
+    def test_single_node_dict(self, sample_node_data):
         obs_list = NodeObservation.from_multiple(
-            data=sample_node_data, nodes=[123]
+            data=sample_node_data, nodes={123: "WaterLevel"}
         )
 
         assert len(obs_list) == 1
@@ -404,11 +406,15 @@ class TestNetworkIntegration:
             }
         )
 
-        # Create multiple NodeObservations using .from_multiple (auto-assign items)
-        nodes = [123, 456, 789]
+        node_0 = sample_network.find(node="123")
+        node_1 = sample_network.find(node="456")
+        node_2 = sample_network.find(node="789")
+
+        # Create multiple NodeObservations using .from_multiple
         obs_list = NodeObservation.from_multiple(
-            data=multi_data, nodes=nodes
-        )  # Items auto-assigned
+            data=multi_data,
+            nodes={node_0: "station_0", node_1: "station_1", node_2: "station_2"},
+        )
 
         # Test that matching works
         comparer_collection = ms.match(obs_list, nmr)

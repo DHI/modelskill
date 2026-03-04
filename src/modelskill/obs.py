@@ -382,8 +382,8 @@ class NodeObservation(Observation):
     >>> o1 = ms.NodeObservation(data, node=123, name="123")
     >>> o2 = ms.NodeObservation(df, item="Water Level", node=456)
     >>>
-    >>> # Multiple node observations from single DataFrame
-    >>> obs = ms.NodeObservation.from_multiple(data, nodes=[123, 456, 789])
+    >>> # Multiple node observations from separate data sources
+    >>> obs = ms.NodeObservation.from_multiple(nodes={123: df1, 456: df2})
     """
 
     def __init__(
@@ -428,7 +428,7 @@ class NodeObservation(Observation):
         cls,
         *,
         data: PointType,
-        nodes: list[int] | dict[int, str | int],
+        nodes: dict[int, str | int],
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
@@ -450,55 +450,55 @@ class NodeObservation(Observation):
         cls,
         *,
         data: PointType | None = None,
-        nodes: list[int] | dict[int, Any] | None = None,
+        nodes: dict[int, Any] | None = None,
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> list[NodeObservation]:
-        """Create multiple NodeObservation objects from a single data source.
+        """Create multiple NodeObservation objects.
+
+        Two calling conventions are supported:
+
+        1. **Separate data sources** — pass only ``nodes`` as a dict mapping
+           each node ID to its own data source (file path, DataFrame, etc.)::
+
+               obs = NodeObservation.from_multiple(nodes={123: df1, 456: "sensor.csv"})
+
+        2. **Shared data source** — pass a single ``data`` object together with
+           ``nodes`` as a dict mapping each node ID to the column name or index
+           to select from ``data``::
+
+               obs = NodeObservation.from_multiple(data=df, nodes={123: "col_a", 456: "col_b"})
 
         Parameters
         ----------
         data : PointType, optional
-            data source with time series for the nodes (required when nodes is a list)
-        nodes : list[int] | dict[int, PointType]
-            node IDs as list (requires data parameter) or dict mapping node_id -> data_source
+            Shared data source (required when ``nodes`` values are column selectors).
+        nodes : dict[int, PointType | str | int]
+            Mapping of node_id -> data source or column selector.
         quantity : Quantity | None, optional
-            physical quantity metadata, by default None
+            Physical quantity metadata, by default None.
         aux_items : list[int | str] | None, optional
-            auxiliary items, by default None
+            Auxiliary items, by default None.
         attrs : dict | None, optional
-            additional attributes, by default None
+            Additional attributes, by default None.
 
         Returns
         -------
         list[NodeObservation]
-            List of NodeObservation objects
-
-        Examples
-        --------
-        # Single data source with multiple nodes
-        >>> obs = ms.NodeObservation.from_multiple(data=df, nodes=[123, 456, 789])
-
-        # Multiple data sources
-        >>> obs = ms.NodeObservation.from_multiple(nodes={123: df1, 456: df2})
+            List of NodeObservation objects.
         """
         if nodes is None:
             raise ValueError("'nodes' argument is required")
-        if not isinstance(nodes, (dict, list)):
-            raise ValueError(
-                f"'nodes' argument must be either a list or a dict but {type(nodes)} was passed."
+        if not isinstance(nodes, dict):
+            raise TypeError(
+                f"'nodes' must be a dict mapping node_id -> data_source, got {type(nodes).__name__}"
             )
 
+        node_ids = list(nodes.keys())
+
         if data is None:
-            if not isinstance(nodes, dict):
-                raise ValueError(
-                    "When 'data' argument is None, 'nodes' must be a dictionary of nodes and data sources."
-                )
-
-            node_ids = list(nodes.keys())
             data_sources: list[PointType] = list(nodes.values())  # type: ignore[list-item]
-
             return [
                 cls(
                     data_i,
@@ -511,19 +511,7 @@ class NodeObservation(Observation):
                 for data_i, node_i in zip(data_sources, node_ids)
             ]
         else:
-            node_items: list[int | str | None]
-            if isinstance(nodes, list):
-                node_ids = nodes
-                node_items = list(range(len(nodes)))
-                warnings.warn(
-                    f"'nodes' was passed as a list of length {len(nodes)} so, only the first {len(nodes)} items of 'data'"
-                    " will be selected to match the nodes. You can pass 'nodes' as a dictionary to assign an item to each node.",
-                    stacklevel=2,
-                )
-            else:
-                node_items = list(nodes.values())  # type: ignore[list-item]
-                node_ids = list(nodes.keys())
-
+            node_items: list[int | str | None] = list(nodes.values())  # type: ignore[list-item]
             return [
                 cls(
                     data,
