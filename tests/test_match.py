@@ -7,7 +7,19 @@ import mikeio
 import modelskill as ms
 from modelskill.comparison._comparison import ItemSelection
 from modelskill.model.dfsu import DfsuModelResult
-import xarray as xr
+from modelskill.model.network import Network, BasicNode, BasicEdge
+
+
+def _make_network(node_ids, time, data, quantity="WaterLevel"):
+    nodes = [
+        BasicNode(nid, pd.DataFrame({quantity: data[:, i]}, index=time))
+        for i, nid in enumerate(node_ids)
+    ]
+    edges = [
+        BasicEdge(f"e{i}", nodes[i], nodes[i + 1], length=100.0)
+        for i in range(len(nodes) - 1)
+    ]
+    return Network(edges)
 
 
 @pytest.fixture
@@ -74,60 +86,55 @@ def mr3():
 
 # Network-related fixtures
 @pytest.fixture
-def network_data():
-    """Network data as xr.Dataset with multiple nodes"""
+def network():
+    """Network fixture with 3 nodes"""
     time = pd.date_range("2017-10-27", periods=20, freq="h")
-    nodes = [100, 200, 300]
-
-    # Create realistic water level data with some variation
     np.random.seed(42)
-    data = np.random.normal(1.5, 0.3, (len(time), len(nodes)))
-
-    ds = xr.Dataset(
-        {
-            "WaterLevel": (["time", "node"], data),
-        },
-        coords={
-            "time": time,
-            "node": nodes,
-        },
-    )
-    ds["WaterLevel"].attrs["units"] = "m"
-    ds["WaterLevel"].attrs["long_name"] = "Water Level"
-
-    return ds
+    data = np.random.normal(1.5, 0.3, (20, 3))
+    return _make_network(["100", "200", "300"], time, data)
 
 
 @pytest.fixture
-def network_mr(network_data):
+def network2():
+    """Second network fixture with offset data for multi-model tests"""
+    time = pd.date_range("2017-10-27", periods=20, freq="h")
+    np.random.seed(42)
+    data = np.random.normal(1.5, 0.3, (20, 3)) + 0.1
+    return _make_network(["100", "200", "300"], time, data)
+
+
+@pytest.fixture
+def network_mr(network):
     """NetworkModelResult fixture"""
-    return ms.NetworkModelResult(network_data, name="Network_Model")
+    return ms.NetworkModelResult(network, name="Network_Model")
 
 
 @pytest.fixture
-def node_obs1():
-    """NodeObservation for node 100"""
+def node_obs1(network):
+    """NodeObservation for node '100'"""
+    node_id = network.find(node="100")
     time = pd.date_range("2017-10-27", periods=18, freq="h")
     # Add some noise to make it different from model
     np.random.seed(123)
     data = np.random.normal(1.4, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
-    return ms.NodeObservation(df, node=100, name="Station_A")
+    return ms.NodeObservation(df, node=node_id, name="Station_A")
 
 
 @pytest.fixture
-def node_obs2():
-    """NodeObservation for node 200"""
+def node_obs2(network):
+    """NodeObservation for node '200'"""
+    node_id = network.find(node="200")
     time = pd.date_range("2017-10-27", periods=15, freq="h")
     np.random.seed(456)
     data = np.random.normal(1.6, 0.25, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
-    return ms.NodeObservation(df, node=200, name="Station_B")
+    return ms.NodeObservation(df, node=node_id, name="Station_B")
 
 
 @pytest.fixture
-def node_obs_invalid():
-    """NodeObservation for node that doesn't exist in network"""
+def node_obs_invalid(network):
+    """NodeObservation for a node that doesn't exist in the network"""
     time = pd.date_range("2017-10-27", periods=10, freq="h")
     data = np.random.normal(1.5, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
@@ -135,32 +142,31 @@ def node_obs_invalid():
 
 
 @pytest.fixture
-def network_mr1(network_data):
+def network_mr1(network):
     """First NetworkModelResult fixture"""
-    return ms.NetworkModelResult(network_data, name="Network_1")
+    return ms.NetworkModelResult(network, name="Network_1")
 
 
 @pytest.fixture
-def network_mr2(network_data):
-    """Second NetworkModelResult fixture with modified data"""
-    network_data2 = network_data.copy()
-    network_data2["WaterLevel"] = network_data2["WaterLevel"] + 0.1
-    return ms.NetworkModelResult(network_data2, name="Network_2")
+def network_mr2(network2):
+    """Second NetworkModelResult fixture with offset data"""
+    return ms.NetworkModelResult(network2, name="Network_2")
 
 
 @pytest.fixture
-def node_obs_gaps():
+def node_obs_gaps(network):
     """NodeObservation with time gaps"""
+    node_id = network.find(node="100")
     time = pd.date_range("2017-10-27", periods=10, freq="2h")  # Different frequency
     data = np.random.normal(1.5, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
-    return ms.NodeObservation(df, node=100, name="Node_100_Gaps")
+    return ms.NodeObservation(df, node=node_id, name="Node_100_Gaps")
 
 
 @pytest.fixture
-def network_mr_gaps(network_data):
+def network_mr_gaps(network):
     """NetworkModelResult for gap testing"""
-    return ms.NetworkModelResult(network_data, name="Network_Gaps")
+    return ms.NetworkModelResult(network, name="Network_Gaps")
 
 
 @pytest.fixture

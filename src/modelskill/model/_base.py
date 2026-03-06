@@ -10,10 +10,9 @@ import pandas as pd
 if TYPE_CHECKING:
     from .point import PointModelResult
     from .track import TrackModelResult
-    from .network import NodeModelResult
 
 from ..utils import _get_name
-from ..obs import Observation, PointObservation, TrackObservation, NodeObservation
+from ..obs import Observation, PointObservation, TrackObservation
 
 
 @dataclass
@@ -87,10 +86,3 @@ class SpatialField(Protocol):
     def _extract_track(
         self, observation: TrackObservation, spatial_method: str | None = None
     ) -> TrackModelResult: ...
-
-
-class Network1D(Protocol):
-    def extract(
-        self,
-        observation: NodeObservation,
-    ) -> NodeModelResult: ...

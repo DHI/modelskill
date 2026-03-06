@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 source-exclude = ["**/.mypy_cache**", "**/.mypy_cache/**"]
-wheel-exclude = ["**/.mypy_cache**","**/.mypy_cache/**"]
+wheel-exclude = ["**/.mypy_cache**", "**/.mypy_cache/**"]
 
 [project]
 name = "modelskill"
@@ -17,7 +17,7 @@ dependencies = [
     "xarray",
     "netCDF4",
     "scipy",
-    "jinja2", # used for skill.style
+    "jinja2",               # used for skill.style
 ]
 
 authors = [
@@ -42,19 +42,9 @@ classifiers = [
 ]
 
 [dependency-groups]
-dev = [
-    "pytest",
-    "plotly >= 4.5",
-    "ruff==0.6.2",
-    "netCDF4",
-    "dask",
-]
+dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2", "netCDF4", "dask"]
 
-docs = [
-    "quarto-cli==1.5.57",
-    "quartodoc==0.11.1",
-    "griffe<2",
-]
+docs = ["quarto-cli==1.5.57", "quartodoc==0.11.1", "griffe<2"]
 
 test = [
     "pytest",
@@ -67,6 +57,8 @@ test = [
 ]
 
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
+
+networks = ["mikeio1d", "networkx"]
 
 [project.urls]
 "Homepage" = "https://github.com/DHI/modelskill"
