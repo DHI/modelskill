@@ -5,7 +5,7 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 import modelskill as ms
-from modelskill.model.network import (
+from modelskill.network import (
     Network,
     NetworkModelResult,
     NodeModelResult,
