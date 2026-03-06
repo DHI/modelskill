@@ -1,0 +1,261 @@
+---
+title: Network model results
+jupyter: python3
+---
+
+A **Network** represents a 1D pipe or river network as a directed graph: nodes hold
+timeseries data (e.g. water level at a junction) and edges carry the topology and
+reach length between them.  Break points along an edge (e.g. cross-section chainages)
+are supported as observation locations too.
+
+The typical workflow is:
+
+```
+Network  →  NetworkModelResult  →  match()  →  Comparer
+```
+
+## Loading from a Res1D file
+
+The quickest way to get a `Network` is from a MIKE 1D result file:
+
+```{python}
+#| eval: false
+from modelskill.model.network import Network
+
+network = Network.from_res1d("model.res1d")
+network
+```
+
+An already-opened `mikeio1d.Res1D` object is also accepted:
+
+```{python}
+#| eval: false
+from mikeio1d import Res1D
+from modelskill.model.network import Network
+
+res = Res1D("model.res1d")
+network = Network.from_res1d(res)
+```
+
+## Building a Network programmatically
+
+When your data comes from a source other than a Res1D file you can assemble a
+`Network` by subclassing the abstract base classes `NetworkNode` and `NetworkEdge`.
+This is the recommended approach when integrating your own data source.
+
+### Subclassing the abstract base classes
+
+`NetworkNode` requires three properties: `id`, `data`, and `boundary`.
+`NetworkEdge` requires five: `id`, `start`, `end`, `length`, and `breakpoints`.
+
+```{python}
+import pandas as pd
+import numpy as np
+from typing import Any
+from modelskill.model.network import NetworkNode, NetworkEdge, Network
+
+
+class DfNode(NetworkNode):
+    """Node backed by an in-memory DataFrame, e.g. model output."""
+
+    def __init__(self, node_id: str, data: pd.DataFrame):
+        self._id = node_id
+        self._data = data
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def data(self) -> pd.DataFrame:
+        return self._data
+
+    @property
+    def boundary(self) -> dict[str, Any]:
+        return {}
+
+
+class SimpleEdge(NetworkEdge):
+    """Edge connecting two nodes with a given length."""
+
+    def __init__(
+        self, edge_id: str, start: NetworkNode, end: NetworkNode, length: float,
+        breakpoints: list | None = None,
+    ):
+        self._id = edge_id
+        self._start = start
+        self._end = end
+        self._length = length
+        self._breakpoints = breakpoints or []
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def start(self) -> NetworkNode:
+        return self._start
+
+    @property
+    def end(self) -> NetworkNode:
+        return self._end
+
+    @property
+    def length(self) -> float:
+        return self._length
+
+    @property
+    def breakpoints(self) -> list:
+        return self._breakpoints
+```
+
+::: {.callout-tip}
+The three abstract properties that **every** `NetworkNode` subclass must implement
+are `id`, `data` and `boundary`. If `boundary` is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a `NetworkEdge` with no intermediate points can return an empty `breakpoints` list.
+:::
+
+
+```{python}
+from modelskill.model.network import Network
+
+# Synthetic model output covering the observation period
+model_time = pd.date_range("1994-08-07 16:00", periods=180, freq="1min")
+t = np.linspace(0, 2 * np.pi, 180)
+
+node_s1 = DfNode("sensor_1", pd.DataFrame({"WaterLevel": 194.0 + np.sin(t)}, index=model_time))
+node_s2 = DfNode("sensor_2", pd.DataFrame({"WaterLevel": 193.8 + 0.8 * np.sin(t)}, index=model_time))
+node_s3 = DfNode("sensor_3", pd.DataFrame({"WaterLevel": 193.6 + 0.6 * np.sin(t)}, index=model_time))
+
+reach_r1 = SimpleEdge("r1", node_s1, node_s2, length=500.0)
+reach_r2 = SimpleEdge("r2", node_s2, node_s3, length=300.0)
+
+network = Network(edges=[reach_r1, reach_r2])
+network
+```
+
+### Adding break points along a reach
+
+Break points represent intermediate chainage locations on a reach (e.g.
+cross-sections).  Subclass `EdgeBreakPoint` the same way — implement `id`
+(a `(edge_id, distance)` tuple) and `data`:
+
+```{python}
+from modelskill.model.network import EdgeBreakPoint
+
+bp_time = pd.date_range("1994-08-07 16:00", periods=180, freq="1min")
+
+class DfBreakPoint(EdgeBreakPoint):
+    def __init__(self, edge_id: str, distance: float, data: pd.DataFrame):
+        self._id = (edge_id, distance)
+        self._data = data
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def data(self):
+        return self._data
+
+
+bp = DfBreakPoint(
+    "r1",
+    200.0,
+    pd.DataFrame({"WaterLevel": 193.9 + 0.9 * np.sin(t)}, index=bp_time),
+)
+
+reach_r1_bp = SimpleEdge("r1", node_s1, node_s2, length=500.0, breakpoints=[bp])
+network = Network(edges=[reach_r1_bp, SimpleEdge("r2", node_s2, node_s3, length=300.0)])
+```
+
+## Inspecting the Network
+
+### Available quantities
+
+```{python}
+print(network.quantities)
+```
+
+### Underlying graph
+
+The network exposes a `networkx.Graph` so you can use any NetworkX algorithm or
+plotting function directly:
+
+```{python}
+import networkx as nx
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(6, 3), layout="tight")
+nx.draw(network.graph, ax=ax, with_labels=True, node_color="white", edgecolors="black")
+plt.show()
+```
+
+### Timeseries data
+
+```{python}
+# Multi-index DataFrame: columns are (node, quantity)
+network.to_dataframe().head()
+```
+
+```{python}
+# Select a single quantity
+network.to_dataframe(sel="WaterLevel").head()
+```
+
+## Looking up node IDs
+
+After construction, nodes are re-labelled as integers.  Use `find()` to go
+from original coordinates to the integer ID and `recall()` to go back.
+
+```{python}
+# Look up a named node by its original id
+node_id = network.find(node="sensor_1")
+print(f"Node 'sensor_1' → integer id {node_id}")
+
+# Recover the original label
+print(network.recall(node_id))
+```
+
+```{python}
+# Look up a break point by reach + chainage
+bp_id = network.find(edge="r1", distance=200.0)
+print(f"Break point (r1, 200) → integer id {bp_id}")
+print(network.recall(bp_id))
+```
+
+```{python}
+# Batch lookup — one edge, multiple chainages
+ids = network.find(edge="r1", distance=[200.0, "start", "end"])
+print(ids)
+```
+
+## Skill assessment workflow
+
+### 1. Wrap the Network in a NetworkModelResult
+
+```{python}
+import modelskill as ms
+from modelskill.model.network import NetworkModelResult
+
+mr = NetworkModelResult(network, name="MyModel", item="WaterLevel")
+mr
+```
+
+### 2. Create NodeObservations and compute skill
+
+`NodeObservation` accepts a file path directly; the observation name is taken from the filename.
+
+```{python}
+obs_1 = ms.NodeObservation("../../tests/testdata/network_sensor_1.csv", node=network.find(node="sensor_1"))
+obs_2 = ms.NodeObservation("../../tests/testdata/network_sensor_2.csv", node=network.find(node="sensor_2"))
+
+cc = ms.match(obs=[obs_1, obs_2], mod=mr)
+cc.skill()
+```
+
+## See also
+
+* [API reference — Network](../api/network.qmd)
+* [API reference — NetworkModelResult](../api/NetworkModelResult.qmd)
+* [API reference — NodeObservation](../api/NodeObservation.qmd)
+* [Workflow overview](workflow.qmd)
