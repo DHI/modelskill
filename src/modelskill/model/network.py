@@ -333,7 +333,7 @@ class BasicEdge(NetworkEdge):
 class Network:
     """Network built from a set of edges, with coordinate lookup and data access."""
 
-    def __init__(self, edges: list[NetworkEdge]):
+    def __init__(self, edges: Sequence[NetworkEdge]):
         self._edges: dict[str, NetworkEdge] = {e.id: e for e in edges}
         self._graph = self._initialize_graph()
         self._alias_map = self._initialize_alias_map()
@@ -561,8 +561,11 @@ class Network:
                 "Must specify either 'node' or both 'edge' and 'distance' parameters"
             )
 
+        ids: list[str | tuple[str, float]]
+
         if by_node:
             # Handle node lookup
+            assert node is not None
             if not isinstance(node, list):
                 node = [node]
             ids = list(node)
@@ -673,7 +676,7 @@ class Network:
         # Create reverse lookup map
         reverse_alias_map = {v: k for k, v in self._alias_map.items()}
 
-        results = []
+        results: list[dict[str, Any]] = []
         for node_id in id:
             if node_id not in reverse_alias_map:
                 raise KeyError(f"Node ID {node_id} not found in the network.")
