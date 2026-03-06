@@ -48,6 +48,7 @@ website:
         - user-guide/selecting-data.qmd
         - user-guide/plotting.qmd
         - user-guide/statistics.qmd
+        - user-guide/network.qmd
 
     - title: "Examples"
       contents:
