@@ -6,6 +6,7 @@ A model result can either be a simple point/track, or spatial field (e.g. 2d dfs
 * Timeseries
     - [`PointModelResult`](`modelskill.PointModelResult`) - a point result from a dfs0/nc file or a DataFrame
     - [`TrackModelResult`](`modelskill.TrackModelResult`) - a track (moving point) result from a dfs0/nc file or a DataFrame
+    - [`VerticalModelResult`](`modelskill.VerticalModelResult`) - a vertical column result from a dfs0/nc file or a DataFrame
 * SpatialField (extractable)
     - [`GridModelResult`](`modelskill.GridModelResult`) - a spatial field from a dfs2/nc file or a Xarray Dataset
     - [`DfsuModelResult`](`modelskill.DfsuModelResult`) - a spatial field from a dfsu file
@@ -18,6 +19,8 @@ A model result can be created by explicitly invoking one of the above classes or
 from .factory import model_result
 from .point import PointModelResult
 from .track import TrackModelResult
+from .vertical import VerticalModelResult
+
 from .dfsu import DfsuModelResult
 from .grid import GridModelResult
 from .dummy import DummyModelResult
@@ -25,6 +28,7 @@ from .dummy import DummyModelResult
 __all__ = [
     "PointModelResult",
     "TrackModelResult",
+    "VerticalModelResult",
     "DfsuModelResult",
     "GridModelResult",
     "model_result",

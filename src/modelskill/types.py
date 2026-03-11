@@ -91,6 +91,7 @@ PointType = Union[
 ]
 TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
 VerticalType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
+# mikeio.Dfsu3D (as vertical type?)
 
 
 @dataclass(frozen=True)
