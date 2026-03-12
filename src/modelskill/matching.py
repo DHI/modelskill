@@ -28,6 +28,7 @@ from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
+from .model.vertical import VerticalModelResult
 from .obs import Observation, PointObservation, TrackObservation, VerticalObservation
 from .timeseries import TimeSeries
 from .types import Period
@@ -41,6 +42,7 @@ MRTypes = Union[
     DfsuModelResult,
     TrackModelResult,
     DummyModelResult,
+    VerticalModelResult,
 ]
 MRInputType = Union[
     str,
