@@ -102,7 +102,6 @@ class VerticalModelResult(TimeSeries):
             mod_at_t = mod_df.loc[[mod_t]].sort_values("z")
 
             obs_z = obs_at_t["z"].values.astype(float)
-            print(obs_at_t)
             obs_val = obs_at_t["salt"].values.astype(float)
             mod_z = mod_at_t["z"].values.astype(float)
             mod_sal = mod_at_t["Salinity"].values.astype(float)
@@ -136,64 +135,3 @@ class VerticalModelResult(TimeSeries):
         print(pairs)
 
         return pairs.reset_index().set_index(["time", "z"]).to_xarray()
-
-    def subset_to(
-        self, observation: VerticalObservation, *, spatial_tolerance: float
-    ) -> xr.Dataset:
-        n_obs = len(observation.data.time)
-        if n_obs == 0:
-            return self.data.isel(time=slice(0, 0))
-
-        obs_df = observation.data[["z"]].to_dataframe().reset_index()
-        obs_df = obs_df.rename(columns={"z": "z_obs"})
-        obs_df["obs_idx"] = np.arange(len(obs_df), dtype=int)
-
-        mod_df = self.data[["z"]].to_dataframe().reset_index()
-        mod_df = mod_df.rename(columns={"z": "z_mod"})
-        mod_df["mod_idx"] = np.arange(len(mod_df), dtype=int)
-
-        candidates = obs_df[["time", "z_obs", "obs_idx"]].merge(
-            mod_df[["time", "z_mod", "mod_idx"]], on="time", how="left"
-        )
-        candidates = candidates[candidates["mod_idx"].notna()].copy()
-
-        matched = pd.DataFrame(columns=["obs_idx", "mod_idx"])
-        if len(candidates) > 0:
-            depth_dist_signed = np.abs(candidates["z_obs"] - candidates["z_mod"])
-            depth_dist_abs = np.abs(
-                np.abs(candidates["z_obs"]) - np.abs(candidates["z_mod"])
-            )
-            candidates["depth_dist"] = np.minimum(depth_dist_signed, depth_dist_abs)
-            candidates = candidates[candidates["depth_dist"] <= spatial_tolerance]
-            if len(candidates) > 0:
-                matched = (
-                    candidates.sort_values(["obs_idx", "depth_dist", "mod_idx"])
-                    .drop_duplicates(subset=["obs_idx"], keep="first")
-                    .loc[:, ["obs_idx", "mod_idx"]]
-                )
-
-        model_idx_for_obs = np.full(n_obs, -1, dtype=int)
-        if len(matched) > 0:
-            obs_idx = matched["obs_idx"].to_numpy(dtype=int)
-            mod_idx = matched["mod_idx"].to_numpy(dtype=int)
-            model_idx_for_obs[obs_idx] = mod_idx
-
-        result = xr.Dataset(coords={"time": observation.data.time.values})
-        result = result.assign_coords(z=("time", observation.data["z"].values))
-        valid = model_idx_for_obs >= 0
-
-        for dv, da in self.data.data_vars.items():
-            values = np.asarray(da.values)
-            out = np.full(n_obs, np.nan, dtype=np.float64)
-            if np.any(valid):
-                out[valid] = values[model_idx_for_obs[valid]]
-            result[dv] = xr.Variable(("time",), out, attrs=da.attrs)
-
-        n_removed = int((~valid).sum())
-        if n_removed > 0:
-            warnings.warn(
-                f"Removed {n_removed} model points outside profile depth tolerance "
-                f"(spatial_tolerance={spatial_tolerance})"
-            )
-
-        return result
