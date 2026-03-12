@@ -115,7 +115,7 @@ class VerticalModelResult(TimeSeries):
             for z, obs_v, mod_v in zip(obs_z[isin], obs_val[isin], mod_interp):
                 records.append({"time": obs_t, "z": z, "obs": obs_v, "mod": mod_v})
 
-            return pd.DataFrame(records).set_index("time")
+        return pd.DataFrame(records).set_index("time")
 
     def align_to_obs_profiles(
         self, observation: VerticalObservation, *, spatial_tolerance: float
@@ -131,6 +131,5 @@ class VerticalModelResult(TimeSeries):
             _match_to_nearest_times["obs_time"],
             _match_to_nearest_times["mod_time"],
         )
-        print(pairs)
 
         return pairs.reset_index().set_index(["time", "z"]).to_xarray()
