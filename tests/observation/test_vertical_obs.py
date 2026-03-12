@@ -109,7 +109,7 @@ class TestVerticalObservation:
         fn = Path("tests/testdata/vertical/VerticalProfile_ST.dfs0")
         # no item specified, but multiple items in file
         with pytest.raises(ValueError):
-            obs = ms.observation(fn, z_item="z")
+            _ = ms.observation(fn, z_item="z")
         # below should be fine...only one item
         fn = Path("tests/testdata/vertical/VerticalProfile_obs1.dfs0")
         assert isinstance(ms.observation(fn, z_item="z"), ms.VerticalObservation)
@@ -123,7 +123,7 @@ class TestVerticalObservation:
             index=[pd.Timestamp("2019-01-01")] * 3,
         )
         with pytest.warns(UserWarning, match="Removed 1 duplicate"):
-            obs = ms.VerticalObservation(
+            _ = ms.VerticalObservation(
                 df,
                 item="value",
                 z_item="z",
