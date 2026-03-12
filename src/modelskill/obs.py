@@ -355,7 +355,7 @@ class VerticalObservation(Observation):
 
     Parameters
     ----------
-    data : VerticalType
+    data : (str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset)
         Input data with vertical profile observations.
     item : int or str, optional
         Index or name of the primary observation item.
@@ -441,6 +441,7 @@ class VerticalObservation(Observation):
                 z_item=z_item,
                 x=x,
                 y=y,
+                keep_duplicates=keep_duplicates,
             )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
