@@ -25,7 +25,7 @@ from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation
-from ..model import PointModelResult, TrackModelResult
+from ..model import PointModelResult, TrackModelResult, VerticalModelResult
 from ..timeseries._timeseries import _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
@@ -444,7 +444,10 @@ class Comparer:
     def __init__(
         self,
         matched_data: xr.Dataset,
-        raw_mod_data: dict[str, PointModelResult | TrackModelResult] | None = None,
+        raw_mod_data: dict[
+            str, PointModelResult | TrackModelResult | VerticalModelResult
+        ]
+        | None = None,
     ) -> None:
         self.data = _parse_dataset(matched_data)
         self.raw_mod_data = (
