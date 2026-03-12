@@ -351,7 +351,9 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 def _match_space_time(
     observation: Observation,
-    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult],
+    raw_mod_data: Mapping[
+        str, PointModelResult | TrackModelResult | VerticalObservation
+    ],
     max_model_gap: float | None,
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
@@ -375,6 +377,8 @@ def _match_space_time(
                 )
             case PointModelResult() as pmr, PointObservation():
                 aligned = pmr.align(observation, max_gap=max_model_gap)
+            case VerticalObservation(), VerticalObservation():
+                raise NotImplementedError("Vertical matching not implemented yet")
             case _:
                 raise TypeError(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"
