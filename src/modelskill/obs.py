@@ -441,6 +441,7 @@ class VerticalObservation(Observation):
                 z_item=z_item,
                 x=x,
                 y=y,
+                keep_duplicates=keep_duplicates,
             )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
