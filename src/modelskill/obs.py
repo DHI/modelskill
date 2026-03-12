@@ -355,7 +355,7 @@ class VerticalObservation(Observation):
 
     Parameters
     ----------
-    data : VerticalType
+    data : (str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset)
         Input data with vertical profile observations.
     item : int or str, optional
         Index or name of the primary observation item.
