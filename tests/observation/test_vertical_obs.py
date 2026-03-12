@@ -59,7 +59,8 @@ class TestVerticalObservation:
             y=55.0,
         )
 
-        out = obs.sel(z=-4.0)
+        # out = obs.sel(z=-4.0)  # only works with xarray >= 2026.01.0
+        out = ms.VerticalObservation(obs.data.where(obs.data["z"] == -4.0, drop=True))
 
         assert isinstance(out, ms.VerticalObservation)
         assert len(out.data) == 1
