@@ -118,7 +118,7 @@ def test_dfsu_aux_items_fail(hd_oresund_2d):
         )
 
 
-def test_dfsu_dataarray(hd_oresund_2d):
+def test_dfsu_dataarray_and_dataset(hd_oresund_2d):
     ds = mikeio.read(hd_oresund_2d)
     assert ds.n_items == 4
     da = ds[0]
@@ -129,6 +129,10 @@ def test_dfsu_dataarray(hd_oresund_2d):
 
     mr.name = "Oresund2"
     assert mr.name == "Oresund2"
+
+    mr2 = ms.model_result(ds, name="Oresund", item="Surface elevation")
+    assert isinstance(mr2, ms.DfsuModelResult)
+    assert mr2.name == "Oresund"
 
 
 def test_dfsu_factory(hd_oresund_2d):
