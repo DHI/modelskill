@@ -1269,7 +1269,9 @@ class Comparer:
             return Comparer(matched_data=data)
 
         if data.gtype == "point":
-            raw_mod_data: Dict[str, PointModelResult | TrackModelResult] = {}
+            raw_mod_data: Dict[
+                str, PointModelResult | TrackModelResult | VerticalModelResult
+            ] = {}
 
             for var in data.data_vars:
                 var_name = str(var)
