@@ -64,6 +64,8 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
 
     if "gtype" not in ds.attrs:
         raise ValueError("data must have a gtype attribute")
+
+    # Validate gtype
     gtype = ds.attrs["gtype"]
     valid_gtypes = {
         str(GeometryType.POINT),
