@@ -44,6 +44,7 @@ from .obs import (
     observation,
     PointObservation,
     TrackObservation,
+    VerticalObservation,
 )
 from .matching import from_matched, match
 from .configuration import from_config
@@ -97,6 +98,7 @@ __all__ = [
     "observation",
     "PointObservation",
     "TrackObservation",
+    "VerticalObservation",
     "TimeSeries",
     "match",
     "from_matched",

@@ -1,10 +1,11 @@
 """
 # Observations
 
-ModelSkill supports two types of observations:
+ModelSkill supports three types of observations:
 
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
+* [`VerticalObservation`](`modelskill.VerticalObservation`) - a vertical profile from a dfs0/nc file or a DataFrame
 
 An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
@@ -16,12 +17,13 @@ import warnings
 import pandas as pd
 import xarray as xr
 
-from .types import PointType, TrackType, GeometryType, DataInputType
+from .types import PointType, TrackType, VerticalType, GeometryType, DataInputType
 from . import Quantity
 from .timeseries import (
     TimeSeries,
     _parse_xyz_point_input,
     _parse_track_input,
+    _parse_vertical_input,
 )
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
@@ -31,9 +33,9 @@ Serializable = Union[str, int, float]
 def observation(
     data: DataInputType,
     *,
-    gtype: Optional[Literal["point", "track"]] = None,
+    gtype: Optional[Literal["point", "track", "vertical"]] = None,
     **kwargs,
-) -> PointObservation | TrackObservation:
+) -> PointObservation | TrackObservation | VerticalObservation:
     """Create an appropriate observation object.
 
     A factory function for creating an appropriate observation object
@@ -41,19 +43,21 @@ def observation(
 
     If 'x' or 'y' is given, a PointObservation is created.
     If 'x_item' or 'y_item' is given, a TrackObservation is created.
+    If 'z_item' is given, a VerticalObservation is created.
+    If gtype is explicitly given, it will be used to determine the type of observation.
 
     Parameters
     ----------
     data : DataInputType
         The data to be used for creating the Observation object.
-    gtype : Optional[Literal["point", "track"]]
+    gtype : Optional[Literal["point", "track", "vertical"]], optional
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
         Additional keyword arguments to be passed to the Observation constructor.
 
     Returns
     -------
-    PointObservation or TrackObservation
+    PointObservation or TrackObservation or VerticalObservation
         An observation object of the appropriate type
 
     Examples
@@ -76,13 +80,16 @@ def observation(
 def _guess_gtype(**kwargs) -> GeometryType:
     """Guess geometry type from data"""
 
-    if "x" in kwargs and "y" in kwargs:
+    if "z_item" in kwargs:
+        return GeometryType.VERTICAL
+    elif "x" in kwargs and "y" in kwargs:
         return GeometryType.POINT
     elif "x_item" in kwargs or "y_item" in kwargs:
         return GeometryType.TRACK
     else:
         warnings.warn(
-            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation or TrackObservation to be explicit."
+            "Could not guess geometry type from data or args, assuming POINT geometry. "
+            "Use PointObservation, TrackObservation, or VerticalObservation to be explicit."
         )
         return GeometryType.POINT
 
@@ -340,6 +347,106 @@ class TrackObservation(Observation):
         super().__init__(data=data, weight=weight, attrs=attrs)
 
 
+class VerticalObservation(Observation):
+    """Class for observations of vertical profiles.
+
+    Create a VerticalObservation from a dfs0/nc file or tabular data
+    containing time, vertical coordinate, and observed values.
+
+    Parameters
+    ----------
+    data : (str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset)
+        Input data with vertical profile observations.
+    item : int or str, optional
+        Index or name of the primary observation item.
+        If the input contains more than one candidate value item,
+        this argument must be provided.
+    x : float, optional
+        x-coordinate of the observation location. If not provided,
+        it is inferred from data when possible.
+    y : float, optional
+        y-coordinate of the observation location. If not provided,
+        it is inferred from data when possible.
+    z_item : int or str, optional
+        Index or name of the vertical coordinate item, by default 0.
+    name : str, optional
+        User-defined name for identification in plots and summaries.
+    weight : float, optional
+        Weighting factor for skill scores, by default 1.0.
+    keep_duplicates : {"first", "last", False}, optional
+        Strategy for handling duplicate timestamps/z pairs.
+    quantity : Quantity, optional
+        Physical quantity metadata used for validation against model results.
+    aux_items : list[int | str], optional
+        List of auxiliary item names or indices to keep in the dataset.
+    attrs : dict, optional
+        Additional attributes to be added to the underlying dataset.
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> import pandas as pd
+    >>> df = pd.DataFrame(
+    ...     {
+    ...         "z": [0.0, -5.0, -10.0, 0.0, -5.0, -10.0],
+    ...         "value": [0.1, 0.3, 0.4, 0.5, 0.3, 0.3],
+    ...     },
+    ...     index=pd.to_datetime(
+    ...         [
+    ...             "2010-01-01 01:00:00",
+    ...             "2010-01-01 01:00:00",
+    ...             "2010-01-01 01:00:00",
+    ...             "2010-01-01 02:00:00",
+    ...             "2010-01-01 02:00:00",
+    ...             "2010-01-01 02:00:00",
+    ...         ]
+    ...     ),
+    ... )
+    >>> df.index.name = "t"
+    >>> print(df.to_string())
+                           z  value
+    t
+    2010-01-01 01:00:00   0.0    0.1
+    2010-01-01 01:00:00  -5.0    0.3
+    2010-01-01 01:00:00 -10.0    0.4
+    2010-01-01 02:00:00   0.0    0.5
+    2010-01-01 02:00:00  -5.0    0.3
+    2010-01-01 02:00:00 -10.0    0.3
+
+    >>> o = ms.VerticalObservation(df, item="value", z_item="z", x=12.0, y=55.0)
+    """
+
+    def __init__(
+        self,
+        data: VerticalType,
+        *,
+        item: Optional[int | str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+        z_item: Optional[int | str] = 0,
+        name: Optional[str] = None,
+        weight: float = 1.0,
+        keep_duplicates: Literal["first", "last", False] = "first",
+        quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
+        attrs: Optional[dict] = None,
+    ) -> None:
+        if not self._is_input_validated(data):
+            data = _parse_vertical_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                z_item=z_item,
+                x=x,
+                y=y,
+                keep_duplicates=keep_duplicates,
+            )
+        assert isinstance(data, xr.Dataset)
+        super().__init__(data=data, weight=weight, attrs=attrs)
+
+
 def unit_display_name(name: str) -> str:
     """Display name
 
@@ -364,4 +471,5 @@ def unit_display_name(name: str) -> str:
 _obs_class_lookup = {
     GeometryType.POINT: PointObservation,
     GeometryType.TRACK: TrackObservation,
+    GeometryType.VERTICAL: VerticalObservation,
 }

@@ -12,7 +12,7 @@ from ..types import GridType
 from ..quantity import Quantity
 from .point import PointModelResult
 from .track import TrackModelResult
-from ..obs import PointObservation, TrackObservation
+from ..obs import PointObservation, TrackObservation, VerticalObservation
 
 
 class GridModelResult(SpatialField):
@@ -124,7 +124,7 @@ class GridModelResult(SpatialField):
 
     def extract(
         self,
-        observation: PointObservation | TrackObservation,
+        observation: PointObservation | TrackObservation | VerticalObservation,
         spatial_method: Optional[str] = None,
     ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
@@ -144,6 +144,10 @@ class GridModelResult(SpatialField):
         PointModelResult or TrackModelResult
             extracted modelresult
         """
+        if isinstance(observation, VerticalObservation):
+            raise NotImplementedError(
+                "Extraction of VerticalObservation from GridModelResult is not implemented yet."
+            )
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
             return self._extract_point(observation, spatial_method)
