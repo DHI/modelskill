@@ -467,7 +467,9 @@ class Comparer:
     @staticmethod
     def from_matched_data(
         data: xr.Dataset | pd.DataFrame,
-        raw_mod_data: Optional[Dict[str, PointModelResult | TrackModelResult]] = None,
+        raw_mod_data: Optional[
+            Dict[str, PointModelResult | TrackModelResult | VerticalModelResult]
+        ] = None,
         obs_item: str | int | None = None,
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,
@@ -737,7 +739,9 @@ class Comparer:
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
-    def _to_model(self) -> list[PointModelResult | TrackModelResult]:
+    def _to_model(
+        self,
+    ) -> list[PointModelResult | TrackModelResult | VerticalModelResult]:
         mods = list(self.raw_mod_data.values())
         return mods
 
@@ -1258,6 +1262,10 @@ class Comparer:
             data = ds.load()
 
         if data.gtype == "track":
+            return Comparer(matched_data=data)
+
+        if data.gtype == "vertical":
+            # FIXME
             return Comparer(matched_data=data)
 
         if data.gtype == "point":
