@@ -126,7 +126,7 @@ def _parse_vertical_input(
             quantity = Quantity.from_mikeio_iteminfo(data[sel_items.values].item)
     model_quantity = Quantity.undefined() if quantity is None else quantity
 
-    # select relevant items and convert to xr.Dataset
+    # Convert to xr.Dataset and select relevant items and
     assert isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset))
     data = data[sel_items.all]
     if isinstance(data, mikeio.Dataset):
@@ -163,9 +163,7 @@ def _parse_vertical_input(
 
     # Fixed x,y location
     coords = XYZCoords(x=x, y=y, z=None)
-    ds = _include_location(ds, coords=coords)  # FIXME: Is this needed!
-    # ds.coords["x"] = float(2)
-    # ds.coords["y"] = float(2)
+    ds = _include_location(ds, coords=coords)  # Add x and y
 
     assert len(ds.data_vars) == 1 + len(sel_items.aux)
     data_var = str(list(ds.data_vars)[0])
