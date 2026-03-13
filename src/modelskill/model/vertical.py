@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Literal, Optional, Sequence
+from typing import Any, Literal, Optional, Sequence
 
 import numpy as np
 import xarray as xr
@@ -29,8 +29,10 @@ class VerticalModelResult(TimeSeries):
         must be given (as either an index or a string), by default None
     z_item : str | int | None, optional
         Item of the first coordinate of positions, by default None
-    y : FIXME
-    x : FIXME
+    x : float, optional
+        lateral coordinate of point position, inferred from data if not given, else None
+    y : float, optional
+        zonal coordinate of point position, inferred from data if not given, else None
     quantity : Quantity, optional
         Model quantity, for MIKE files this is inferred from the EUM information
     keep_duplicates : (str, bool), optional
@@ -71,6 +73,12 @@ class VerticalModelResult(TimeSeries):
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
+
+    # z coordinate not as property in TimeSeries. Add it here instead
+    @property
+    def z(self) -> Any:
+        """z-coordinate"""
+        return self._coordinate_values("z")
 
     def _match_to_nearest_times(
         self, obs_df, mod_df, tolerance=pd.Timedelta("30min")
