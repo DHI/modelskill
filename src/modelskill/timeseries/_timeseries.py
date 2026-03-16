@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from ..types import GeometryType
+from ..types import GeometryType, VariableKind
 from ..quantity import Quantity
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
 from .. import __version__
@@ -86,8 +86,8 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
             list(ds[v].dims)[0] == "time"
         ), f"All data arrays must have a time dimension; {v} has dimensions {ds[v].dims}"
         if "kind" not in ds[v].attrs:
-            ds[v].attrs["kind"] = "auxiliary"
-        if ds[v].attrs["kind"] in ["model", "observation"]:
+            ds[v].attrs["kind"] = VariableKind.AUXILIARY.value
+        if ds[v].attrs["kind"] in [VariableKind.MODEL.value, VariableKind.OBSERVATION.value]:
             n_primary += 1
             name = v
 
@@ -152,8 +152,8 @@ class TimeSeries:
         return [
             str(v)
             for v in self.data.data_vars
-            if self.data[v].attrs["kind"] == "model"
-            or self.data[v].attrs["kind"] == "observation"
+            if self.data[v].attrs["kind"] == VariableKind.MODEL.value
+            or self.data[v].attrs["kind"] == VariableKind.OBSERVATION.value
         ][0]
 
     @property
@@ -228,7 +228,7 @@ class TimeSeries:
 
     @property
     def _is_modelresult(self) -> bool:
-        return bool(self.data[self.name].attrs["kind"] == "model")
+        return bool(self.data[self.name].attrs["kind"] == VariableKind.MODEL.value)
 
     @property
     def values(self) -> np.ndarray:
@@ -242,7 +242,7 @@ class TimeSeries:
 
     @property
     def _aux_vars(self):
-        return list(self.data.filter_by_attrs(kind="aux").data_vars)
+        return list(self.data.filter_by_attrs(kind=VariableKind.AUXILIARY.value).data_vars)
 
     def __repr__(self) -> str:
         res = []
