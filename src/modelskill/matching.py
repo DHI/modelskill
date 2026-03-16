@@ -28,6 +28,7 @@ from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
+from .model.vertical import VerticalModelResult
 from .obs import Observation, PointObservation, TrackObservation, VerticalObservation
 from .timeseries import TimeSeries
 from .types import Period
@@ -40,6 +41,7 @@ MRTypes = Union[
     GridModelResult,
     DfsuModelResult,
     TrackModelResult,
+    VerticalModelResult,
     DummyModelResult,
 ]
 MRInputType = Union[
@@ -351,7 +353,9 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 def _match_space_time(
     observation: Observation,
-    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult],
+    raw_mod_data: Mapping[
+        str, PointModelResult | TrackModelResult | VerticalModelResult
+    ],
     max_model_gap: float | None,
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
@@ -375,6 +379,9 @@ def _match_space_time(
                 )
             case PointModelResult() as pmr, PointObservation():
                 aligned = pmr.align(observation, max_gap=max_model_gap)
+            case VerticalModelResult(), VerticalObservation():
+                raise NotImplementedError("Vertical matching not implemented yet!")
+                # aligned = vmr.align(observation, max_gap=max_model_gap)
             case _:
                 raise TypeError(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"

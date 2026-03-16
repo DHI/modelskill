@@ -70,6 +70,16 @@ def dfs0_ds(dfs0_fpath) -> mikeio.Dataset:
     return mikeio.read(dfs0_fpath)
 
 
+@pytest.fixture
+def dfsu_fpath() -> str:
+    return "tests/testdata/vertical/sigma_z_coast.dfsu"
+
+
+@pytest.fixture
+def dfsu_ds(dfsu_fpath) -> mikeio.Dataset:
+    return mikeio.read(dfsu_fpath)
+
+
 class TestVerticalModelResult:
     # ================
     # Test basic open for different formats
@@ -226,3 +236,87 @@ class TestVerticalModelResult:
         assert mr.equals(mr2)
         assert mr2.gtype == mr.gtype
         assert mr2.name == mr.name
+
+    # ================
+    # Test extract profile and align to obs profiles from dfsu
+    # ===============
+    def test_extract_from_dfsu(self, dfsu_ds):
+        dfsu_mr = ms.DfsuModelResult(dfsu_ds, item=0, name="test")
+        dummy_obs = pd.DataFrame(
+            {"z": [-5.0, -4.0, -3.0], "salt": [30.0, 31.0, 32.0]},
+            index=pd.to_datetime(["2022-06-14 00:00:00"] * 3),
+        )
+        XPOS = 6.575e5
+        YPOS = 6.55e6
+        vo = ms.VerticalObservation(dummy_obs, x=XPOS, y=YPOS, item="salt", z_item="z")
+        vmr = dfsu_mr.extract(vo, spatial_method="contained")
+
+        # approximate selected column coordinates from dfsu geometry
+        dfsu_col = dfsu_ds.sel(x=XPOS, y=YPOS)
+        x_mod_expected_close = dfsu_col.geometry.element_coordinates[0, 0]
+        y_mod_expected_close = dfsu_col.geometry.element_coordinates[0, 1]
+
+        assert isinstance(vmr, ms.VerticalModelResult)
+        assert vmr.gtype == "vertical"
+        assert vmr.name == "test"
+        assert vmr.n_points > 0
+        assert vmr.x == pytest.approx(x_mod_expected_close)
+        assert vmr.y == pytest.approx(y_mod_expected_close)
+
+    def test_extract_from_dfsu_correct_layers(self, dfsu_ds):
+        dfsu_mr = ms.DfsuModelResult(dfsu_ds, item=0, name="test")
+        dummy_obs = pd.DataFrame(
+            {"z": [-5.0, -4.0, -3.0], "salt": [30.0, 31.0, 32.0]},
+            index=pd.to_datetime(["2022-06-14 00:00:00"] * 3),
+        )
+        XPOS = 6.575e5
+        YPOS = 6.55e6
+        vo = ms.VerticalObservation(dummy_obs, x=XPOS, y=YPOS, item="salt", z_item="z")
+        vmr = dfsu_mr.extract(vo, spatial_method="contained")
+
+        # number layers at location from sel
+        dfsu_col = dfsu_ds.sel(x=XPOS, y=YPOS)
+        n_layers_expected = dfsu_col.geometry.n_layers
+
+        # number of layers in VerticalModelResult
+        ntimes = len(np.unique(vmr.data.time.values))
+        n_layers = int(len(vmr.data.z.values) / ntimes)
+
+        assert n_layers == n_layers_expected
+
+    @pytest.mark.parametrize("spatial_method", ["nearest", "inverse_distance"])
+    def test_extract_from_dfsu_unsupported_spatial_methods_raise(
+        self, dfsu_ds, spatial_method
+    ):
+        dfsu_mr = ms.DfsuModelResult(dfsu_ds, item=0, name="test")
+        dummy_obs = pd.DataFrame(
+            {"z": [-5.0, -4.0, -3.0], "salt": [30.0, 31.0, 32.0]},
+            index=pd.to_datetime(["2022-06-14 00:00:00"] * 3),
+        )
+        xpos = 6.575e5
+        ypos = 6.55e6
+        vo = ms.VerticalObservation(
+            dummy_obs,
+            x=xpos,
+            y=ypos,
+            item="salt",
+            z_item="z",
+        )
+
+        with pytest.raises(
+            NotImplementedError,
+            match="Only spatial_method='contained' is currently implemented",
+        ):
+            _ = dfsu_mr.extract(vo, spatial_method=spatial_method)
+
+    def test_extract_from_dfsu_obs_outside_domain(self, dfsu_ds):
+        dfsu_mr = ms.DfsuModelResult(dfsu_ds, item=0, name="test")
+        dummy_obs = pd.DataFrame(
+            {"z": [-5.0, -4.0, -3.0], "salt": [30.0, 31.0, 32.0]},
+            index=pd.to_datetime(["2022-06-14 00:00:00"] * 3),
+        )
+        XPOS = 1
+        YPOS = 1
+        vo = ms.VerticalObservation(dummy_obs, x=XPOS, y=YPOS, item="salt", z_item="z")
+        with pytest.raises(ValueError, match="outside model domain"):
+            _ = dfsu_mr.extract(vo, spatial_method="contained")
