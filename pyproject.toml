@@ -13,11 +13,11 @@ dependencies = [
     "numpy  > 1.24.4",
     "pandas >= 1.4, < 3.0", # TODO remove upper limit
     "mikeio >= 1.2",
-    "matplotlib",
-    "xarray",
-    "netCDF4",
-    "scipy",
-    "jinja2", # used for skill.style
+    "matplotlib >= 3.9.0",
+    "xarray >= 2023.1.0",
+    "netCDF4 >= 1.7.2",
+    "scipy >= 1.14.1",
+    "jinja2 >= 3.0.0", # used for skill.style
 ]
 
 authors = [
@@ -43,11 +43,11 @@ classifiers = [
 
 [dependency-groups]
 dev = [
-    "pytest",
+    "pytest >= 7.0.0",
     "plotly >= 4.5",
     "ruff==0.6.2",
     "netCDF4",
-    "dask",
+    "dask >= 2023.1.0",
 ]
 
 docs = [
@@ -57,13 +57,13 @@ docs = [
 ]
 
 test = [
-    "pytest",
-    "pytest-cov",
-    "openpyxl",
-    "dask",
+    "pytest >= 7.0.0",
+    "pytest-cov >= 4.0.0",
+    "openpyxl >= 3.1.0",
+    "dask >= 2023.1.0",
     "mypy==1.19.1",
-    "types-PyYAML",
-    "geopandas",
+    "types-PyYAML >= 6.0.12",
+    "geopandas >= 0.14.0",
 ]
 
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
