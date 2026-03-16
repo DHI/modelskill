@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Any, Iterable, overload, Hashable, TYPE_CHECKING
+from collections.abc import Collection
+from typing import Any, overload, Hashable, TYPE_CHECKING
 import xarray as xr
 
 if TYPE_CHECKING:
@@ -13,12 +14,12 @@ class SkillGridMixin:
     @property
     def x(self) -> xr.DataArray:
         """x-coordinate values"""
-        return self.data.x  # type: ignore
+        return self.data.x
 
     @property
     def y(self) -> xr.DataArray:
         """y-coordinate values"""
-        return self.data.y  # type: ignore
+        return self.data.y
 
     @property
     def coords(self) -> Any:
@@ -141,10 +142,10 @@ class SkillGrid(SkillGridMixin):
     def __getitem__(self, key: Hashable) -> SkillGridArray: ...
 
     @overload
-    def __getitem__(self, key: Iterable[Hashable]) -> SkillGrid: ...
+    def __getitem__(self, key: Collection[Hashable]) -> SkillGrid: ...
 
     def __getitem__(
-        self, key: Hashable | Iterable[Hashable]
+        self, key: Hashable | Collection[Hashable]
     ) -> SkillGridArray | SkillGrid:
         result = self.data[key]
         if isinstance(result, xr.DataArray):

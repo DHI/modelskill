@@ -97,7 +97,7 @@ class PlotlyTimeSeriesPlotter(TimeSeriesPlotter):
 
         Wraps plotly.express.line() function.
         """
-        import plotly.express as px  # type: ignore
+        import plotly.express as px
 
         fig = px.line(
             self._ts._values_as_series, color_discrete_sequence=[self._ts._color]
@@ -116,7 +116,7 @@ class PlotlyTimeSeriesPlotter(TimeSeriesPlotter):
         **kwargs
             other keyword arguments to df.hist()
         """
-        import plotly.express as px  # type: ignore
+        import plotly.express as px
 
         fig = px.histogram(
             self._ts._values_as_series,

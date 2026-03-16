@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     import matplotlib.axes
     from ._comparison import Comparer
 
-import numpy as np  # type: ignore
+import numpy as np
 
 from .. import metrics as mtr
 from ..utils import _get_idx
@@ -115,7 +115,7 @@ class ComparerPlotter:
             return ax
 
         elif backend == "plotly":  # pragma: no cover
-            import plotly.graph_objects as go  # type: ignore
+            import plotly.graph_objects as go
 
             mod_scatter_list = []
             for j in range(cmp.n_models):

@@ -222,7 +222,7 @@ def scatter(
         df = pd.DataFrame({"obs": x, "model": y})
         cmp = from_matched(df)
         metrics = None if skill_table is True else skill_table
-        skill = cmp.skill(metrics=metrics)
+        skill = cmp.skill(metrics=metrics)  # type: ignore[arg-type]
         skill_scores = skill.to_dict("records")[0]
 
     return PLOTTING_BACKENDS[backend](
