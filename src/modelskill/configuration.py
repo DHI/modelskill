@@ -66,13 +66,13 @@ def from_config(
     for name, data in conf["observations"].items():
         if data.pop("include", True):
             data["name"] = name
-            observations.append(_obs_from_dict(name, data, dirname, relative_path))
+            observations.append(_obs_from_dict(data, dirname, relative_path))
 
     return match(obs=observations, mod=modelresults)
 
 
 def _obs_from_dict(
-    name: str, obs_dict: dict, dirname: Path, relative_path: bool
+    obs_dict: dict, dirname: Path, relative_path: bool
 ) -> PointObservation | TrackObservation:
     fp = Path(obs_dict.pop("filename"))
     if relative_path:
