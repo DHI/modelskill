@@ -24,7 +24,6 @@ from copy import deepcopy
 from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
-from ..obs import PointObservation, TrackObservation
 from ..model import PointModelResult, TrackModelResult
 from ..timeseries._timeseries import _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
@@ -706,37 +705,6 @@ class Comparer:
                 raw_mod_data[k] = v
 
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
-
-    def _to_observation(self) -> PointObservation | TrackObservation:
-        """Convert to Observation"""
-        if self.gtype == "point":
-            df = self.data.drop_vars(["x", "y", "z"])[self._obs_str].to_dataframe()
-            return PointObservation(
-                data=df,
-                name=self.name,
-                x=self.x,
-                y=self.y,
-                z=self.z,
-                quantity=self.quantity,
-                # TODO: add attrs
-            )
-        elif self.gtype == "track":
-            df = self.data.drop_vars(["z"])[[self._obs_str]].to_dataframe()
-            return TrackObservation(
-                data=df,
-                item=0,
-                x_item=1,
-                y_item=2,
-                name=self.name,
-                quantity=self.quantity,
-                # TODO: add attrs
-            )
-        else:
-            raise NotImplementedError(f"Unknown gtype: {self.gtype}")
-
-    def _to_model(self) -> list[PointModelResult | TrackModelResult]:
-        mods = list(self.raw_mod_data.values())
-        return mods
 
     def __add__(self, other):
         warnings.warn(
