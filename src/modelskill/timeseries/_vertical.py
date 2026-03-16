@@ -163,9 +163,7 @@ def _parse_vertical_input(
 
     # Fixed x,y location
     coords = XYZCoords(x=x, y=y, z=None)
-    ds = _include_location(ds, coords=coords)  # FIXME: Is this needed!
-    # ds.coords["x"] = float(2)
-    # ds.coords["y"] = float(2)
+    ds = _include_location(ds, coords=coords)  # Add x,y to coords
 
     assert len(ds.data_vars) == 1 + len(sel_items.aux)
     data_var = str(list(ds.data_vars)[0])
