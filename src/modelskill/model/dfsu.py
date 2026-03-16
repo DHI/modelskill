@@ -143,7 +143,7 @@ class DfsuModelResult(SpatialField):
         elif isinstance(observation, TrackObservation):
             return self._extract_track(observation, spatial_method=method)
         elif isinstance(observation, VerticalObservation):
-            return self._extract_vertical_column(observation)
+            return self._extract_vertical_column(observation, spatial_method=method)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
@@ -180,11 +180,6 @@ class DfsuModelResult(SpatialField):
 
         method = spatial_method or "contained"
 
-        if method != "contained":
-            raise NotImplementedError(
-                "Only spatial_method='contained' is currently implemented for vertical profile extraction from DfsuModelResult. "
-            )
-
         # Check if 3D for dfsu and dataset
         if not hasattr(self.data, "n_layers") and not hasattr(
             self.data.geometry, "n_layers"
@@ -195,11 +190,15 @@ class DfsuModelResult(SpatialField):
             if isinstance(self.data, mikeio.Dataset):
                 ds_column = self.data.sel(x=observation.x, y=observation.y)
             elif isinstance(self.data, mikeio.dfsu.Dfsu3D):
-                # FIXME: open with specific element instead...bug fixed in mikeio should make read.sel unnecessary
+                # FIXME: open with specific element instead...make sure mikeio fix is in place before
                 # ds_column = self.data.read(elements=elemids) # when bug is fixed in mikeio
                 ds_column = self.data.read(items=self.sel_items.all).sel(
                     x=observation.x, y=observation.y
                 )
+        else:
+            raise NotImplementedError(
+                "Only spatial_method='contained' is currently implemented for vertical profile extraction from DfsuModelResult. "
+            )
 
         # get layer depth info
         layer_boundaries = ds_column.geometry.calc_ze(ds_column._zn)

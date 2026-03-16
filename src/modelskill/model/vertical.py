@@ -80,15 +80,16 @@ class VerticalModelResult(TimeSeries):
         """z-coordinate"""
         return self._coordinate_values("z")
 
+    # TODO: PHASE 3
     def _match_to_nearest_times(
-        self, obs_df, mod_df, tolerance=pd.Timedelta("30min")
+        self, obs_df, mod_df, max_gap: pd.Timedelta | None = pd.Timedelta("30min")
     ) -> pd.DataFrame:
         obs_times = obs_df.index.unique().sort_values()
         mod_times_unique = mod_df.index.unique().sort_values()
 
         # get_indexer requires a unique, monotonic index - work on unique times first
         idx = mod_times_unique.get_indexer(
-            obs_times, method="nearest", tolerance=tolerance
+            obs_times, method="nearest", tolerance=max_gap
         )
         valid = idx != -1
 
@@ -100,7 +101,14 @@ class VerticalModelResult(TimeSeries):
         )
 
     def _interpolate_to_obs_depths(
-        self, obs_df, mod_df, obs_times_valid, matched_mod_times
+        self,
+        obs_df,
+        mod_df,
+        obs_times_valid,
+        matched_mod_times,
+        *,
+        obs_value_col: str,
+        mod_value_col: str,
     ) -> pd.DataFrame:
         records = []
 
@@ -108,26 +116,56 @@ class VerticalModelResult(TimeSeries):
             obs_at_t = obs_df.loc[[obs_t]].sort_values("z")
             mod_at_t = mod_df.loc[[mod_t]].sort_values("z")
 
-            obs_z = obs_at_t["z"].values.astype(float)
-            obs_val = obs_at_t["salt"].values.astype(float)
-            mod_z = mod_at_t["z"].values.astype(float)
-            mod_sal = mod_at_t["Salinity"].values.astype(float)
+            obs_z = obs_at_t["z"].to_numpy(dtype=float)
+            obs_values = obs_at_t[obs_value_col].to_numpy(dtype=float)
+            mod_z = mod_at_t["z"].to_numpy(dtype=float)
+            mod_values = mod_at_t[mod_value_col].to_numpy(dtype=float)
 
-            # Restrict to obs points within the model's z range
+            if mod_z.size < 2:
+                continue
+
+            valid_mod = np.isfinite(mod_z) & np.isfinite(mod_values)
+            if not np.any(valid_mod):
+                continue
+            mod_z = mod_z[valid_mod]
+            mod_values = mod_values[valid_mod]
+
+            # np.interp requires monotonic x-values and behaves poorly on duplicates.
+            # Keep first occurrence for duplicate depths.
+            _, unique_idx = np.unique(mod_z, return_index=True)
+            unique_idx = np.sort(unique_idx)
+            mod_z = mod_z[unique_idx]
+            mod_values = mod_values[unique_idx]
+
+            if mod_z.size < 2:
+                continue
+
             z_lo, z_hi = mod_z.min(), mod_z.max()
-            isin = (obs_z >= z_lo) & (obs_z <= z_hi)
+            in_range = (
+                np.isfinite(obs_z)
+                & np.isfinite(obs_values)
+                & (obs_z >= z_lo)
+                & (obs_z <= z_hi)
+            )
 
-            # Linear interpolation of model to obs z levels
-            mod_interp = np.interp(obs_z[isin], mod_z, mod_sal)
+            if not np.any(in_range):
+                continue
 
-            for z, obs_v, mod_v in zip(obs_z[isin], obs_val[isin], mod_interp):
+            mod_interp = np.interp(obs_z[in_range], mod_z, mod_values)
+            for z, obs_v, mod_v in zip(
+                obs_z[in_range], obs_values[in_range], mod_interp
+            ):
                 records.append({"time": obs_t, "z": z, "obs": obs_v, "mod": mod_v})
+
+        if not records:
+            return pd.DataFrame(
+                columns=["z", "obs", "mod"], index=pd.Index([], name="time")
+            )
 
         return pd.DataFrame(records).set_index("time")
 
-    def align_to_obs_profiles(
-        self, observation: VerticalObservation, *, spatial_tolerance: float
-    ) -> xr.Dataset:
+    def align_to_obs_profiles(self, observation: VerticalObservation) -> xr.Dataset:
+        # In future, support contained in z as well. For now, just vertical interpolation
         _match_to_nearest_times = self._match_to_nearest_times(
             observation.data[["z"]].to_dataframe(), self.data[["z"]].to_dataframe()
         )
@@ -138,6 +176,8 @@ class VerticalModelResult(TimeSeries):
             self.data.to_dataframe(),
             _match_to_nearest_times["obs_time"],
             _match_to_nearest_times["mod_time"],
+            obs_value_col=observation.name,
+            mod_value_col=self.name,
         )
 
         return pairs.reset_index().set_index(["time", "z"]).to_xarray()
