@@ -14,13 +14,34 @@ The typical workflow is:
 Network  →  NetworkModelResult  →  match()  →  Comparer
 ```
 
+## Installation
+
+Network support depends on `networkx` and `mikeio1d`, which are **not** installed
+by default. Install them alongside modelskill using the `networks` extra:
+
+::: {.panel-tabset}
+
+## pip
+
+```bash
+pip install modelskill[networks]
+```
+
+## uv
+
+```bash
+uv sync --group networks
+```
+
+:::
+
 ## Loading from a Res1D file
 
 The quickest way to get a `Network` is from a MIKE 1D result file:
 
 ```{python}
 #| eval: false
-from modelskill.model.network import Network
+from modelskill.network import Network
 
 network = Network.from_res1d("model.res1d")
 network
@@ -31,7 +52,7 @@ An already-opened `mikeio1d.Res1D` object is also accepted:
 ```{python}
 #| eval: false
 from mikeio1d import Res1D
-from modelskill.model.network import Network
+from modelskill.network import Network
 
 res = Res1D("model.res1d")
 network = Network.from_res1d(res)
@@ -52,7 +73,7 @@ This is the recommended approach when integrating your own data source.
 import pandas as pd
 import numpy as np
 from typing import Any
-from modelskill.model.network import NetworkNode, NetworkEdge, Network
+from modelskill.network import NetworkNode, NetworkEdge, Network
 
 
 class DfNode(NetworkNode):
@@ -116,7 +137,7 @@ are `id`, `data` and `boundary`. If `boundary` is not relevant for your use case
 
 
 ```{python}
-from modelskill.model.network import Network
+from modelskill.network import Network
 
 # Synthetic model output covering the observation period
 model_time = pd.date_range("1994-08-07 16:00", periods=180, freq="1min")
@@ -140,7 +161,7 @@ cross-sections).  Subclass `EdgeBreakPoint` the same way — implement `id`
 (a `(edge_id, distance)` tuple) and `data`:
 
 ```{python}
-from modelskill.model.network import EdgeBreakPoint
+from modelskill.network import EdgeBreakPoint
 
 bp_time = pd.date_range("1994-08-07 16:00", periods=180, freq="1min")
 
@@ -235,7 +256,7 @@ print(ids)
 
 ```{python}
 import modelskill as ms
-from modelskill.model.network import NetworkModelResult
+from modelskill.network import NetworkModelResult
 
 mr = NetworkModelResult(network, name="MyModel", item="WaterLevel")
 mr
