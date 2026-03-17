@@ -35,29 +35,11 @@ The typical workflow is:
 Network  →  NetworkModelResult  →  match()  →  Comparer
 ```
 
-## Loading from a Res1D file
+## Building a Network
 
-The quickest way to get a `Network` is from the path to a MIKE 1D result file:
+You can build a `Network` object by loading it from a supported network format, which is covered in a dedicated section below.
 
-```{python}
-from modelskill.network import Network
-
-network = Network.from_res1d("model.res1d")
-```
-
-or a `mikeio1d.Res1D` that has already been opened:
-
-```{python}
-from mikeio1d import Res1D
-
-res = Res1D("model.res1d")
-network = Network.from_res1d(res)
-```
-
-## Building a Network programmatically
-
-When your data comes from a source other than a Res1D file, you can assemble a `Network` by subclassing the abstract base classes `NetworkNode` and `NetworkEdge`.
-This is the recommended approach when integrating your own data source.
+Alternatively, a `Network` can be assembled by subclassing the abstract base classes `NetworkNode` and `NetworkEdge`. This is the recommended approach when integrating your own data source.
 
 ### Subclassing the abstract base classes
 
@@ -134,7 +116,7 @@ The three abstract properties that **every** `NetworkNode` subclass must impleme
 ```{python}
 # | echo: false
 
-# Synthetic model outputcovering the observation period
+# Synthetic model output covering the observation period
 model_time = pd.date_range("1994-08-07 16:00", periods=180, freq="1min")
 t = np.linspace(0, 2 * np.pi, len(model_time))
 
@@ -247,6 +229,31 @@ print(network.recall(bp_id))
 ids = network.find(edge="r1", distance=[200.0, "start", "end"])
 print(ids)
 ```
+
+## Loading from a standard format
+
+Currently, the only supported format is `mikeio.Res1D`.
+
+### Res1D file
+
+The quickest way to get a `Network` is from the path to a MIKE 1D result file:
+
+```{python}
+from modelskill.network import Network
+
+network = Network.from_res1d("model.res1d")
+```
+
+or a `mikeio1d.Res1D` that has already been opened:
+
+```{python}
+from mikeio1d import Res1D
+
+res = Res1D("model.res1d")
+network = Network.from_res1d(res)
+```
+
+![How a Res1D file maps to a Network object. Reaches and nodes are re-indexed as integers; boundary nodes expose `find()`/`recall()` round-trip lookups.](../images/res1d_network_mapping.png)
 
 ## Skill assessment workflow
 
