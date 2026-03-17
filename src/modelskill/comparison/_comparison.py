@@ -499,6 +499,8 @@ class Comparer:
                 quantity=quantity,
             )
             data.attrs["weight"] = weight
+
+            # FIXME: Consider changes needed for vertical
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
     def __repr__(self):
@@ -1228,6 +1230,8 @@ class Comparer:
         """
         ds = self.data
 
+        # FIXME: Consider changes needed for vertical
+
         # add self.raw_mod_data to ds with prefix 'raw_' to avoid name conflicts
         # an alternative strategy would be to use NetCDF groups
         # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
@@ -1265,7 +1269,8 @@ class Comparer:
             return Comparer(matched_data=data)
 
         if data.gtype == "vertical":
-            return Comparer(matched_data=data)  # FIXME: consider during Phase3
+            # FIXME: consider during Phase3
+            return Comparer(matched_data=data)
 
         if data.gtype == "point":
             raw_mod_data: Dict[

@@ -6,6 +6,7 @@ import xarray as xr
 from ..types import VerticalType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_vertical_input
+from ..obs import VerticalObservation
 
 
 class VerticalModelResult(TimeSeries):
@@ -75,3 +76,15 @@ class VerticalModelResult(TimeSeries):
     def z(self) -> Any:
         """z-coordinate"""
         return self._coordinate_values("z")
+
+    def align(self, vo: VerticalObservation) -> None:  # xr.Dataset
+        """Align model result and observation to common z levels and time"""
+
+        # 1. Align model to obs times using neareast or interpolation.
+        #   Interpolation might be tricky due to changing depth levels, but nearest should be straightforward.
+
+        # 2. Align model to obs z levels using interpolation. This should be straightforward
+
+        # OPTION:
+        # Use bilinear intepolaation of z and depth to align model to obs.
+        pass
