@@ -199,6 +199,10 @@ class TestVerticalModelResult:
         assert mr2.gtype == mr.gtype
         assert mr2.name == mr.name
 
+        # Check that changing name of original does not change roundtripped
+        mr.name = "changed_name"
+        assert mr2.name == "salt_model"
+
     # ================
     # Test extract profile and align to obs profiles from dfsu
     # ===============
