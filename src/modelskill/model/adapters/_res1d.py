@@ -7,7 +7,7 @@ import pandas as pd
 if TYPE_CHECKING:
     from mikeio1d.result_network import ResultNode, ResultGridPoint, ResultReach
 
-from ..network import NetworkNode, EdgeBreakPoint, NetworkEdge
+from modelskill.network import NetworkNode, EdgeBreakPoint, NetworkEdge
 
 
 def _simplify_res1d_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
