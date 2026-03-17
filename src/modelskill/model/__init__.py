@@ -18,6 +18,7 @@ A model result can be created by explicitly invoking one of the above classes or
 from .factory import model_result
 from .point import PointModelResult
 from .track import TrackModelResult
+from .vertical import VerticalModelResult
 from .dfsu import DfsuModelResult
 from .grid import GridModelResult
 from .dummy import DummyModelResult
@@ -25,6 +26,7 @@ from .dummy import DummyModelResult
 __all__ = [
     "PointModelResult",
     "TrackModelResult",
+    "VerticalModelResult",
     "DfsuModelResult",
     "GridModelResult",
     "model_result",

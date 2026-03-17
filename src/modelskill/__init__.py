@@ -36,6 +36,7 @@ from .model import model_result
 from .model import (
     PointModelResult,
     TrackModelResult,
+    VerticalModelResult,
     GridModelResult,
     DfsuModelResult,
     DummyModelResult,
@@ -92,6 +93,7 @@ __all__ = [
     "model_result",
     "PointModelResult",
     "TrackModelResult",
+    "VerticalModelResult",
     "GridModelResult",
     "DfsuModelResult",
     "DummyModelResult",

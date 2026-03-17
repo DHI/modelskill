@@ -13,7 +13,8 @@ from ..quantity import Quantity
 from ..utils import _get_idx
 from .point import PointModelResult
 from .track import TrackModelResult
-from ..obs import Observation, PointObservation, TrackObservation
+from .vertical import VerticalModelResult
+from ..obs import Observation, PointObservation, TrackObservation, VerticalObservation
 
 
 class DfsuModelResult(SpatialField):
@@ -73,7 +74,9 @@ class DfsuModelResult(SpatialField):
             item = data.name
             self.sel_items = SelectedItems(values=data.name, aux=[])
             data = mikeio.Dataset({data.name: data})
-        elif isinstance(data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D)):
+        elif isinstance(
+            data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D, mikeio.Dataset)
+        ):
             item_names = [i.name for i in data.items]
             idx = _get_idx(x=item, valid_names=item_names)
             item_info = data.items[idx]
@@ -113,14 +116,14 @@ class DfsuModelResult(SpatialField):
 
     def extract(
         self, observation: Observation, spatial_method: Optional[str] = None
-    ) -> PointModelResult | TrackModelResult:
+    ) -> PointModelResult | TrackModelResult | VerticalModelResult:
         """Extract ModelResult at observation positions
 
         Note: this method is typically not called directly, but by the match() method.
 
         Parameters
         ----------
-        observation : <PointObservation> or <TrackObservation>
+        observation : <PointObservation>, <TrackObservation>, or <VerticalObservation>
             positions (and times) at which modelresult should be extracted
         spatial_method : Optional[str], optional
             spatial selection/interpolation method, 'contained' (=isel),
@@ -129,7 +132,7 @@ class DfsuModelResult(SpatialField):
 
         Returns
         -------
-        PointModelResult or TrackModelResult
+        PointModelResult, TrackModelResult, or VerticalModelResult
             extracted modelresult with the same geometry as the observation
         """
         method = self._parse_spatial_method(spatial_method)
@@ -139,6 +142,8 @@ class DfsuModelResult(SpatialField):
             return self._extract_point(observation, spatial_method=method)
         elif isinstance(observation, TrackObservation):
             return self._extract_track(observation, spatial_method=method)
+        elif isinstance(observation, VerticalObservation):
+            return self._extract_vertical(observation, spatial_method=method)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
@@ -161,6 +166,76 @@ class DfsuModelResult(SpatialField):
             )
         else:
             return METHOD_MAP[method]
+
+    def _extract_vertical(
+        self,
+        observation: VerticalObservation,
+        spatial_method: Optional[str] = None,
+    ) -> VerticalModelResult:
+        x, y = observation.x, observation.y
+
+        if not self._in_domain(x, y):
+            raise ValueError(
+                f"PointObservation '{observation.name}' (x={x}, y={y}) outside model domain!"
+            )
+
+        elemids = self.data.geometry.find_index(x=x, y=y)
+        if len(elemids) == 0:
+            raise ValueError(f"No elements found at observation location ({x}, {y})")
+
+        method = spatial_method or "contained"
+
+        # Check if 3D for dfsu and dataset
+        if not hasattr(self.data, "n_layers") and not hasattr(
+            self.data.geometry, "n_layers"
+        ):
+            raise ValueError("Cannot extract vertical profile from 2D dfsu file.")
+
+        if method == "contained":
+            if isinstance(self.data, mikeio.Dataset):
+                ds_column = self.data.sel(x=x, y=y)
+            elif isinstance(self.data, mikeio.dfsu.Dfsu3D):
+                # FIXME: open with specific element instead...make sure mikeio fix is in place before
+                # ds_column = self.data.read(elements=elemids) # when bug is fixed in mikeio
+                ds_column = self.data.read(items=self.sel_items.all).sel(x=x, y=y)
+            else:
+                raise ValueError(
+                    "Unsupported data type for vertical profile extraction."
+                )
+        else:
+            raise NotImplementedError(
+                "Only spatial_method='contained' is currently implemented for vertical profile extraction from DfsuModelResult. "
+            )
+
+        # get layer depth info
+        layer_boundaries = ds_column.geometry.calc_ze(ds_column._zn)
+
+        item_name = self.sel_items.values
+
+        # Flatten ds_column (time, layers) to 1D format for ProfileModelResult
+        # Need to repeat time for each layer and flatten z and values
+        n_layers = ds_column.geometry.n_layers
+
+        # Create flattened arrays # Repeat each timestamp n_layers times
+        time_flat = np.repeat(ds_column.time, n_layers)
+        z_flat = layer_boundaries.flatten()  # Flatten z-coordinates
+        item_values_1d = ds_column[item_name].to_numpy().flatten()  # Flatten item?
+        # aux_items_flat = {aux_item: ds_column[aux_item].to_numpy().flatten() for aux_item in self.sel_items.aux}
+
+        # Create DataFrame in long format
+        df = pd.DataFrame({"time": time_flat, "z": z_flat, self.name: item_values_1d})
+        # Set time as index for ProfileModelResult parsing
+        df = df.set_index("time")
+        return VerticalModelResult(
+            data=df,
+            item=self.name,
+            z_item="z",
+            x=ds_column.geometry.element_coordinates[0, 0],
+            y=ds_column.geometry.element_coordinates[0, 1],
+            name=self.name,
+            quantity=self.quantity,
+            aux_items=self.sel_items.aux,
+        )
 
     def _extract_point(
         self, observation: PointObservation, spatial_method: Optional[str] = None
