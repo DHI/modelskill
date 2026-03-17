@@ -84,30 +84,12 @@ class TestVerticalModelResult:
     # ================
     # Test basic open for different formats
     # ================
-    # dataframe input
-    def test_vertical_model_result_from_dataframe(self, vertical_model_df):
-        mr = ms.VerticalModelResult(
-            vertical_model_df,
-            item="Salinity",
-            z_item="z",
-            x=12.0,
-            y=55.0,
-            name="test",
-        )
-
-        assert isinstance(mr, ms.VerticalModelResult)
-        assert mr.gtype == "vertical"
-        assert mr.name == "test"
-        assert mr.x == pytest.approx(12.0)
-        assert mr.y == pytest.approx(55.0)
-        assert mr.n_points == len(vertical_model_df)
-        assert mr.data[mr.name].attrs["kind"] == "model"
-
-    # dfs0 dataset path input
-    def test_vertical_model_result_from_dfs0_path(self, dfs0_fpath):
-        mr = ms.VerticalModelResult(
-            dfs0_fpath, z_item="z", item="Salinity", name="test"
-        )
+    @pytest.mark.parametrize(
+        "input_fixture", ["vertical_model_df", "dfs0_ds", "dfs0_fpath"]
+    )
+    def test_open_and_parse(self, request, input_fixture):
+        input = request.getfixturevalue(input_fixture)
+        mr = ms.VerticalModelResult(input, z_item="z", item="Salinity", name="test")
 
         assert isinstance(mr, ms.VerticalModelResult)
         assert mr.gtype == "vertical"
@@ -119,28 +101,8 @@ class TestVerticalModelResult:
 
         # with x, y
         mr = ms.VerticalModelResult(
-            dfs0_fpath, z_item="z", item="Salinity", name="test", x=12.0, y=55.0
+            input, z_item="z", item="Salinity", name="test", x=12.0, y=55.0
         )
-        assert isinstance(mr, ms.VerticalModelResult)
-        assert mr.gtype == "vertical"
-        assert mr.name == "test"
-        assert mr.n_points > 0
-        assert mr.x == pytest.approx(12.0)
-        assert mr.y == pytest.approx(55.0)
-
-    # dfs0 dataset path input
-    def test_vertical_model_result_from_dfs0_dataset(self, dfs0_ds):
-        mr = ms.VerticalModelResult(dfs0_ds, name="test")
-
-        assert isinstance(mr, ms.VerticalModelResult)
-        assert mr.gtype == "vertical"
-        assert mr.name == "test"
-        assert mr.n_points > 0
-        assert not np.isnan(mr.z).any()
-        assert np.isnan(mr.x)
-        assert np.isnan(mr.y)
-        # with x, y
-        mr = ms.VerticalModelResult(dfs0_ds, name="test", x=12.0, y=55.0)
         assert isinstance(mr, ms.VerticalModelResult)
         assert mr.gtype == "vertical"
         assert mr.name == "test"
