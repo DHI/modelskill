@@ -250,6 +250,21 @@ class TestVerticalModelResult:
 
         assert n_layers == n_layers_expected
 
+        # ===
+        # Also check values
+        # ===
+
+        # expected element depths from dfsu geometry
+        element_depths_expected = dfsu_col.geometry.calc_ze(dfsu_col._zn)
+
+        # element depths at first timestep from VerticalModelResult
+        element_depths_t0 = vmr.data.sel(time=vmr.data.time.values[0]).z.values
+        # element depths at last timestep from VerticalModelResult
+        element_depths_tend = vmr.data.sel(time=vmr.data.time.values[-1]).z.values
+
+        assert np.allclose(element_depths_t0, element_depths_expected[0, :])
+        assert np.allclose(element_depths_tend, element_depths_expected[-1, :])
+
     @pytest.mark.parametrize("spatial_method", ["nearest", "inverse_distance"])
     def test_extract_from_dfsu_unsupported_spatial_methods_raise(
         self, dfsu_ds, spatial_method
