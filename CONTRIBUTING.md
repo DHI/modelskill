@@ -18,6 +18,15 @@
    ```
 6. Make a pull request with a clear summary of the changes
 
+## Building documentation locally
+
+To build the docs locally, install [Quarto](https://quarto.org/docs/get-started/) (version is specified in the [CI workflow](.github/workflows/docs.yml)), then:
+
+```bash
+uv sync --group docs
+make docs
+```
+
 ## Running specific tests
 
 ```bash
