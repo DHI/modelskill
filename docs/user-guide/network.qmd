@@ -164,10 +164,10 @@ res = Res1D(path_to_res1d)
 network = Network.from_res1d(res)
 ```
 
+A `Res1D` network contains multiple levels that are unified into a generic network structure as depicted in the image below. The image introduces concepts like _find_, _recall_ and _boundary_ which are explained in the following sections.
+
 ![How a Res1D file maps to a Network object. Reaches and nodes are re-indexed as integers; boundary nodes expose `find()`/`recall()` round-trip lookups.](../images/res1d_network_mapping.png)
 
-
-Alternatively, a `Network` can be assembled by subclassing the abstract base classes `NetworkNode` and `NetworkEdge`. This is the recommended approach when integrating your own data source.
 
 ## Inspecting the Network
 
