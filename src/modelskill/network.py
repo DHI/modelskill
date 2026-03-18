@@ -24,13 +24,6 @@ import xarray as xr
 if TYPE_CHECKING:
     from mikeio1d import Res1D
 
-from modelskill.model.network import NodeModelResult, NetworkModelResult
-
-__all__ = [
-    "NodeModelResult",
-    "NetworkModelResult",
-]
-
 
 class NetworkNode(ABC):
     """Abstract base class for a node in a network.
@@ -49,21 +42,6 @@ class NetworkNode(ABC):
     The concrete helper :class:`BasicNode` is provided for the common case
     where the data is already available as a DataFrame.
 
-    Examples
-    --------
-    Minimal subclass backed by a CSV file:
-
-    >>> class CsvNode(NetworkNode):
-    ...     def __init__(self, node_id, csv_path):
-    ...         self._id = node_id
-    ...         self._data = pd.read_csv(csv_path, index_col=0, parse_dates=True)
-    ...     @property
-    ...     def id(self): return self._id
-    ...     @property
-    ...     def data(self): return self._data
-    ...     @property
-    ...     def boundary(self): return {}
-
     See Also
     --------
     BasicNode : Ready-to-use concrete implementation.
@@ -75,19 +53,19 @@ class NetworkNode(ABC):
     @abstractmethod
     def id(self) -> str:
         """Unique string identifier for this node."""
-        ...
+        pass
 
     @property
     @abstractmethod
     def data(self) -> pd.DataFrame:
         """Time-indexed DataFrame with one column per quantity."""
-        ...
+        pass
 
     @property
     @abstractmethod
     def boundary(self) -> dict[str, Any]:
         """Boundary-condition metadata dict (may be empty)."""
-        ...
+        pass
 
     @property
     def quantities(self) -> list[str]:
@@ -136,13 +114,13 @@ class EdgeBreakPoint(ABC):
     @abstractmethod
     def id(self) -> tuple[str, float]:
         """``(edge_id, distance)`` tuple uniquely identifying this break point."""
-        ...
+        pass
 
     @property
     @abstractmethod
     def data(self) -> pd.DataFrame:
         """Time-indexed DataFrame with one column per quantity."""
-        ...
+        pass
 
     @property
     def distance(self) -> float:
@@ -210,31 +188,31 @@ class NetworkEdge(ABC):
     @abstractmethod
     def id(self) -> str:
         """Unique string identifier for this edge."""
-        ...
+        pass
 
     @property
     @abstractmethod
     def start(self) -> NetworkNode:
         """Start (upstream) node of this edge."""
-        ...
+        pass
 
     @property
     @abstractmethod
     def end(self) -> NetworkNode:
         """End (downstream) node of this edge."""
-        ...
+        pass
 
     @property
     @abstractmethod
     def length(self) -> float:
         """Total length of this edge in network units."""
-        ...
+        pass
 
     @property
     @abstractmethod
     def breakpoints(self) -> list[EdgeBreakPoint]:
         """Ordered list of intermediate :class:`EdgeBreakPoint` objects (may be empty)."""
-        ...
+        pass
 
     @property
     def n_breakpoints(self) -> int:
