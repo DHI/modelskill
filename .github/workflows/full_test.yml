@@ -28,7 +28,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --group test --no-dev
+        run: uv sync --group test --group networks --no-dev
 
       - name: Type check
         run: make typecheck
