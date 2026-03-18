@@ -10,21 +10,16 @@ jupyter: python3
 Network support depends on libraries that are **not** installed
 by default, e.g. `networkx`. You can install them alongside `modelskill` using the _networks_ extra:
 
-::: {.panel-tabset}
-
-## uv
-
 ```bash
-uv sync --group networks
+uv pip install modelskill[networks]
 ```
 
-## pip
+or 
 
 ```bash
-pip install modelskill[networks]
+uv add modelskill[networks]
 ```
 
-:::
 :::
 
 A **Network** represents a 1D pipe or river network as a directed graph: nodes hold timeseries data (e.g. water level at a junction) and edges carry the topology and reach length between them.  Break points along an edge (e.g. cross-section chainages) are supported as observation locations too.
@@ -238,7 +233,7 @@ Currently, the only supported format is `mikeio.Res1D`.
 
 The quickest way to get a `Network` is from the path to a MIKE 1D result file:
 
-```{python}
+```python
 from modelskill.network import Network
 
 network = Network.from_res1d("model.res1d")
@@ -246,7 +241,7 @@ network = Network.from_res1d("model.res1d")
 
 or a `mikeio1d.Res1D` that has already been opened:
 
-```{python}
+```python
 from mikeio1d import Res1D
 
 res = Res1D("model.res1d")
@@ -261,7 +256,7 @@ network = Network.from_res1d(res)
 
 ```{python}
 import modelskill as ms
-from modelskill.network import NetworkModelResult
+from modelskill.model.network import NetworkModelResult
 
 mr = NetworkModelResult(network, name="MyModel", item="WaterLevel")
 mr
@@ -272,8 +267,15 @@ mr
 `NodeObservation` accepts a file path directly; the observation name is taken from the filename.
 
 ```{python}
-obs_1 = ms.NodeObservation("../../tests/testdata/network_sensor_1.csv", node=network.find(node="sensor_1"))
-obs_2 = ms.NodeObservation("../../tests/testdata/network_sensor_2.csv", node=network.find(node="sensor_2"))
+# | echo: false
+
+path_to_sensor_data_1 = "../../tests/testdata/network_sensor_1.csv"
+path_to_sensor_data_2 = "../../tests/testdata/network_sensor_2.csv"
+```
+
+```{python}
+obs_1 = ms.NodeObservation(path_to_sensor_data_1, node=network.find(node="sensor_1"))
+obs_2 = ms.NodeObservation(path_to_sensor_data_2, node=network.find(node="sensor_2"))
 
 cc = ms.match(obs=[obs_1, obs_2], mod=mr)
 cc.skill()
