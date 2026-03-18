@@ -174,7 +174,7 @@ A `Res1D` network contains multiple levels that are unified into a generic netwo
 ### Available quantities
 
 ```{python}
-print(network.quantities)
+network.quantities
 ```
 
 ### Underlying graph
