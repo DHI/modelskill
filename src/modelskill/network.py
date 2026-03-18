@@ -327,6 +327,17 @@ class Network:
         self._alias_map = self._initialize_alias_map()
         self._df = self._build_dataframe()
 
+    def __repr__(self) -> str:
+        time = self._df.index
+        out = [
+            "<Network>",
+            f"Edges: {len(self._edges)}",
+            f"Nodes: {self._graph.number_of_nodes()}",
+            f"Quantities: {self.quantities}",
+            f"Time: {time[0]} - {time[-1]}",
+        ]
+        return "\n".join(out)
+
     @classmethod
     def from_res1d(cls, res: str | Path | Res1D) -> Network:
         """Create a Network from a Res1D file or object.
