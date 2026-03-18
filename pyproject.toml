@@ -52,6 +52,9 @@ dev = [
 
 docs = [
     "quartodoc==0.11.1",
+    "nbformat",
+    "nbconvert",
+    "ipykernel",
     "griffe<2",
 ]
 
