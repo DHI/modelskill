@@ -152,6 +152,7 @@ path_to_sensor_data_2 = "../../tests/testdata/network_sensor_2.csv"
 from modelskill.network import Network
 
 network = Network.from_res1d(path_to_res1d)
+network
 ```
 
 or a `mikeio1d.Res1D` that has already been opened:
