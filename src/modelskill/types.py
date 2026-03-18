@@ -14,6 +14,7 @@ class GeometryType(Enum):
     TRACK = "track"
     UNSTRUCTURED = "unstructured"
     GRID = "grid"
+    VERTICAL = "vertical"
 
     def __str__(self) -> str:
         return self.name.lower()
@@ -37,6 +38,8 @@ class GeometryType(Enum):
         <GeometryType.UNSTRUCTURED: 'unstructured'>
         >>> GeometryType.from_string("grid")
         <GeometryType.GRID: 'grid'>
+        >>> GeometryType.from_string("vertical")
+        <GeometryType.VERTICAL: 'vertical'>
         """
 
         try:
@@ -87,6 +90,7 @@ PointType = Union[
     xr.DataArray,
 ]
 TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
+VerticalType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
 
 
 @dataclass(frozen=True)

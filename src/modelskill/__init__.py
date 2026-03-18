@@ -36,6 +36,7 @@ from .model import model_result
 from .model import (
     PointModelResult,
     TrackModelResult,
+    VerticalModelResult,
     GridModelResult,
     DfsuModelResult,
     DummyModelResult,
@@ -44,6 +45,7 @@ from .obs import (
     observation,
     PointObservation,
     TrackObservation,
+    VerticalObservation,
 )
 from .matching import from_matched, match
 from .configuration import from_config
@@ -91,12 +93,14 @@ __all__ = [
     "model_result",
     "PointModelResult",
     "TrackModelResult",
+    "VerticalModelResult",
     "GridModelResult",
     "DfsuModelResult",
     "DummyModelResult",
     "observation",
     "PointObservation",
     "TrackObservation",
+    "VerticalObservation",
     "TimeSeries",
     "match",
     "from_matched",
