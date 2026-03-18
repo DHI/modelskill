@@ -5,10 +5,12 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 import modelskill as ms
-from modelskill.network import (
-    Network,
+from modelskill.model.network import (
     NetworkModelResult,
     NodeModelResult,
+)
+from modelskill.network import (
+    Network,
     BasicNode,
     BasicEdge,
 )
@@ -245,7 +247,8 @@ class TestNodeObservation:
     def test_multiple_nodes_returns_list_of_observations(self, multi_data):
         """Test that from_multiple returns a list of NodeObservation objects"""
         obs_list = NodeObservation.from_multiple(
-            data=multi_data, nodes={123: "station_0", 456: "station_1", 789: "station_2"}
+            data=multi_data,
+            nodes={123: "station_0", 456: "station_1", 789: "station_2"},
         )
 
         assert len(obs_list) == 3
@@ -253,7 +256,8 @@ class TestNodeObservation:
 
     def test_node_ids_are_assigned_correctly(self, multi_data):
         obs_list = NodeObservation.from_multiple(
-            data=multi_data, nodes={123: "station_0", 456: "station_1", 789: "station_2"}
+            data=multi_data,
+            nodes={123: "station_0", 456: "station_1", 789: "station_2"},
         )
 
         assert obs_list[0].node == 123
@@ -262,7 +266,8 @@ class TestNodeObservation:
 
     def test_names_derived_from_column_names(self, multi_data):
         obs_list = NodeObservation.from_multiple(
-            data=multi_data, nodes={123: "station_0", 456: "station_1", 789: "station_2"}
+            data=multi_data,
+            nodes={123: "station_0", 456: "station_1", 789: "station_2"},
         )
 
         assert obs_list[0].name == "station_0"
