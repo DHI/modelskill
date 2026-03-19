@@ -403,4 +403,3 @@ network = Network(edges=[edge1, edge2])
 
 * [API reference — NetworkModelResult](../api/NetworkModelResult.qmd)
 * [API reference — NodeObservation](../api/NodeObservation.qmd)
-* [Workflow overview](workflow.qmd)

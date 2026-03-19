@@ -81,6 +81,7 @@ website:
             - api/observation.qmd
             - api/PointObservation.qmd
             - api/TrackObservation.qmd
+            - api/NodeObservation.qmd
         - section: "Model Result"
           href: api/model.qmd
           contents:
@@ -90,6 +91,7 @@ website:
             - api/DfsuModelResult.qmd
             - api/GridModelResult.qmd
             - api/DummyModelResult.qmd
+            - api/NetworkModelResult.qmd
         - section: "Matching"
           contents:
             - api/match.qmd
