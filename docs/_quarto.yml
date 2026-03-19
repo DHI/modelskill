@@ -167,6 +167,7 @@ quartodoc:
         - observation
         - PointObservation
         - TrackObservation
+        - NodeObservation
     - title: Model Result
       desc: ""
       contents:
@@ -178,6 +179,7 @@ quartodoc:
         - DfsuModelResult
         - GridModelResult
         - DummyModelResult
+        - NetworkModelResult
     - title: Matching
       desc: Matching functions
       contents:
