@@ -7,7 +7,7 @@ import mikeio
 import modelskill as ms
 from modelskill.comparison._comparison import ItemSelection
 from modelskill.model.dfsu import DfsuModelResult
-from modelskill.model.network import Network, BasicNode, BasicEdge
+from modelskill.network import Network, BasicNode, BasicEdge
 
 
 def _make_network(node_ids, time, data, quantity="WaterLevel"):
