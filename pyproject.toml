@@ -47,7 +47,13 @@ networks = ["mikeio1d", "networkx"]
 [dependency-groups]
 dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2", "netCDF4", "dask"]
 
-docs = ["quarto-cli==1.5.57", "quartodoc==0.11.1", "griffe<2"]
+docs = [
+    "quartodoc==0.11.1",
+    "nbformat",
+    "nbconvert",
+    "ipykernel",
+    "griffe<2",
+]
 
 test = [
     "pytest",
@@ -67,6 +73,9 @@ networks = ["mikeio1d", "networkx"]
 "Homepage" = "https://github.com/DHI/modelskill"
 "Bug Tracker" = "https://github.com/DHI/modelskill/issues"
 
+
+[tool.ruff]
+extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
 ignore = ["E501"]

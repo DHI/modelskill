@@ -17,31 +17,31 @@ uv sync --group test    # Install with test dependencies
 
 ### Testing
 ```bash
-make test               # Run all tests (ignores notebooks)
+just test               # Run all tests (ignores notebooks)
 pytest                  # Direct pytest invocation
 pytest tests/test_comparer.py::test_name  # Run specific test
-pytest --disable-warnings  # Run without warnings (default in Makefile)
+pytest --disable-warnings  # Run without warnings (default in justfile)
 ```
 
 ### Code Quality
 ```bash
-make check              # Run all checks: lint, typecheck, test, doctest
-make lint               # Lint with ruff
-make format             # Format with ruff
-make typecheck          # Type check with mypy
-make doctest            # Run doctests in metrics.py
-make coverage           # Generate HTML coverage report
+just check              # Run all checks: lint, typecheck, test, doctest
+just lint               # Lint with ruff
+just format             # Format with ruff
+just typecheck          # Type check with mypy
+just doctest            # Run doctests in metrics.py
+just coverage           # Generate HTML coverage report
 ```
 
 ### Building
 ```bash
-make build              # Run typecheck and test, then build package with uv build
+just build              # Run typecheck and test, then build package with uv build
 uv build                # Build wheel and sdist
 ```
 
 ### Documentation
 ```bash
-make docs               # Build documentation with quartodoc and quarto
+just docs               # Build documentation with quartodoc and quarto
                         # Located in docs/_site after building
 ```
 
