@@ -1,5 +1,6 @@
 """Test network models and observations"""
 
+# ruff: noqa: E402
 import pytest
 
 pytest.importorskip("networkx")

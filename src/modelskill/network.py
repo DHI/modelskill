@@ -681,3 +681,15 @@ class Network:
             return results[0]
         else:
             return results
+
+
+def _make_basic_network(node_ids, time, data, quantity="WaterLevel"):
+    nodes = [
+        BasicNode(nid, pd.DataFrame({quantity: data[:, i]}, index=time))
+        for i, nid in enumerate(node_ids)
+    ]
+    edges = [
+        BasicEdge(f"e{i}", nodes[i], nodes[i + 1], length=100.0)
+        for i in range(len(nodes) - 1)
+    ]
+    return Network(edges)

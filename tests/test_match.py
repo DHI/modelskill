@@ -7,19 +7,10 @@ import mikeio
 import modelskill as ms
 from modelskill.comparison._comparison import ItemSelection
 from modelskill.model.dfsu import DfsuModelResult
-from modelskill.network import Network, BasicNode, BasicEdge
-
-
-def _make_network(node_ids, time, data, quantity="WaterLevel"):
-    nodes = [
-        BasicNode(nid, pd.DataFrame({quantity: data[:, i]}, index=time))
-        for i, nid in enumerate(node_ids)
-    ]
-    edges = [
-        BasicEdge(f"e{i}", nodes[i], nodes[i + 1], length=100.0)
-        for i in range(len(nodes) - 1)
-    ]
-    return Network(edges)
+try:
+    from modelskill.network import _make_basic_network
+except ImportError:
+    pass
 
 
 @pytest.fixture
@@ -88,19 +79,21 @@ def mr3():
 @pytest.fixture
 def network():
     """Network fixture with 3 nodes"""
+    pytest.importorskip("networkx")
     time = pd.date_range("2017-10-27", periods=20, freq="h")
     np.random.seed(42)
     data = np.random.normal(1.5, 0.3, (20, 3))
-    return _make_network(["100", "200", "300"], time, data)
+    return _make_basic_network(["100", "200", "300"], time, data)
 
 
 @pytest.fixture
 def network2():
     """Second network fixture with offset data for multi-model tests"""
+    pytest.importorskip("networkx")
     time = pd.date_range("2017-10-27", periods=20, freq="h")
     np.random.seed(42)
     data = np.random.normal(1.5, 0.3, (20, 3)) + 0.1
-    return _make_network(["100", "200", "300"], time, data)
+    return _make_basic_network(["100", "200", "300"], time, data)
 
 
 @pytest.fixture
