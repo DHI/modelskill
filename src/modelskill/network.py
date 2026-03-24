@@ -487,7 +487,8 @@ class Network:
         node: str,
         edge: None = None,
         distance: None = None,
-    ) -> int: ...
+    ) -> int:
+        pass
 
     @overload
     def find(
@@ -496,7 +497,8 @@ class Network:
         node: list[str],
         edge: None = None,
         distance: None = None,
-    ) -> list[int]: ...
+    ) -> list[int]:
+        pass
 
     @overload
     def find(
@@ -505,7 +507,8 @@ class Network:
         node: None = None,
         edge: str | list[str],
         distance: str | float,
-    ) -> int: ...
+    ) -> int:
+        pass
 
     @overload
     def find(
@@ -514,7 +517,8 @@ class Network:
         node: None = None,
         edge: str | list[str],
         distance: list[str | float],
-    ) -> list[int]: ...
+    ) -> list[int]:
+        pass
 
     def find(
         self,
