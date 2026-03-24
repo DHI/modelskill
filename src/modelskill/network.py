@@ -637,10 +637,12 @@ class Network:
         return resolved
 
     @overload
-    def recall(self, id: int) -> dict[str, Any]: ...
+    def recall(self, id: int) -> dict[str, Any]:
+        pass
 
     @overload
-    def recall(self, id: list[int]) -> list[dict[str, Any]]: ...
+    def recall(self, id: list[int]) -> list[dict[str, Any]]:
+        pass
 
     def recall(self, id: int | list[int]) -> dict[str, Any] | list[dict[str, Any]]:
         """Recover the original coordinates of an element given the node id(s) in the Network object.
