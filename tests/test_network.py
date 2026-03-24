@@ -1,6 +1,9 @@
 """Test network models and observations"""
 
 import pytest
+
+pytest.importorskip("networkx")
+
 import pandas as pd
 import xarray as xr
 import numpy as np
