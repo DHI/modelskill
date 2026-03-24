@@ -443,7 +443,8 @@ class NodeObservation(Observation):
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
-    ) -> list[NodeObservation]: ...
+    ) -> list[NodeObservation]:
+        pass
 
     @classmethod
     def from_multiple(
