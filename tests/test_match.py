@@ -38,6 +38,12 @@ def o3():
 
 
 @pytest.fixture
+def o4():
+    fn = "tests/testdata/vertical/VerticalProfile_obs1.dfs0"
+    return ms.VerticalObservation(fn, z_item="z", name="vobs", x=657500, y=6553600)
+
+
+@pytest.fixture
 def mr12_gaps():
     fn = "tests/testdata/SW/ts_storm_4.dfs0"
     df1 = mikeio.read(fn, items=0).to_dataframe()
@@ -69,6 +75,66 @@ def mr2():
 def mr3():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v3.dfsu"
     return ms.model_result(fn, item=0, name="SW_3")
+
+
+@pytest.fixture
+def mr4():
+    fn = "tests/testdata/vertical/VerticalModel_at_obs.dfs0"
+    return ms.model_result(fn, item="Salinity", name="vmod", gtype="vertical")
+
+
+@pytest.fixture
+def mr5():
+    fn = "tests/testdata/vertical/sigma_z_coast.dfsu"
+    return ms.model_result(fn, item="Salinity", name="3dmod")
+
+
+class TestVerticalObservation:
+    # ============
+    # Check vartions of match with vertical data
+    def test_match_dfs0_dfs0(self, o4, mr4):
+        cmp = ms.match(o4, mr4)
+        assert cmp.n_models == 1
+        assert cmp.n_points > 0
+        assert cmp.x == pytest.approx(657500)
+        assert cmp.y == pytest.approx(6553600)
+        assert cmp.z is not None
+        assert cmp.name == "vobs"
+        assert cmp.gtype == "vertical"
+        assert cmp.mod_names == ["vmod"]
+
+    def test_match_dfsu_dfs0(self, o4, mr5):
+        cmp = ms.match(o4, mr5)
+        assert cmp.n_models == 1
+        assert cmp.n_points > 0
+        assert cmp.x == pytest.approx(657500)
+        assert cmp.y == pytest.approx(6553600)
+        assert cmp.z is not None
+        assert cmp.name == "vobs"
+        assert cmp.gtype == "vertical"
+        assert cmp.mod_names == ["3dmod"]
+
+    def test_match_multiple(self, o4, mr4, mr5):
+        cmp = ms.match(o4, [mr4, mr5])
+        assert cmp.n_models == 2
+        assert cmp.x == pytest.approx(657500)
+        assert cmp.y == pytest.approx(6553600)
+        assert cmp.z is not None
+        assert cmp.name == "vobs"
+        assert cmp.gtype == "vertical"
+        assert cmp.mod_names == ["vmod", "3dmod"]
+
+    # ==========
+    # Test from_matched
+    # ==========
+
+    # ==========
+    # Test slicing
+    # ==========
+
+    # ==========
+    # Test correct results
+    # ==========
 
 
 def test_properties_after_match(o1, mr1):
