@@ -21,7 +21,7 @@ def _simplify_res1d_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame
             raise ValueError(
                 f"There must be exactly one column per quantity, found {column_pairs}."
             )
-        old_name, new_name = column_pairs
+        old_name, new_name = column_pairs[0]
         renamer_dict[old_name] = new_name
     return df.rename(columns=renamer_dict).copy()
 
