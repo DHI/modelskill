@@ -1,6 +1,10 @@
 """Test network models and observations"""
 
+# ruff: noqa: E402
 import pytest
+
+pytest.importorskip("networkx")
+
 import pandas as pd
 import xarray as xr
 import numpy as np

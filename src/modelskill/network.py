@@ -487,7 +487,8 @@ class Network:
         node: str,
         edge: None = None,
         distance: None = None,
-    ) -> int: ...
+    ) -> int:
+        pass
 
     @overload
     def find(
@@ -496,7 +497,8 @@ class Network:
         node: list[str],
         edge: None = None,
         distance: None = None,
-    ) -> list[int]: ...
+    ) -> list[int]:
+        pass
 
     @overload
     def find(
@@ -505,7 +507,8 @@ class Network:
         node: None = None,
         edge: str | list[str],
         distance: str | float,
-    ) -> int: ...
+    ) -> int:
+        pass
 
     @overload
     def find(
@@ -514,7 +517,8 @@ class Network:
         node: None = None,
         edge: str | list[str],
         distance: list[str | float],
-    ) -> list[int]: ...
+    ) -> list[int]:
+        pass
 
     def find(
         self,
@@ -633,10 +637,12 @@ class Network:
         return resolved
 
     @overload
-    def recall(self, id: int) -> dict[str, Any]: ...
+    def recall(self, id: int) -> dict[str, Any]:
+        pass
 
     @overload
-    def recall(self, id: list[int]) -> list[dict[str, Any]]: ...
+    def recall(self, id: list[int]) -> list[dict[str, Any]]:
+        pass
 
     def recall(self, id: int | list[int]) -> dict[str, Any] | list[dict[str, Any]]:
         """Recover the original coordinates of an element given the node id(s) in the Network object.
@@ -681,3 +687,15 @@ class Network:
             return results[0]
         else:
             return results
+
+
+def _make_basic_network(node_ids, time, data, quantity="WaterLevel"):
+    nodes = [
+        BasicNode(nid, pd.DataFrame({quantity: data[:, i]}, index=time))
+        for i, nid in enumerate(node_ids)
+    ]
+    edges = [
+        BasicEdge(f"e{i}", nodes[i], nodes[i + 1], length=100.0)
+        for i in range(len(nodes) - 1)
+    ]
+    return Network(edges)

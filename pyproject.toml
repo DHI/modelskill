@@ -8,7 +8,7 @@ wheel-exclude = ["**/.mypy_cache**", "**/.mypy_cache/**"]
 
 [project]
 name = "modelskill"
-version = "1.4.dev0"
+version = "1.4.0a1"
 dependencies = [
     "numpy  > 1.24.4",
     "pandas >= 1.4, < 3.0", # TODO remove upper limit
@@ -47,13 +47,7 @@ networks = ["mikeio1d", "networkx"]
 [dependency-groups]
 dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2", "netCDF4", "dask"]
 
-docs = [
-    "quartodoc==0.11.1",
-    "nbformat",
-    "nbconvert",
-    "ipykernel",
-    "griffe<2",
-]
+docs = ["quartodoc==0.11.1", "nbformat", "nbconvert", "ipykernel", "griffe<2"]
 
 test = [
     "pytest",
