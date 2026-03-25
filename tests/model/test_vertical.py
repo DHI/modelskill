@@ -110,6 +110,14 @@ class TestVerticalModelResult:
         assert mr.x == pytest.approx(12.0)
         assert mr.y == pytest.approx(55.0)
 
+    def test_open_with_factory(self, dfs0_fpath):
+        mr = ms.model_result(
+            dfs0_fpath, z_item="z", item="Salinity", name="test", gtype="vertical"
+        )
+        assert isinstance(mr, ms.VerticalModelResult)
+        assert mr.gtype == "vertical"
+        assert mr.name == "test"
+
     # ================
     # Test failing and optional args
     # ================
