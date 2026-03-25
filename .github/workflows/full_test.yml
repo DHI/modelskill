@@ -30,10 +30,30 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --group test --no-dev
+        run: uv sync --group test --group networks --no-dev
 
       - name: Type check
         run: just typecheck
+
+      - name: Test
+        run: just test
+
+  build-no-networks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: extractions/setup-just@v3
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.10"
+          enable-cache: true
+
+      - name: Install dependencies (without networks)
+        run: uv sync --group test --no-dev
 
       - name: Test
         run: just test

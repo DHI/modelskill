@@ -80,12 +80,12 @@ def test_timeseries_validation_fails_kind(ds_point):
 
 def test_timeseries_validation_fails_xy(ds_point):
     ds_without_x = ds_point.drop_vars("x")
-    with pytest.raises(ValueError, match="data must have an x-coordinate"):
+    with pytest.raises(ValueError, match="data must have either x,y"):
         TimeSeries(ds_without_x)
 
     # ds_point.coords["x"] = 0
     ds_without_y = ds_point.drop_vars("y")
-    with pytest.raises(ValueError, match="data must have a y-coordinate"):
+    with pytest.raises(ValueError, match="data must have either x,y"):
         TimeSeries(ds_without_y)
 
 

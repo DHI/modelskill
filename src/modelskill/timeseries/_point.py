@@ -2,10 +2,9 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence, get_args, List, Optional, Tuple, Union, Any
+from typing import Sequence, get_args, List, Tuple, Union, Any
 import pandas as pd
 import xarray as xr
-import numpy as np
 
 import mikeio
 
@@ -13,7 +12,7 @@ from ..types import GeometryType, PointType
 from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
-from ._coords import XYZCoords
+from ._coords import XYZCoords, NetworkCoords
 
 
 @dataclass
@@ -29,7 +28,7 @@ class PointItem:
 def _parse_point_items(
     items: Sequence[Hashable],
     item: int | str | None,
-    aux_items: Optional[Sequence[int | str]] = None,
+    aux_items: Sequence[int | str] | None = None,
 ) -> PointItem:
     """If input has exactly 1 item we accept item=None"""
     if item is None:
@@ -62,8 +61,8 @@ def _select_items(
         pd.Series,
         pd.DataFrame,
     ],
-    item: Optional[str | int] = None,
-    aux_items: Optional[Sequence[int | str]] = None,
+    item: str | int | None = None,
+    aux_items: Sequence[int | str] | None = None,
 ) -> PointItem:
     if isinstance(data, (mikeio.DataArray, pd.Series, xr.DataArray)):
         item_name = data.name if data.name is not None else "PointModelResult"
@@ -144,7 +143,7 @@ def _convert_to_dataset(
 def _include_coords(
     ds: xr.Dataset,
     *,
-    coords: Optional[XYZCoords] = None,
+    coords: XYZCoords | NetworkCoords | None = None,
 ) -> xr.Dataset:
     ds = ds.copy()
     if coords is not None:
@@ -153,7 +152,9 @@ def _include_coords(
         coords_to_add = {}
         for k, v in coords.as_dict.items():
             # Add if coordinate doesn't exist, or if user provided a non-null value
-            if k not in ds.coords or (v is not None and not np.isnan(v)):
+            # - pd.isna(v) returns True for NaN, False otherwise
+            #   - for string values: pd.isna(v) returns False (strings are never considered "NA" unless specifically None)
+            if k not in ds.coords or (v is not None and not pd.isna(v)):
                 coords_to_add[k] = v
         ds.coords.update(coords_to_add)
 
@@ -165,7 +166,10 @@ def _include_attributes(
 ) -> xr.Dataset:
     ds = ds.copy()
 
-    ds.attrs["gtype"] = str(GeometryType.POINT)
+    if "node" in ds.coords:
+        ds.attrs["gtype"] = str(GeometryType.NODE)
+    else:
+        ds.attrs["gtype"] = str(GeometryType.POINT)
 
     ds[name].attrs["long_name"] = quantity.name
     ds[name].attrs["units"] = quantity.unit
@@ -178,7 +182,7 @@ def _include_attributes(
 
 
 def _open_and_name(
-    data: PointType, name: Optional[str]
+    data: PointType, name: str | None
 ) -> Tuple[
     Union[
         mikeio.Dataset,
@@ -204,6 +208,8 @@ def _open_and_name(
         elif suffix == ".nc":
             data = xr.open_dataset(data)
             name = name if name_is_arg else data.attrs.get("name") or stem
+        elif suffix == ".csv":
+            data = pd.read_csv(data, parse_dates=True, index_col=0)
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
 
@@ -232,14 +238,18 @@ def _select_variable_name(name: str, sel_items: PointItem) -> str:
 
 def _parse_point_input(
     data: PointType,
-    name: Optional[str],
-    item: Optional[str | int],
-    quantity: Optional[Quantity],
-    aux_items: Optional[Sequence[int | str]],
+    name: str | None,
+    item: str | int | None,
+    quantity: Quantity | None,
+    aux_items: Sequence[int | str] | None,
     *,
-    coords: XYZCoords,
+    coords: XYZCoords | NetworkCoords,
 ) -> xr.Dataset:
-    """Convert accepted input data to an xr.Dataset"""
+    """Convert accepted input data to an xr.Dataset."""
+
+    # name -> the name of the model result
+    # item -> the name of the element of interest in the data
+    # quantity -> the physical quantity that the variable of interest represents
 
     data, name = _open_and_name(data, name)
     sel_items = _select_items(data, item, aux_items)
@@ -247,21 +257,36 @@ def _parse_point_input(
     varname = _select_variable_name(name, sel_items)
 
     ds = _convert_to_dataset(data, varname, sel_items)
-    ds = _include_attributes(ds, varname, quantity, sel_items)
     ds = _include_coords(ds, coords=coords)
+    ds = _include_attributes(ds, varname, quantity, sel_items)
     return ds
 
 
 def _parse_xyz_point_input(
     data: PointType,
-    name: Optional[str],
+    name: str | None,
     item: str | int | None,
-    quantity: Optional[Quantity],
-    x: Optional[float],
-    y: Optional[float],
-    z: Optional[float],
-    aux_items: Optional[Sequence[int | str]],
+    quantity: Quantity | None,
+    x: float | None,
+    y: float | None,
+    z: float | None,
+    aux_items: Sequence[int | str] | None,
 ) -> xr.Dataset:
     coords = XYZCoords(x, y, z)
+    ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
+    return ds
+
+
+def _parse_network_node_input(
+    data: PointType,
+    name: str | None,
+    item: str | int | None,
+    quantity: Quantity | None,
+    node: int | None,
+    aux_items: Sequence[int | str] | None,
+) -> xr.Dataset:
+    if node is None:
+        raise ValueError("'node' argument cannot be empty.")
+    coords = NetworkCoords(node=node)
     ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds
