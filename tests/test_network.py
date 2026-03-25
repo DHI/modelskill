@@ -439,6 +439,6 @@ class TestNetworkIntegration:
 
 @pytest.mark.skipif(sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14")
 def test_open_res1d():
-    path_to_file = "./testdata/network.res1d"
+    path_to_file = "./tests/testdata/network.res1d"
     network = Network.from_res1d(path_to_file)
     assert network.graph.number_of_nodes() == 259
