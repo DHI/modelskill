@@ -1,6 +1,7 @@
 """Test network models and observations"""
 
 # ruff: noqa: E402
+import sys
 import pytest
 
 pytest.importorskip("networkx")
@@ -434,3 +435,10 @@ class TestNetworkIntegration:
         for comparer in comparer_collection:
             assert "Network_Model" in comparer.mod_names
             assert comparer.n_points > 0
+
+
+@pytest.mark.skipif(sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14")
+def test_open_res1d():
+    path_to_file = "./testdata/network.res1d"
+    network = Network.from_res1d(path_to_file)
+    assert network.graph.number_of_nodes() == 259
