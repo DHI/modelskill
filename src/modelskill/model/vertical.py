@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing import Any, Literal, Sequence
 
 import xarray as xr
+import pandas as pd
+import numpy as np
 
 from ..types import VerticalType
 from ..quantity import Quantity
@@ -77,14 +79,97 @@ class VerticalModelResult(TimeSeries):
         """z-coordinate"""
         return self._coordinate_values("z")
 
-    def align(self, vo: VerticalObservation) -> None:  # xr.Dataset
-        """Align model result and observation to common z levels and time"""
+    def _match_to_nearest_times(
+        self, obs_df, mod_df, t_tol: pd.Timedelta | None = None
+    ) -> pd.DataFrame:
+        obs_times = obs_df.index.unique().sort_values()
+        mod_times_unique = mod_df.index.unique().sort_values()
 
-        # 1. Align model to obs times using neareast or interpolation.
-        #   Interpolation might be tricky due to changing depth levels, but nearest should be straightforward.
+        # get_indexer requires a unique, monotonic index - work on unique times first
+        idx = mod_times_unique.get_indexer(obs_times, method="nearest", tolerance=t_tol)
+        valid = idx != -1
 
-        # 2. Align model to obs z levels using interpolation. This should be straightforward
+        matched_mod_times = mod_times_unique[idx[valid]]
+        obs_times_valid = obs_times[valid]
 
-        # OPTION:
-        # Use bilinear intepolaation of z and depth to align model to obs.
-        pass
+        return pd.DataFrame(
+            {"obs_time": obs_times_valid, "mod_time": matched_mod_times}
+        )
+
+    def _interpolate_to_obs_depths(
+        self,
+        obs_df,
+        mod_df,
+        obs_times_valid,
+        matched_mod_times,
+        *,
+        obs_value_col: str,
+        mod_value_col: str,
+    ) -> pd.DataFrame:
+        records = []
+
+        for obs_t, mod_t in zip(obs_times_valid, matched_mod_times):
+            obs_at_t = obs_df.loc[[obs_t]].sort_values("z")
+            mod_at_t = mod_df.loc[[mod_t]].sort_values("z")
+
+            obs_z = obs_at_t["z"].to_numpy(dtype=float)
+            mod_z = mod_at_t["z"].to_numpy(dtype=float)
+            mod_values = mod_at_t[mod_value_col].to_numpy(dtype=float)
+
+            if mod_z.size < 2:
+                continue
+
+            mod_interp = np.interp(obs_z, mod_z, mod_values, left=np.nan, right=np.nan)
+            for z, mod_v in zip(obs_z, mod_interp):
+                records.append({"time": obs_t, "z": z, self.name: mod_v})
+
+        if not records:
+            return pd.DataFrame(
+                columns=["z", self.name], index=pd.Index([], name="time")
+            )
+
+        return pd.DataFrame(records).set_index("time")
+
+    def align(
+        self, vo: VerticalObservation, temporal_tolerance: pd.Timedelta | None = None
+    ) -> xr.Dataset:
+        """Align model result to observation by matching nearest times and interpolating to observation depths.
+        Model depths outside the range of observation depths are extrapolated using nearest model values.
+
+        Parameters
+        ----------
+        vo : VerticalObservation
+            Vertical observation to align with
+        temporal_tolerance : pd.Timedelta, optional
+            Maximum allowed time difference for matching, by default None
+
+        Returns
+        -------
+        xr.Dataset
+            Aligned model result
+
+        """
+        # if temporal_tolerance is not given. Estimate on half the median time step of the model data.
+        if temporal_tolerance is None:
+            median_dt = self.time.unique().to_series().diff().median()
+            temporal_tolerance = median_dt / 2
+
+        matched_times = self._match_to_nearest_times(
+            vo.data[["z"]].to_dataframe(),
+            self.data[["z"]].to_dataframe(),
+            t_tol=temporal_tolerance,
+        )
+
+        pairs = self._interpolate_to_obs_depths(
+            vo.data.to_dataframe(),
+            self.data.to_dataframe(),
+            matched_times["obs_time"],
+            matched_times["mod_time"],
+            obs_value_col=vo.name,
+            mod_value_col=self.name,
+        )
+        # Convert to xarray Dataset and set kind attribute
+        xarr = pairs.reset_index().set_index(["time"]).to_xarray()
+        xarr[self.name].attrs["kind"] = "model"
+
+        return xarr

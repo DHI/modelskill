@@ -379,9 +379,8 @@ def _match_space_time(
                 )
             case PointModelResult() as pmr, PointObservation():
                 aligned = pmr.align(observation, max_gap=max_model_gap)
-            case VerticalModelResult(), VerticalObservation():
-                raise NotImplementedError("Vertical matching not implemented yet!")
-                # aligned = vmr.align(observation, max_gap=max_model_gap)
+            case VerticalModelResult() as vmr, VerticalObservation():
+                aligned = vmr.align(observation)
             case _:
                 raise TypeError(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"
@@ -393,7 +392,6 @@ def _match_space_time(
             raise ValueError(
                 f"Aux variables are not allowed to have identical names. Choose either aux from obs or model. Overlapping: {overlapping}"
             )
-
         for dv in aligned:
             data[dv] = aligned[dv]
 
