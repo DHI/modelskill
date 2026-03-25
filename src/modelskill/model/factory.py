@@ -27,9 +27,17 @@ def model_result(
     data: DataInputType,
     *,
     aux_items: Optional[list[int | str]] = None,
-    gtype: Optional[Literal["point", "track", "vertical", "unstructured", "grid"]] = None,
+    gtype: Optional[
+        Literal["point", "track", "vertical", "unstructured", "grid"]
+    ] = None,
     **kwargs: Any,
-) -> PointModelResult | TrackModelResult | VerticalModelResult | DfsuModelResult | GridModelResult:
+) -> (
+    PointModelResult
+    | TrackModelResult
+    | VerticalModelResult
+    | DfsuModelResult
+    | GridModelResult
+):
     """A factory function for creating an appropriate object based on the data input.
 
     Parameters
