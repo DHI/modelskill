@@ -395,7 +395,7 @@ class Network:
         return {g.nodes[id]["alias"]: id for id in g.nodes()}
 
     @staticmethod
-    def _generate_edges_dict(edges: list[NetworkEdge]) -> dict[str, NetworkEdge]:
+    def _generate_edges_dict(edges: Sequence[NetworkEdge]) -> dict[str, NetworkEdge]:
         return {e.id: e for e in edges}
 
     @staticmethod
@@ -517,8 +517,8 @@ class Network:
 
         subset_edges = []
         for edge in self._edges.values():
-            new_start = self.find(edge.start.id)
-            new_end = self.find(edge.end.id)
+            new_start = self.find(node=edge.start.id)
+            new_end = self.find(node=edge.end.id)
             if (new_start in graph_subset.nodes) and (new_end in graph_subset.nodes):
                 subset_edges.append(edge)
 
@@ -529,6 +529,7 @@ class Network:
         else:
             self._initialize_network_attributes(graph_subset)
             self._edges = self._generate_edges_dict(subset_edges)
+            return None
 
 
     @overload
