@@ -324,10 +324,14 @@ class Network:
     """Network built from a set of edges, with coordinate lookup and data access."""
 
     def __init__(self, edges: Sequence[NetworkEdge]):
-        self._edges: dict[str, NetworkEdge] = {e.id: e for e in edges}
-        self._graph = self._initialize_graph(edges)
-        self._alias_map = self._initialize_alias_map(self._graph)
-        self._df = self._build_dataframe(self._graph)
+        graph = self._generate_graph(edges)
+        self._initialize_network_attributes(graph)
+        self._edges = self._generate_edges_dict(edges)
+
+    def _initialize_network_attributes(self, graph: nx.Graph):
+        self._alias_map = self._generate_alias_map(graph)
+        self._df = self._build_dataframe(graph)
+        self._graph = graph.copy()
 
     def __repr__(self) -> str:
         time = self._df.index
@@ -386,8 +390,12 @@ class Network:
         return cls(edges)
 
     @staticmethod
-    def _initialize_alias_map(g: nx.Graph) -> dict[str | tuple[str, float], int]:
+    def _generate_alias_map(g: nx.Graph) -> dict[str | tuple[str, float], int]:
         return {g.nodes[id]["alias"]: id for id in g.nodes()}
+
+    @staticmethod
+    def _generate_edges_dict(edges: list[NetworkEdge]) -> dict[str, NetworkEdge]:
+        return {e.id: e for e in edges}
 
     @staticmethod
     def _build_dataframe(g: nx.Graph) -> pd.DataFrame:
@@ -449,7 +457,7 @@ class Network:
         return list(self.to_dataframe().columns.get_level_values(1).unique())
 
     @staticmethod
-    def _initialize_graph(edges: Sequence[NetworkEdge]) -> nx.Graph:
+    def _generate_graph(edges: Sequence[NetworkEdge]) -> nx.Graph:
         g0 = nx.Graph()
         for edge in edges:
             # 1) Add start and end nodes
@@ -490,7 +498,7 @@ class Network:
 
         return nx.convert_node_labels_to_integers(g0, label_attribute="alias")
 
-    def subset(self, node: int, radius: int = 5):
+    def reduce_around(self, node: int, radius: int = 5):
         """Select subset of data around a node.
 
         Parameters
@@ -509,14 +517,8 @@ class Network:
             if (new_start in graph_subset.nodes) and (new_end in graph_subset.nodes):
                 subset_edges.append(edge)
 
-        self._edges: dict[str, NetworkEdge] = {e.id: e for e in subset_edges}
-        self._graph = graph_subset.copy()
-        self._alias_map = {
-            alias: id
-            for alias, id in self._alias_map.items()
-            if id in self._graph.nodes()
-        }
-        self._df = self._build_dataframe(self._graph)
+        self._initialize_network_attributes(graph_subset)
+        self._edges = self._generate_edges_dict(subset_edges)
 
     @overload
     def find(
