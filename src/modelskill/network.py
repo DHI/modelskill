@@ -508,6 +508,8 @@ class Network:
             Id of node that represents the center of the graph subset
         radius : int, default 5
             Number of hops around the central node of the subset
+        copy : bool, default
+            Return a copy of the network or mutate the network in place
         """
 
         network_copy = self.copy()
