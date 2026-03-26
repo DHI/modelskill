@@ -18,6 +18,7 @@ import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Sequence, overload, TYPE_CHECKING
+from copy import deepcopy
 
 import networkx as nx
 import pandas as pd
@@ -498,7 +499,7 @@ class Network:
 
         return nx.convert_node_labels_to_integers(g0, label_attribute="alias")
 
-    def reduce_around(self, node: int, radius: int = 5):
+    def reduce_around(self, node: int, radius: int = 5, copy: bool = True) -> None | "Network":
         """Select subset of data around a node.
 
         Parameters
@@ -509,7 +510,9 @@ class Network:
             Number of hops around the central node of the subset
         """
 
-        graph_subset: nx.Graph = nx.ego_graph(self._graph, node, radius)
+        network_copy = self.copy()
+        graph_subset: nx.Graph = nx.ego_graph(network_copy.graph, node, radius)
+
         subset_edges = []
         for edge in self._edges.values():
             new_start = self.find(edge.start.id)
@@ -517,8 +520,14 @@ class Network:
             if (new_start in graph_subset.nodes) and (new_end in graph_subset.nodes):
                 subset_edges.append(edge)
 
-        self._initialize_network_attributes(graph_subset)
-        self._edges = self._generate_edges_dict(subset_edges)
+        if copy:
+            network_copy._initialize_network_attributes(graph_subset)
+            network_copy._edges = network_copy._generate_edges_dict(subset_edges)
+            return network_copy
+        else:
+            self._initialize_network_attributes(graph_subset)
+            self._edges = self._generate_edges_dict(subset_edges)
+
 
     @overload
     def find(
@@ -727,6 +736,17 @@ class Network:
             return results[0]
         else:
             return results
+        
+    def copy(self) -> "Network":
+        """Create a deep copy of the Network.
+
+        Returns
+        -------
+        Network
+            Deep copy of the Network object
+        """
+        return deepcopy(self)
+
 
 
 def _make_basic_network(node_ids, time, data, quantity="WaterLevel"):
