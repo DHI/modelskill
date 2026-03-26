@@ -103,23 +103,25 @@ class VerticalModelResult(TimeSeries):
         obs_times_valid,
         matched_mod_times,
         *,
-        obs_value_col: str,
         mod_value_col: str,
     ) -> pd.DataFrame:
         records = []
 
         for obs_t, mod_t in zip(obs_times_valid, matched_mod_times):
-            obs_at_t = obs_df.loc[[obs_t]].sort_values("z")
-            mod_at_t = mod_df.loc[[mod_t]].sort_values("z")
+            obs_at_t = obs_df.loc[[obs_t]]
+            mod_at_t = mod_df.loc[[mod_t]]
 
             obs_z = obs_at_t["z"].to_numpy(dtype=float)
-            mod_z = mod_at_t["z"].to_numpy(dtype=float)
-            mod_values = mod_at_t[mod_value_col].to_numpy(dtype=float)
 
-            if mod_z.size < 2:
+            # Sort model depths for np.interp
+            mod_at_t_sorted = mod_at_t.sort_values("z")
+            m_z = mod_at_t_sorted["z"].to_numpy(dtype=float)
+            m_v = mod_at_t_sorted[mod_value_col].to_numpy(dtype=float)
+
+            if m_z.size < 2:
                 continue
 
-            mod_interp = np.interp(obs_z, mod_z, mod_values, left=np.nan, right=np.nan)
+            mod_interp = np.interp(obs_z, m_z, m_v, left=np.nan, right=np.nan)
             for z, mod_v in zip(obs_z, mod_interp):
                 records.append({"time": obs_t, "z": z, self.name: mod_v})
 
@@ -134,6 +136,7 @@ class VerticalModelResult(TimeSeries):
         self, vo: VerticalObservation, temporal_tolerance: pd.Timedelta | None = None
     ) -> xr.Dataset:
         """Align model result to observation by matching nearest times and interpolating to observation depths.
+
         Model depths outside the range of observation depths are extrapolated using nearest model values.
 
         Parameters
@@ -165,7 +168,6 @@ class VerticalModelResult(TimeSeries):
             self.data.to_dataframe(),
             matched_times["obs_time"],
             matched_times["mod_time"],
-            obs_value_col=vo.name,
             mod_value_col=self.name,
         )
         # Convert to xarray Dataset and set kind attribute
