@@ -325,9 +325,9 @@ class Network:
 
     def __init__(self, edges: Sequence[NetworkEdge]):
         self._edges: dict[str, NetworkEdge] = {e.id: e for e in edges}
-        self._graph = self._initialize_graph()
-        self._alias_map = self._initialize_alias_map()
-        self._df = self._build_dataframe()
+        self._graph = self._initialize_graph(edges)
+        self._alias_map = self._initialize_alias_map(self._graph)
+        self._df = self._build_dataframe(self._graph)
 
     def __repr__(self) -> str:
         time = self._df.index
@@ -360,11 +360,12 @@ class Network:
         >>> network = Network.from_res1d(Res1D("model.res1d"))
         """
         if sys.version_info >= (3, 14):
-            raise NotImplementedError(f"Current version of 'mikeio1d' requires python < 3.14 and {sys.version} is being used.")
-        
+            raise NotImplementedError(
+                f"Current version of 'mikeio1d' requires python < 3.14 and {sys.version} is being used."
+            )
+
         from mikeio1d import Res1D as _Res1D
         from modelskill.model.adapters._res1d import Res1DReach
-
 
         if isinstance(res, (str, Path)):
             path = Path(res)
@@ -384,11 +385,13 @@ class Network:
         ]
         return cls(edges)
 
-    def _initialize_alias_map(self) -> dict[str | tuple[str, float], int]:
-        return {self.graph.nodes[id]["alias"]: id for id in self.graph.nodes()}
+    @staticmethod
+    def _initialize_alias_map(g: nx.Graph) -> dict[str | tuple[str, float], int]:
+        return {g.nodes[id]["alias"]: id for id in g.nodes()}
 
-    def _build_dataframe(self) -> pd.DataFrame:
-        df = pd.concat({k: v["data"] for k, v in self._graph.nodes.items()}, axis=1)
+    @staticmethod
+    def _build_dataframe(g: nx.Graph) -> pd.DataFrame:
+        df = pd.concat({k: v["data"] for k, v in g.nodes.items()}, axis=1)
         df.columns = df.columns.set_names(["node", "quantity"])
         df.index.name = "time"
         return df.copy()
@@ -445,9 +448,10 @@ class Network:
         """
         return list(self.to_dataframe().columns.get_level_values(1).unique())
 
-    def _initialize_graph(self) -> nx.Graph:
+    @staticmethod
+    def _initialize_graph(edges: Sequence[NetworkEdge]) -> nx.Graph:
         g0 = nx.Graph()
-        for edge in self._edges.values():
+        for edge in edges:
             # 1) Add start and end nodes
             for node in [edge.start, edge.end]:
                 node_key = node.id
@@ -485,6 +489,34 @@ class Network:
                 )
 
         return nx.convert_node_labels_to_integers(g0, label_attribute="alias")
+
+    def subset(self, node: int, radius: int = 5):
+        """Select subset of data around a node.
+
+        Parameters
+        ----------
+        node : int
+            Id of node that represents the center of the graph subset
+        radius : int, default 5
+            Number of hops around the central node of the subset
+        """
+
+        graph_subset: nx.Graph = nx.ego_graph(self._graph, node, radius)
+        subset_edges = []
+        for edge in self._edges.values():
+            new_start = self.find(edge.start.id)
+            new_end = self.find(edge.end.id)
+            if (new_start in graph_subset.nodes) and (new_end in graph_subset.nodes):
+                subset_edges.append(edge)
+
+        self._edges: dict[str, NetworkEdge] = {e.id: e for e in subset_edges}
+        self._graph = graph_subset.copy()
+        self._alias_map = {
+            alias: id
+            for alias, id in self._alias_map.items()
+            if id in self._graph.nodes()
+        }
+        self._df = self._build_dataframe(self._graph)
 
     @overload
     def find(
