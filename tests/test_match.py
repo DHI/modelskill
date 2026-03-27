@@ -89,9 +89,36 @@ def mr5():
     return ms.model_result(fn, item="Salinity", name="3dmod")
 
 
+@pytest.fixture
+def simple_vo():
+    ind = pd.DatetimeIndex(["2020-01-01 13:00:00"] * 2 + ["2020-01-02 11:00:00"] * 2)
+    data = {
+        "v": [1, 2, 1.1, 2.1],
+        "z": [-1, -2, -1, -2],
+        "x": [20, 20, 20, 20],
+        "y": [55, 55, 55, 55],
+    }
+    vo = ms.VerticalObservation(
+        pd.DataFrame(data, index=ind), z_item="z", item="v", name="obs", x=20, y=55
+    )
+    return vo
+
+
+@pytest.fixture
+def simple_vm():
+    ind = pd.DatetimeIndex(["2020-01-01 12:00:00"] * 4 + ["2020-01-02 12:00:00"] * 4)
+    data = {
+        "mod": [1.1, 2.1, 3.1, 4.1, 1.2, 2.2, 3.2, 4.2],
+        "z": [-1, -2, -3, -4, -1, -2, -3, -4],
+    }
+    vm = ms.VerticalModelResult(pd.DataFrame(data, index=ind), z_item=1, item=0)
+    return vm
+
+
 class TestVerticalObservation:
     # ============
-    # Check vartions of match with vertical data
+    # Check variations of match with vertical data
+    # ============
     def test_match_dfs0_dfs0(self, o4, mr4):
         cmp = ms.match(o4, mr4)
         assert cmp.n_models == 1
@@ -102,6 +129,8 @@ class TestVerticalObservation:
         assert cmp.name == "vobs"
         assert cmp.gtype == "vertical"
         assert cmp.mod_names == ["vmod"]
+        assert cmp.data["vmod"].attrs["kind"] == "model"
+        assert cmp.data["Observation"].attrs["kind"] == "observation"
 
     def test_match_dfsu_dfs0(self, o4, mr5):
         cmp = ms.match(o4, mr5)
@@ -113,6 +142,8 @@ class TestVerticalObservation:
         assert cmp.name == "vobs"
         assert cmp.gtype == "vertical"
         assert cmp.mod_names == ["3dmod"]
+        assert cmp.data["3dmod"].attrs["kind"] == "model"
+        assert cmp.data["Observation"].attrs["kind"] == "observation"
 
     def test_match_multiple(self, o4, mr4, mr5):
         cmp = ms.match(o4, [mr4, mr5])
@@ -123,18 +154,147 @@ class TestVerticalObservation:
         assert cmp.name == "vobs"
         assert cmp.gtype == "vertical"
         assert cmp.mod_names == ["vmod", "3dmod"]
+        assert cmp.data["vmod"].attrs["kind"] == "model"
+        assert cmp.data["3dmod"].attrs["kind"] == "model"
+        assert cmp.data["Observation"].attrs["kind"] == "observation"
+
+    def test_failing_z_and_z_item_set(self, simple_vo, simple_vm):
+        cmp = ms.match(simple_vo, simple_vm)
+        with pytest.raises(ValueError, match="z and z_item"):
+            ms.from_matched(cmp.to_dataframe(), z_item="z", z=cmp.z)
 
     # ==========
     # Test from_matched
     # ==========
+    def test_round_trip_from_matched_df(self, o4, mr4):
+        cmp = ms.match(o4, mr4)
+        cmp2 = ms.from_matched(cmp.to_dataframe(), x=cmp.x, y=cmp.y)
+        assert cmp2.gtype == "vertical"
+        assert cmp2.n_models == 1
+        assert cmp2.n_points == cmp.n_points
+        assert cmp2.x == cmp.x  # set in from_matched
+        assert cmp2.y == cmp.y  # set in from_matched
+        assert np.array_equal(cmp2.z, cmp.z)
+        assert cmp2.name == cmp._obs_name  # not set, defaults to obs name
+        assert cmp2.mod_names == cmp.mod_names
 
-    # ==========
-    # Test slicing
-    # ==========
+    def test_round_trip_from_matched_dfs0(self, simple_vo, simple_vm):
+        cmp = ms.match(simple_vo, simple_vm)
+        # create df0 from matched data and create comparer from that again
+        ds = mikeio.from_pandas(cmp.to_dataframe())
+        cmp2 = ms.from_matched(ds)
+        assert cmp2.gtype == cmp.gtype == "vertical"
+        assert cmp2.n_models == 1
+        assert cmp2.n_points == cmp.n_points
+        assert np.isnan(cmp2.x)  # x and y not propagate with dataframe
+        assert np.isnan(cmp2.y)  # x and y not propagate with dataframe
+        assert np.array_equal(cmp2.z, cmp.z)
+        assert cmp2.name == "Observation"
+        assert cmp2.gtype == cmp.gtype
+        assert cmp2.mod_names == cmp.mod_names
+
+    def test_round_trip_from_matched_xr(self, simple_vo, simple_vm):
+        cmp = ms.match(simple_vo, simple_vm)
+        cmp2 = ms.from_matched(cmp.data)
+
+        assert cmp2.gtype == cmp.gtype == "vertical"
+        assert cmp2.n_models == 1
+        assert cmp2.n_points == cmp.n_points
+        assert cmp2.x == cmp.x  # propagated
+        assert cmp2.y == cmp.y  # propagated
+        assert np.array_equal(cmp2.z, cmp.z)
+        assert cmp2.name == cmp.name
+        assert cmp2.gtype == cmp.gtype
+        assert cmp2.mod_names == cmp.mod_names
 
     # ==========
     # Test correct results
     # ==========
+    def test_align_same_negative_depth(self, simple_vo, simple_vm):
+        vo = simple_vo
+        vm = simple_vm
+        cmp = ms.match(vo, vm)
+        expected_mod_values = [1.1, 2.1, 1.2, 2.2]
+
+        assert cmp.data["mod"].to_numpy() == pytest.approx(expected_mod_values)
+        assert cmp.data["z"].to_numpy() == pytest.approx(simple_vo.data["z"].to_numpy())
+
+    def test_align_unevently_sampled_obs(self, simple_vo, simple_vm):
+        # drop the last point and modify last obs depth to -4 and create new VerticalObservation
+        df_o = simple_vo.to_dataframe().iloc[0:-1, :]
+        df_o.iloc[-1, 0] = -4
+        vo = ms.VerticalObservation(df_o)
+        cmp = ms.match(vo, simple_vm)
+        expected_mod_values = [1.1, 2.1, 4.2]
+        expected_depths = simple_vo.data["z"].to_numpy()[0:-1]
+        expected_depths[-1] = -4
+
+        assert cmp.data["mod"].to_numpy() == pytest.approx(expected_mod_values)
+        assert cmp.data["z"].to_numpy() == pytest.approx(expected_depths)
+
+    def test_align_vertical_intepolation(self, simple_vm):
+        # Create observations from model df
+        vo = ms.VerticalObservation(simple_vm.to_dataframe())
+        # Modify model to be inbetween the obs depths and create new VerticalModelResult
+        df = simple_vm.to_dataframe()
+        df["z"] = df["z"] - 0.5
+        # INPUT
+        # mod_z = [-1.5, -2.5, -3.5, -4.5, -1.5, -2.5, -3.5, -4.5],
+        # mod_v = [1.1, 2.1, 3.1, 4.1, 1.2, 2.2, 3.2, 4.2]
+        # obs_z = [-1, -2, -3, -4, -1, -2, -3, -4]
+        vm = ms.VerticalModelResult(df)
+        cmp = ms.match(vo, vm)
+
+        # first depth is nan in models becasuse obs outside model domain
+        # obs at -2 is between model depths -1.5 and -2.5, so mod value is = 1.6
+        # ...
+        expected_mod_values = [1.6, 2.6, 3.6, 1.7, 2.7, 3.7]
+        assert cmp.n_points == 6
+        assert cmp.data["mod"].to_numpy() == pytest.approx(expected_mod_values)
+
+    def test_same_results(self, simple_vm):
+        vo = ms.VerticalObservation(simple_vm.to_dataframe())
+        cmp = ms.match(vo, simple_vm)
+        assert cmp.n_points == 8
+        assert cmp.data["mod"].to_numpy() == pytest.approx(
+            simple_vm.data["mod"].to_numpy()
+        )
+        assert cmp.data["z"].to_numpy() == pytest.approx(simple_vm.data["z"].to_numpy())
+        assert cmp.data["Observation"].to_numpy() == pytest.approx(
+            simple_vm.data["mod"].to_numpy()
+        )
+
+    # ==========
+    # Skill test (MAYBE IN SKILL)
+    # ==========
+    # Same models give rmse = 0
+
+    # ==========
+    # Test slicing
+    # ==========
+    def test_slice_vertical(self, simple_vo, simple_vm):
+        cmp = ms.match(simple_vo, simple_vm)
+        cmp_slice = cmp.query("z>=-1.5 & z<=-0.5")
+        assert cmp_slice.n_points < cmp.n_points
+
+    # ==========
+    # Edge-cases
+    # ==========
+    def test_no_overlap_in_z(self, simple_vo, simple_vm):
+        # shift model to be outside obs range
+        df = simple_vm.to_dataframe()
+        df["z"] = df["z"] - 2
+        vm = ms.VerticalModelResult(df)
+        cmp = ms.match(simple_vo, vm)
+        assert cmp.n_points == 0
+
+    def test_only_1_model_depth_overlap(self, simple_vo, simple_vm):
+        # shift model to be outside obs range except for one point
+        df = simple_vm.to_dataframe()
+        df["z"] = df["z"] - 1  # only match with models at z=-2 exact
+        vm = ms.VerticalModelResult(df)
+        cmp = ms.match(simple_vo, vm)
+        assert cmp.n_points == 2
 
 
 def test_properties_after_match(o1, mr1):
