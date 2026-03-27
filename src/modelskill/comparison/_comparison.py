@@ -175,6 +175,7 @@ class ItemSelection:
     aux: Sequence[str]
     x: Optional[str] = None
     y: Optional[str] = None
+    z: Optional[str] = None
 
     def __post_init__(self) -> None:
         # check that obs, model and aux are unique, and that they are not overlapping
@@ -189,6 +190,8 @@ class ItemSelection:
             res.append(self.x)
         if self.y is not None:
             res.append(self.y)
+        if self.z is not None:
+            res.append(self.z)
         return res
 
     @staticmethod
@@ -199,6 +202,7 @@ class ItemSelection:
         aux_items: Optional[Iterable[str | int]] = None,
         x_item: str | int | None = None,
         y_item: str | int | None = None,
+        z_item: str | int | None = None,
     ) -> ItemSelection:
         """Parse item selection.
 
@@ -214,25 +218,26 @@ class ItemSelection:
             raise ValueError("data must contain at least two items")
         obs_name = _get_name(obs_item, items) if obs_item else items[0]
 
-        # Check existance of items and convert to names
-
+        # Check existence of items and convert to names
         if aux_items is not None:
             if isinstance(aux_items, (str, int)):
                 aux_items = [aux_items]
             aux_names = [_get_name(a, items) for a in aux_items]
         else:
             aux_names = []
+
+        x_name = _get_name(x_item, items) if x_item is not None else None
+        y_name = _get_name(y_item, items) if y_item is not None else None
+        z_name = _get_name(z_item, items) if z_item is not None else None
+
         if mod_items is not None:
             if isinstance(mod_items, (str, int)):
                 mod_items = [mod_items]
             mod_names = [_get_name(m, items) for m in mod_items]
         else:
-            mod_names = [
-                item for item in items if item not in aux_names and item != obs_name
-            ]
-
-        x_name = _get_name(x_item, items) if x_item is not None else None
-        y_name = _get_name(y_item, items) if y_item is not None else None
+            # Add remaining items as model items
+            not_model = [x_name] + [y_name] + [z_name] + aux_names + [obs_name]
+            mod_names = [item for item in items if item not in not_model]
 
         if len(mod_names) == 0:
             raise ValueError("no model items were found! Must be at least one")
@@ -242,7 +247,7 @@ class ItemSelection:
             raise ValueError("observation item must not be an auxiliary item")
 
         return ItemSelection(
-            obs=obs_name, model=mod_names, aux=aux_names, x=x_name, y=y_name
+            obs=obs_name, model=mod_names, aux=aux_names, x=x_name, y=y_name, z=z_name
         )
 
 
@@ -302,18 +307,23 @@ def _matched_data_to_xarray(
     z: Optional[float] = None,
     x_item: str | int | None = None,
     y_item: str | int | None = None,
+    z_item: str | int | None = None,
     quantity: Optional[Quantity] = None,
 ) -> xr.Dataset:
     """Convert matched data to accepted xarray.Dataset format"""
     assert isinstance(df, pd.DataFrame)
-    cols = list(df.columns)
-    items = ItemSelection.parse(cols, obs_item, mod_items, aux_items, x_item, y_item)
 
+    cols = list(df.columns)
+    items = ItemSelection.parse(
+        cols, obs_item, mod_items, aux_items, x_item, y_item, z_item
+    )
     # check that x and x_item is not both specified (same for y and y_item)
     if (x is not None) and (x_item is not None):
         raise ValueError("x and x_item cannot both be specified")
     if (y is not None) and (y_item is not None):
         raise ValueError("y and y_item cannot both be specified")
+    if (z is not None) and (z_item is not None):
+        raise ValueError("z and z_item cannot both be specified")
 
     if x is not None:
         try:
@@ -329,7 +339,6 @@ def _matched_data_to_xarray(
             raise TypeError(
                 f"y must be scalar, not {type(y)}; if y is a coordinate variable, use y_item"
             )
-
     # check that items.obs and items.model are numeric
     if not np.issubdtype(df[items.obs].dtype, np.number):
         raise ValueError(
@@ -370,16 +379,20 @@ def _matched_data_to_xarray(
     else:
         ds.coords["y"] = np.nan
 
-    # No z-item so far (relevant for ProfileObservation)
-    if z is not None:
+    if z_item is not None:
+        ds = ds.rename({items.z: "z"}).set_coords("z")
+    elif z is not None:
         ds.coords["z"] = z
+    # data vars named "z" will be coordinates
+    elif "z" in ds.data_vars:
+        ds = ds.set_coords("z")
 
-    if ds.coords["x"].size == 1:
+    if "z" in ds.coords:
+        ds.attrs["gtype"] = str(GeometryType.VERTICAL)
+    elif ds.coords["x"].size == 1:
         ds.attrs["gtype"] = str(GeometryType.POINT)
     else:
         ds.attrs["gtype"] = str(GeometryType.TRACK)
-    # TODO
-    # ds.attrs["gtype"] = str(GeometryType.PROFILE)
 
     if quantity is None:
         q = Quantity.undefined()
@@ -480,6 +493,7 @@ class Comparer:
         z: Optional[float] = None,
         x_item: str | int | None = None,
         y_item: str | int | None = None,
+        z_item: str | int | None = None,
         quantity: Optional[Quantity] = None,
     ) -> "Comparer":
         """Initialize from compared data"""
@@ -496,10 +510,10 @@ class Comparer:
                 z=z,
                 x_item=x_item,
                 y_item=y_item,
+                z_item=z_item,
                 quantity=quantity,
             )
             data.attrs["weight"] = weight
-
             # FIXME: Consider changes needed for vertical
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
@@ -1202,6 +1216,7 @@ class Comparer:
         """Convert matched data to pandas DataFrame
 
         Include x, y coordinates only if gtype=track
+        Include z coordinate only if gtype=vertical
 
         Returns
         -------
@@ -1217,6 +1232,15 @@ class Comparer:
             # make sure that x, y cols are first
             cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
             return df[cols]
+        elif self.gtype == str(GeometryType.VERTICAL):
+            df = self.data.drop_vars(["x", "y"]).to_dataframe()
+            # make sure that z col is first
+            # cols = ["z"] + [c for c in df.columns if c not in ["z"]]
+            cols = ["Observation"] + [c for c in df.columns if c not in ["Observation"]]
+            cols = [c for c in df.columns if c not in ["z"]] + ["z"]
+            # add x,y as attributes to the dataframe
+            return df[cols]
+
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 

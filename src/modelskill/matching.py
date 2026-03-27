@@ -87,6 +87,7 @@ def from_matched(
     z: Optional[float] = None,
     x_item: str | int | None = None,
     y_item: str | int | None = None,
+    z_item: str | int | None = None,
 ) -> Comparer:
     """Create a Comparer from data that is already matched (aligned).
 
@@ -115,6 +116,8 @@ def from_matched(
         Name of x item, only relevant for track data
     y_item: [str, int], optional
         Name of y item, only relevant for track data
+    z_item: [str, int], optional
+        Name of z item, only relevant for vertical data for which it must be provided
 
     Returns
     -------
@@ -167,6 +170,7 @@ def from_matched(
         z=z,
         x_item=x_item,
         y_item=y_item,
+        z_item=z_item,
         quantity=quantity,
     )
 
