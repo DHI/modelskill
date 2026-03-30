@@ -8,7 +8,7 @@ wheel-exclude = ["**/.mypy_cache**", "**/.mypy_cache/**"]
 
 [project]
 name = "modelskill"
-version = "1.4.0a1"
+version = "1.4.0-alpha.1"
 dependencies = [
     "numpy  > 1.24.4",
     "pandas >= 1.4, < 3.0", # TODO remove upper limit
@@ -18,6 +18,8 @@ dependencies = [
     "netCDF4",
     "scipy",
     "jinja2",               # used for skill.style
+    "typing-extensions",
+    "pyyaml",
 ]
 
 authors = [
