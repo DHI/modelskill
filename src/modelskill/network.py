@@ -13,6 +13,8 @@ Import this module explicitly to use network functionality::
 
 from __future__ import annotations
 
+import sys
+
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Sequence, overload, TYPE_CHECKING
@@ -357,8 +359,12 @@ class Network:
         >>> network = Network.from_res1d("model.res1d")
         >>> network = Network.from_res1d(Res1D("model.res1d"))
         """
+        if sys.version_info >= (3, 14):
+            raise NotImplementedError(f"Current version of 'mikeio1d' requires python < 3.14 and {sys.version} is being used.")
+        
         from mikeio1d import Res1D as _Res1D
         from modelskill.model.adapters._res1d import Res1DReach
+
 
         if isinstance(res, (str, Path)):
             path = Path(res)
