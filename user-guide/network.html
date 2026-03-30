@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Networks – ModelSkill</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../user-guide/statistics.html" rel="prev">
+<link href="../dhi.ico" rel="icon">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-3a7abe8a1fb041dadcb9b079f1f7e447.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+<link rel="stylesheet" href="../api/_styles-quartodoc.css">
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">ModelSkill</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="../user-guide/index.html" aria-current="page"> 
+<span class="menu-text">User Guide</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../examples/index.html"> 
+<span class="menu-text">Examples</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../api/index.html"> 
+<span class="menu-text">API Reference</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <div class="dropdown">
+      <a href="" title="" id="quarto-navigation-tool-dropdown-0" class="quarto-navigation-tool dropdown-toggle px-1" data-bs-toggle="dropdown" aria-expanded="false" role="link" aria-label=""><i class="bi bi-github"></i></a>
+      <ul class="dropdown-menu" aria-labelledby="quarto-navigation-tool-dropdown-0">
+          <li>
+            <a class="dropdown-item quarto-navbar-tools-item" href="https://github.com/DHI/modelskill">
+            Source Code
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item quarto-navbar-tools-item" href="https://github.com/DHI/modelskill/issues">
+            Report a Bug
+            </a>
+          </li>
+      </ul>
+    </div>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">Networks</h1>
+        </a>     
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">User Guide</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/getting-started.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Getting started</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/terminology.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Terminology</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/data-structures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Data Structures</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/workflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Workflow</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/matching.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Matching</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/selecting-data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selecting data</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/plotting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Plotting</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/statistics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Skill Statistics</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Extensions</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/network.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Networks</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#building-a-network" id="toc-building-a-network" class="nav-link active" data-scroll-target="#building-a-network">Building a Network</a>
+  <ul class="collapse">
+  <li><a href="#res1d-file" id="toc-res1d-file" class="nav-link" data-scroll-target="#res1d-file">Res1D file</a></li>
+  </ul></li>
+  <li><a href="#inspecting-the-network" id="toc-inspecting-the-network" class="nav-link" data-scroll-target="#inspecting-the-network">Inspecting the Network</a>
+  <ul class="collapse">
+  <li><a href="#available-quantities" id="toc-available-quantities" class="nav-link" data-scroll-target="#available-quantities">Available quantities</a></li>
+  <li><a href="#underlying-graph" id="toc-underlying-graph" class="nav-link" data-scroll-target="#underlying-graph">Underlying graph</a></li>
+  <li><a href="#timeseries-data" id="toc-timeseries-data" class="nav-link" data-scroll-target="#timeseries-data">Timeseries data</a></li>
+  </ul></li>
+  <li><a href="#looking-up-node-ids" id="toc-looking-up-node-ids" class="nav-link" data-scroll-target="#looking-up-node-ids">Looking up node IDs</a></li>
+  <li><a href="#skill-assessment-workflow" id="toc-skill-assessment-workflow" class="nav-link" data-scroll-target="#skill-assessment-workflow">Skill assessment workflow</a>
+  <ul class="collapse">
+  <li><a href="#wrap-the-network-in-a-networkmodelresult" id="toc-wrap-the-network-in-a-networkmodelresult" class="nav-link" data-scroll-target="#wrap-the-network-in-a-networkmodelresult">1. Wrap the Network in a NetworkModelResult</a></li>
+  <li><a href="#create-nodeobservations-and-compute-skill" id="toc-create-nodeobservations-and-compute-skill" class="nav-link" data-scroll-target="#create-nodeobservations-and-compute-skill">2. Create NodeObservations and compute skill</a></li>
+  </ul></li>
+  <li><a href="#development" id="toc-development" class="nav-link" data-scroll-target="#development">Development</a>
+  <ul class="collapse">
+  <li><a href="#custom-network-formats" id="toc-custom-network-formats" class="nav-link" data-scroll-target="#custom-network-formats">Custom network formats</a></li>
+  <li><a href="#adding-break-points-along-a-reach" id="toc-adding-break-points-along-a-reach" class="nav-link" data-scroll-target="#adding-break-points-along-a-reach">Adding break points along a reach</a></li>
+  </ul></li>
+  <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See also</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/user-guide/network.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="network.ipynb" download="network.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title d-none d-lg-block">Networks</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Extra dependencies required
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Network support depends on libraries that are <strong>not</strong> installed by default, e.g.&nbsp;<code>networkx</code>. You can install them alongside <code>modelskill</code> using the <em>networks</em> extra:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> pip install modelskill<span class="pp">[</span><span class="ss">networks</span><span class="pp">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>or</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add modelskill<span class="pp">[</span><span class="ss">networks</span><span class="pp">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<p>A <strong>Network</strong> represents a 1D pipe or river network as a directed graph: nodes hold timeseries data (e.g.&nbsp;water level at a junction) and edges carry the topology and reach length between them. Break points along an edge (e.g.&nbsp;cross-section chainages) are supported as observation locations too.</p>
+<p>The typical workflow is:</p>
+<pre><code>Network  →  NetworkModelResult  →  match()  →  Comparer</code></pre>
+<section id="building-a-network" class="level2">
+<h2 class="anchored" data-anchor-id="building-a-network">Building a Network</h2>
+<p>You can build a <code>Network</code> object by loading it from a supported network format.</p>
+<p>Currently, the only supported format is <code>mikeio.Res1D</code>.</p>
+<section id="res1d-file" class="level3">
+<h3 class="anchored" data-anchor-id="res1d-file">Res1D file</h3>
+<p>The quickest way to get a <code>Network</code> is from the path to a MIKE 1D result file:</p>
+<div id="e9259636" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> Network</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>network <span class="op">=</span> Network.from_res1d(path_to_res1d)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>network</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="3">
+<pre><code>&lt;Network&gt;
+Edges: 118
+Nodes: 259
+Quantities: ['WaterLevel', 'Discharge']
+Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
+</div>
+</div>
+<p>or a <code>mikeio1d.Res1D</code> that has already been opened:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mikeio1d <span class="im">import</span> Res1D</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> Res1D(path_to_res1d)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>network <span class="op">=</span> Network.from_res1d(res)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A <code>Res1D</code> network contains multiple levels that are unified into a generic network structure as depicted in the image below. The image introduces concepts like <em>find</em>, <em>recall</em> and <em>boundary</em> which are explained in the following sections.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/res1d_network_mapping.png" class="img-fluid figure-img"></p>
+<figcaption>How a Res1D file maps to a Network object. Reaches and nodes are re-indexed as integers; boundary nodes expose <code>find()</code>/<code>recall()</code> round-trip lookups.</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="inspecting-the-network" class="level2">
+<h2 class="anchored" data-anchor-id="inspecting-the-network">Inspecting the Network</h2>
+<section id="available-quantities" class="level3">
+<h3 class="anchored" data-anchor-id="available-quantities">Available quantities</h3>
+<div id="4f7e6c6c" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>network.quantities</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="4">
+<pre><code>['WaterLevel', 'Discharge']</code></pre>
+</div>
+</div>
+</section>
+<section id="underlying-graph" class="level3">
+<h3 class="anchored" data-anchor-id="underlying-graph">Underlying graph</h3>
+<p>The network exposes a <code>networkx.Graph</code> so you can use any NetworkX algorithm or plotting function directly:</p>
+<div id="0e142953" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">9</span>), layout<span class="op">=</span><span class="st">"tight"</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>nx.draw(network.graph, ax<span class="op">=</span>ax, <span class="op">**</span>plot_kwargs)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="network_files/figure-html/cell-7-output-1.png" width="950" height="854" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="timeseries-data" class="level3">
+<h3 class="anchored" data-anchor-id="timeseries-data">Timeseries data</h3>
+<div id="39fb1544" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Multi-index DataFrame: columns are (node, quantity)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>network.to_dataframe().head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="7">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">node</th>
+<th data-quarto-table-cell-role="th">0</th>
+<th data-quarto-table-cell-role="th">1</th>
+<th data-quarto-table-cell-role="th">2</th>
+<th data-quarto-table-cell-role="th">3</th>
+<th data-quarto-table-cell-role="th">4</th>
+<th data-quarto-table-cell-role="th">5</th>
+<th data-quarto-table-cell-role="th">6</th>
+<th data-quarto-table-cell-role="th">7</th>
+<th data-quarto-table-cell-role="th">8</th>
+<th data-quarto-table-cell-role="th">9</th>
+<th data-quarto-table-cell-role="th">...</th>
+<th data-quarto-table-cell-role="th">249</th>
+<th data-quarto-table-cell-role="th">250</th>
+<th data-quarto-table-cell-role="th">251</th>
+<th data-quarto-table-cell-role="th">252</th>
+<th data-quarto-table-cell-role="th">253</th>
+<th data-quarto-table-cell-role="th">254</th>
+<th data-quarto-table-cell-role="th">255</th>
+<th data-quarto-table-cell-role="th">256</th>
+<th data-quarto-table-cell-role="th">257</th>
+<th data-quarto-table-cell-role="th">258</th>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">quantity</th>
+<th data-quarto-table-cell-role="th">WaterLevel</th>
+<th data-quarto-table-cell-role="th">WaterLevel</th>
+<th data-quarto-table-cell-role="th">Discharge</th>
+<th data-quarto-table-cell-role="th">WaterLevel</th>
+<th data-quarto-table-cell-role="th">Discharge</th>
+<th data-quarto-table-cell-role="th">WaterLevel</th>
+<th data-quarto-table-cell-role="th">WaterLevel</th>
+<th data-quarto-table-cell-role="th">Discharge</th>
+<th data-quarto-table-cell-role="th">WaterLevel</th>
+<th data-quarto-table-cell-role="th">WaterLevel</th>
+<th data-quarto-table-cell-role="th">...</th>
+<th data-quarto-table-cell-role="th">Discharge</th>
+<th data-quarto-table-cell-role="th">WaterLevel</th>
+<th data-quarto-table-cell-role="th">Discharge</th>
+<th data-quarto-table-cell-role="th">WaterLevel</th>
+<th data-quarto-table-cell-role="th">Discharge</th>
+<th data-quarto-table-cell-role="th">Discharge</th>
+<th data-quarto-table-cell-role="th">Discharge</th>
+<th data-quarto-table-cell-role="th">WaterLevel</th>
+<th data-quarto-table-cell-role="th">Discharge</th>
+<th data-quarto-table-cell-role="th">Discharge</th>
+</tr>
+<tr class="header">
+<th data-quarto-table-cell-role="th">time</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">1994-08-07 16:35:00.000</th>
+<td>195.441498</td>
+<td>194.661499</td>
+<td>0.000006</td>
+<td>195.931503</td>
+<td>0.000004</td>
+<td>193.550003</td>
+<td>193.550003</td>
+<td>0.000000</td>
+<td>195.801498</td>
+<td>195.703003</td>
+<td>...</td>
+<td>0.000005</td>
+<td>194.511505</td>
+<td>0.000013</td>
+<td>194.581497</td>
+<td>0.000003</td>
+<td>0.000002</td>
+<td>0.000031</td>
+<td>193.779999</td>
+<td>0.0</td>
+<td>0.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1994-08-07 16:36:01.870</th>
+<td>195.441605</td>
+<td>194.661621</td>
+<td>0.000006</td>
+<td>195.931595</td>
+<td>0.000004</td>
+<td>193.550140</td>
+<td>193.550064</td>
+<td>0.000008</td>
+<td>195.801498</td>
+<td>195.703171</td>
+<td>...</td>
+<td>0.000005</td>
+<td>194.511841</td>
+<td>0.000010</td>
+<td>194.581497</td>
+<td>0.000003</td>
+<td>0.000002</td>
+<td>0.000031</td>
+<td>188.479996</td>
+<td>0.0</td>
+<td>0.0</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">1994-08-07 16:37:07.560</th>
+<td>195.441620</td>
+<td>194.661728</td>
+<td>0.000006</td>
+<td>195.931625</td>
+<td>0.000004</td>
+<td>193.550232</td>
+<td>193.550156</td>
+<td>0.000016</td>
+<td>195.801498</td>
+<td>195.703400</td>
+<td>...</td>
+<td>0.000005</td>
+<td>194.511795</td>
+<td>0.000010</td>
+<td>194.581497</td>
+<td>0.000003</td>
+<td>0.000002</td>
+<td>0.000033</td>
+<td>188.479996</td>
+<td>0.0</td>
+<td>0.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1994-08-07 16:38:55.828</th>
+<td>195.441605</td>
+<td>194.661926</td>
+<td>0.000006</td>
+<td>195.931656</td>
+<td>0.000004</td>
+<td>193.550369</td>
+<td>193.550308</td>
+<td>0.000022</td>
+<td>195.801498</td>
+<td>195.703690</td>
+<td>...</td>
+<td>0.000005</td>
+<td>194.511581</td>
+<td>0.000009</td>
+<td>194.581497</td>
+<td>0.000003</td>
+<td>0.000002</td>
+<td>0.000037</td>
+<td>188.479996</td>
+<td>0.0</td>
+<td>0.0</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">1994-08-07 16:39:55.828</th>
+<td>195.441605</td>
+<td>194.661972</td>
+<td>0.000006</td>
+<td>195.931656</td>
+<td>0.000004</td>
+<td>193.550430</td>
+<td>193.550369</td>
+<td>0.000024</td>
+<td>195.801498</td>
+<td>195.703827</td>
+<td>...</td>
+<td>0.000005</td>
+<td>194.511505</td>
+<td>0.000009</td>
+<td>194.581497</td>
+<td>0.000003</td>
+<td>0.000002</td>
+<td>0.000039</td>
+<td>188.479996</td>
+<td>0.0</td>
+<td>0.0</td>
+</tr>
+</tbody>
+</table>
+
+<p>5 rows × 259 columns</p>
+</div>
+</div>
+</div>
+<div id="9d7dfae1" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select a single quantity</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>network.to_dataframe(sel<span class="op">=</span><span class="st">"WaterLevel"</span>).head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="8">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">node</th>
+<th data-quarto-table-cell-role="th">0</th>
+<th data-quarto-table-cell-role="th">1</th>
+<th data-quarto-table-cell-role="th">3</th>
+<th data-quarto-table-cell-role="th">5</th>
+<th data-quarto-table-cell-role="th">6</th>
+<th data-quarto-table-cell-role="th">8</th>
+<th data-quarto-table-cell-role="th">9</th>
+<th data-quarto-table-cell-role="th">11</th>
+<th data-quarto-table-cell-role="th">12</th>
+<th data-quarto-table-cell-role="th">14</th>
+<th data-quarto-table-cell-role="th">...</th>
+<th data-quarto-table-cell-role="th">235</th>
+<th data-quarto-table-cell-role="th">237</th>
+<th data-quarto-table-cell-role="th">239</th>
+<th data-quarto-table-cell-role="th">241</th>
+<th data-quarto-table-cell-role="th">244</th>
+<th data-quarto-table-cell-role="th">246</th>
+<th data-quarto-table-cell-role="th">248</th>
+<th data-quarto-table-cell-role="th">250</th>
+<th data-quarto-table-cell-role="th">252</th>
+<th data-quarto-table-cell-role="th">256</th>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">time</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">1994-08-07 16:35:00.000</th>
+<td>195.441498</td>
+<td>194.661499</td>
+<td>195.931503</td>
+<td>193.550003</td>
+<td>193.550003</td>
+<td>195.801498</td>
+<td>195.703003</td>
+<td>197.072006</td>
+<td>196.962006</td>
+<td>197.351501</td>
+<td>...</td>
+<td>196.272995</td>
+<td>196.113007</td>
+<td>196.322006</td>
+<td>196.401993</td>
+<td>196.851501</td>
+<td>196.891495</td>
+<td>196.601501</td>
+<td>194.511505</td>
+<td>194.581497</td>
+<td>193.779999</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1994-08-07 16:36:01.870</th>
+<td>195.441605</td>
+<td>194.661621</td>
+<td>195.931595</td>
+<td>193.550140</td>
+<td>193.550064</td>
+<td>195.801498</td>
+<td>195.703171</td>
+<td>197.072006</td>
+<td>196.962051</td>
+<td>197.351501</td>
+<td>...</td>
+<td>196.272995</td>
+<td>196.113007</td>
+<td>196.322037</td>
+<td>196.402023</td>
+<td>196.851501</td>
+<td>196.891495</td>
+<td>196.601501</td>
+<td>194.511841</td>
+<td>194.581497</td>
+<td>188.479996</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">1994-08-07 16:37:07.560</th>
+<td>195.441620</td>
+<td>194.661728</td>
+<td>195.931625</td>
+<td>193.550232</td>
+<td>193.550156</td>
+<td>195.801498</td>
+<td>195.703400</td>
+<td>197.072006</td>
+<td>196.962082</td>
+<td>197.351501</td>
+<td>...</td>
+<td>196.272995</td>
+<td>196.113007</td>
+<td>196.322052</td>
+<td>196.402039</td>
+<td>196.851501</td>
+<td>196.891495</td>
+<td>196.601501</td>
+<td>194.511795</td>
+<td>194.581497</td>
+<td>188.479996</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1994-08-07 16:38:55.828</th>
+<td>195.441605</td>
+<td>194.661926</td>
+<td>195.931656</td>
+<td>193.550369</td>
+<td>193.550308</td>
+<td>195.801498</td>
+<td>195.703690</td>
+<td>197.072006</td>
+<td>196.962112</td>
+<td>197.351501</td>
+<td>...</td>
+<td>196.272995</td>
+<td>196.113007</td>
+<td>196.322067</td>
+<td>196.402069</td>
+<td>196.851501</td>
+<td>196.891495</td>
+<td>196.601501</td>
+<td>194.511581</td>
+<td>194.581497</td>
+<td>188.479996</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">1994-08-07 16:39:55.828</th>
+<td>195.441605</td>
+<td>194.661972</td>
+<td>195.931656</td>
+<td>193.550430</td>
+<td>193.550369</td>
+<td>195.801498</td>
+<td>195.703827</td>
+<td>197.072006</td>
+<td>196.962128</td>
+<td>197.351501</td>
+<td>...</td>
+<td>196.272995</td>
+<td>196.113007</td>
+<td>196.322067</td>
+<td>196.402069</td>
+<td>196.851501</td>
+<td>196.891495</td>
+<td>196.601501</td>
+<td>194.511505</td>
+<td>194.581497</td>
+<td>188.479996</td>
+</tr>
+</tbody>
+</table>
+
+<p>5 rows × 130 columns</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="looking-up-node-ids" class="level2">
+<h2 class="anchored" data-anchor-id="looking-up-node-ids">Looking up node IDs</h2>
+<p>After construction, nodes are re-labelled as integers. Use <code>find()</code> to go from original coordinates to the integer ID and <code>recall()</code> to go back.</p>
+<div id="71aefb45" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Look up a named node by its original id</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>node_id <span class="op">=</span> network.find(node<span class="op">=</span><span class="st">"117"</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Node '117' → integer id </span><span class="sc">{</span>node_id<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Recover the original label</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(network.recall(node_id))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Node '117' → integer id 51
+{'node': '117'}</code></pre>
+</div>
+</div>
+<div id="6b8b21de" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Look up a break point by reach + chainage</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>bp_id <span class="op">=</span> network.find(edge<span class="op">=</span><span class="st">"94l1"</span>, distance<span class="op">=</span><span class="fl">21.285</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Break point (94l1, 21.285) → integer id </span><span class="sc">{</span>bp_id<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(network.recall(bp_id))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Break point (94l1, 21.285) → integer id 245
+{'edge': '94l1', 'distance': 21.2852238539205}</code></pre>
+</div>
+</div>
+<div id="167a32fe" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Node batch lookup</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(node<span class="op">=</span>[<span class="st">"20"</span>, <span class="st">"113"</span>, <span class="st">"38"</span>])</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ids)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[76, 40, 15]</code></pre>
+</div>
+</div>
+<div id="85f5c9e0" class="cell" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Edge lookup</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(edge<span class="op">=</span><span class="st">"58l1"</span>, distance<span class="op">=</span><span class="st">"start"</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ids)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(edge<span class="op">=</span><span class="st">"58l1"</span>, distance<span class="op">=</span>[<span class="fl">51.456</span>, <span class="fl">77.185</span>])</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ids)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(edge<span class="op">=</span><span class="st">"58l1"</span>, distance<span class="op">=</span>[<span class="st">"start"</span>, <span class="fl">77.185</span>])</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ids)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>57
+[159, 160]
+[57, 160]</code></pre>
+</div>
+</div>
+</section>
+<section id="skill-assessment-workflow" class="level2">
+<h2 class="anchored" data-anchor-id="skill-assessment-workflow">Skill assessment workflow</h2>
+<section id="wrap-the-network-in-a-networkmodelresult" class="level3">
+<h3 class="anchored" data-anchor-id="wrap-the-network-in-a-networkmodelresult">1. Wrap the Network in a NetworkModelResult</h3>
+<div id="e4a2c626" class="cell" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.model.network <span class="im">import</span> NetworkModelResult</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> NetworkModelResult(network, name<span class="op">=</span><span class="st">"MyModel"</span>, item<span class="op">=</span><span class="st">"WaterLevel"</span>)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>mr</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="13">
+<pre><code>&lt;NetworkModelResult&gt;: MyModel</code></pre>
+</div>
+</div>
+</section>
+<section id="create-nodeobservations-and-compute-skill" class="level3">
+<h3 class="anchored" data-anchor-id="create-nodeobservations-and-compute-skill">2. Create NodeObservations and compute skill</h3>
+<p><code>NodeObservation</code> accepts a file path directly; the observation name is taken from the filename.</p>
+<div id="21223f68" class="cell" data-execution_count="14">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>obs_1 <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_1, node<span class="op">=</span>network.find(node<span class="op">=</span><span class="st">"78"</span>))</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>obs_2 <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_2, node<span class="op">=</span>network.find(node<span class="op">=</span><span class="st">"46"</span>))</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>cc <span class="op">=</span> ms.match(obs<span class="op">=</span>[obs_1, obs_2], mod<span class="op">=</span>mr)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>cc.skill()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="14">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">n</th>
+<th data-quarto-table-cell-role="th">bias</th>
+<th data-quarto-table-cell-role="th">rmse</th>
+<th data-quarto-table-cell-role="th">urmse</th>
+<th data-quarto-table-cell-role="th">mae</th>
+<th data-quarto-table-cell-role="th">cc</th>
+<th data-quarto-table-cell-role="th">si</th>
+<th data-quarto-table-cell-role="th">r2</th>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">observation</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">network_sensor_1</th>
+<td>109</td>
+<td>0.700685</td>
+<td>0.810246</td>
+<td>0.406865</td>
+<td>0.724734</td>
+<td>0.726882</td>
+<td>0.002095</td>
+<td>-2.245889</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">network_sensor_2</th>
+<td>80</td>
+<td>0.430548</td>
+<td>0.462543</td>
+<td>0.169040</td>
+<td>0.431153</td>
+<td>0.550352</td>
+<td>0.000873</td>
+<td>-4.548691</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="development" class="level2">
+<h2 class="anchored" data-anchor-id="development">Development</h2>
+<section id="custom-network-formats" class="level3">
+<h3 class="anchored" data-anchor-id="custom-network-formats">Custom network formats</h3>
+<p>In case you have your network data in a format that is not included in <a href="#building-a-network">Building a Network</a>, you can assemble a <code>Network</code> object by subclassing the abstract base classes <code>NetworkNode</code> and <code>NetworkEdge</code>.</p>
+<p><code>NetworkNode</code> requires three properties: <code>id</code>, <code>data</code>, and <code>boundary</code>. <code>NetworkEdge</code> requires five: <code>id</code>, <code>start</code>, <code>end</code>, <code>length</code>, and <code>breakpoints</code>.</p>
+<p>The following is a simple implementation example:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Any</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> NetworkNode, NetworkEdge, Network</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExampleNode(NetworkNode):</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Node backed by an in-memory DataFrame, e.g. model output."""</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, node_id: <span class="bu">str</span>, data: pd.DataFrame):</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._id <span class="op">=</span> node_id</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data <span class="op">=</span> data</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">id</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._id</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> data(<span class="va">self</span>) <span class="op">-&gt;</span> pd.DataFrame:</span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._data</span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> boundary(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">dict</span>[<span class="bu">str</span>, Any]:</span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> {}</span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExampleEdge(NetworkEdge):</span>
+<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Edge connecting two nodes with a given length."""</span></span>
+<span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(</span>
+<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, edge_id: <span class="bu">str</span>, start: NetworkNode, end: NetworkNode, length: <span class="bu">float</span>,</span>
+<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>        breakpoints: <span class="bu">list</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb23-34"><a href="#cb23-34" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._id <span class="op">=</span> edge_id</span>
+<span id="cb23-35"><a href="#cb23-35" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._start <span class="op">=</span> start</span>
+<span id="cb23-36"><a href="#cb23-36" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._end <span class="op">=</span> end</span>
+<span id="cb23-37"><a href="#cb23-37" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._length <span class="op">=</span> length</span>
+<span id="cb23-38"><a href="#cb23-38" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._breakpoints <span class="op">=</span> breakpoints <span class="kw">or</span> []</span>
+<span id="cb23-39"><a href="#cb23-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-40"><a href="#cb23-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb23-41"><a href="#cb23-41" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">id</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb23-42"><a href="#cb23-42" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._id</span>
+<span id="cb23-43"><a href="#cb23-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-44"><a href="#cb23-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb23-45"><a href="#cb23-45" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> start(<span class="va">self</span>) <span class="op">-&gt;</span> NetworkNode:</span>
+<span id="cb23-46"><a href="#cb23-46" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._start</span>
+<span id="cb23-47"><a href="#cb23-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-48"><a href="#cb23-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb23-49"><a href="#cb23-49" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> end(<span class="va">self</span>) <span class="op">-&gt;</span> NetworkNode:</span>
+<span id="cb23-50"><a href="#cb23-50" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._end</span>
+<span id="cb23-51"><a href="#cb23-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-52"><a href="#cb23-52" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb23-53"><a href="#cb23-53" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> length(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">float</span>:</span>
+<span id="cb23-54"><a href="#cb23-54" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._length</span>
+<span id="cb23-55"><a href="#cb23-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-56"><a href="#cb23-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb23-57"><a href="#cb23-57" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> breakpoints(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">list</span>:</span>
+<span id="cb23-58"><a href="#cb23-58" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._breakpoints</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The three abstract properties that <strong>every</strong> <code>NetworkNode</code> subclass must implement are <code>id</code>, <code>data</code> and <code>boundary</code>. If <code>boundary</code> is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a <code>NetworkEdge</code> with no intermediate points can return an empty <code>breakpoints</code> list.</p>
+</div>
+</div>
+<div id="16c2d91c" class="cell" data-execution_count="15">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> Network</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co"># df1, df2 and df3 are DataFrame objects that are loaded in memory</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>node_s1 <span class="op">=</span> ExampleNode(<span class="st">"sensor_1"</span>, df1)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>node_s2 <span class="op">=</span> ExampleNode(<span class="st">"sensor_2"</span>, df2)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>node_s3 <span class="op">=</span> ExampleNode(<span class="st">"sensor_3"</span>, df3)</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>edge1 <span class="op">=</span> ExampleEdge(<span class="st">"r1"</span>, node_s1, node_s2, length<span class="op">=</span><span class="fl">500.0</span>)</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>edge2 <span class="op">=</span> ExampleEdge(<span class="st">"r2"</span>, node_s2, node_s3, length<span class="op">=</span><span class="fl">300.0</span>)</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>network <span class="op">=</span> Network(edges<span class="op">=</span>[edge1, edge2])</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>network</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="15">
+<pre><code>&lt;Network&gt;
+Edges: 2
+Nodes: 3
+Quantities: ['WaterLevel']
+Time: 1994-08-07 16:00:00 - 1994-08-07 18:59:00</code></pre>
+</div>
+</div>
+</section>
+<section id="adding-break-points-along-a-reach" class="level3">
+<h3 class="anchored" data-anchor-id="adding-break-points-along-a-reach">Adding break points along a reach</h3>
+<p>Break points represent intermediate chainage locations on a reach (e.g.&nbsp;cross-sections). Subclass <code>EdgeBreakPoint</code> the same way — implement <code>id</code> (a <code>(edge_id, distance)</code> tuple) and <code>data</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> EdgeBreakPoint</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExampleBreakPoint(EdgeBreakPoint):</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, edge_id: <span class="bu">str</span>, distance: <span class="bu">float</span>, data: pd.DataFrame):</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._id <span class="op">=</span> (edge_id, distance)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data <span class="op">=</span> data</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">id</span>(<span class="va">self</span>):</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._id</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> data(<span class="va">self</span>):</span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._data</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="co"># df4 is a DataFrame object that has been loaded in memory</span></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>bp <span class="op">=</span> ExampleBreakPoint(<span class="st">"r1"</span>, <span class="fl">200.0</span>, df4)</span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>edge1 <span class="op">=</span> ExampleEdge(<span class="st">"r1"</span>, node_s1, node_s2, length<span class="op">=</span><span class="fl">500.0</span>, breakpoints<span class="op">=</span>[bp])</span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>edge2 <span class="op">=</span> ExampleEdge(<span class="st">"r2"</span>, node_s2, node_s3, length<span class="op">=</span><span class="fl">300.0</span>)</span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>network <span class="op">=</span> Network(edges<span class="op">=</span>[edge1, edge2])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="see-also" class="level2">
+<h2 class="anchored" data-anchor-id="see-also">See also</h2>
+<ul>
+<li><a href="../api/NetworkModelResult.html">API reference — NetworkModelResult</a></li>
+<li><a href="../api/NodeObservation.html">API reference — NodeObservation</a></li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../user-guide/statistics.html" class="pagination-link" aria-label="Skill Statistics">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Skill Statistics</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+  </div>
+</nav>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2025 DHI Group</p>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/user-guide/network.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

@@ -78,7 +78,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-c2184ee79b4189700a07fecab5507ffb.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-3a7abe8a1fb041dadcb9b079f1f7e447.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -216,6 +216,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">TrackObservation</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/NodeObservation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NodeObservation</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -261,6 +267,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../api/DummyModelResult.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">DummyModelResult</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/NetworkModelResult.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NetworkModelResult</span></a>
   </div>
 </li>
       </ul>
@@ -506,7 +518,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <table class="caption-top table">
 <colgroup>
 <col style="width: 4%">
-<col style="width: 16%">
+<col style="width: 15%">
 <col style="width: 75%">
 <col style="width: 3%">
 </colgroup>
@@ -563,7 +575,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>show_density</td>
-<td>Optional[bool]</td>
+<td>bool | None</td>
 <td>show the data density as a colormap of the scatter, by default None. If both <code>show_density</code> and <code>show_hist</code> are None, then <code>show_density</code> is used by default. If number of points is less than 200, then <code>show_density</code> is False by default. For binning the data, the previous kword <code>bins=Float</code> is used</td>
 <td><code>None</code></td>
 </tr>
@@ -623,7 +635,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>skill_table</td>
-<td>Optional[str | Sequence[str] | Mapping[str, str] | bool]</td>
+<td>str | Sequence[str] | Mapping[str, str] | bool | None</td>
 <td>calculate skill scores and show in box next to the plot, True will show default metrics, list of metrics will show these skill scores, by default False, mapping can be used to rename the metrics in the table. Note: cannot be used together with skill_scores argument</td>
 <td><code>False</code></td>
 </tr>
@@ -680,7 +692,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples" class="level2 doc-section doc-section-examples">
 <h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
-<div id="2978da33" class="cell" data-execution_count="1">
+<div id="02b5047e" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -696,7 +708,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="43f3a063" class="cell" data-execution_count="2">
+<div id="0e6a6d1c" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ms.plotting.scatter(x, y, show_hist<span class="op">=</span><span class="va">True</span>, bins<span class="op">=</span><span class="dv">20</span>, cmap<span class="op">=</span><span class="st">"OrRd"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -706,7 +718,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="7e4a7a19" class="cell" data-execution_count="3">
+<div id="a4e9aae2" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ms.plotting.scatter(x, y, quantiles<span class="op">=</span><span class="dv">0</span>, title<span class="op">=</span><span class="st">"Hide quantiles"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -716,7 +728,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="c022cbd1" class="cell" data-execution_count="4">
+<div id="70fbf81d" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ms.plotting.scatter(x, y, xlim<span class="op">=</span>(<span class="dv">0</span>,<span class="dv">4</span>), ylim<span class="op">=</span>(<span class="dv">0</span>,<span class="dv">4</span>), show_density<span class="op">=</span><span class="va">False</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>

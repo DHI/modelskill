@@ -78,7 +78,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-c2184ee79b4189700a07fecab5507ffb.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-3a7abe8a1fb041dadcb9b079f1f7e447.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -216,6 +216,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">TrackObservation</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/NodeObservation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NodeObservation</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -261,6 +267,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../api/DummyModelResult.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">DummyModelResult</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/NetworkModelResult.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NetworkModelResult</span></a>
   </div>
 </li>
       </ul>
@@ -1001,8 +1013,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <table class="caption-top table">
 <colgroup>
 <col style="width: 4%">
-<col style="width: 16%">
-<col style="width: 75%">
+<col style="width: 15%">
+<col style="width: 76%">
 <col style="width: 3%">
 </colgroup>
 <thead>
@@ -1046,7 +1058,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>show_density</td>
-<td>Optional[bool]</td>
+<td>bool | None</td>
 <td>show the data density as a colormap of the scatter, by default None. If both <code>show_density</code> and <code>show_hist</code> are None, then <code>show_density</code> is used by default. If number of points is less than 200, then <code>show_density</code> is False as default. For binning the data, the kword <code>bins=Float</code> is used.</td>
 <td><code>None</code></td>
 </tr>
@@ -1106,7 +1118,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>skill_table</td>
-<td>Optional[Union[str, List[str], Mapping[str, str], bool]]</td>
+<td>Union[str, List[str], Mapping[str, str], bool] | None</td>
 <td>list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list. This kword adds a box at the right of the scatter plot. mapping can be used to rename the metrics in the table. by default False</td>
 <td><code>None</code></td>
 </tr>
@@ -1147,9 +1159,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 9%">
-<col style="width: 18%">
-<col style="width: 59%">
+<col style="width: 10%">
+<col style="width: 17%">
+<col style="width: 60%">
 <col style="width: 12%">
 </colgroup>
 <thead>
@@ -1175,7 +1187,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td>title</td>
-<td>Optional[str]</td>
+<td>str | None</td>
 <td>plot title, default empty</td>
 <td><code>None</code></td>
 </tr>

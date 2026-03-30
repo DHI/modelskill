@@ -78,7 +78,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-c2184ee79b4189700a07fecab5507ffb.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-3a7abe8a1fb041dadcb9b079f1f7e447.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -216,6 +216,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">TrackObservation</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/NodeObservation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NodeObservation</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -261,6 +267,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../api/DummyModelResult.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">DummyModelResult</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/NetworkModelResult.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NetworkModelResult</span></a>
   </div>
 </li>
       </ul>
@@ -468,8 +480,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <table class="caption-top table">
 <colgroup>
 <col style="width: 6%">
-<col style="width: 40%">
-<col style="width: 46%">
+<col style="width: 39%">
+<col style="width: 47%">
 <col style="width: 6%">
 </colgroup>
 <thead>
@@ -489,13 +501,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>aux_items</td>
-<td>Optional[list[int | str]]</td>
+<td>list[int | str] | None</td>
 <td>Auxiliary items, by default None</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
 <td>gtype</td>
-<td>Optional[Literal['point', 'track', 'unstructured', 'grid']]</td>
+<td>Literal['point', 'track', 'unstructured', 'grid'] | None</td>
 <td>The geometry type of the data. If not specified, it will be guessed from the data.</td>
 <td><code>None</code></td>
 </tr>

@@ -78,7 +78,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-c2184ee79b4189700a07fecab5507ffb.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-3a7abe8a1fb041dadcb9b079f1f7e447.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -216,6 +216,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">TrackObservation</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/NodeObservation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NodeObservation</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -261,6 +267,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../api/DummyModelResult.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">DummyModelResult</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/NetworkModelResult.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NetworkModelResult</span></a>
   </div>
 </li>
       </ul>
@@ -487,8 +499,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <table class="caption-top table">
 <colgroup>
 <col style="width: 5%">
-<col style="width: 10%">
-<col style="width: 80%">
+<col style="width: 9%">
+<col style="width: 81%">
 <col style="width: 3%">
 </colgroup>
 <thead>
@@ -508,7 +520,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>name</td>
-<td>Optional[str]</td>
+<td>str | None</td>
 <td>The name of the model result, by default None (will be set to file name or item name)</td>
 <td><code>None</code></td>
 </tr>
@@ -544,7 +556,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>aux_items</td>
-<td>Optional[list[int | str]]</td>
+<td>list[int | str] | None</td>
 <td>Auxiliary items, by default None</td>
 <td><code>None</code></td>
 </tr>
@@ -574,26 +586,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Name of time series (value item name)</td>
 </tr>
 <tr class="even">
+<td><a href="#modelskill.TrackModelResult.node">node</a></td>
+<td>node-coordinate</td>
+</tr>
+<tr class="odd">
 <td><a href="#modelskill.TrackModelResult.plot">plot</a></td>
 <td>Plot using the ComparerPlotter</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#modelskill.TrackModelResult.quantity">quantity</a></td>
 <td>Quantity of time series</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#modelskill.TrackModelResult.time">time</a></td>
 <td>Time index</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#modelskill.TrackModelResult.values">values</a></td>
 <td>Values as numpy array</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#modelskill.TrackModelResult.x">x</a></td>
 <td>x-coordinate</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#modelskill.TrackModelResult.y">y</a></td>
 <td>y-coordinate</td>
 </tr>
