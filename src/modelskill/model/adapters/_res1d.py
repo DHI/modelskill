@@ -12,16 +12,20 @@ from modelskill.network import NetworkNode, EdgeBreakPoint, NetworkEdge
 
 def _simplify_res1d_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
     # We remove suffixes and indexes so the columns contain only the quantity names
+
+    # The columns in a Res1D dataframe follow the convention "Quantity:Location:Sublocation"
+    # where Location refers to the node id or the reach id followed by the chainage.
+    RES1D_NAME_SEP = ":"
     df = node.to_dataframe()
-    quantities = node.quantities
     renamer_dict = {}
-    for quantity in quantities:
-        relevant_columns = [col for col in df.columns if quantity in col]
-        if len(relevant_columns) != 1:
+    for quantity in node.quantities:
+        column_pairs = [(col, quantity) for col in df.columns if quantity in col.split(RES1D_NAME_SEP)]
+        if len(column_pairs) != 1:
             raise ValueError(
-                f"There must be exactly one column per quantity, found {relevant_columns}."
+                f"There must be exactly one column per quantity, found {column_pairs}."
             )
-        renamer_dict[relevant_columns[0]] = quantity
+        old_name, new_name = column_pairs[0]
+        renamer_dict[old_name] = new_name
     return df.rename(columns=renamer_dict).copy()
 
 
