@@ -87,6 +87,7 @@ def from_matched(
     z: Optional[float] = None,
     x_item: str | int | None = None,
     y_item: str | int | None = None,
+    z_item: str | int | None = None,
 ) -> Comparer:
     """Create a Comparer from data that is already matched (aligned).
 
@@ -115,6 +116,8 @@ def from_matched(
         Name of x item, only relevant for track data
     y_item: [str, int], optional
         Name of y item, only relevant for track data
+    z_item: [str, int], optional
+        Name of z item, only relevant for vertical data for which it must be provided
 
     Returns
     -------
@@ -167,6 +170,7 @@ def from_matched(
         z=z,
         x_item=x_item,
         y_item=y_item,
+        z_item=z_item,
         quantity=quantity,
     )
 
@@ -379,9 +383,8 @@ def _match_space_time(
                 )
             case PointModelResult() as pmr, PointObservation():
                 aligned = pmr.align(observation, max_gap=max_model_gap)
-            case VerticalModelResult(), VerticalObservation():
-                raise NotImplementedError("Vertical matching not implemented yet!")
-                # aligned = vmr.align(observation, max_gap=max_model_gap)
+            case VerticalModelResult() as vmr, VerticalObservation():
+                aligned = vmr.align(observation)
             case _:
                 raise TypeError(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"
@@ -393,7 +396,6 @@ def _match_space_time(
             raise ValueError(
                 f"Aux variables are not allowed to have identical names. Choose either aux from obs or model. Overlapping: {overlapping}"
             )
-
         for dv in aligned:
             data[dv] = aligned[dv]
 
