@@ -4,11 +4,11 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 source-exclude = ["**/.mypy_cache**", "**/.mypy_cache/**"]
-wheel-exclude = ["**/.mypy_cache**","**/.mypy_cache/**"]
+wheel-exclude = ["**/.mypy_cache**", "**/.mypy_cache/**"]
 
 [project]
 name = "modelskill"
-version = "1.4.dev0"
+version = "1.4.0a2"
 dependencies = [
     "numpy  > 1.24.4",
     "pandas >= 1.4, < 3.0", # TODO remove upper limit
@@ -17,7 +17,9 @@ dependencies = [
     "xarray",
     "netCDF4",
     "scipy",
-    "jinja2", # used for skill.style
+    "jinja2",               # used for skill.style
+    "typing-extensions",
+    "pyyaml",
 ]
 
 authors = [
@@ -41,16 +43,13 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 
+[project.optional-dependencies]
+networks = ["mikeio1d", "networkx"]
+
 [dependency-groups]
-dev = [
-    "pytest",
-    "plotly >= 4.5",
-    "ruff==0.6.2",
-    "quarto-cli==1.5.57",
-    "quartodoc==0.11.1",
-    "netCDF4",
-    "dask",
-]
+dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2", "netCDF4", "dask"]
+
+docs = ["quartodoc==0.11.1", "nbformat", "nbconvert", "ipykernel", "griffe<2"]
 
 test = [
     "pytest",
@@ -64,10 +63,15 @@ test = [
 
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
 
+networks = ["mikeio1d", "networkx"]
+
 [project.urls]
 "Homepage" = "https://github.com/DHI/modelskill"
 "Bug Tracker" = "https://github.com/DHI/modelskill/issues"
 
+
+[tool.ruff]
+extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
 ignore = ["E501"]

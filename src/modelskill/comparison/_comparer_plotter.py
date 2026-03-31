@@ -3,7 +3,6 @@ from typing import (
     Literal,
     Union,
     List,
-    Optional,
     Tuple,
     Sequence,
     TYPE_CHECKING,
@@ -464,19 +463,19 @@ class ComparerPlotter:
         quantiles: int | Sequence[float] | None = None,
         fit_to_quantiles: bool = False,
         show_points: bool | int | float | None = None,
-        show_hist: Optional[bool] = None,
-        show_density: Optional[bool] = None,
-        norm: Optional[colors.Normalize] = None,
+        show_hist: bool | None = None,
+        show_density: bool | None = None,
+        norm: colors.Normalize | None = None,
         backend: Literal["matplotlib", "plotly"] = "matplotlib",
         figsize: Tuple[float, float] = (8, 8),
-        xlim: Optional[Tuple[float, float]] = None,
-        ylim: Optional[Tuple[float, float]] = None,
+        xlim: Tuple[float, float] | None = None,
+        ylim: Tuple[float, float] | None = None,
         reg_method: str | bool = "ols",
-        title: Optional[str] = None,
-        xlabel: Optional[str] = None,
-        ylabel: Optional[str] = None,
-        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]] = None,
-        ax: Optional[matplotlib.axes.Axes] = None,
+        title: str | None = None,
+        xlabel: str | None = None,
+        ylabel: str | None = None,
+        skill_table: Union[str, List[str], Mapping[str, str], bool] | None = None,
+        ax: matplotlib.axes.Axes | None = None,
         **kwargs,
     ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
         """Scatter plot tailored for model-observation comparison.
@@ -594,18 +593,18 @@ class ComparerPlotter:
         quantiles: int | Sequence[float] | None,
         fit_to_quantiles: bool,
         show_points: bool | int | float | None,
-        show_hist: Optional[bool],
-        show_density: Optional[bool],
-        norm: Optional[colors.Normalize],
+        show_hist: bool | None,
+        show_density: bool | None,
+        norm: colors.Normalize | None,
         backend: Literal["matplotlib", "plotly"],
         figsize: Tuple[float, float],
-        xlim: Optional[Tuple[float, float]],
-        ylim: Optional[Tuple[float, float]],
+        xlim: Tuple[float, float] | None,
+        ylim: Tuple[float, float] | None,
         reg_method: str | bool,
-        title: Optional[str],
-        xlabel: Optional[str],
-        ylabel: Optional[str],
-        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]],
+        title: str | None,
+        xlabel: str | None,
+        ylabel: str | None,
+        skill_table: Union[str, List[str], Mapping[str, str], bool] | None,
         **kwargs,
     ):
         """Scatter plot for one model only"""
@@ -746,7 +745,14 @@ class ComparerPlotter:
         df = df.rename(columns={"_std_obs": "obs_std", "_std_mod": "std"})
 
         pts = [
-            TaylorPoint(name=r.model, obs_std=r.obs_std, std=r.std, cc=r.cc, marker=marker, marker_size=marker_size)
+            TaylorPoint(
+                name=r.model,
+                obs_std=r.obs_std,
+                std=r.std,
+                cc=r.cc,
+                marker=marker,
+                marker_size=marker_size,
+            )
             for r in df.itertuples()
         ]
 

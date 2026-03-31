@@ -18,9 +18,10 @@ they will need to be defined and then matched in space and time with the `match(
 
 ### Define observations
 
-The observations can be defined as either a [`PointObservation`](`modelskill.PointObservation`) or a [`TrackObservation`](`modelskill.TrackObservation`) (a moving point). 
+The observations can be defined as either a [`PointObservation`](`modelskill.PointObservation`) or a [`TrackObservation`](`modelskill.TrackObservation`) (a moving point).
 
 ```{python}
+import modelskill as ms
 o1 = ms.PointObservation("../data/obs.dfs0", item="obs_WL",x=366844.15, y=6154291.6)
 ```
 

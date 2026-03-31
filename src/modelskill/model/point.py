@@ -1,14 +1,13 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Any
-import numpy as np
+from typing import Sequence, Any
 
 import xarray as xr
-import pandas as pd
 
 from ..obs import Observation
 from ..types import PointType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_xyz_point_input
+from ..timeseries._align import align_data
 
 
 class PointModelResult(TimeSeries):
@@ -22,7 +21,7 @@ class PointModelResult(TimeSeries):
     ----------
     data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
         filename (.dfs0 or .nc) or object with the data
-    name : Optional[str], optional
+    name : str | None, optional
         The name of the model result,
         by default None (will be set to file name or item name)
     x : float, optional
@@ -36,7 +35,7 @@ class PointModelResult(TimeSeries):
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
         Model quantity, for MIKE files this is inferred from the EUM information
-    aux_items : Optional[list[int | str]], optional
+    aux_items : list[int | str] | None, optional
         Auxiliary items, by default None
     """
 
@@ -44,13 +43,13 @@ class PointModelResult(TimeSeries):
         self,
         data: PointType,
         *,
-        name: Optional[str] = None,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
-        z: Optional[float] = None,
+        name: str | None = None,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
         item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[Sequence[int | str]] = None,
+        quantity: Quantity | None = None,
+        aux_items: Sequence[int | str] | None = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_xyz_point_input(
@@ -89,62 +88,5 @@ class PointModelResult(TimeSeries):
         PointModelResult
             Interpolated model result
         """
-        ds = self.align(observation, **kwargs)
+        ds = align_data(self.data, observation, **kwargs)
         return PointModelResult(ds)
-
-    def align(
-        self,
-        observation: Observation,
-        *,
-        max_gap: float | None = None,
-        **kwargs: Any,
-    ) -> xr.Dataset:
-        new_time = observation.time
-
-        dati = self.data.dropna("time").interp(
-            time=new_time, assume_sorted=True, **kwargs
-        )
-
-        pmr = PointModelResult(dati)
-        if max_gap is not None:
-            pmr = pmr._remove_model_gaps(mod_index=self.time, max_gap=max_gap)
-        return pmr.data
-
-    def _remove_model_gaps(
-        self,
-        mod_index: pd.DatetimeIndex,
-        max_gap: float | None = None,
-    ) -> PointModelResult:
-        """Remove model gaps longer than max_gap from TimeSeries"""
-        max_gap_delta = pd.Timedelta(max_gap, "s")
-        valid_times = self._get_valid_times(mod_index, max_gap_delta)
-        ds = self.data.sel(time=valid_times)
-        return PointModelResult(ds)
-
-    def _get_valid_times(
-        self, mod_index: pd.DatetimeIndex, max_gap: pd.Timedelta
-    ) -> pd.DatetimeIndex:
-        """Used only by _remove_model_gaps"""
-        obs_index = self.time
-        # init dataframe of available timesteps and their index
-        df = pd.DataFrame(index=mod_index)
-        df["idx"] = range(len(df))
-
-        # for query times get available left and right index of source times
-        df = (
-            df.reindex(df.index.union(obs_index))
-            .interpolate(method="time", limit_area="inside")
-            .reindex(obs_index)
-            .dropna()
-        )
-        df["idxa"] = np.floor(df.idx).astype(int)
-        df["idxb"] = np.ceil(df.idx).astype(int)
-
-        # time of left and right source times and time delta
-        df["ta"] = mod_index[df.idxa]
-        df["tb"] = mod_index[df.idxb]
-        df["dt"] = df.tb - df.ta
-
-        # valid query times where time delta is less than max_gap
-        valid_idx = df.dt <= max_gap
-        return df[valid_idx].index
