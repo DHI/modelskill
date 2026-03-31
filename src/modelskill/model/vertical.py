@@ -80,8 +80,10 @@ class VerticalModelResult(TimeSeries):
         return self._coordinate_values("z")
 
     def _match_to_nearest_times(
-        self, obs_df, mod_df, t_tol: pd.Timedelta | None = None
+        self, obs_df: pd.DataFrame, t_tol: pd.Timedelta | None = None
     ) -> pd.DataFrame:
+        """Match model times to nearest observation times within a specified tolerance."""
+        mod_df = self.data[["z"]].to_dataframe()
         obs_times = obs_df.index.unique().sort_values()
         mod_times_unique = mod_df.index.unique().sort_values()
 
@@ -98,14 +100,16 @@ class VerticalModelResult(TimeSeries):
 
     def _interpolate_to_obs_depths(
         self,
-        obs_df,
-        mod_df,
-        obs_times_valid,
-        matched_mod_times,
+        obs_df: pd.DataFrame,
+        obs_times_valid: pd.DatetimeIndex,
+        matched_mod_times: pd.DatetimeIndex,
         *,
         mod_value_col: str,
     ) -> pd.DataFrame:
+        """Interpolate model values to observation depths for matched times."""
         records = []
+
+        mod_df = self.data.to_dataframe()
 
         for obs_t, mod_t in zip(obs_times_valid, matched_mod_times):
             obs_at_t = obs_df.loc[[obs_t]]
@@ -118,6 +122,7 @@ class VerticalModelResult(TimeSeries):
             m_z = mod_at_t_sorted["z"].to_numpy(dtype=float)
             m_v = mod_at_t_sorted[mod_value_col].to_numpy(dtype=float)
 
+            # make sure we have at least 2 points to interpolate, otherwise skip this time step
             if m_z.size < 2:
                 continue
 
@@ -159,13 +164,11 @@ class VerticalModelResult(TimeSeries):
 
         matched_times = self._match_to_nearest_times(
             vo.data[["z"]].to_dataframe(),
-            self.data[["z"]].to_dataframe(),
             t_tol=temporal_tolerance,
         )
 
         pairs = self._interpolate_to_obs_depths(
             vo.data.to_dataframe(),
-            self.data.to_dataframe(),
             matched_times["obs_time"],
             matched_times["mod_time"],
             mod_value_col=self.name,
