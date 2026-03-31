@@ -348,7 +348,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="res1d-file" class="level3">
 <h3 class="anchored" data-anchor-id="res1d-file">Res1D file</h3>
 <p>The quickest way to get a <code>Network</code> is from the path to a MIKE 1D result file:</p>
-<div id="3be56d15" class="cell" data-execution_count="3">
+<div id="aee734af" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> Network</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>network <span class="op">=</span> Network.from_res1d(path_to_res1d)</span>
@@ -379,7 +379,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 <h2 class="anchored" data-anchor-id="inspecting-the-network">Inspecting the Network</h2>
 <section id="available-quantities" class="level3">
 <h3 class="anchored" data-anchor-id="available-quantities">Available quantities</h3>
-<div id="28479cde" class="cell" data-execution_count="4">
+<div id="364be2a6" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>network.quantities</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <pre><code>['WaterLevel', 'Discharge']</code></pre>
@@ -389,7 +389,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 <section id="underlying-graph" class="level3">
 <h3 class="anchored" data-anchor-id="underlying-graph">Underlying graph</h3>
 <p>The network exposes a <code>networkx.Graph</code> so you can use any NetworkX algorithm or plotting function directly:</p>
-<div id="1cb1cbb4" class="cell" data-execution_count="6">
+<div id="e7463bd5" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -407,7 +407,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 </section>
 <section id="timeseries-data" class="level3">
 <h3 class="anchored" data-anchor-id="timeseries-data">Timeseries data</h3>
-<div id="ac04616b" class="cell" data-execution_count="7">
+<div id="3baa4a46" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Multi-index DataFrame: columns are (node, quantity)</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>network.to_dataframe().head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="7">
@@ -617,7 +617,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 </div>
 </div>
 </div>
-<div id="cb2f0417" class="cell" data-execution_count="8">
+<div id="90bb0838" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select a single quantity</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>network.to_dataframe(sel<span class="op">=</span><span class="st">"WaterLevel"</span>).head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="8">
@@ -808,7 +808,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 <section id="looking-up-node-ids" class="level2">
 <h2 class="anchored" data-anchor-id="looking-up-node-ids">Looking up node IDs</h2>
 <p>After construction, nodes are re-labelled as integers. Use <code>find()</code> to go from original coordinates to the integer ID and <code>recall()</code> to go back.</p>
-<div id="746ca211" class="cell" data-execution_count="9">
+<div id="b66db564" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Look up a named node by its original id</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>node_id <span class="op">=</span> network.find(node<span class="op">=</span><span class="st">"117"</span>)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Node '117' → integer id </span><span class="sc">{</span>node_id<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -820,7 +820,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 {'node': '117'}</code></pre>
 </div>
 </div>
-<div id="f3266797" class="cell" data-execution_count="10">
+<div id="5fd6f939" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Look up a break point by reach + chainage</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>bp_id <span class="op">=</span> network.find(edge<span class="op">=</span><span class="st">"94l1"</span>, distance<span class="op">=</span><span class="fl">21.285</span>)</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Break point (94l1, 21.285) → integer id </span><span class="sc">{</span>bp_id<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -830,7 +830,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 {'edge': '94l1', 'distance': 21.2852238539205}</code></pre>
 </div>
 </div>
-<div id="dddddbab" class="cell" data-execution_count="11">
+<div id="aeae9c33" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Node batch lookup</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(node<span class="op">=</span>[<span class="st">"20"</span>, <span class="st">"113"</span>, <span class="st">"38"</span>])</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ids)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -838,7 +838,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 <pre><code>[76, 40, 15]</code></pre>
 </div>
 </div>
-<div id="493c22a5" class="cell" data-execution_count="12">
+<div id="db9a6eb7" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Edge lookup</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(edge<span class="op">=</span><span class="st">"58l1"</span>, distance<span class="op">=</span><span class="st">"start"</span>)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ids)</span>
@@ -857,7 +857,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 <h2 class="anchored" data-anchor-id="skill-assessment-workflow">Skill assessment workflow</h2>
 <section id="wrap-the-network-in-a-networkmodelresult" class="level3">
 <h3 class="anchored" data-anchor-id="wrap-the-network-in-a-networkmodelresult">1. Wrap the Network in a NetworkModelResult</h3>
-<div id="0ba9488a" class="cell" data-execution_count="13">
+<div id="bbbc66c3" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.model.network <span class="im">import</span> NetworkModelResult</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -871,7 +871,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 <section id="create-nodeobservations-and-compute-skill" class="level3">
 <h3 class="anchored" data-anchor-id="create-nodeobservations-and-compute-skill">2. Create NodeObservations and compute skill</h3>
 <p><code>NodeObservation</code> accepts a file path directly; the observation name is taken from the filename.</p>
-<div id="ce70f2ab" class="cell" data-execution_count="14">
+<div id="c0392da7" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>obs_1 <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_1, node<span class="op">=</span>network.find(node<span class="op">=</span><span class="st">"78"</span>))</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>obs_2 <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_2, node<span class="op">=</span>network.find(node<span class="op">=</span><span class="st">"46"</span>))</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1015,7 +1015,7 @@ Tip
 <p>The three abstract properties that <strong>every</strong> <code>NetworkNode</code> subclass must implement are <code>id</code>, <code>data</code> and <code>boundary</code>. If <code>boundary</code> is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a <code>NetworkEdge</code> with no intermediate points can return an empty <code>breakpoints</code> list.</p>
 </div>
 </div>
-<div id="95dbba16" class="cell" data-execution_count="15">
+<div id="4c2b8b2f" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> Network</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co"># df1, df2 and df3 are DataFrame objects that are loaded in memory</span></span>
