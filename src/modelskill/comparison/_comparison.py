@@ -236,8 +236,11 @@ class ItemSelection:
             mod_names = [_get_name(m, items) for m in mod_items]
         else:
             # Add remaining items as model items
-            not_model = [x_name] + [y_name] + [z_name] + aux_names + [obs_name]
-            mod_names = [item for item in items if item not in not_model]
+            mod_names = [
+                item
+                for item in items
+                if item not in [x_name, y_name, z_name] + aux_names + [obs_name]
+            ]
 
         if len(mod_names) == 0:
             raise ValueError("no model items were found! Must be at least one")
@@ -383,9 +386,10 @@ def _matched_data_to_xarray(
         ds = ds.rename({items.z: "z"}).set_coords("z")
     elif z is not None:
         ds.coords["z"] = z
-    # data vars named "z" will be coordinates
     elif "z" in ds.data_vars:
         ds = ds.set_coords("z")
+    else:
+        pass  # z is optional, if not provided, we don't add it as a coordinate
 
     if "z" in ds.coords:
         ds.attrs["gtype"] = str(GeometryType.VERTICAL)
@@ -1234,11 +1238,12 @@ class Comparer:
             return df[cols]
         elif self.gtype == str(GeometryType.VERTICAL):
             df = self.data.drop_vars(["x", "y"]).to_dataframe()
-            # make sure that z col is first
-            # cols = ["z"] + [c for c in df.columns if c not in ["z"]]
-            cols = ["Observation"] + [c for c in df.columns if c not in ["Observation"]]
-            cols = [c for c in df.columns if c not in ["z"]] + ["z"]
-            # add x,y as attributes to the dataframe
+            # make sure that Observations is first and z is last
+            cols = (
+                ["Observation"]
+                + [c for c in df.columns if c not in ["Observation", "z"]]
+                + ["z"]
+            )
             return df[cols]
 
         else:
