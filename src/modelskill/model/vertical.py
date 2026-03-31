@@ -101,8 +101,8 @@ class VerticalModelResult(TimeSeries):
     def _interpolate_to_obs_depths(
         self,
         obs_df: pd.DataFrame,
-        obs_times_valid: pd.DatetimeIndex,
-        matched_mod_times: pd.DatetimeIndex,
+        obs_times_valid: pd.Series,
+        matched_mod_times: pd.Series,
         *,
         mod_value_col: str,
     ) -> pd.DataFrame:
