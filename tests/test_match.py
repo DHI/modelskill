@@ -501,7 +501,7 @@ def test_save_comparercollection(o1, o3, tmp_path):
 
     cc = ms.match([o1, o3], ms.DfsuModelResult(da))
 
-    fn = tmp_path / "cc.msk"
+    fn = tmp_path / "cc.nc"
     cc.save(fn)
 
     assert fn.exists()
