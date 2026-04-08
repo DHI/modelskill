@@ -31,6 +31,7 @@ from ..skill_grid import SkillGrid
 from ..utils import _get_name
 from ._comparison import Comparer
 from ..metrics import _parse_metric
+from .._deprecation import _deprecate_positional_args
 from ._utils import (
     _add_spatial_grid_to_df,
     _groupby_df,
@@ -283,6 +284,7 @@ class ComparerCollection(Mapping):
                 cc = cc.merge(oc)
             return cc
 
+    @_deprecate_positional_args
     def sel(
         self,
         model: IdxOrNameTypes | None = None,
@@ -565,6 +567,7 @@ class ComparerCollection(Mapping):
                     skilldf.insert(loc=0, column=field, value=unames[0])
         return skilldf
 
+    @_deprecate_positional_args
     def gridded_skill(
         self,
         bins: int = 5,
