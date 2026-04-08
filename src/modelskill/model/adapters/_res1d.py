@@ -12,6 +12,9 @@ from modelskill.network import NetworkNode, EdgeBreakPoint, NetworkEdge
 
 def _simplify_res1d_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
     # We remove suffixes and indexes so the columns contain only the quantity names
+
+    # The columns in a Res1D dataframe follow the convention "Quantity:Location:Sublocation"
+    # where Location refers to the node id or the reach id followed by the chainage.
     RES1D_NAME_SEP = ":"
     df = node.to_dataframe()
     renamer_dict = {}
