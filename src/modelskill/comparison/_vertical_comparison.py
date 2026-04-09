@@ -5,73 +5,12 @@ from ..types import GeometryType
 from ..plotting._misc import _get_fig_ax
 import xarray as xr
 from matplotlib import dates as mdates
-from ..model import PointModelResult, TrackModelResult, VerticalModelResult
+from ..model import PointModelResult
 
 
 class VerticalPlotter:
     def __init__(self, comparer):
         self.comparer = comparer
-
-    def timeseries(self, z_model: float | None = None, ax=None, figsize=None, **kwargs):
-        """
-        Plot a timeseries of model and observation data at a specific depth.
-
-        Parameters
-        ----------
-        z_model : float, optional
-            Depth at which to plot the timeseries. If None, all available depths will be used.
-        ax : matplotlib Axes, optional
-            Matplotlib Axes to plot on (if None, a new figure and axes will be created).
-        figsize : tuple, optional
-            Size of the figure (only used if ax is None).
-        **kwargs
-            Additional keyword arguments to pass to the plotting function.
-
-        Returns
-        -------
-        matplotlib Axes
-            Axes object with the timeseries plot.
-
-        Example usage:
-        -------
-        >>> cmp.vertical.plot.timeseries(z_model=-5)
-        >>> cmp.vertical.plot.timeseries()  # Try to match model z from comparison data
-        """
-        _, ax = _get_fig_ax(ax, figsize)
-
-        cmp = self.comparer
-        if z_model is None:
-            cmp_z = cmp.data["z"].values
-            if np.isnan(cmp_z):
-                raise ValueError(
-                    "No z_model provided and no 'z' coordinate found in comparison data."
-                )
-        else:
-            cmp_z = z_model
-
-        if cmp.gtype != "point":
-            raise ValueError(
-                "Timeseries plot is only available for point comparisons. Use slice() to create a point comparison at a specific depth."
-            )
-        if "z" not in cmp.data.coords:
-            raise ValueError(
-                "Comparison data must have a 'z' coordinate for vertical plotting."
-            )
-
-        mod_name = self.comparer.mod_names[0]
-
-        d = cmp.raw_mod_data[mod_name].data
-        cmp.data["Observation"].plot(
-            marker="o", linestyle="", label="Observation", ax=ax
-        )
-        # Find nearest model depth layer to requested z and plot that timeseries.
-        z_layers = np.unique(d.z.values)
-        nearest_z = z_layers[np.argmin(np.abs(z_layers - cmp_z))]
-
-        d.where((d.z == nearest_z), drop=True)[mod_name].plot(
-            label=f"{mod_name} (z={nearest_z:g})", ax=ax
-        )
-        return ax
 
     def profile(
         self,
@@ -136,7 +75,6 @@ class VerticalPlotter:
 
         data = cmp.data.sel(time=sel_time)
         z = data["z"].values
-
         ax.plot(
             data[cmp.mod_names[0]].values, z, "o-", linewidth=2, label=cmp.mod_names[0]
         )
@@ -251,76 +189,29 @@ class VerticalAccessor:
         self._comparer = comparer
         self.plot = VerticalPlotter(comparer)
 
-    def _raw_model_at_nearest_z(
-        self, z: float
-    ) -> dict[str, PointModelResult | TrackModelResult | VerticalModelResult]:
+    def slice(self, z: float, name: str = "slice"):
+        from ._comparison import Comparer
+
+        # Slice matched data
         cmp = self._comparer
+        cmp_out = cmp.where(cmp.data["z"] == z).rename({cmp.name: name})
+        cmp_out.data.attrs["gtype"] = GeometryType.POINT
+        cmp_out.data["z"] = z
+
+        # Slice raw model data
         mod_name = cmp.mod_names[0]
         d = cmp.raw_mod_data[mod_name].data
         z_layers = np.unique(d.z.values)
         nearest_z = z_layers[np.argmin(np.abs(z_layers - z))]
         new_raw = d.where((d.z == nearest_z), drop=True)
-        raw_pm = PointModelResult(
+        raw_point_model = PointModelResult(
             new_raw,
             x=1,
             y=1,
             z=nearest_z,
             quantity=cmp.quantity,
         )
-        return {mod_name: raw_pm}
-
-    def _raw_model_for_agg(
-        self, agg_func: str
-    ) -> dict[str, PointModelResult | TrackModelResult | VerticalModelResult]:
-        cmp = self._comparer
-        mod_name = cmp.mod_names[0]
-
-        d = cmp.raw_mod_data[mod_name].data
-        d.where((d.z >= cmp.z.min()) & (d.z <= cmp.z.max()), drop=True).groupby(
-            "time"
-        ).mean()
-
-        # mod_df = d_raw[[mod_name, "z"]].to_dataframe()
-        # obs_bounds = (
-        #     cmp.data[["z"]]
-        #     .to_dataframe()
-        #     .groupby(level="time")["z"]
-        #     .agg(["min", "max"])
-        # )
-        # bounded = mod_df.join(obs_bounds, how="inner")
-        # bounded = bounded[(bounded["z"] >= bounded["min"]) & (bounded["z"] <= bounded["max"])]
-
-        # if bounded.empty:
-        #     raise ValueError("No raw model data within observed depth range.")
-
-        # if agg_func == "mean":
-        #     mod = bounded.groupby(level="time")[mod_name].mean()
-        # elif agg_func == "min":
-        #     mod = bounded.groupby(level="time")[mod_name].min()
-        # elif agg_func == "max":
-        #     mod = bounded.groupby(level="time")[mod_name].max()
-        # else:
-        #     raise ValueError(f"Unsupported aggregation function: {agg_func}")
-
-        # mod = mod.to_xarray()
-
-        # raw_pm = PointModelResult(
-        #     mod.to_dataset(name=mod_name),
-        #     x=1,
-        #     y=1,
-        #     quantity=cmp.quantity,
-        # )
-        return {mod_name: raw_pm}
-
-    def slice(self, z: float, name: str = "slice"):
-        from ._comparison import Comparer
-
-        cmp = self._comparer
-        cmp_out = cmp.where(cmp.data["z"] == z).rename({cmp.name: name})
-        cmp_out.data.attrs["gtype"] = GeometryType.POINT
-        cmp_out.data["z"] = z
-
-        return Comparer(cmp_out.data, raw_mod_data=self._raw_model_at_nearest_z(z))
+        return Comparer(cmp_out.data, raw_mod_data={mod_name: raw_point_model})
 
     def cut(
         self,
@@ -368,15 +259,10 @@ class VerticalAccessor:
         else:
             raise ValueError(f"Unsupported aggregation function: {agg_func}")
 
-        raw["z"] = 0
-        raw = raw.set_coords("z")
-
         ds = xr.Dataset({"Observation": obs, cmp.mod_names[0]: mod})
         ds.attrs = cmp.data.attrs
         ds.attrs["gtype"] = GeometryType.POINT
         ds.attrs["name"] = f"vertical_{agg_func}"
-        ds["z"] = 0
-        ds = ds.set_coords("z")
 
         return Comparer(
             ds,
