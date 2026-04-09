@@ -42,6 +42,7 @@ from ..skill_grid import SkillGrid
 from ..settings import register_option
 from ..utils import _get_name, _RESERVED_NAMES
 from .. import __version__
+from ._vertical_comparison import VerticalAccessor
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
@@ -534,6 +535,15 @@ class Comparer:
         for var in self.aux_names:
             out.append(f" Auxiliary: {var}")
         return str.join("\n", out)
+
+    @property
+    def vertical(self) -> VerticalAccessor:
+        """Accessor for vertical comparisons (only available if gtype is vertical)"""
+        # if self.gtype != str(GeometryType.VERTICAL):
+        #     raise AttributeError(
+        #         "vertical accessor is only available for vertical data"
+        #     )
+        return VerticalAccessor(self)
 
     @property
     def name(self) -> str:
