@@ -818,6 +818,7 @@ class Comparer:
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,
         area: Optional[List[float]] = None,
+        z: Optional[float | slice] = None,
     ) -> "Comparer":
         """Select data based on model, time and/or area.
 
@@ -854,18 +855,21 @@ class Comparer:
             d = d.drop_vars(dropped_models)
             raw_mod_data = {m: raw_mod_data[m] for m in mod_names}
         if (start is not None) or (end is not None):
-            # TODO: can this be done without to_index? (simplify)
-            d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)  # type: ignore
-
-            # Note: if user asks for a specific time, we also filter raw
+            d = d.sel(time=slice(start, end))  # why not? and if it works, slice as arg?
+            # d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)  # type: ignore
             raw_mod_data = {
                 k: v.sel(time=slice(start, end)) for k, v in raw_mod_data.items()
             }  # type: ignore
         if time is not None:
             d = d.sel(time=time)
-
-            # Note: if user asks for a specific time, we also filter raw
-            raw_mod_data = {k: v.sel(time=time) for k, v in raw_mod_data.items()}
+            raw_mod = {}
+            # Nearest time selection for raw_mod_data,
+            # as it may not have the same time points as the matched data
+            for k, v in raw_mod_data.items():
+                time_vals = v.time.values
+                idx = np.abs(time_vals - np.datetime64(time)).argmin()
+                raw_mod[k] = v.sel(time=time_vals[idx])
+            raw_mod_data = raw_mod
         if area is not None:
             if _area_is_bbox(area):
                 x0, y0, x1, y1 = area
@@ -877,10 +881,37 @@ class Comparer:
             else:
                 raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
             if self.gtype == "point":
-                # if False, return empty data
                 d = d if mask else d.isel(time=slice(None, 0))
             else:
                 d = d.isel(time=mask)
+
+        if z is not None:
+            if "z" not in d and "z" not in d.coords:
+                raise KeyError("'z' coordinate not found in matched data")
+
+            if isinstance(z, slice):
+                lo = z.start if z.start is not None else -np.inf
+                hi = z.stop if z.stop is not None else np.inf
+
+                d = d.where((d["z"] >= lo) & (d["z"] <= hi), drop=True)
+                raw_mod = {}
+                for k, v in raw_mod_data.items():
+                    sel_data = v.data.where(
+                        (v.data["z"] >= lo) & (v.data["z"] <= hi), drop=True
+                    )
+                    raw_mod[k] = type(v)(sel_data)
+                raw_mod_data = raw_mod
+            else:
+                d = d.where(d["z"] == float(z), drop=True)
+
+                raw_mod = {}
+                for k, v in raw_mod_data.items():
+                    z_layers = np.unique(v.data["z"].values)
+                    nearest = z_layers[np.argmin(np.abs(z_layers - float(z)))]
+                    sel_data = v.data.where(v.data["z"] == nearest, drop=True)
+                    raw_mod[k] = type(v)(sel_data)
+                raw_mod_data = raw_mod
+
         return Comparer.from_matched_data(data=d, raw_mod_data=raw_mod_data)
 
     def where(
