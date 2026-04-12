@@ -14,8 +14,6 @@ class VerticalPlotter:
 
     def profile(
         self,
-        time: np.datetime64 | str | int | None = None,
-        method: str = "exact",
         title: str | None = None,
         ax=None,
         figsize: Tuple[float, float] | None = None,
@@ -25,11 +23,6 @@ class VerticalPlotter:
 
         Parameters
         ----------
-        time : np.datetime64, str, int, or None
-            Time to plot. Can be a datetime string, a numpy datetime64, or an integer index. If None, the first available time will be used.
-        method : str, optional
-            Method to handle time selection when an exact match is not found. Options are 'exact'
-            (default) which raises an error if no exact match is found, or 'nearest' which selects the nearest available time.
         title : str, optional
             Title of the plot. If None, the selected time will be used as the title.
         ax : matplotlib Axes, optional
@@ -43,47 +36,37 @@ class VerticalPlotter:
         -------
         matplotlib Axes
             Axes object with the vertical profile plot.
-
-        Example usage:
-        -------
-        >>> ax = cmp.vertical.plot.profile(time="2022-06-13 12:00", method="nearest")
-        >>> ax = cmp.vertical.plot.profile(time=0)  # Plot the first available time
         """
         cmp = self.comparer
-        avail_times = cmp.time.unique()
 
         _, ax = _get_fig_ax(ax, figsize)
+        avail_times = cmp.time.unique()
 
-        if time is None:
-            sel_time = avail_times[0]
-
-        if isinstance(time, int):
-            if time < 0 or time >= len(avail_times):
-                raise ValueError(
-                    f"Time index {time} is out of bounds for available times."
-                )
-            else:
-                sel_time = avail_times[time]
-        else:
-            sel_time = np.datetime64(time)
-            if sel_time not in avail_times and method == "nearest":
-                sel_time = avail_times[np.argmin(np.abs(avail_times - sel_time))]
-            else:
-                raise ValueError(
-                    f"Time {sel_time} not an available time. Try using method='nearest'"
-                )
-
-        data = cmp.data.sel(time=sel_time)
-        z = data["z"].values
-        ax.plot(
-            data[cmp.mod_names[0]].values, z, "o-", linewidth=2, label=cmp.mod_names[0]
-        )
-        ax.plot(data["Observation"].values, z, "o-", linewidth=2, label="Observation")
-        ax.set_xlabel(kwargs.get("xlabel", f"{cmp._unit_text}"))
-        ax.set_ylabel(kwargs.get("ylabel", "Depth"))
-        ax.legend()
-        ax.grid(True)
-        ax.set_title(title if title is not None else f"{sel_time}")
+        for i, t in enumerate(avail_times):
+            col = "C" + str(i)
+            data = cmp.sel(time=t).data
+            z = data["z"].values
+            ax.plot(
+                data[cmp.mod_names[0]].values,
+                z,
+                "o-",
+                linewidth=2,
+                label=f"{cmp.mod_names[0]}-t{i}",
+                color=col,
+            )
+            ax.plot(
+                data["Observation"].values,
+                z,
+                linestyle="--",
+                linewidth=2,
+                label=f"Observation-t{i}",
+                color=col,
+            )
+            ax.set_xlabel(kwargs.get("xlabel", f"{cmp._unit_text}"))
+            ax.set_ylabel(kwargs.get("ylabel", "Depth"))
+            ax.legend()
+            ax.grid(True)
+            ax.set_title(title if title is not None else f"{t}")
 
         return ax
 
@@ -176,7 +159,6 @@ class VerticalPlotter:
 
         ax.set_title(title)
         unit_text = cmp._unit_text
-        ax.set_xlabel(kwargs.get("xlabel", f"Observation, {unit_text}"))
         ax.set_ylabel(kwargs.get("ylabel", f"Model, {unit_text}"))
         if ylim is not None:
             ax.set_ylim(ylim)
@@ -188,49 +170,6 @@ class VerticalAccessor:
     def __init__(self, comparer):
         self._comparer = comparer
         self.plot = VerticalPlotter(comparer)
-
-    def slice(self, z: float, name: str = "slice"):
-        from ._comparison import Comparer
-
-        # Slice matched data
-        cmp = self._comparer
-        cmp_out = cmp.where(cmp.data["z"] == z).rename({cmp.name: name})
-        cmp_out.data.attrs["gtype"] = GeometryType.POINT
-        cmp_out.data["z"] = z
-
-        # Slice raw model data
-        mod_name = cmp.mod_names[0]
-        d = cmp.raw_mod_data[mod_name].data
-        z_layers = np.unique(d.z.values)
-        nearest_z = z_layers[np.argmin(np.abs(z_layers - z))]
-        new_raw = d.where((d.z == nearest_z), drop=True)
-        raw_point_model = PointModelResult(
-            new_raw,
-            x=1,
-            y=1,
-            z=nearest_z,
-            quantity=cmp.quantity,
-        )
-        return Comparer(cmp_out.data, raw_mod_data={mod_name: raw_point_model})
-
-    def cut(
-        self,
-        zmin: float | None = None,
-        zmax: float | None = None,
-        name: str = "cut",
-    ):
-        """Cut the comparison to a specific depth range."""
-        z = self._comparer.data["z"]
-        z_minimum = float(z.min())
-        z_maximum = float(z.max())
-
-        zmin = zmin if zmin is not None else z_minimum
-        zmax = zmax if zmax is not None else z_maximum
-
-        cmp = self._comparer
-        return cmp.where((cmp.data["z"] >= zmin) & (cmp.data["z"] <= zmax)).rename(
-            {cmp.name: name}
-        )
 
     def _agg(self, agg_func: str = "mean"):
         """Aggregate the comparison vertically using a specified aggregation function."""
