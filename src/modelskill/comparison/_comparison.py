@@ -906,10 +906,8 @@ class Comparer:
 
                 raw_mod = {}
                 for k, v in raw_mod_data.items():
-                    z_layers = np.unique(v.data["z"].values)
-                    nearest = z_layers[np.argmin(np.abs(z_layers - float(z)))]
-                    sel_data = v.data.where(v.data["z"] == nearest, drop=True)
-                    raw_mod[k] = type(v)(sel_data)
+                    self.vertical._raw_model_to_z(v, z)
+                    raw_mod[k] = v
                 raw_mod_data = raw_mod
 
         return Comparer.from_matched_data(data=d, raw_mod_data=raw_mod_data)
