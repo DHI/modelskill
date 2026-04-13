@@ -896,18 +896,16 @@ class Comparer:
                 d = d.where((d["z"] >= lo) & (d["z"] <= hi), drop=True)
                 raw_mod = {}
                 for k, v in raw_mod_data.items():
-                    sel_data = v.data.where(
+                    raw_mod[k] = v.data.where(
                         (v.data["z"] >= lo) & (v.data["z"] <= hi), drop=True
                     )
-                    raw_mod[k] = type(v)(sel_data)
                 raw_mod_data = raw_mod
             else:
                 d = d.where(d["z"] == float(z), drop=True)
 
                 raw_mod = {}
                 for k, v in raw_mod_data.items():
-                    self.vertical._raw_model_to_z(v, z)
-                    raw_mod[k] = v
+                    raw_mod[k] = self.vertical._raw_model_to_z(v, z)
                 raw_mod_data = raw_mod
 
         return Comparer.from_matched_data(data=d, raw_mod_data=raw_mod_data)
