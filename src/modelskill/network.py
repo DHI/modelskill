@@ -26,6 +26,7 @@ import xarray as xr
 
 if TYPE_CHECKING:
     from mikeio1d import Res1D
+    from mikeio1d.result_network import ResultReach
 
 
 class NetworkNode(ABC):
@@ -344,9 +345,9 @@ class Network:
             f"Time: {time[0]} - {time[-1]}",
         ]
         return "\n".join(out)
-
+    
     @classmethod
-    def from_res1d(cls, res: str | Path | Res1D) -> Network:
+    def from_res1d(cls, res: str | Path | Res1D, *, nodes: str | list[str] | None = None) -> Network:
         """Create a Network from a Res1D file or object.
 
         Parameters
@@ -364,13 +365,13 @@ class Network:
         >>> network = Network.from_res1d("model.res1d")
         >>> network = Network.from_res1d(Res1D("model.res1d"))
         """
+
         if sys.version_info >= (3, 14):
             raise NotImplementedError(
                 f"Current version of 'mikeio1d' requires python < 3.14 and {sys.version} is being used."
             )
 
         from mikeio1d import Res1D as _Res1D
-        from modelskill.model.adapters._res1d import Res1DReach
 
         if isinstance(res, (str, Path)):
             path = Path(res)
@@ -384,9 +385,37 @@ class Network:
                 f"Expected a str, Path or Res1D object, got {type(res).__name__!r}"
             )
 
+        if nodes is None:
+            nodes = list(res.nodes.keys())
+        else:
+            if not isinstance(nodes, list):
+                nodes = [nodes]
+        return cls._load_res1d_network(res, nodes)
+
+
+    @classmethod
+    def _load_res1d_network(cls, res: Res1D, nodes: list[str] = []) -> Network:
+
+        from modelskill.model.adapters._res1d import Res1DReach, Res1DNode, _simplify_colnames
+
+        # In order to work with bigger files, we might want to select a subset of nodes and avoid
+        # potential memory issues. For this reason, we create this intermediate step that populates
+        # only the data in the passed nodes
+
+        def _res_node(reach: ResultReach, is_end: bool) -> Res1DNode:
+            id = reach.end_node if is_end else reach.start_node
+            gpt_idx = int(is_end)
+            if id in nodes:
+                node = res.nodes[id]
+                df = _simplify_colnames(node)
+                overlapping_gridpoint = reach.gridpoints[gpt_idx]
+                boundary = _simplify_colnames(overlapping_gridpoint)
+                return Res1DNode(id, data=df, boundary={reach.name: boundary}) 
+            else:
+                return Res1DNode(id)
+
         edges = [
-            Res1DReach(reach, res.nodes[reach.start_node], res.nodes[reach.end_node])
-            for reach in res.reaches.values()
+            Res1DReach(reach, _res_node(reach, False), _res_node(reach, True)) for reach in res.reaches.values()
         ]
         return cls(edges)
 

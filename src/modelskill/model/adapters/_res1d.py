@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 from modelskill.network import NetworkNode, EdgeBreakPoint, NetworkEdge
 
 
-def _simplify_res1d_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
+def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
     # We remove suffixes and indexes so the columns contain only the quantity names
 
     # The columns in a Res1D dataframe follow the convention "Quantity:Location:Sublocation"
@@ -30,19 +30,17 @@ def _simplify_res1d_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame
 
 
 class Res1DNode(NetworkNode):
-    def __init__(self, node: ResultNode, boundary: dict[str, ResultGridPoint]):
-        self._id = node.id
-        self._data = _simplify_res1d_colnames(node)
-        self._boundary = {
-            key: _simplify_res1d_colnames(point) for key, point in boundary.items()
-        }
+    def __init__(self, id: str, *, data: pd.DataFrame | None = None, boundary: dict[str, pd.DataFrame] = {}):
+        self._id = id
+        self._data = data
+        self._boundary = boundary
 
     @property
     def id(self) -> str:
         return self._id
 
     @property
-    def data(self) -> pd.DataFrame:
+    def data(self) -> pd.DataFrame | None:
         return self._data
 
     @property
@@ -51,9 +49,9 @@ class Res1DNode(NetworkNode):
 
 
 class GridPoint(EdgeBreakPoint):
-    def __init__(self, point: ResultGridPoint):
-        self._id = (point.reach_name, point.chainage)
-        self._data = _simplify_res1d_colnames(point)
+    def __init__(self, reach_id: str, chainage: float, data: pd.DataFrame):
+        self._id = (reach_id, chainage)
+        self._data = data
 
     @property
     def id(self) -> tuple[str, float]:
@@ -68,7 +66,10 @@ class Res1DReach(NetworkEdge):
     """NetworkEdge adapter for a mikeio1d ResultReach."""
 
     def __init__(
-        self, reach: ResultReach, start_node: ResultNode, end_node: ResultNode
+        self,
+        reach: ResultReach,
+        start_node: Res1DNode,
+        end_node: Res1DNode,
     ):
         self._id = reach.name
 
@@ -77,17 +78,20 @@ class Res1DReach(NetworkEdge):
         if end_node.id != reach.end_node:
             raise ValueError("Incorrect ending node.")
 
-        start_gridpoint = reach.gridpoints[0]
-        end_gridpoint = reach.gridpoints[-1]
         intermediate_gridpoints = (
             reach.gridpoints[1:-1] if len(reach.gridpoints) > 2 else []
         )
 
-        self._start = Res1DNode(start_node, {reach.name: start_gridpoint})
-        self._end = Res1DNode(end_node, {reach.name: end_gridpoint})
+        self._start = start_node
+        self._end = end_node
         self._length = reach.length
         self._breakpoints: list[EdgeBreakPoint] = [
-            GridPoint(gridpoint) for gridpoint in intermediate_gridpoints
+            GridPoint(
+                gridpoint.reach_name,
+                gridpoint.chainage,
+                _simplify_colnames(gridpoint),
+            )
+            for gridpoint in intermediate_gridpoints
         ]
 
     @property
