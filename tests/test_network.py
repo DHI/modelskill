@@ -21,6 +21,7 @@ from modelskill.network import (
 )
 from modelskill.obs import NodeObservation
 from modelskill.quantity import Quantity
+from modelskill.timeseries._coords import NodeCoords, BreakpointCoords
 
 
 def _make_network(node_ids, time, data, quantity="WaterLevel"):
@@ -529,3 +530,151 @@ def test_dataframe_from_partial_network():
     nodes_in_df = network.to_dataframe().droplevel(axis=1, level=1).columns
 
     assert set(nodes_in_df) == set([network.find(n) for n in selected_nodes])
+
+
+# ---------------------------------------------------------------------------
+# Coords classes
+# ---------------------------------------------------------------------------
+
+
+class TestNodeCoords:
+    def test_int_node(self):
+        c = NodeCoords(node=42)
+        assert c.as_dict["node"] == 42
+
+    def test_str_node(self):
+        c = NodeCoords(node="node_A")
+        assert c.as_dict["node"] == "node_A"
+
+    def test_none_node_becomes_nan(self):
+        c = NodeCoords(node=None)
+        assert np.isnan(c.as_dict["node"])
+
+
+class TestBreakpointCoords:
+    def test_stores_edge_and_distance(self):
+        c = BreakpointCoords(edge="reach_1", distance=24.5)
+        d = c.as_dict
+        assert d["edge"] == "reach_1"
+        assert d["distance"] == 24.5
+
+    def test_no_node_key(self):
+        c = BreakpointCoords(edge="reach_1", distance=24.5)
+        assert "node" not in c.as_dict
+
+
+# ---------------------------------------------------------------------------
+# NodeObservation — alias / breakpoint node forms
+# ---------------------------------------------------------------------------
+
+
+class TestNodeObservationAliases:
+    """NodeObservation accepts int, str alias, and (edge, distance) tuple."""
+
+    def test_integer_node_unchanged(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, node=42)
+        assert obs.node == 42
+        assert isinstance(obs.node, int)
+
+    def test_integer_node_coord(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, node=42)
+        assert "node" in obs.data.coords
+        assert int(obs.data.coords["node"].item()) == 42
+
+    def test_string_alias_stored(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, node="node_A", name="test")
+        assert obs.node == "node_A"
+        assert isinstance(obs.node, str)
+
+    def test_string_alias_has_node_coord(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, node="node_A")
+        assert "node" in obs.data.coords
+        assert obs.data.coords["node"].item() == "node_A"
+
+    def test_string_alias_gtype_is_node(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, node="node_A")
+        assert obs.data.attrs["gtype"] == "node"
+
+    def test_tuple_node_stored(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, node=("reach_1", 24.5))
+        assert obs.node == ("reach_1", 24.5)
+        assert isinstance(obs.node, tuple)
+
+    def test_tuple_node_gtype_is_node(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, node=("reach_1", 24.5))
+        assert obs.data.attrs["gtype"] == "node"
+
+    def test_tuple_node_has_edge_distance_coords(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, node=("reach_1", 24.5))
+        assert "edge" in obs.data.coords
+        assert "distance" in obs.data.coords
+        assert str(obs.data.coords["edge"].item()) == "reach_1"
+        assert float(obs.data.coords["distance"].item()) == pytest.approx(24.5)
+
+    def test_tuple_node_has_no_node_coord(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, node=("reach_1", 24.5))
+        assert "node" not in obs.data.coords
+
+    def test_tuple_node_roundtrip_via_create_new_instance(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, node=("reach_1", 24.5))
+        obs2 = obs._create_new_instance(obs.data)
+        assert obs2.node == ("reach_1", 24.5)
+
+    def test_string_roundtrip_via_create_new_instance(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, node="node_A")
+        obs2 = obs._create_new_instance(obs.data)
+        assert obs2.node == "node_A"
+
+
+# ---------------------------------------------------------------------------
+# NetworkModelResult — alias resolution in extract()
+# ---------------------------------------------------------------------------
+
+
+class TestNetworkModelResultAliasResolution:
+    """NetworkModelResult.extract() resolves str and tuple aliases via alias_map."""
+
+    def test_alias_map_stored(self, sample_network):
+        nmr = NetworkModelResult(sample_network)
+        assert hasattr(nmr, "_alias_map")
+        assert "123" in nmr._alias_map
+        assert "456" in nmr._alias_map
+        assert "789" in nmr._alias_map
+
+    def test_extract_with_string_alias(self, sample_network, sample_node_data):
+        nmr = NetworkModelResult(sample_network)
+        obs = NodeObservation(sample_node_data, node="123", name="Node_123")
+        extracted = nmr.extract(obs)
+        expected_id = sample_network.find(node="123")
+        assert isinstance(extracted, NodeModelResult)
+        assert extracted.node == expected_id
+
+    def test_extract_string_alias_wrong_key_raises(self, sample_network, sample_node_data):
+        nmr = NetworkModelResult(sample_network)
+        obs = NodeObservation(sample_node_data, node="nonexistent_node")
+        with pytest.raises(ValueError, match="not found"):
+            nmr.extract(obs)
+
+    def test_extract_with_tuple_breakpoint(self, sample_network, sample_node_data):
+        """Tuple alias is resolved via _alias_map (mapping injected for this test)."""
+        nmr = NetworkModelResult(sample_network)
+        existing_int = int(sample_network.find(node="123"))
+        nmr._alias_map[("reach_test", 10.0)] = existing_int
+        obs = NodeObservation(sample_node_data, node=("reach_test", 10.0))
+        extracted = nmr.extract(obs)
+        assert extracted.node == existing_int
+
+    def test_extract_tuple_alias_wrong_key_raises(self, sample_network, sample_node_data):
+        nmr = NetworkModelResult(sample_network)
+        obs = NodeObservation(sample_node_data, node=("nonexistent_edge", 0.0))
+        with pytest.raises(ValueError, match="not found"):
+            nmr.extract(obs)
+
+    def test_match_with_string_alias(self, sample_network, sample_node_data):
+        """Full ms.match() workflow works end-to-end with a string alias."""
+        nmr = NetworkModelResult(sample_network, name="Network_Model")
+        obs = NodeObservation(sample_node_data, node="123", name="Node_123")
+        comparer = ms.match(obs, nmr)
+        assert comparer.n_points > 0
+        assert "Network_Model" in comparer.mod_names
+
