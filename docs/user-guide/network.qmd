@@ -256,11 +256,6 @@ network.to_dataframe().head()
 network.to_dataframe(sel="WaterLevel").head()
 ```
 
-```{python}
-# Select a single quantity
-network.to_dataset()
-```
-
 ## Looking up node IDs
 
 After construction, nodes are re-labelled as integers.  Use `find()` to go from original coordinates to the integer ID and `recall()` to go back.
