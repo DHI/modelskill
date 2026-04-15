@@ -476,14 +476,7 @@ def test_from_res1d_nodes_filter_creates_full_network():
     path_to_file = "./tests/testdata/network.res1d"
     full_network = Network.from_res1d(path_to_file)
 
-    # Pick a small subset of string node IDs from the full network
-    all_node_aliases = [
-        full_network.graph.nodes[n]["alias"]
-        for n in full_network.graph.nodes()
-        if isinstance(full_network.graph.nodes[n]["alias"], str)
-    ]
-    selected_nodes = all_node_aliases[:2]
-
+    selected_nodes = ["1", "108"]
     partial_network = Network.from_res1d(path_to_file, nodes=selected_nodes)
 
     # Full topology is preserved
@@ -499,11 +492,12 @@ def test_from_res1d_nodes_filter_only_selected_have_data():
 
     selected_nodes = ["1", "108"]
     network = Network.from_res1d(path_to_file, nodes=selected_nodes)
+    g = network.graph.copy()
 
     n_nodes = network.graph.number_of_nodes()
-    assert sum([network.graph.nodes[n]["data"] is None for n in network.graph.nodes]) == n_nodes - 2
+    assert sum([g.nodes[n]["data"] is None for n in g.nodes]) == n_nodes - 2
     for n in selected_nodes:
-        assert network.graph.nodes[network.find(n)]["data"] is not None 
+        assert g.nodes[network.find(n)]["data"] is not None 
 
 
 @pytest.mark.skipif(
@@ -514,20 +508,11 @@ def test_from_res1d_nodes_single_string():
     path_to_file = "./tests/testdata/network.res1d"
     full_network = Network.from_res1d(path_to_file)
 
-    single_node = next(
-        full_network.graph.nodes[n]["alias"]
-        for n in full_network.graph.nodes()
-        if isinstance(full_network.graph.nodes[n]["alias"], str)
-    )
+    network = Network.from_res1d(path_to_file, nodes="108")
+    g = network.graph.copy()
 
-    partial_network = Network.from_res1d(path_to_file, nodes=single_node)
+    assert g.number_of_nodes() == full_network.graph.number_of_nodes()
 
-    assert partial_network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
-
-    nodes_with_data = [
-        partial_network.graph.nodes[n]["alias"]
-        for n in partial_network.graph.nodes()
-        if isinstance(partial_network.graph.nodes[n]["alias"], str)
-        and partial_network.graph.nodes[n]["data"] is not None
-    ]
-    assert nodes_with_data == [single_node]
+    nodes_with_data = [n for n in g.nodes if g.nodes[n]["data"] is not None]
+    nodes_with_data = [network.recall(n)["node"] for n in nodes_with_data]
+    assert nodes_with_data == ["108"]
