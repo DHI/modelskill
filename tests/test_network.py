@@ -466,3 +466,84 @@ def test_network_subset_inplace():
     network.reduce_around(node=52, copy=False)
     assert network.graph.number_of_nodes() == 22
     assert 52 in network.graph.nodes()
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_nodes_filter_creates_full_network():
+    """When nodes is specified, the full network topology is created."""
+    path_to_file = "./tests/testdata/network.res1d"
+    full_network = Network.from_res1d(path_to_file)
+
+    # Pick a small subset of string node IDs from the full network
+    all_node_aliases = [
+        full_network.graph.nodes[n]["alias"]
+        for n in full_network.graph.nodes()
+        if isinstance(full_network.graph.nodes[n]["alias"], str)
+    ]
+    selected_nodes = all_node_aliases[:2]
+
+    partial_network = Network.from_res1d(path_to_file, nodes=selected_nodes)
+
+    # Full topology is preserved
+    assert partial_network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_nodes_filter_only_selected_have_data():
+    """When nodes is specified, only selected nodes contain data; others have None."""
+    path_to_file = "./tests/testdata/network.res1d"
+    full_network = Network.from_res1d(path_to_file)
+
+    all_node_aliases = [
+        full_network.graph.nodes[n]["alias"]
+        for n in full_network.graph.nodes()
+        if isinstance(full_network.graph.nodes[n]["alias"], str)
+    ]
+    selected_nodes = all_node_aliases[:2]
+
+    partial_network = Network.from_res1d(path_to_file, nodes=selected_nodes)
+
+    for int_id in partial_network.graph.nodes():
+        alias = partial_network.graph.nodes[int_id]["alias"]
+        node_data = partial_network.graph.nodes[int_id]["data"]
+
+        if isinstance(alias, str):
+            # String aliases are res1d nodes
+            if alias in selected_nodes:
+                assert node_data is not None, f"Node '{alias}' should have data"
+            else:
+                assert node_data is None, f"Node '{alias}' should not have data"
+        else:
+            # Tuple aliases are breakpoints (grid points), always have data
+            assert node_data is not None
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_nodes_single_string():
+    """nodes argument accepts a single string (not just a list)."""
+    path_to_file = "./tests/testdata/network.res1d"
+    full_network = Network.from_res1d(path_to_file)
+
+    single_node = next(
+        full_network.graph.nodes[n]["alias"]
+        for n in full_network.graph.nodes()
+        if isinstance(full_network.graph.nodes[n]["alias"], str)
+    )
+
+    partial_network = Network.from_res1d(path_to_file, nodes=single_node)
+
+    assert partial_network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
+
+    nodes_with_data = [
+        partial_network.graph.nodes[n]["alias"]
+        for n in partial_network.graph.nodes()
+        if isinstance(partial_network.graph.nodes[n]["alias"], str)
+        and partial_network.graph.nodes[n]["data"] is not None
+    ]
+    assert nodes_with_data == [single_node]

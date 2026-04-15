@@ -345,9 +345,11 @@ class Network:
             f"Time: {time[0]} - {time[-1]}",
         ]
         return "\n".join(out)
-    
+
     @classmethod
-    def from_res1d(cls, res: str | Path | Res1D, *, nodes: str | list[str] | None = None) -> Network:
+    def from_res1d(
+        cls, res: str | Path | Res1D, *, nodes: str | list[str] | None = None, reaches: str | list[str] | None = None
+    ) -> Network:
         """Create a Network from a Res1D file or object.
 
         Parameters
@@ -390,13 +392,25 @@ class Network:
         else:
             if not isinstance(nodes, list):
                 nodes = [nodes]
-        return cls._load_res1d_network(res, nodes)
 
+        if reaches is None:
+            reaches = list(res.reaches.keys())
+        else:
+            if not isinstance(reaches, list):
+                reaches = [reaches]
 
-    @classmethod
-    def _load_res1d_network(cls, res: Res1D, nodes: list[str] = []) -> Network:
+        list_of_reaches = cls._load_res1d_network(res, nodes, reaches)
+        return cls(list_of_reaches)
 
-        from modelskill.model.adapters._res1d import Res1DReach, Res1DNode, _simplify_colnames
+    @staticmethod
+    def _load_res1d_network(
+        res: Res1D, nodes: list[str], reaches: list[str]
+    ) -> list[ResultReach]:
+        from modelskill.model.adapters._res1d import (
+            Res1DReach,
+            Res1DNode,
+            _simplify_colnames,
+        )
 
         # In order to work with bigger files, we might want to select a subset of nodes and avoid
         # potential memory issues. For this reason, we create this intermediate step that populates
@@ -410,14 +424,19 @@ class Network:
                 df = _simplify_colnames(node)
                 overlapping_gridpoint = reach.gridpoints[gpt_idx]
                 boundary = _simplify_colnames(overlapping_gridpoint)
-                return Res1DNode(id, data=df, boundary={reach.name: boundary}) 
+                return Res1DNode(id, data=df, boundary={reach.name: boundary})
             else:
                 return Res1DNode(id)
 
-        edges = [
-            Res1DReach(reach, _res_node(reach, False), _res_node(reach, True)) for reach in res.reaches.values()
+        return [
+            Res1DReach(
+                reach,
+                _res_node(reach, False),
+                _res_node(reach, True),
+                populate_gridpoints=reach in reaches,
+            )
+            for reach in res.reaches.values()
         ]
-        return cls(edges)
 
     @staticmethod
     def _generate_alias_map(g: nx.Graph) -> dict[str | tuple[str, float], int]:
@@ -429,7 +448,10 @@ class Network:
 
     @staticmethod
     def _build_dataframe(g: nx.Graph) -> pd.DataFrame:
-        df = pd.concat({k: v["data"] for k, v in g.nodes.items()}, axis=1)
+        data_in_nodes = {
+            k: v["data"] for k, v in g.nodes.items() if v["data"] is not None
+        }
+        df = pd.concat(data_in_nodes, axis=1)
         df.columns = df.columns.set_names(["node", "quantity"])
         df.index.name = "time"
         return df.copy()
@@ -528,7 +550,9 @@ class Network:
 
         return nx.convert_node_labels_to_integers(g0, label_attribute="alias")
 
-    def reduce_around(self, node: int, radius: int = 5, copy: bool = True) -> None | "Network":
+    def reduce_around(
+        self, node: int, radius: int = 5, copy: bool = True
+    ) -> None | "Network":
         """Select subset of data around a node.
 
         Parameters
@@ -559,7 +583,6 @@ class Network:
             self._initialize_network_attributes(graph_subset)
             self._edges = self._generate_edges_dict(subset_edges)
             return None
-
 
     @overload
     def find(
@@ -768,7 +791,7 @@ class Network:
             return results[0]
         else:
             return results
-        
+
     def copy(self) -> "Network":
         """Create a deep copy of the Network.
 
@@ -778,7 +801,6 @@ class Network:
             Deep copy of the Network object
         """
         return deepcopy(self)
-
 
 
 def _make_basic_network(node_ids, time, data, quantity="WaterLevel"):

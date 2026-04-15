@@ -49,7 +49,7 @@ class Res1DNode(NetworkNode):
 
 
 class GridPoint(EdgeBreakPoint):
-    def __init__(self, reach_id: str, chainage: float, data: pd.DataFrame):
+    def __init__(self, reach_id: str, chainage: float, data: pd.DataFrame | None = None):
         self._id = (reach_id, chainage)
         self._data = data
 
@@ -58,7 +58,7 @@ class GridPoint(EdgeBreakPoint):
         return self._id
 
     @property
-    def data(self) -> pd.DataFrame:
+    def data(self) -> pd.DataFrame | None:
         return self._data
 
 
@@ -70,6 +70,8 @@ class Res1DReach(NetworkEdge):
         reach: ResultReach,
         start_node: Res1DNode,
         end_node: Res1DNode,
+        *,
+        populate_gridpoints: bool = True,
     ):
         self._id = reach.name
 
@@ -89,7 +91,7 @@ class Res1DReach(NetworkEdge):
             GridPoint(
                 gridpoint.reach_name,
                 gridpoint.chainage,
-                _simplify_colnames(gridpoint),
+                _simplify_colnames(gridpoint) if populate_gridpoints else None,
             )
             for gridpoint in intermediate_gridpoints
         ]
