@@ -12,7 +12,7 @@ from ..types import GeometryType, PointType
 from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
-from ._coords import XYZCoords, NetworkCoords
+from ._coords import XYZCoords, NodeCoords, BreakpointCoords
 
 
 @dataclass
@@ -143,7 +143,7 @@ def _convert_to_dataset(
 def _include_coords(
     ds: xr.Dataset,
     *,
-    coords: XYZCoords | NetworkCoords | None = None,
+    coords: XYZCoords | NodeCoords | BreakpointCoords | None = None,
 ) -> xr.Dataset:
     ds = ds.copy()
     if coords is not None:
@@ -166,7 +166,7 @@ def _include_attributes(
 ) -> xr.Dataset:
     ds = ds.copy()
 
-    if "node" in ds.coords:
+    if "node" in ds.coords or "edge" in ds.coords:
         ds.attrs["gtype"] = str(GeometryType.NODE)
     else:
         ds.attrs["gtype"] = str(GeometryType.POINT)
@@ -243,7 +243,7 @@ def _parse_point_input(
     quantity: Quantity | None,
     aux_items: Sequence[int | str] | None,
     *,
-    coords: XYZCoords | NetworkCoords,
+    coords: XYZCoords | NodeCoords | BreakpointCoords,
 ) -> xr.Dataset:
     """Convert accepted input data to an xr.Dataset."""
 
@@ -282,11 +282,27 @@ def _parse_network_node_input(
     name: str | None,
     item: str | int | None,
     quantity: Quantity | None,
-    node: int | None,
+    node: int | str | None,
     aux_items: Sequence[int | str] | None,
 ) -> xr.Dataset:
     if node is None:
         raise ValueError("'node' argument cannot be empty.")
-    coords = NetworkCoords(node=node)
+    coords = NodeCoords(node=node)
+    ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
+    return ds
+
+
+def _parse_network_breakpoint_input(
+    data: PointType,
+    name: str | None,
+    item: str | int | None,
+    quantity: Quantity | None,
+    aux_items: Sequence[int | str] | None,
+    *,
+    edge: str,
+    distance: float,
+) -> xr.Dataset:
+    """Parse input for a breakpoint observation identified by edge + distance."""
+    coords = BreakpointCoords(edge=edge, distance=distance)
     ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds

@@ -519,6 +519,11 @@ class Network:
         df.index.name = "time"
         return df.copy()
 
+    @property
+    def alias_map(self) -> dict[str | tuple[str, float], int]:
+        """Mapping from original node/breakpoint IDs to internal integer IDs."""
+        return self._alias_map
+
     def to_dataframe(self, sel: str | None = None) -> pd.DataFrame:
         """Dataframe using node ids as column names.
 

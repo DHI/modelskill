@@ -17,10 +17,10 @@ class XYZCoords:
         return {"x": self.x, "y": self.y, "z": self.z}
 
 
-class NetworkCoords:
+class NodeCoords:
     def __init__(
         self,
-        node: int | None = None,
+        node: int | str | None = None,
         boundary: str | None = None,
     ):
         self.node = node if node is not None else np.nan
@@ -29,3 +29,19 @@ class NetworkCoords:
     @property
     def as_dict(self) -> dict:
         return {"node": self.node, "boundary": self.boundary}
+
+
+class BreakpointCoords:
+    def __init__(
+        self,
+        edge: str,
+        distance: float,
+        boundary: str | None = None,
+    ):
+        self.edge = edge
+        self.distance = distance
+        self.boundary = boundary if boundary is not None else np.nan
+
+    @property
+    def as_dict(self) -> dict:
+        return {"edge": self.edge, "distance": self.distance, "boundary": self.boundary}

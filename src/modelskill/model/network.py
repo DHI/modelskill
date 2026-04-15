@@ -138,6 +138,7 @@ class NetworkModelResult:
         self.data = ds[sel_items.all]
         self.name = name
         self.sel_items = sel_items
+        self._alias_map: dict[str | tuple[str, float], int] = data.alias_map
 
         if quantity is None:
             da = self.data[sel_items.values]
@@ -181,7 +182,15 @@ class NetworkModelResult:
                 f"NetworkModelResult only supports NodeObservation, got {type(observation).__name__}"
             )
 
-        node_id = observation.node
+        node_id: int | str | tuple[str, float] = observation.node
+        if isinstance(node_id, (str, tuple)):
+            if node_id not in self._alias_map:
+                available = list(self._alias_map.keys())[:5]
+                raise ValueError(
+                    f"Node alias '{node_id}' not found in network. "
+                    f"Available aliases (first 5): {available}"
+                )
+            node_id = self._alias_map[node_id]
         if node_id not in self.data.node:
             raise ValueError(
                 f"Node {node_id} not found. Available: {list(self.nodes[:5])}..."

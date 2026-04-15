@@ -25,7 +25,9 @@ from .timeseries import (
     _parse_xyz_point_input,
     _parse_track_input,
     _parse_network_node_input,
+    _parse_network_breakpoint_input,
 )
+
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
 Serializable = Union[str, int, float]
@@ -351,7 +353,12 @@ class NodeObservation(Observation):
     """Class for observations at network nodes.
 
     Create a NodeObservation from a DataFrame or other data source.
-    The node ID is specified as an integer.
+    The node ID can be an integer (internal network ID) or a string alias
+    (e.g. the original Res1D node name). String aliases are resolved to
+    integer IDs automatically when matched against a
+    :class:`~modelskill.model.network.NetworkModelResult`.
+    For breakpoint locations (edge + distance), resolve the integer ID first
+    via :meth:`~modelskill.network.Network.find`.
 
     To create multiple NodeObservation objects from a single data source,
     use :method:`from_multiple`.
@@ -360,11 +367,17 @@ class NodeObservation(Observation):
     ----------
     data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
         data source with time series for the node
+    node : int, str, or tuple[str, float]
+        Node ID. Accepted forms:
+
+        * **int** — internal network ID, used directly.
+        * **str** — original node alias (e.g. Res1D node name), resolved
+          when matched against a :class:`~modelskill.model.network.NetworkModelResult`.
+        * **tuple** ``(edge_id, distance)`` — breakpoint location along an
+          edge, resolved via the alias map in the same way.
     item : (int, str), optional
         index or name of the wanted item/column, by default None
         if data contains more than one item, item must be given
-    node : int, optional
-        node ID (integer), by default None
     name : str, optional
         user-defined name for easy identification in plots etc, by default derived from data
     weight : float, optional
@@ -382,6 +395,11 @@ class NodeObservation(Observation):
     >>> o1 = ms.NodeObservation(data, node=123, name="123")
     >>> o2 = ms.NodeObservation(df, item="Water Level", node=456)
     >>>
+    >>> o3 = ms.NodeObservation(data, node="node_A")
+    >>>
+    >>> # Breakpoint as (edge_id, distance) tuple
+    >>> o4 = ms.NodeObservation(data, node=("reach_1", 24.5))
+    >>>
     >>> # Multiple node observations from separate data sources
     >>> obs = ms.NodeObservation.from_multiple(nodes={123: df1, 456: df2})
     """
@@ -389,7 +407,7 @@ class NodeObservation(Observation):
     def __init__(
         self,
         data: PointType,
-        node: int,
+        node: int | str | tuple[str, float],
         *,
         item: int | str | None = None,
         name: str | None = None,
@@ -398,28 +416,54 @@ class NodeObservation(Observation):
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> None:
-        if not self._is_input_validated(data):
-            data = _parse_network_node_input(
-                data,
-                name=name,
-                item=item,
-                quantity=quantity,
-                node=node,
-                aux_items=aux_items,
-            )
-
+        if isinstance(node, tuple):
+            edge, distance = str(node[0]), float(node[1])
+            if not self._is_input_validated(data):
+                data = _parse_network_breakpoint_input(
+                    data,
+                    name=name,
+                    item=item,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    edge=edge,
+                    distance=distance,
+                )
+        else:
+            if not self._is_input_validated(data):
+                data = _parse_network_node_input(
+                    data,
+                    name=name,
+                    item=item,
+                    quantity=quantity,
+                    node=node,
+                    aux_items=aux_items,
+                )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
 
     @property
-    def node(self) -> int:
-        """Node ID of observation"""
-        node_val = self.data.coords["node"]
-        return int(node_val.item())
+    def node(self) -> int | str | tuple[str, float]:
+        """Node ID of observation.
+
+        Returns an integer, a string alias, or an ``(edge_id, distance)``
+        tuple for breakpoint locations.
+        """
+        if "edge" in self.data.coords:
+            return (
+                str(self.data.coords["edge"].item()),
+                float(self.data.coords["distance"].item()),
+            )
+        return self.data.coords["node"].item()  # int or str
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
-        """Extract node from data and create new instance"""
-        node = int(data.coords["node"].item())
+        """Reconstruct instance from a dataset slice."""
+        if "edge" in data.coords:
+            node: int | str | tuple[str, float] = (
+                str(data.coords["edge"].item()),
+                float(data.coords["distance"].item()),
+            )
+        else:
+            node = data.coords["node"].item()
         return self.__class__(data, node=node)
 
     @overload
