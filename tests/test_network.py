@@ -516,3 +516,16 @@ def test_from_res1d_nodes_single_string():
     nodes_with_data = [n for n in g.nodes if g.nodes[n]["data"] is not None]
     nodes_with_data = [network.recall(n)["node"] for n in nodes_with_data]
     assert nodes_with_data == ["108"]
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_dataframe_from_partial_network():
+    """nodes argument accepts a single string (not just a list)."""
+    path_to_file = "./tests/testdata/network.res1d"
+    selected_nodes = ["108", "101"]
+    network = Network.from_res1d(path_to_file, nodes=selected_nodes)
+    nodes_in_df = network.to_dataframe().droplevel(axis=1, level=1).columns
+
+    assert set(nodes_in_df) == set([network.find(n) for n in selected_nodes])
