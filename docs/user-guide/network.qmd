@@ -356,6 +356,12 @@ cc.skill()
 
 The tuple form is equivalent to calling `network.find(edge="94l1", distance=21.285)` beforehand and is resolved during matching.
 
+::: {.callout-note}
+## Chainage tolerance
+
+Breakpoint distances are matched with a tolerance of **1 × 10⁻³** (i.e. ±0.001 in whatever distance units the network uses).  This means that small floating-point discrepancies between the distance you type and the value stored in the network are handled gracefully.  If no breakpoint falls within that tolerance a `ValueError` is raised.
+:::
+
 ## Development
 
 ### Custom network formats
