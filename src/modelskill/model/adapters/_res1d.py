@@ -30,10 +30,10 @@ def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
 
 
 class Res1DNode(NetworkNode):
-    def __init__(self, id: str, *, data: pd.DataFrame | None = None, boundary: dict[str, pd.DataFrame] = {}):
+    def __init__(self, id: str, *, data: pd.DataFrame | None = None, boundary: dict[str, pd.DataFrame] | None = None):
         self._id = id
         self._data = data
-        self._boundary = boundary
+        self._boundary = {} if boundary is None else boundary
 
     @property
     def id(self) -> str:

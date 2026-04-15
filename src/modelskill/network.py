@@ -27,6 +27,7 @@ import xarray as xr
 if TYPE_CHECKING:
     from mikeio1d import Res1D
     from mikeio1d.result_network import ResultReach
+    from .model.adapters._res1d import Res1DReach
 
 
 class NetworkNode(ABC):
@@ -405,7 +406,7 @@ class Network:
     @staticmethod
     def _load_res1d_network(
         res: Res1D, nodes: list[str], reaches: list[str]
-    ) -> list[ResultReach]:
+    ) -> list[Res1DReach]:
         from modelskill.model.adapters._res1d import (
             Res1DReach,
             Res1DNode,
@@ -418,7 +419,7 @@ class Network:
 
         def _init_node(reach: ResultReach, is_end: bool) -> Res1DNode:
             id = reach.end_node if is_end else reach.start_node
-            gpt_idx = int(is_end)
+            gpt_idx = -1 if is_end else 0
             if id in nodes:
                 node = res.nodes[id]
                 df = _simplify_colnames(node)
@@ -433,7 +434,7 @@ class Network:
                 reach,
                 _init_node(reach, False),
                 _init_node(reach, True),
-                populate_gridpoints=reach in reaches,
+                populate_gridpoints=reach.name in reaches,
             )
             for reach in res.reaches.values()
         ]

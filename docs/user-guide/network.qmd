@@ -168,6 +168,47 @@ A `Res1D` network contains multiple levels that are unified into a generic netwo
 
 ![How a Res1D file maps to a Network object. Reaches and nodes are re-indexed as integers; boundary nodes expose `find()`/`recall()` round-trip lookups.](../images/res1d_network_mapping.png)
 
+#### Selective loading
+
+Large Res1D files can contain thousands of nodes and gridpoints. Loading all of that data into memory is slow and may cause memory issues — especially when you only need the timeseries at a handful of nodes where observations exist.
+
+`from_res1d` accepts two optional arguments to restrict what gets loaded:
+
+| Argument | Type | Effect |
+|---|---|---|
+| `nodes` | `str \| list[str]` | Only load timeseries data for the specified node IDs |
+| `reaches` | `str \| list[str]` | Only populate intermediate gridpoint data for the specified reach names |
+
+::: {.callout-note}
+Selective loading only controls **which timeseries are held in memory**. The full network topology (nodes, edges, lengths) is always constructed so that `find()`, `recall()`, and graph algorithms still work on the complete network.
+:::
+
+For example, if your observations are at nodes `"78"` and `"46"`, you can load only those:
+
+```{python}
+network_subset = Network.from_res1d(
+    path_to_res1d,
+    nodes=["78", "46"],
+)
+network_subset
+```
+
+Similarly, if you also want the intermediate gridpoint data for a specific reach:
+
+```{python}
+network_subset = Network.from_res1d(
+    path_to_res1d,
+    nodes=["78", "46"],
+    reaches=["94l1"],
+)
+network_subset
+```
+
+When only some nodes are loaded, `to_dataframe()` and `to_dataset()` only contain columns for those nodes — the rest are graph-connected but data-free:
+
+```{python}
+network_subset.to_dataframe(sel="WaterLevel").head()
+```
 
 ## Inspecting the Network
 
