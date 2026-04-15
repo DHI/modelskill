@@ -416,7 +416,7 @@ class Network:
         # potential memory issues. For this reason, we create this intermediate step that populates
         # only the data in the passed nodes
 
-        def _res_node(reach: ResultReach, is_end: bool) -> Res1DNode:
+        def _init_node(reach: ResultReach, is_end: bool) -> Res1DNode:
             id = reach.end_node if is_end else reach.start_node
             gpt_idx = int(is_end)
             if id in nodes:
@@ -431,8 +431,8 @@ class Network:
         return [
             Res1DReach(
                 reach,
-                _res_node(reach, False),
-                _res_node(reach, True),
+                _init_node(reach, False),
+                _init_node(reach, True),
                 populate_gridpoints=reach in reaches,
             )
             for reach in res.reaches.values()

@@ -496,30 +496,14 @@ def test_from_res1d_nodes_filter_creates_full_network():
 def test_from_res1d_nodes_filter_only_selected_have_data():
     """When nodes is specified, only selected nodes contain data; others have None."""
     path_to_file = "./tests/testdata/network.res1d"
-    full_network = Network.from_res1d(path_to_file)
 
-    all_node_aliases = [
-        full_network.graph.nodes[n]["alias"]
-        for n in full_network.graph.nodes()
-        if isinstance(full_network.graph.nodes[n]["alias"], str)
-    ]
-    selected_nodes = all_node_aliases[:2]
+    selected_nodes = ["1", "108"]
+    network = Network.from_res1d(path_to_file, nodes=selected_nodes)
 
-    partial_network = Network.from_res1d(path_to_file, nodes=selected_nodes)
-
-    for int_id in partial_network.graph.nodes():
-        alias = partial_network.graph.nodes[int_id]["alias"]
-        node_data = partial_network.graph.nodes[int_id]["data"]
-
-        if isinstance(alias, str):
-            # String aliases are res1d nodes
-            if alias in selected_nodes:
-                assert node_data is not None, f"Node '{alias}' should have data"
-            else:
-                assert node_data is None, f"Node '{alias}' should not have data"
-        else:
-            # Tuple aliases are breakpoints (grid points), always have data
-            assert node_data is not None
+    n_nodes = network.graph.number_of_nodes()
+    assert sum([network.graph.nodes[n]["data"] is None for n in network.graph.nodes]) == n_nodes - 2
+    for n in selected_nodes:
+        assert network.graph.nodes[network.find(n)]["data"] is not None 
 
 
 @pytest.mark.skipif(
