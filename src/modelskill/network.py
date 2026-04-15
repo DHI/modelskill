@@ -616,7 +616,7 @@ class Network:
     def reduce_around(
         self, node: int, radius: int = 5, copy: bool = True
     ) -> None | "Network":
-        """Select subset of data around a node.
+        """Select subset of network around a node.
 
         Parameters
         ----------
