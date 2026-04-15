@@ -17,7 +17,7 @@ import sys
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Sequence, overload, TYPE_CHECKING
+from typing import Any, Literal, Sequence, overload, TYPE_CHECKING
 from copy import deepcopy
 
 import networkx as nx
@@ -349,7 +349,11 @@ class Network:
 
     @classmethod
     def from_res1d(
-        cls, res: str | Path | Res1D, *, nodes: str | list[str] | None = None, reaches: str | list[str] | None = None
+        cls,
+        res: str | Path | Res1D,
+        *,
+        nodes: Literal["all"] | str | list[str] = "all",
+        reaches: Literal["all"] | str | list[str] = "all",
     ) -> Network:
         """Create a Network from a Res1D file or object.
 
@@ -357,6 +361,24 @@ class Network:
         ----------
         res : str, Path or Res1D
             Path to a .res1d file, or an already-opened :class:`mikeio1d.Res1D` object.
+        nodes : "all", str, or list of str, optional
+            Controls which nodes have their timeseries data loaded into memory.
+
+            * ``"all"`` *(default)* — data is loaded for every node.
+            * A single node ID or a list of node IDs — only those nodes get
+              data; others are topology-only.
+            * ``[]`` (empty list) — no node data is loaded at all.
+
+            The full network topology is always constructed regardless of this
+            setting, so ``find()`` and ``recall()`` still work on all nodes.
+        reaches : "all", str, or list of str, optional
+            Controls which reaches have their intermediate gridpoint data
+            populated.
+
+            * ``"all"`` *(default)* — gridpoints are populated for every reach.
+            * A single reach name or a list of reach names — only those reaches
+              get gridpoint data; others are topology-only.
+            * ``[]`` (empty list) — no gridpoint data is loaded at all.
 
         Returns
         -------
@@ -364,9 +386,27 @@ class Network:
 
         Examples
         --------
+        Load everything (default behaviour):
+
         >>> from modelskill.network import Network
         >>> network = Network.from_res1d("model.res1d")
-        >>> network = Network.from_res1d(Res1D("model.res1d"))
+
+        Load data only for the two nodes where observations exist, and skip
+        all intermediate gridpoint data to keep memory usage low:
+
+        >>> network = Network.from_res1d(
+        ...     "model.res1d",
+        ...     nodes=["node_a", "node_b"],
+        ...     reaches=[],
+        ... )
+
+        Load data for selected nodes and gridpoints for one specific reach:
+
+        >>> network = Network.from_res1d(
+        ...     "model.res1d",
+        ...     nodes=["node_a", "node_b"],
+        ...     reaches=["reach_1"],
+        ... )
         """
 
         if sys.version_info >= (3, 14):
@@ -388,24 +428,46 @@ class Network:
                 f"Expected a str, Path or Res1D object, got {type(res).__name__!r}"
             )
 
-        if nodes is None:
-            nodes = list(res.nodes.keys())
-        else:
-            if not isinstance(nodes, list):
-                nodes = [nodes]
+        if "all" in res.nodes:
+            import warnings
+            warnings.warn(
+                "This Res1D file contains a node named 'all', which conflicts with the "
+                "sentinel value used by the 'nodes' parameter. To load data for "
+                "that node specifically, pass it as a list: nodes=['all'].",
+                UserWarning,
+                stacklevel=2,
+            )
 
-        if reaches is None:
-            reaches = list(res.reaches.keys())
-        else:
-            if not isinstance(reaches, list):
-                reaches = [reaches]
+        if "all" in res.reaches:
+            import warnings
+            warnings.warn(
+                "This Res1D file contains a reach named 'all', which conflicts with the "
+                "sentinel value used by the 'reaches' parameter. To load gridpoints for "
+                "that reach specifically, pass it as a list: reaches=['all'].",
+                UserWarning,
+                stacklevel=2,
+            )
 
-        list_of_reaches = cls._load_res1d_network(res, nodes, reaches)
+        if nodes == "all":
+            nodes_list: list[str] = list(res.nodes.keys())
+        elif isinstance(nodes, str):
+            nodes_list = [nodes]
+        else:
+            nodes_list = list(nodes)
+
+        if reaches == "all":
+            reaches_list: list[str] = list(res.reaches.keys())
+        elif isinstance(reaches, str):
+            reaches_list = [reaches]
+        else:
+            reaches_list = list(reaches)
+
+        list_of_reaches = cls._load_res1d_network(res, nodes_list, reaches_list)
         return cls(list_of_reaches)
 
     @staticmethod
     def _load_res1d_network(
-        res: Res1D, nodes: list[str], reaches: list[str]
+        res: Res1D, nodes: list[str], reaches: list[str],
     ) -> list[Res1DReach]:
         from modelskill.model.adapters._res1d import (
             Res1DReach,

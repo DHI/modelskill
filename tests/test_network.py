@@ -491,7 +491,7 @@ def test_from_res1d_nodes_filter_only_selected_have_data():
     path_to_file = "./tests/testdata/network.res1d"
 
     selected_nodes = ["1", "108"]
-    network = Network.from_res1d(path_to_file, nodes=selected_nodes)
+    network = Network.from_res1d(path_to_file, nodes=selected_nodes, reaches=[])
     g = network.graph.copy()
 
     n_nodes = network.graph.number_of_nodes()
@@ -508,7 +508,7 @@ def test_from_res1d_nodes_single_string():
     path_to_file = "./tests/testdata/network.res1d"
     full_network = Network.from_res1d(path_to_file)
 
-    network = Network.from_res1d(path_to_file, nodes="108")
+    network = Network.from_res1d(path_to_file, nodes="108", reaches=[])
     g = network.graph.copy()
 
     assert g.number_of_nodes() == full_network.graph.number_of_nodes()
@@ -525,7 +525,7 @@ def test_dataframe_from_partial_network():
     """nodes argument accepts a single string (not just a list)."""
     path_to_file = "./tests/testdata/network.res1d"
     selected_nodes = ["108", "101"]
-    network = Network.from_res1d(path_to_file, nodes=selected_nodes)
+    network = Network.from_res1d(path_to_file, nodes=selected_nodes, reaches=[])
     nodes_in_df = network.to_dataframe().droplevel(axis=1, level=1).columns
 
     assert set(nodes_in_df) == set([network.find(n) for n in selected_nodes])
