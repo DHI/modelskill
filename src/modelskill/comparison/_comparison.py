@@ -834,6 +834,8 @@ class Comparer:
             Time. If None, all times are selected.
         area : list of float, optional
             bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
+        z : float or slice, optional
+            Select by z coordinate. 
 
         Returns
         -------
@@ -896,9 +898,10 @@ class Comparer:
                 d = d.where((d["z"] >= lo) & (d["z"] <= hi), drop=True)
                 raw_mod = {}
                 for k, v in raw_mod_data.items():
-                    raw_mod[k] = v.data.where(
+                    m_data = v.data.where(
                         (v.data["z"] >= lo) & (v.data["z"] <= hi), drop=True
                     )
+                    raw_mod[k] = type(v)(m_data)
                 raw_mod_data = raw_mod
             else:
                 d = d.where(d["z"] == float(z), drop=True)
