@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+import matplotlib
 import numpy as np
-from typing import Callable, Iterable, Sequence, Tuple
+from typing import TYPE_CHECKING, Callable, Iterable, Sequence, Tuple
 from ..types import GeometryType
 
 from ..plotting._misc import _get_fig_ax
@@ -7,67 +10,81 @@ import xarray as xr
 from matplotlib import dates as mdates
 from ..model import PointModelResult
 
+if TYPE_CHECKING:
+    import matplotlib.axes
+
 
 class VerticalPlotter:
     def __init__(self, comparer):
         self.comparer = comparer
 
+    def __call__(
+        self, *args, **kwargs
+    ) -> matplotlib.axes.Axes:
+        """Plot scatter plot of modelled vs observed data"""
+        return self.profile(*args, **kwargs)
+    
     def profile(
         self,
         title: str | None = None,
-        ax=None,
+        ax: matplotlib.axes.Axes | None = None,
         figsize: Tuple[float, float] | None = None,
-        **kwargs,
-    ):
-        """Plot a vertical profile of model and observations at a specific time.
+        show_matched_model: bool = False,
+    ) -> matplotlib.axes.Axes:
+        """Plot vertical profiles of model and observations.
 
         Parameters
         ----------
         title : str, optional
-            Title of the plot. If None, the selected time will be used as the title.
-        ax : matplotlib Axes, optional
+            Title of the plot.
+            ax : matplotlib Axes, optional
             Matplotlib Axes to plot on (if None, a new figure and axes will be created).
         figsize : tuple, optional
             Size of the figure (only used if ax is None).
-        **kwargs
-            Other keyword arguments to matplotlib's plot function for the model and observation lines.
 
         Returns
         -------
         matplotlib Axes
             Axes object with the vertical profile plot.
         """
+        from ._comparison import MOD_COLORS
+
         cmp = self.comparer
-
         _, ax = _get_fig_ax(ax, figsize)
-        avail_times = cmp.time.unique()
 
-        for i, t in enumerate(avail_times):
-            col = "C" + str(i)
-            data = cmp.sel(time=t).data
-            z = data["z"].values
-            ax.plot(
-                data[cmp.mod_names[0]].values,
-                z,
-                "o-",
-                linewidth=2,
-                label=f"{cmp.mod_names[0]}-t{i}",
-                color=col,
-            )
-            ax.plot(
-                data["Observation"].values,
-                z,
-                linestyle="--",
-                linewidth=2,
-                label=f"Observation-t{i}",
-                color=col,
-            )
-            ax.set_xlabel(kwargs.get("xlabel", f"{cmp._unit_text}"))
-            ax.set_ylabel(kwargs.get("ylabel", "Depth"))
-            ax.legend()
-            ax.grid(True)
-            ax.set_title(title if title is not None else f"{t}")
+        title = title if title is not None else cmp.name
 
+        for j in range(cmp.n_models):
+            key = cmp.mod_names[j]
+            raw_data = cmp.raw_mod_data[key].data
+            mod_values = raw_data[key].values
+            z = raw_data["z"].values
+            ax.plot(mod_values, z, color=MOD_COLORS[j])
+
+            obs_values = cmp.data["Observation"].values
+            z_obs = cmp.data["z"].values
+
+            ax.scatter(
+                obs_values,
+                z_obs,
+                color=cmp.data[cmp._obs_name].attrs["color"],
+                marker=".",
+            )
+
+            if show_matched_model:
+                mod_values_int = cmp.data[key].values
+                ax.scatter(
+                    mod_values_int,
+                    z_obs,
+                    color=MOD_COLORS[j],
+                    marker=".",
+                )
+
+        ax.set_xlabel(f"{cmp._unit_text}")
+        ax.set_ylabel("Depth")
+        ax.legend([*cmp.mod_names, cmp._obs_name])
+        ax.grid(True)
+        ax.set_title(title)
         return ax
 
     def hovmoller(
@@ -75,11 +92,11 @@ class VerticalPlotter:
         *,
         title: str | None = None,
         ylim: Tuple[float, float] | None = None,
-        ax=None,
+        ax: matplotlib.axes.Axes | None = None,
         figsize: Tuple[float, float] | None = None,
         obs_marker_size: float = 20.0,
         **kwargs,
-    ):
+    ) -> matplotlib.axes.Axes:
         """
         Hovmöller plot of model and observations as a function of depth and time.
 
