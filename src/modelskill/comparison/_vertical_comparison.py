@@ -81,7 +81,7 @@ class VerticalPlotter:
                 )
 
         ax.set_xlabel(f"{cmp._unit_text}")
-        ax.set_ylabel("Depth")
+        ax.set_ylabel("z")
         ax.legend([*cmp.mod_names, cmp._obs_name])
         ax.grid(True)
         ax.set_title(title)
