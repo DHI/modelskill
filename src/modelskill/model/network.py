@@ -220,7 +220,12 @@ class NetworkModelResult:
         """
         edge_id = observation.edge
 
-        # All (alias, int_id) pairs whose alias is a (edge_id, distance) tuple
+        # TODO: this only searches intermediate breakpoints (tuple aliases).
+        # Start/end nodes of an edge (string aliases) are never considered, so
+        # extraction will fail for reaches with no gridpoints loaded even when
+        # the end nodes carry the same quantity. Fixing this requires
+        # NetworkModelResult to know the edge→node topology (e.g. via a new
+        # Network.edge_node_map property).
         candidates = [
             (alias, int_id)
             for alias, int_id in self._alias_map.items()
