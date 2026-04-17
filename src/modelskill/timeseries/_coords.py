@@ -18,41 +18,34 @@ class XYZCoords:
 
 
 class NodeCoords:
-    def __init__(
-        self,
-        node: int | str | None = None,
-        boundary: str | None = None,
-    ):
+    def __init__(self, node: int | str | None = None):
         self.node = node if node is not None else np.nan
-        self.boundary = boundary if boundary is not None else np.nan
 
     @property
     def as_dict(self) -> dict:
-        return {"node": self.node, "boundary": self.boundary}
-
-
-class BreakpointCoords:
-    def __init__(
-        self,
-        edge: str,
-        distance: float,
-        boundary: str | None = None,
-    ):
-        self.edge = edge
-        self.distance = distance
-        self.boundary = boundary if boundary is not None else np.nan
-
-    @property
-    def as_dict(self) -> dict:
-        return {"edge": self.edge, "distance": self.distance, "boundary": self.boundary}
+        return {"node": self.node}
 
 
 class EdgeCoords:
-    """Coordinate for an edge-level observation (no specific chainage/distance)."""
+    """Coordinates for an observation along a network edge.
 
-    def __init__(self, edge: str):
+    Parameters
+    ----------
+    edge : str
+        Edge (reach) identifier.
+    distance : float or None, optional
+        Along-edge distance (chainage).  When ``None`` the observation is
+        edge-level (no specific chainage) and no ``distance`` coordinate is
+        stored in the dataset.
+    """
+
+    def __init__(self, edge: str, distance: float | None = None):
         self.edge = edge
+        self.distance = distance
 
     @property
     def as_dict(self) -> dict:
-        return {"edge": self.edge}
+        d: dict = {"edge": self.edge}
+        if self.distance is not None:
+            d["distance"] = self.distance
+        return d

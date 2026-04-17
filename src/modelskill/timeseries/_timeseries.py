@@ -63,8 +63,7 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
         ds.time.to_index().is_monotonic_increasing
     ), "time must be increasing (please check for duplicate times))"
 
-    # Validate coordinates
-    # Check for either traditional x,y coordinates OR node-based coordinates
+    # Validate coordinates: x,y spatial, node-based, or edge-based (with or without chainage)
     has_spatial_coords = "x" in ds.coords and "y" in ds.coords
     has_node_coord = "node" in ds.coords
     has_breakpoint_coords = "edge" in ds.coords and "distance" in ds.coords

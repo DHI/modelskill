@@ -26,7 +26,6 @@ from .timeseries import (
     _parse_track_input,
     _parse_network_node_input,
     _parse_network_breakpoint_input,
-    _parse_network_edge_input,
 )
 
 
@@ -627,13 +626,14 @@ class EdgeObservation(Observation):
         attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_network_edge_input(
+            data = _parse_network_breakpoint_input(
                 data,
                 name=name,
                 item=item,
                 quantity=quantity,
-                edge=edge,
                 aux_items=aux_items,
+                edge=edge,
+                distance=None,
             )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
