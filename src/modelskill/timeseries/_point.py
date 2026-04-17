@@ -12,7 +12,7 @@ from ..types import GeometryType, PointType
 from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
-from ._coords import XYZCoords, NodeCoords, BreakpointCoords
+from ._coords import XYZCoords, NodeCoords, BreakpointCoords, EdgeCoords
 
 
 @dataclass
@@ -143,7 +143,7 @@ def _convert_to_dataset(
 def _include_coords(
     ds: xr.Dataset,
     *,
-    coords: XYZCoords | NodeCoords | BreakpointCoords | None = None,
+    coords: XYZCoords | NodeCoords | BreakpointCoords | EdgeCoords | None = None,
 ) -> xr.Dataset:
     ds = ds.copy()
     if coords is not None:
@@ -243,7 +243,7 @@ def _parse_point_input(
     quantity: Quantity | None,
     aux_items: Sequence[int | str] | None,
     *,
-    coords: XYZCoords | NodeCoords | BreakpointCoords,
+    coords: XYZCoords | NodeCoords | BreakpointCoords | EdgeCoords,
 ) -> xr.Dataset:
     """Convert accepted input data to an xr.Dataset."""
 
@@ -304,5 +304,26 @@ def _parse_network_breakpoint_input(
 ) -> xr.Dataset:
     """Parse input for a breakpoint observation identified by edge + distance."""
     coords = BreakpointCoords(edge=edge, distance=distance)
+    ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
+    return ds
+
+
+def _parse_network_edge_input(
+    data: PointType,
+    name: str | None,
+    item: str | int | None,
+    quantity: Quantity | None,
+    edge: str,
+    aux_items: Sequence[int | str] | None,
+) -> xr.Dataset:
+    """Parse input for an edge-level observation identified by edge ID only.
+
+    The quantity is assumed to be uniform across the whole edge (e.g. discharge).
+    When matched against a NetworkModelResult it will be extracted from an
+    arbitrary breakpoint that belongs to the edge.
+    """
+    if not edge:
+        raise ValueError("'edge' argument cannot be empty.")
+    coords = EdgeCoords(edge=edge)
     ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds

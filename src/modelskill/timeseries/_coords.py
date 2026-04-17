@@ -45,3 +45,14 @@ class BreakpointCoords:
     @property
     def as_dict(self) -> dict:
         return {"edge": self.edge, "distance": self.distance, "boundary": self.boundary}
+
+
+class EdgeCoords:
+    """Coordinate for an edge-level observation (no specific chainage/distance)."""
+
+    def __init__(self, edge: str):
+        self.edge = edge
+
+    @property
+    def as_dict(self) -> dict:
+        return {"edge": self.edge}

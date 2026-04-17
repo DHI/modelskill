@@ -9,7 +9,7 @@ import xarray as xr
 
 from modelskill.timeseries import TimeSeries, _parse_network_node_input
 from ._base import SelectedItems
-from ..obs import NodeObservation
+from ..obs import NodeObservation, EdgeObservation
 from ..quantity import Quantity
 from ..types import PointType
 
@@ -163,25 +163,30 @@ class NetworkModelResult:
 
     def extract(
         self,
-        observation: NodeObservation,
+        observation: NodeObservation | EdgeObservation,
     ) -> NodeModelResult:
-        """Extract ModelResult at exact node locations
+        """Extract ModelResult at exact node or edge locations
 
         Parameters
         ----------
-        observation : NodeObservation
-            observation with node ID (only NodeObservation supported)
+        observation : NodeObservation or EdgeObservation
+            observation with node ID or edge ID
 
         Returns
         -------
         NodeModelResult
             extracted model result
         """
-        if not isinstance(observation, NodeObservation):
+        if isinstance(observation, NodeObservation):
+            return self._extract_node(observation)
+        elif isinstance(observation, EdgeObservation):
+            return self._extract_edge(observation)
+        else:
             raise TypeError(
-                f"NetworkModelResult only supports NodeObservation, got {type(observation).__name__}"
+                f"NetworkModelResult supports NodeObservation and EdgeObservation, got {type(observation).__name__}"
             )
 
+    def _extract_node(self, observation: NodeObservation) -> NodeModelResult:
         node_id: int | str | tuple[str, float] = observation.node
         if isinstance(node_id, (str, tuple)):
             if node_id not in self._alias_map:
@@ -203,4 +208,49 @@ class NetworkModelResult:
             item=self.sel_items.values,
             quantity=self.quantity,
             aux_items=self.sel_items.aux,
+        )
+
+    def _extract_edge(self, observation: EdgeObservation) -> NodeModelResult:
+        """Extract model result from an arbitrary breakpoint belonging to the edge.
+
+        Searches the alias map for breakpoints whose edge component matches
+        ``observation.edge``, then returns the first one that has data in the
+        dataset.  Raises if no breakpoint with data is found or if the quantity
+        is not present for any breakpoint of that edge.
+        """
+        edge_id = observation.edge
+
+        # All (alias, int_id) pairs whose alias is a (edge_id, distance) tuple
+        candidates = [
+            (alias, int_id)
+            for alias, int_id in self._alias_map.items()
+            if isinstance(alias, tuple) and alias[0] == edge_id
+        ]
+
+        if not candidates:
+            available_edges = list(
+                {alias[0] for alias in self._alias_map if isinstance(alias, tuple)}
+            )
+            raise ValueError(
+                f"Edge '{edge_id}' not found in network. "
+                f"Available edges (from breakpoints): {available_edges[:5]}"
+            )
+
+        # Find first breakpoint with data in the dataset
+        available_nodes = set(self.data.node.values.tolist())
+        for alias, int_id in candidates:
+            if int_id in available_nodes:
+                return NodeModelResult(
+                    data=self.data.sel(node=int_id).drop_vars("node"),
+                    node=int_id,
+                    name=self.name,
+                    item=self.sel_items.values,
+                    quantity=self.quantity,
+                    aux_items=self.sel_items.aux,
+                )
+
+        raise ValueError(
+            f"Edge '{edge_id}' was found in the network but none of its "
+            f"breakpoints have data loaded for quantity '{self.sel_items.values}'. "
+            f"Re-create the NetworkModelResult with the relevant reaches populated."
         )

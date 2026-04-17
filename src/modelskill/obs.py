@@ -26,6 +26,7 @@ from .timeseries import (
     _parse_track_input,
     _parse_network_node_input,
     _parse_network_breakpoint_input,
+    _parse_network_edge_input,
 )
 
 
@@ -36,9 +37,9 @@ Serializable = Union[str, int, float]
 def observation(
     data: DataInputType,
     *,
-    gtype: Literal["point", "track", "node"] | None = None,
+    gtype: Literal["point", "track", "node", "edge"] | None = None,
     **kwargs,
-) -> PointObservation | TrackObservation | NodeObservation:
+) -> PointObservation | TrackObservation | NodeObservation | EdgeObservation:
     """Create an appropriate observation object.
 
     A factory function for creating an appropriate observation object
@@ -47,19 +48,20 @@ def observation(
     If 'x' or 'y' is given, a PointObservation is created.
     If 'x_item' or 'y_item' is given, a TrackObservation is created.
     If 'node' is given, a NodeObservation is created.
+    If 'edge' is given (without 'distance'), an EdgeObservation is created.
 
     Parameters
     ----------
     data : DataInputType
         The data to be used for creating the Observation object.
-    gtype : Literal["point", "track", "node"] | None
+    gtype : Literal["point", "track", "node", "edge"] | None
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
         Additional keyword arguments to be passed to the Observation constructor.
 
     Returns
     -------
-    PointObservation or TrackObservation or NodeObservation
+    PointObservation or TrackObservation or NodeObservation or EdgeObservation
         An observation object of the appropriate type
 
     Examples
@@ -68,7 +70,12 @@ def observation(
     >>> o_pt = ms.observation(df, item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o_tr = ms.observation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
     >>> o_node = ms.observation(df, item="Water Level", node=123, name="123")
+    >>> o_edge = ms.observation(df, item="Discharge", edge="reach_1", name="reach_1_Q")
     """
+    # EdgeObservation is handled directly since it shares the NODE gtype internally
+    if gtype == "edge" or (gtype is None and "edge" in kwargs):
+        return EdgeObservation(data=data, **kwargs)
+
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
     else:
@@ -91,7 +98,7 @@ def _guess_gtype(**kwargs) -> GeometryType:
         return GeometryType.NODE
     else:
         warnings.warn(
-            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation, TrackObservation, or NodeObservation to be explicit."
+            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation, TrackObservation, NodeObservation, or EdgeObservation to be explicit."
         )
         return GeometryType.POINT
 
@@ -568,6 +575,73 @@ class NodeObservation(Observation):
                 )
                 for node_i, item_i in zip(node_ids, node_items)
             ]
+
+
+class EdgeObservation(Observation):
+    """Class for observations representing a quantity uniform across a network edge.
+
+    Some quantities (e.g. discharge in a river reach) are constant for the
+    whole edge, even though the underlying model stores values at
+    nodes/breakpoints.  An EdgeObservation associates a timeseries with a
+    named edge; when matched against a
+    :class:`~modelskill.model.network.NetworkModelResult` the data is
+    extracted from an arbitrary breakpoint that belongs to that edge.
+
+    Parameters
+    ----------
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        data source with time series for the edge quantity
+    edge : str
+        Edge identifier (reach name / edge ID) in the network.
+    item : (int, str), optional
+        index or name of the wanted item/column, by default None
+        if data contains more than one item, item must be given
+    name : str, optional
+        user-defined name for easy identification in plots etc, by default derived from data
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
+    quantity : Quantity, optional
+        The quantity of the observation, for validation with model results
+    aux_items : list, optional
+        list of names or indices of auxiliary items, by default None
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> o1 = ms.EdgeObservation(df, edge="reach_1", name="Q_reach_1")
+    >>> o2 = ms.EdgeObservation(df, item="Discharge", edge="reach_2")
+    """
+
+    def __init__(
+        self,
+        data: PointType,
+        edge: str,
+        *,
+        item: int | str | None = None,
+        name: str | None = None,
+        weight: float = 1.0,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> None:
+        if not self._is_input_validated(data):
+            data = _parse_network_edge_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                edge=edge,
+                aux_items=aux_items,
+            )
+        assert isinstance(data, xr.Dataset)
+        super().__init__(data=data, weight=weight, attrs=attrs)
+
+    @property
+    def edge(self) -> str:
+        """Edge ID of this observation."""
+        return str(self.data.coords["edge"].item())
 
 
 def unit_display_name(name: str) -> str:
