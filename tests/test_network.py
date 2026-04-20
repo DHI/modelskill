@@ -596,29 +596,30 @@ class TestNodeObservationAliases:
         assert obs.data.attrs["gtype"] == "node"
 
     def test_tuple_node_stored(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, node=("reach_1", 24.5))
-        assert obs.node == ("reach_1", 24.5)
-        assert isinstance(obs.node, tuple)
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
+        assert obs.at == ("reach_1", 24.5)
+        assert isinstance(obs.at, tuple)
+        assert obs.node is None
 
     def test_tuple_node_gtype_is_node(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, node=("reach_1", 24.5))
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
         assert obs.data.attrs["gtype"] == "node"
 
     def test_tuple_node_has_edge_distance_coords(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, node=("reach_1", 24.5))
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
         assert "edge" in obs.data.coords
         assert "distance" in obs.data.coords
         assert str(obs.data.coords["edge"].item()) == "reach_1"
         assert float(obs.data.coords["distance"].item()) == pytest.approx(24.5)
 
     def test_tuple_node_has_no_node_coord(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, node=("reach_1", 24.5))
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
         assert "node" not in obs.data.coords
 
     def test_tuple_node_roundtrip_via_create_new_instance(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, node=("reach_1", 24.5))
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
         obs2 = obs._create_new_instance(obs.data)
-        assert obs2.node == ("reach_1", 24.5)
+        assert obs2.at == ("reach_1", 24.5)
 
     def test_string_roundtrip_via_create_new_instance(self, sample_node_data):
         obs = NodeObservation(sample_node_data, node="node_A")
@@ -660,13 +661,13 @@ class TestNetworkModelResultAliasResolution:
         nmr = NetworkModelResult(sample_network)
         existing_int = int(sample_network.find(node="123"))
         nmr._alias_map[("reach_test", 10.0)] = existing_int
-        obs = NodeObservation(sample_node_data, node=("reach_test", 10.0))
+        obs = NodeObservation(sample_node_data, at=("reach_test", 10.0))
         extracted = nmr.extract(obs)
         assert extracted.node == existing_int
 
     def test_extract_tuple_alias_wrong_key_raises(self, sample_network, sample_node_data):
         nmr = NetworkModelResult(sample_network)
-        obs = NodeObservation(sample_node_data, node=("nonexistent_edge", 0.0))
+        obs = NodeObservation(sample_node_data, at=("nonexistent_edge", 0.0))
         with pytest.raises(ValueError, match="not found"):
             nmr.extract(obs)
 
