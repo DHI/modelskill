@@ -129,6 +129,8 @@ class NetworkModelResult:
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
     ):
+        self.network = data.copy()
+
         ds = data.to_dataset()
         sel_items = SelectedItems.parse(
             list(ds.data_vars), item=item, aux_items=aux_items
@@ -138,7 +140,6 @@ class NetworkModelResult:
         self.data = ds[sel_items.all]
         self.name = name
         self.sel_items = sel_items
-        self._alias_map: dict[str | tuple[str, float], int] = data.alias_map
 
         if quantity is None:
             da = self.data[sel_items.values]
@@ -189,13 +190,13 @@ class NetworkModelResult:
     def _extract_node(self, observation: NodeObservation) -> NodeModelResult:
         node_id: int | str | tuple[str, float] = observation.node
         if isinstance(node_id, (str, tuple)):
-            if node_id not in self._alias_map:
-                available = list(self._alias_map.keys())[:5]
+            if node_id not in self.network.alias_map:
+                available = list(self.network.alias_map.keys())[:5]
                 raise ValueError(
                     f"Node alias '{node_id}' not found in network. "
                     f"Available aliases (first 5): {available}"
                 )
-            node_id = self._alias_map[node_id]
+            node_id = self.network.alias_map[node_id]
         if node_id not in self.data.node:
             raise ValueError(
                 f"Node {node_id} not found. Available: {list(self.nodes[:5])}..."
@@ -218,41 +219,42 @@ class NetworkModelResult:
         dataset.  Raises if no breakpoint with data is found or if the quantity
         is not present for any breakpoint of that edge.
         """
+        item = self.sel_items.values
         edge_id = observation.edge
 
-        # TODO: this only searches intermediate breakpoints (tuple aliases).
-        # Start/end nodes of an edge (string aliases) are never considered, so
-        # extraction will fail for reaches with no gridpoints loaded even when
-        # the end nodes carry the same quantity. Fixing this requires
-        # NetworkModelResult to know the edge→node topology (e.g. via a new
-        # Network.edge_node_map property).
-        candidates = [
-            (alias, int_id)
-            for alias, int_id in self._alias_map.items()
-            if isinstance(alias, tuple) and alias[0] == edge_id
-        ]
+        try:
+            edge = self.network._edges[edge_id]
+        except KeyError:
+            raise ValueError(f"Edge {edge_id} not found in network.")
 
-        if not candidates:
-            available_edges = list(
-                {alias[0] for alias in self._alias_map if isinstance(alias, tuple)}
-            )
-            raise ValueError(
-                f"Edge '{edge_id}' not found in network. "
-                f"Available edges (from breakpoints): {available_edges[:5]}"
-            )
+        # This only searches intermediate breakpoints since edge-level data is not
+        # expected in nodes.
 
-        # Find first breakpoint with data in the dataset
-        available_nodes = set(self.data.node.values.tolist())
-        for alias, int_id in candidates:
-            if int_id in available_nodes:
-                return NodeModelResult(
-                    data=self.data.sel(node=int_id).drop_vars("node"),
-                    node=int_id,
-                    name=self.name,
-                    item=self.sel_items.values,
-                    quantity=self.quantity,
-                    aux_items=self.sel_items.aux,
-                )
+        found_ds = None
+        for breakpoint in edge.breakpoints:
+            if item in breakpoint.quantities:
+                int_id = self.network.find(edge=breakpoint.id, distance=breakpoint.distance)
+                ds = self.data.sel(node=int_id).drop_vars("node")
+                if found_ds is not None:
+                    da1, da2 = xr.align(ds[item], found_ds[item], join="inner")
+                    if not np.allclose(da1.values, da2.values, equal_nan=True):
+                        raise ValueError(
+                            f"Not all data in breakpoints are equivalent. "
+                            f"Select a specific node instead of the edge."
+                        )
+                else:
+                    found_ds = ds
+                    found_int_id = int_id
+
+        if found_ds is not None:
+            return NodeModelResult(
+                data=found_ds,
+                node=found_int_id,
+                name=self.name,
+                item=item,
+                quantity=self.quantity,
+                aux_items=self.sel_items.aux,
+            )
 
         raise ValueError(
             f"Edge '{edge_id}' was found in the network but none of its "
