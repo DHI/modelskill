@@ -21,7 +21,7 @@ from modelskill.network import (
 )
 from modelskill.obs import NodeObservation
 from modelskill.quantity import Quantity
-from modelskill.timeseries._coords import NodeCoords, BreakpointCoords
+from modelskill.timeseries._coords import NodeCoords, EdgeCoords
 
 
 def _make_network(node_ids, time, data, quantity="WaterLevel"):
@@ -201,7 +201,7 @@ class TestNetworkModelResult:
         obs = ms.PointObservation(df, x=0.0, y=0.0)
 
         with pytest.raises(
-            TypeError, match="NetworkModelResult only supports NodeObservation"
+            TypeError, match="NetworkModelResult supports NodeObservation and EdgeObservation"
         ):
             nmr.extract(obs)
 
@@ -551,15 +551,15 @@ class TestNodeCoords:
         assert np.isnan(c.as_dict["node"])
 
 
-class TestBreakpointCoords:
+class TestEdgeCoords:
     def test_stores_edge_and_distance(self):
-        c = BreakpointCoords(edge="reach_1", distance=24.5)
+        c = EdgeCoords(edge="reach_1", distance=24.5)
         d = c.as_dict
         assert d["edge"] == "reach_1"
         assert d["distance"] == 24.5
 
     def test_no_node_key(self):
-        c = BreakpointCoords(edge="reach_1", distance=24.5)
+        c = EdgeCoords(edge="reach_1", distance=24.5)
         assert "node" not in c.as_dict
 
 
@@ -634,12 +634,12 @@ class TestNodeObservationAliases:
 class TestNetworkModelResultAliasResolution:
     """NetworkModelResult.extract() resolves str and tuple aliases via alias_map."""
 
-    def test_alias_map_stored(self, sample_network):
+    def test_network_stored(self, sample_network):
         nmr = NetworkModelResult(sample_network)
-        assert hasattr(nmr, "_alias_map")
-        assert "123" in nmr._alias_map
-        assert "456" in nmr._alias_map
-        assert "789" in nmr._alias_map
+        assert hasattr(nmr, "network")
+        assert "123" in nmr.network._alias_map
+        assert "456" in nmr.network._alias_map
+        assert "789" in nmr.network._alias_map
 
     def test_extract_with_string_alias(self, sample_network, sample_node_data):
         nmr = NetworkModelResult(sample_network)
@@ -659,7 +659,7 @@ class TestNetworkModelResultAliasResolution:
         """Tuple alias is resolved via _alias_map (mapping injected for this test)."""
         nmr = NetworkModelResult(sample_network)
         existing_int = int(sample_network.find(node="123"))
-        nmr._alias_map[("reach_test", 10.0)] = existing_int
+        nmr.network.alias_map[("reach_test", 10.0)] = existing_int
         obs = NodeObservation(sample_node_data, node=("reach_test", 10.0))
         extracted = nmr.extract(obs)
         assert extracted.node == existing_int

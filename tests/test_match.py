@@ -783,7 +783,7 @@ def test_network_match_multi_obs_multi_model_comprehensive(
 def test_network_match_error_non_node_observation(network_mr, point_obs_error):
     """Test that non-NodeObservation raises appropriate error"""
     with pytest.raises(
-        TypeError, match="NetworkModelResult only supports NodeObservation"
+        TypeError, match="NetworkModelResult supports NodeObservation and EdgeObservation"
     ):
         ms.match(point_obs_error, network_mr)
 
