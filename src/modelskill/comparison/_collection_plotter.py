@@ -743,7 +743,7 @@ class ComparerCollectionPlotter:
             )
             axs[i] = ax_mod
 
-        return axs
+        return axs  # type: ignore[return-value]  # axs starts as list[None] and is populated in the loop; mypy cannot infer that all slots are filled with Axes
 
     def _residual_hist_one_model(
         self,

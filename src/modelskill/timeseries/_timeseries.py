@@ -69,7 +69,12 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     has_breakpoint_coords = "edge" in ds.coords and "distance" in ds.coords
     has_edge_coord = "edge" in ds.coords and "distance" not in ds.coords
 
-    if not has_spatial_coords and not has_node_coord and not has_breakpoint_coords and not has_edge_coord:
+    if (
+        not has_spatial_coords
+        and not has_node_coord
+        and not has_breakpoint_coords
+        and not has_edge_coord
+    ):
         raise ValueError(
             "data must have either x,y coordinates, a node coordinate, "
             "edge+distance coordinates, or an edge coordinate"

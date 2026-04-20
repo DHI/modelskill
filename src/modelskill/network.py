@@ -430,6 +430,7 @@ class Network:
 
         if "all" in res.nodes:
             import warnings
+
             warnings.warn(
                 "This Res1D file contains a node named 'all', which conflicts with the "
                 "sentinel value used by the 'nodes' parameter. To load data for "
@@ -440,6 +441,7 @@ class Network:
 
         if "all" in res.reaches:
             import warnings
+
             warnings.warn(
                 "This Res1D file contains a reach named 'all', which conflicts with the "
                 "sentinel value used by the 'reaches' parameter. To load gridpoints for "
@@ -467,7 +469,9 @@ class Network:
 
     @staticmethod
     def _load_res1d_network(
-        res: Res1D, nodes: list[str], reaches: list[str],
+        res: Res1D,
+        nodes: list[str],
+        reaches: list[str],
     ) -> list[Res1DReach]:
         from modelskill.model.adapters._res1d import (
             Res1DReach,

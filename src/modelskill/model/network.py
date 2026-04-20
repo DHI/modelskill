@@ -233,7 +233,9 @@ class NetworkModelResult:
         found_ds = None
         for breakpoint in edge.breakpoints:
             if item in breakpoint.quantities:
-                int_id = self.network.find(edge=breakpoint.id[0], distance=breakpoint.distance)
+                int_id = self.network.find(
+                    edge=breakpoint.id[0], distance=breakpoint.distance
+                )
                 ds = self.data.sel(node=int_id).drop_vars("node")
                 if found_ds is not None:
                     da1, da2 = xr.align(ds[item], found_ds[item], join="inner")

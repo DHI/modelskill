@@ -19,7 +19,11 @@ def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
     df = node.to_dataframe()
     renamer_dict = {}
     for quantity in node.quantities:
-        column_pairs = [(col, quantity) for col in df.columns if quantity in col.split(RES1D_NAME_SEP)]
+        column_pairs = [
+            (col, quantity)
+            for col in df.columns
+            if quantity in col.split(RES1D_NAME_SEP)
+        ]
         if len(column_pairs) != 1:
             raise ValueError(
                 f"There must be exactly one column per quantity, found {column_pairs}."
@@ -30,7 +34,13 @@ def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
 
 
 class Res1DNode(NetworkNode):
-    def __init__(self, id: str, *, data: pd.DataFrame | None = None, boundary: dict[str, pd.DataFrame] | None = None):
+    def __init__(
+        self,
+        id: str,
+        *,
+        data: pd.DataFrame | None = None,
+        boundary: dict[str, pd.DataFrame] | None = None,
+    ):
         self._id = id
         self._data = data
         self._boundary = {} if boundary is None else boundary
@@ -49,7 +59,9 @@ class Res1DNode(NetworkNode):
 
 
 class GridPoint(EdgeBreakPoint):
-    def __init__(self, reach_id: str, chainage: float, data: pd.DataFrame | None = None):
+    def __init__(
+        self, reach_id: str, chainage: float, data: pd.DataFrame | None = None
+    ):
         self._id = (reach_id, chainage)
         self._data = data
 
