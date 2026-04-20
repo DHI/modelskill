@@ -188,15 +188,30 @@ class NetworkModelResult:
             )
 
     def _extract_node(self, observation: NodeObservation) -> NodeModelResult:
-        node_id: int | str | tuple[str, float] = observation.node
-        if isinstance(node_id, (str, tuple)):
-            if node_id not in self.network.alias_map:
-                available = list(self.network.alias_map.keys())[:5]
+
+        if observation.at is not None:
+            raw_id: tuple[str, float] = observation.at
+            if raw_id not in self._alias_map:
+                available = list(self._alias_map.keys())[:5]
                 raise ValueError(
-                    f"Node alias '{node_id}' not found in network. "
+                    f"Breakpoint {raw_id} not found in network. "
                     f"Available aliases (first 5): {available}"
                 )
-            node_id = self.network.alias_map[node_id]
+            else:
+               node_id = self._alias_map[raw_id] 
+        else:
+            raw_id: int | str = observation.node  # type: ignore[assignment]
+            if isinstance(raw_id, str):
+                if raw_id not in self._alias_map:
+                    available = list(self._alias_map.keys())[:5]
+                    raise ValueError(
+                        f"Node alias '{raw_id}' not found in network. "
+                        f"Available aliases (first 5): {available}"
+                    )
+                node_id = self._alias_map[raw_id]
+            else:
+                node_id = raw_id
+
         if node_id not in self.data.node:
             raise ValueError(
                 f"Node {node_id} not found. Available: {list(self.nodes[:5])}..."
