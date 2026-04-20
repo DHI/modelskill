@@ -151,7 +151,7 @@ class NetworkModelResult:
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>: {self.name}"
 
-    _CHAINAGE_TOLERANCE = 1e-3  # Tolerance in the same units as source-network edge/breakpoint distances.
+    _CHAINAGE_TOLERANCE = 1e-3  # Tolerance in source-network distance units (e.g., meters if chainage is in meters).
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -239,7 +239,8 @@ class NetworkModelResult:
         Breakpoint tuple aliases are matched first by exact key lookup and then
         by edge ID and distance within ``_CHAINAGE_TOLERANCE``. If multiple
         candidates are within tolerance, the closest distance is selected; ties
-        are broken by choosing the smallest node ID.
+        are broken by choosing the smallest node ID. Distance units are the
+        same as the network chainage units.
         """
         if alias in self._alias_map:
             return self._alias_map[alias]

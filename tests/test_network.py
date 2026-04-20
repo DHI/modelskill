@@ -710,6 +710,23 @@ class TestNetworkModelResultAliasResolution:
         extracted = nmr.extract(obs)
         assert extracted.node == node_b
 
+    def test_extract_with_tuple_breakpoint_tie_uses_smallest_node_id(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
+        node_a = int(sample_network.find(node="123"))
+        node_b = int(sample_network.find(node="456"))
+        nmr._alias_map[("reach_test", base_distance + 4e-4)] = node_a
+        nmr._alias_map[("reach_test", base_distance + 8e-4)] = node_b
+
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol * 0.6)
+        )
+        extracted = nmr.extract(obs)
+        assert extracted.node == min(node_a, node_b)
+
     def test_extract_tuple_alias_wrong_key_raises(self, sample_network, sample_node_data):
         nmr = NetworkModelResult(sample_network)
         obs = NodeObservation(sample_node_data, at=("nonexistent_edge", 0.0))
