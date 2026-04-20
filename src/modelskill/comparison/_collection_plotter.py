@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import (
-    cast,
     TYPE_CHECKING,
     Any,
     List,
@@ -744,7 +743,7 @@ class ComparerCollectionPlotter:
             )
             axs[i] = ax_mod
 
-        return cast(list[Axes], axs)
+        return axs
 
     def _residual_hist_one_model(
         self,

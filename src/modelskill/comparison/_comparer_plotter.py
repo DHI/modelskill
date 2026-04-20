@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import (
-    cast,
     Literal,
     Union,
     List,
@@ -821,7 +820,7 @@ class ComparerPlotter:
             )
             axs[i] = ax_mod
 
-        return cast(list[matplotlib.axes.Axes], axs)
+        return axs
 
     def _residual_hist_one_model(
         self,
