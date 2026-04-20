@@ -38,12 +38,6 @@ def o3():
 
 
 @pytest.fixture
-def o4():
-    fn = "tests/testdata/vertical/VerticalProfile_obs1.dfs0"
-    return ms.VerticalObservation(fn, z_item="z", name="vobs", x=657500, y=6553600)
-
-
-@pytest.fixture
 def mr12_gaps():
     fn = "tests/testdata/SW/ts_storm_4.dfs0"
     df1 = mikeio.read(fn, items=0).to_dataframe()
@@ -77,45 +71,53 @@ def mr3():
     return ms.model_result(fn, item=0, name="SW_3")
 
 
-@pytest.fixture
-def mr4():
-    fn = "tests/testdata/vertical/VerticalModel_at_obs.dfs0"
-    return ms.model_result(fn, item="Salinity", name="vmod", gtype="vertical")
-
-
-@pytest.fixture
-def mr5():
-    fn = "tests/testdata/vertical/sigma_z_coast.dfsu"
-    return ms.model_result(fn, item="Salinity", name="3dmod")
-
-
-@pytest.fixture
-def simple_vo():
-    ind = pd.DatetimeIndex(["2020-01-01 13:00:00"] * 2 + ["2020-01-02 11:00:00"] * 2)
-    data = {
-        "v": [1, 2, 1.1, 2.1],
-        "z": [-1, -2, -1, -2],
-        "x": [20, 20, 20, 20],
-        "y": [55, 55, 55, 55],
-    }
-    vo = ms.VerticalObservation(
-        pd.DataFrame(data, index=ind), z_item="z", item="v", name="obs", x=20, y=55
-    )
-    return vo
-
-
-@pytest.fixture
-def simple_vm():
-    ind = pd.DatetimeIndex(["2020-01-01 12:00:00"] * 4 + ["2020-01-02 12:00:00"] * 4)
-    data = {
-        "mod": [1.1, 2.1, 3.1, 4.1, 1.2, 2.2, 3.2, 4.2],
-        "z": [-1, -2, -3, -4, -1, -2, -3, -4],
-    }
-    vm = ms.VerticalModelResult(pd.DataFrame(data, index=ind), z_item=1, item=0)
-    return vm
-
-
 class TestVerticalObservation:
+    # ============
+    # Vertical fixtures
+    # ============
+    @pytest.fixture(scope="class")
+    def o4(self):
+        fn = "tests/testdata/vertical/VerticalProfile_obs1.dfs0"
+        return ms.VerticalObservation(fn, z_item="z", name="vobs", x=657500, y=6553600)
+
+    @pytest.fixture(scope="class")
+    def mr4(self):
+        fn = "tests/testdata/vertical/VerticalModel_at_obs.dfs0"
+        return ms.model_result(fn, item="Salinity", name="vmod", gtype="vertical")
+
+    @pytest.fixture(scope="class")
+    def mr5(self):
+        fn = "tests/testdata/vertical/sigma_z_coast.dfsu"
+        return ms.model_result(fn, item="Salinity", name="3dmod")
+
+    @pytest.fixture(scope="class")
+    def simple_vo(self):
+        ind = pd.DatetimeIndex(
+            ["2020-01-01 13:00:00"] * 2 + ["2020-01-02 11:00:00"] * 2
+        )
+        data = {
+            "v": [1, 2, 1.1, 2.1],
+            "z": [-1, -2, -1, -2],
+            "x": [20, 20, 20, 20],
+            "y": [55, 55, 55, 55],
+        }
+        vo = ms.VerticalObservation(
+            pd.DataFrame(data, index=ind), z_item="z", item="v", name="obs", x=20, y=55
+        )
+        return vo
+
+    @pytest.fixture(scope="class")
+    def simple_vm(self):
+        ind = pd.DatetimeIndex(
+            ["2020-01-01 12:00:00"] * 4 + ["2020-01-02 12:00:00"] * 4
+        )
+        data = {
+            "mod": [1.1, 2.1, 3.1, 4.1, 1.2, 2.2, 3.2, 4.2],
+            "z": [-1, -2, -3, -4, -1, -2, -3, -4],
+        }
+        vm = ms.VerticalModelResult(pd.DataFrame(data, index=ind), z_item=1, item=0)
+        return vm
+
     # ============
     # Check variations of match with vertical data
     # ============
@@ -162,6 +164,39 @@ class TestVerticalObservation:
         cmp = ms.match(simple_vo, simple_vm)
         with pytest.raises(ValueError, match="z and z_item"):
             ms.from_matched(cmp.to_dataframe(), z_item="z", z=cmp.z)
+
+    def test_match_with_positive_z(self, o4, mr4):
+        # modify model to have positive z values
+        df = mr4.to_dataframe()
+        df["z"] = -df["z"]
+        mr4_pos = ms.VerticalModelResult(df, z_item="z", item="vmod", name="vmod")
+        df = o4.to_dataframe()
+        df["z"] = -df["z"]
+        o4_pos = ms.VerticalObservation(
+            df, z_item="z", item="vobs", name="vobs", x=o4.x, y=o4.y
+        )
+        cmp_pos = ms.match(o4_pos, mr4_pos)
+        cmp = ms.match(o4, mr4)
+        assert cmp_pos.n_models == cmp.n_models
+        assert cmp_pos.n_points == cmp.n_points
+        assert cmp_pos.x == cmp.x
+        assert cmp_pos.y == cmp.y
+        assert cmp_pos.z is not None
+        assert cmp_pos.name == "vobs"
+        assert cmp_pos.gtype == "vertical"
+        assert cmp_pos.mod_names == ["vmod"]
+        assert cmp_pos.data["vmod"].attrs["kind"] == "model"
+        assert cmp_pos.data["Observation"].attrs["kind"] == "observation"
+
+    def test_with_pos_z_mod_only(self, o4, mr4):
+        # modify model to have positive z values
+        df = mr4.to_dataframe()
+        df["z"] = -df["z"]
+        mr4_pos = ms.VerticalModelResult(df, z_item="z", item="vmod", name="vmod")
+        cmp_pos = ms.match(o4, mr4_pos)
+        cmp = ms.match(o4, mr4)
+        assert cmp_pos.n_models == cmp.n_models
+        assert cmp_pos.n_points == 0
 
     # ==========
     # Test from_matched
@@ -226,7 +261,7 @@ class TestVerticalObservation:
         vo = ms.VerticalObservation(df_o)
         cmp = ms.match(vo, simple_vm)
         expected_mod_values = [1.1, 2.1, 4.2]
-        expected_depths = simple_vo.data["z"].to_numpy()[0:-1]
+        expected_depths = simple_vo.data["z"].to_numpy().copy()[0:-1]
         expected_depths[-1] = -4
 
         assert cmp.data["mod"].to_numpy() == pytest.approx(expected_mod_values)
