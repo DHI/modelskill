@@ -237,7 +237,9 @@ class NetworkModelResult:
         Notes
         -----
         Breakpoint tuple aliases are matched first by exact key lookup and then
-        by edge ID and distance within ``_CHAINAGE_TOLERANCE``.
+        by edge ID and distance within ``_CHAINAGE_TOLERANCE``. If multiple
+        candidates are within tolerance, the closest distance is selected; ties
+        are broken by choosing the smallest node ID.
         """
         if alias in self._alias_map:
             return self._alias_map[alias]
