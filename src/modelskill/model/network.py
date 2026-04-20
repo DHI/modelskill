@@ -151,6 +151,8 @@ class NetworkModelResult:
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>: {self.name}"
 
+    _CHAINAGE_TOLERANCE = 1e-3
+
     @property
     def time(self) -> pd.DatetimeIndex:
         """Return the time coordinate as a pandas.DatetimeIndex."""
@@ -184,23 +186,24 @@ class NetworkModelResult:
 
         if observation.at is not None:
             at = observation.at
-            if at not in self._alias_map:
+            node_id = self._resolve_alias(at)
+            if node_id is None:
                 available = list(self._alias_map.keys())[:5]
                 raise ValueError(
                     f"Breakpoint {at} not found in network. "
                     f"Available aliases (first 5): {available}"
                 )
-            node_id: int = self._alias_map[at]
         else:
             raw_id: int | str = observation.node  # type: ignore[assignment]
             if isinstance(raw_id, str):
-                if raw_id not in self._alias_map:
+                resolved = self._resolve_alias(raw_id)
+                if resolved is None:
                     available = list(self._alias_map.keys())[:5]
                     raise ValueError(
                         f"Node alias '{raw_id}' not found in network. "
                         f"Available aliases (first 5): {available}"
                     )
-                node_id = self._alias_map[raw_id]
+                node_id = resolved
             else:
                 node_id = raw_id
         if node_id not in self.data.node:
@@ -216,3 +219,19 @@ class NetworkModelResult:
             quantity=self.quantity,
             aux_items=self.sel_items.aux,
         )
+
+    def _resolve_alias(self, alias: str | tuple[str, float]) -> int | None:
+        if alias in self._alias_map:
+            return self._alias_map[alias]
+
+        if isinstance(alias, tuple):
+            edge_id, distance = alias
+            for key, node_id in self._alias_map.items():
+                if (
+                    isinstance(key, tuple)
+                    and key[0] == edge_id
+                    and abs(key[1] - distance) <= self._CHAINAGE_TOLERANCE
+                ):
+                    return node_id
+
+        return None

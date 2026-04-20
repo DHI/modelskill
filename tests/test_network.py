@@ -665,6 +665,16 @@ class TestNetworkModelResultAliasResolution:
         extracted = nmr.extract(obs)
         assert extracted.node == existing_int
 
+    def test_extract_with_tuple_breakpoint_tolerance(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        existing_int = int(sample_network.find(node="123"))
+        nmr._alias_map[("reach_test", 10.0)] = existing_int
+        obs = NodeObservation(sample_node_data, at=("reach_test", 10.0005))
+        extracted = nmr.extract(obs)
+        assert extracted.node == existing_int
+
     def test_extract_tuple_alias_wrong_key_raises(self, sample_network, sample_node_data):
         nmr = NetworkModelResult(sample_network)
         obs = NodeObservation(sample_node_data, at=("nonexistent_edge", 0.0))
@@ -678,4 +688,3 @@ class TestNetworkModelResultAliasResolution:
         comparer = ms.match(obs, nmr)
         assert comparer.n_points > 0
         assert "Network_Model" in comparer.mod_names
-
