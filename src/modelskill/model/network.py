@@ -151,7 +151,7 @@ class NetworkModelResult:
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>: {self.name}"
 
-    _CHAINAGE_TOLERANCE = 1e-3
+    _CHAINAGE_TOLERANCE = 1e-3  # Tolerance in the same units as breakpoint chainage distance.
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -221,17 +221,36 @@ class NetworkModelResult:
         )
 
     def _resolve_alias(self, alias: str | tuple[str, float]) -> int | None:
+        """Resolve a node alias to an internal node ID.
+
+        Parameters
+        ----------
+        alias : str | tuple[str, float]
+            Node alias as either a node name string or a breakpoint tuple
+            ``(edge_id, distance)``.
+
+        Returns
+        -------
+        int | None
+            Internal node ID if the alias can be resolved, otherwise ``None``.
+
+        Notes
+        -----
+        Breakpoint tuple aliases are matched first by exact key lookup and then
+        by edge ID and distance within ``_CHAINAGE_TOLERANCE``.
+        """
         if alias in self._alias_map:
             return self._alias_map[alias]
 
         if isinstance(alias, tuple):
             edge_id, distance = alias
+            candidates: list[tuple[float, int]] = []
             for key, node_id in self._alias_map.items():
-                if (
-                    isinstance(key, tuple)
-                    and key[0] == edge_id
-                    and abs(key[1] - distance) <= self._CHAINAGE_TOLERANCE
-                ):
-                    return node_id
+                if isinstance(key, tuple) and key[0] == edge_id:
+                    diff = abs(key[1] - distance)
+                    if diff <= self._CHAINAGE_TOLERANCE:
+                        candidates.append((diff, node_id))
+            if candidates:
+                return min(candidates, key=lambda x: (x[0], x[1]))[1]
 
         return None
