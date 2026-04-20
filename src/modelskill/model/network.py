@@ -239,8 +239,8 @@ class NetworkModelResult:
                     da1, da2 = xr.align(ds[item], found_ds[item], join="inner")
                     if not np.allclose(da1.values, da2.values, equal_nan=True):
                         raise ValueError(
-                            f"Not all data in breakpoints are equivalent. "
-                            f"Select a specific node instead of the edge."
+                            "Not all data in breakpoints are equivalent. "
+                            "Select a specific node instead of the edge."
                         )
                 else:
                     found_ds = ds
