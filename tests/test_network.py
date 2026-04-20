@@ -670,8 +670,12 @@ class TestNetworkModelResultAliasResolution:
     ):
         nmr = NetworkModelResult(sample_network)
         existing_int = int(sample_network.find(node="123"))
-        nmr._alias_map[("reach_test", 10.0)] = existing_int
-        obs = NodeObservation(sample_node_data, at=("reach_test", 10.0005))
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
+        nmr._alias_map[("reach_test", base_distance)] = existing_int
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol / 2)
+        )
         extracted = nmr.extract(obs)
         assert extracted.node == existing_int
 
@@ -680,8 +684,12 @@ class TestNetworkModelResultAliasResolution:
     ):
         nmr = NetworkModelResult(sample_network)
         existing_int = int(sample_network.find(node="123"))
-        nmr._alias_map[("reach_test", 10.0)] = existing_int
-        obs = NodeObservation(sample_node_data, at=("reach_test", 10.0011))
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
+        nmr._alias_map[("reach_test", base_distance)] = existing_int
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol + 1e-4)
+        )
         with pytest.raises(ValueError, match="not found"):
             nmr.extract(obs)
 
@@ -689,12 +697,16 @@ class TestNetworkModelResultAliasResolution:
         self, sample_network, sample_node_data
     ):
         nmr = NetworkModelResult(sample_network)
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
         node_a = int(sample_network.find(node="123"))
         node_b = int(sample_network.find(node="456"))
-        nmr._alias_map[("reach_test", 10.0002)] = node_a
-        nmr._alias_map[("reach_test", 10.0008)] = node_b
+        nmr._alias_map[("reach_test", base_distance + 2e-4)] = node_a
+        nmr._alias_map[("reach_test", base_distance + 8e-4)] = node_b
 
-        obs = NodeObservation(sample_node_data, at=("reach_test", 10.0006))
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol * 0.6)
+        )
         extracted = nmr.extract(obs)
         assert extracted.node == node_b
 

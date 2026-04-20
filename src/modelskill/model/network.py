@@ -151,7 +151,7 @@ class NetworkModelResult:
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>: {self.name}"
 
-    _CHAINAGE_TOLERANCE = 1e-3  # Tolerance in the same units as breakpoint chainage distance.
+    _CHAINAGE_TOLERANCE = 1e-3  # Tolerance in the same units as source-network edge/breakpoint distances.
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -253,6 +253,8 @@ class NetworkModelResult:
                     if diff <= self._CHAINAGE_TOLERANCE:
                         candidates.append((diff, node_id))
             if candidates:
-                return min(candidates, key=lambda x: (x[0], x[1]))[1]
+                return min(candidates, key=lambda candidate: (candidate[0], candidate[1]))[
+                    1
+                ]
 
         return None
