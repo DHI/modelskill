@@ -653,14 +653,11 @@ class Network:
             if (new_start in graph_subset.nodes) and (new_end in graph_subset.nodes):
                 subset_edges.append(edge)
 
+        net._initialize_network_attributes(graph_subset)
+        net._edges = net._generate_edges_dict(subset_edges)
         if copy:
-            net._initialize_network_attributes(graph_subset)
-            net._edges = net._generate_edges_dict(subset_edges)
             return net
-        else:
-            self._initialize_network_attributes(graph_subset)
-            self._edges = self._generate_edges_dict(subset_edges)
-            return None
+        return None
 
     @overload
     def find(
