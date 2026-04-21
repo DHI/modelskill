@@ -623,37 +623,6 @@ class Network:
 
         return nx.convert_node_labels_to_integers(g0, label_attribute="alias")
 
-    def reduce_around(
-        self, node: int, radius: int = 5, copy: bool = True
-    ) -> None | "Network":
-        """Select subset of network around a node.
-
-        Parameters
-        ----------
-        node : int
-            Id of node that represents the center of the graph subset
-        radius : int, default 5
-            Number of hops around the central node of the subset
-        copy : bool, default
-            Return a copy of the network or mutate the network in place
-        """
-
-        net = self.copy() if copy else self
-        graph_subset: nx.Graph = nx.ego_graph(net.graph, node, radius)
-
-        subset_edges = []
-        for edge in net._edges.values():
-            new_start = net.find(node=edge.start.id)
-            new_end = net.find(node=edge.end.id)
-            if (new_start in graph_subset.nodes) and (new_end in graph_subset.nodes):
-                subset_edges.append(edge)
-
-        net._initialize_network_attributes(graph_subset)
-        net._edges = net._generate_edges_dict(subset_edges)
-        if copy:
-            return net
-        return None
-
     @overload
     def find(
         self,

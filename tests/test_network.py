@@ -447,27 +447,6 @@ def test_open_res1d():
     assert network.graph.number_of_nodes() == 259
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_network_subset_copy():
-    path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
-    small_network = network.reduce_around(node=52)
-    assert small_network.graph.number_of_nodes() == 22
-    assert 52 in small_network.graph.nodes()
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_network_subset_inplace():
-    path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
-    network.reduce_around(node=52, copy=False)
-    assert network.graph.number_of_nodes() == 22
-    assert 52 in network.graph.nodes()
-
 
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
