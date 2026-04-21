@@ -21,7 +21,6 @@ from modelskill.network import (
 )
 from modelskill.obs import NodeObservation
 from modelskill.quantity import Quantity
-from modelskill.timeseries._coords import NodeCoords, BreakpointCoords
 
 
 def _make_network(node_ids, time, data, quantity="WaterLevel"):
@@ -531,6 +530,7 @@ def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
     ds = network.to_dataset()
     assert isinstance(ds, xr.Dataset)
     assert len(ds.data_vars) == 0
+
 
 # ---------------------------------------------------------------------------
 # NodeObservation — alias / breakpoint node forms
