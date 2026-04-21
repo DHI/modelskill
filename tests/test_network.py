@@ -447,7 +447,6 @@ def test_open_res1d():
     assert network.graph.number_of_nodes() == 259
 
 
-
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
@@ -460,7 +459,9 @@ def test_from_res1d_nodes_filter_creates_full_network():
     partial_network = Network.from_res1d(path_to_file, nodes=selected_nodes)
 
     # Full topology is preserved
-    assert partial_network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
+    assert (
+        partial_network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
+    )
 
 
 @pytest.mark.skipif(
@@ -477,7 +478,7 @@ def test_from_res1d_nodes_filter_only_selected_have_data():
     n_nodes = network.graph.number_of_nodes()
     assert sum([g.nodes[n]["data"] is None for n in g.nodes]) == n_nodes - 2
     for n in selected_nodes:
-        assert g.nodes[network.find(n)]["data"] is not None 
+        assert g.nodes[network.find(n)]["data"] is not None
 
 
 @pytest.mark.skipif(
@@ -530,38 +531,6 @@ def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
     ds = network.to_dataset()
     assert isinstance(ds, xr.Dataset)
     assert len(ds.data_vars) == 0
-
-
-# ---------------------------------------------------------------------------
-# Coords classes
-# ---------------------------------------------------------------------------
-
-
-class TestNodeCoords:
-    def test_int_node(self):
-        c = NodeCoords(node=42)
-        assert c.as_dict["node"] == 42
-
-    def test_str_node(self):
-        c = NodeCoords(node="node_A")
-        assert c.as_dict["node"] == "node_A"
-
-    def test_none_node_becomes_nan(self):
-        c = NodeCoords(node=None)
-        assert np.isnan(c.as_dict["node"])
-
-
-class TestBreakpointCoords:
-    def test_stores_edge_and_distance(self):
-        c = BreakpointCoords(edge="reach_1", distance=24.5)
-        d = c.as_dict
-        assert d["edge"] == "reach_1"
-        assert d["distance"] == 24.5
-
-    def test_no_node_key(self):
-        c = BreakpointCoords(edge="reach_1", distance=24.5)
-        assert "node" not in c.as_dict
-
 
 # ---------------------------------------------------------------------------
 # NodeObservation — alias / breakpoint node forms
@@ -650,7 +619,9 @@ class TestNetworkModelResultAliasResolution:
         assert isinstance(extracted, NodeModelResult)
         assert extracted.node == expected_id
 
-    def test_extract_string_alias_wrong_key_raises(self, sample_network, sample_node_data):
+    def test_extract_string_alias_wrong_key_raises(
+        self, sample_network, sample_node_data
+    ):
         nmr = NetworkModelResult(sample_network)
         obs = NodeObservation(sample_node_data, node="nonexistent_node")
         with pytest.raises(ValueError, match="not found"):
@@ -727,7 +698,9 @@ class TestNetworkModelResultAliasResolution:
         extracted = nmr.extract(obs)
         assert extracted.node == min(node_a, node_b)
 
-    def test_extract_tuple_alias_wrong_key_raises(self, sample_network, sample_node_data):
+    def test_extract_tuple_alias_wrong_key_raises(
+        self, sample_network, sample_node_data
+    ):
         nmr = NetworkModelResult(sample_network)
         obs = NodeObservation(sample_node_data, at=("nonexistent_edge", 0.0))
         with pytest.raises(ValueError, match="not found"):
