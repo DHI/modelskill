@@ -532,6 +532,27 @@ def test_dataframe_from_partial_network():
     assert set(nodes_in_df) == set([network.find(n) for n in selected_nodes])
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
+    path_to_file = "./tests/testdata/network.res1d"
+    full_network = Network.from_res1d(path_to_file)
+    network = Network.from_res1d(path_to_file, nodes=[], reaches=[])
+
+    assert network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
+
+    df = network.to_dataframe()
+    assert df.empty
+    assert isinstance(df.columns, pd.MultiIndex)
+    assert df.columns.names == ["node", "quantity"]
+    assert df.index.name == "time"
+
+    ds = network.to_dataset()
+    assert isinstance(ds, xr.Dataset)
+    assert len(ds.data_vars) == 0
+
+
 # ---------------------------------------------------------------------------
 # Coords classes
 # ---------------------------------------------------------------------------

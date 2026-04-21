@@ -187,23 +187,10 @@ class NetworkModelResult:
         if observation.at is not None:
             at = observation.at
             node_id = self._resolve_alias(at)
-            if node_id is None:
-                available = list(self._alias_map.keys())[:5]
-                raise ValueError(
-                    f"Breakpoint {at} not found in network. "
-                    f"Available aliases (first 5): {available}"
-                )
         else:
             raw_id: int | str = observation.node  # type: ignore[assignment]
             if isinstance(raw_id, str):
-                resolved = self._resolve_alias(raw_id)
-                if resolved is None:
-                    available = list(self._alias_map.keys())[:5]
-                    raise ValueError(
-                        f"Node alias '{raw_id}' not found in network. "
-                        f"Available aliases (first 5): {available}"
-                    )
-                node_id = resolved
+                node_id = self._resolve_alias(raw_id)
             else:
                 node_id = raw_id
         if node_id not in self.data.node:
@@ -220,7 +207,7 @@ class NetworkModelResult:
             aux_items=self.sel_items.aux,
         )
 
-    def _resolve_alias(self, alias: str | tuple[str, float]) -> int | None:
+    def _resolve_alias(self, alias: str | tuple[str, float]) -> int:
         """Resolve a node alias to an internal node ID.
 
         Parameters
@@ -231,8 +218,8 @@ class NetworkModelResult:
 
         Returns
         -------
-        int | None
-            Internal node ID if the alias can be resolved, otherwise ``None``.
+        int
+            Internal node ID.
 
         Notes
         -----
@@ -258,4 +245,13 @@ class NetworkModelResult:
                     1
                 ]
 
-        return None
+        available = list(self._alias_map.keys())[:5]
+        if isinstance(alias, tuple):
+            raise ValueError(
+                f"Breakpoint {alias} not found in network. "
+                f"Available aliases (first 5): {available}"
+            )
+        raise ValueError(
+            f"Node alias '{alias}' not found in network. "
+            f"Available aliases (first 5): {available}"
+        )

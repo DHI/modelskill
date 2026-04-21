@@ -338,12 +338,13 @@ class Network:
 
     def __repr__(self) -> str:
         time = self._df.index
+        time_window = "N/A - N/A" if len(time) == 0 else f"{time[0]} - {time[-1]}"
         out = [
             "<Network>",
             f"Edges: {len(self._edges)}",
             f"Nodes: {self._graph.number_of_nodes()}",
             f"Quantities: {self.quantities}",
-            f"Time: {time[0]} - {time[-1]}",
+            f"Time: {time_window}",
         ]
         return "\n".join(out)
 
@@ -475,6 +476,9 @@ class Network:
             _simplify_colnames,
         )
 
+        nodes_set = set(nodes)
+        reaches_set = set(reaches)
+
         # In order to work with bigger files, we might want to select a subset of nodes and avoid
         # potential memory issues. For this reason, we create this intermediate step that populates
         # only the data in the passed nodes
@@ -482,7 +486,7 @@ class Network:
         def _init_node(reach: ResultReach, is_end: bool) -> Res1DNode:
             id = reach.end_node if is_end else reach.start_node
             gpt_idx = -1 if is_end else 0
-            if id in nodes:
+            if id in nodes_set:
                 node = res.nodes[id]
                 df = _simplify_colnames(node)
                 overlapping_gridpoint = reach.gridpoints[gpt_idx]
@@ -496,7 +500,7 @@ class Network:
                 reach,
                 _init_node(reach, False),
                 _init_node(reach, True),
-                populate_gridpoints=reach.name in reaches,
+                populate_gridpoints=reach.name in reaches_set,
             )
             for reach in res.reaches.values()
         ]
@@ -514,6 +518,9 @@ class Network:
         data_in_nodes = {
             k: v["data"] for k, v in g.nodes.items() if v["data"] is not None
         }
+        if len(data_in_nodes) == 0:
+            columns = pd.MultiIndex.from_arrays([[], []], names=["node", "quantity"])
+            return pd.DataFrame(index=pd.Index([], name="time"), columns=columns)
         df = pd.concat(data_in_nodes, axis=1)
         df.columns = df.columns.set_names(["node", "quantity"])
         df.index.name = "time"
@@ -554,7 +561,10 @@ class Network:
         xr.Dataset
             Timeseries contained in graph nodes
         """
-        df = self.to_dataframe().reorder_levels(["quantity", "node"], axis=1)
+        df_raw = self.to_dataframe()
+        if len(df_raw.columns) == 0:
+            return xr.Dataset()
+        df = df_raw.reorder_levels(["quantity", "node"], axis=1)
         quantities = df.columns.get_level_values("quantity").unique()
         return xr.Dataset(
             {q: xr.DataArray(df[q], dims=["time", "node"]) for q in quantities}
@@ -633,20 +643,20 @@ class Network:
             Return a copy of the network or mutate the network in place
         """
 
-        network_copy = self.copy()
-        graph_subset: nx.Graph = nx.ego_graph(network_copy.graph, node, radius)
+        net = self.copy() if copy else self
+        graph_subset: nx.Graph = nx.ego_graph(net.graph, node, radius)
 
         subset_edges = []
-        for edge in self._edges.values():
-            new_start = self.find(node=edge.start.id)
-            new_end = self.find(node=edge.end.id)
+        for edge in net._edges.values():
+            new_start = net.find(node=edge.start.id)
+            new_end = net.find(node=edge.end.id)
             if (new_start in graph_subset.nodes) and (new_end in graph_subset.nodes):
                 subset_edges.append(edge)
 
         if copy:
-            network_copy._initialize_network_attributes(graph_subset)
-            network_copy._edges = network_copy._generate_edges_dict(subset_edges)
-            return network_copy
+            net._initialize_network_attributes(graph_subset)
+            net._edges = net._generate_edges_dict(subset_edges)
+            return net
         else:
             self._initialize_network_attributes(graph_subset)
             self._edges = self._generate_edges_dict(subset_edges)
