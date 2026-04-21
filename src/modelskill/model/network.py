@@ -138,7 +138,7 @@ class NetworkModelResult:
         self.data = ds[sel_items.all]
         self.name = name
         self.sel_items = sel_items
-        self._alias_map: dict[str | tuple[str, float], int] = data.alias_map
+        self._alias_map: dict[str | tuple[str, float], int] = data._alias_map
 
         if quantity is None:
             da = self.data[sel_items.values]
