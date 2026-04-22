@@ -631,7 +631,7 @@ class TestNetworkModelResultAliasResolution:
         """Tuple alias is resolved via _alias_map (mapping injected for this test)."""
         nmr = NetworkModelResult(sample_network)
         existing_int = int(sample_network.find(node="123"))
-        nmr.network.alias_map[("reach_test", 10.0)] = existing_int
+        nmr.network._alias_map[("reach_test", 10.0)] = existing_int
         obs = NodeObservation(sample_node_data, at=("reach_test", 10.0))
         extracted = nmr.extract(obs)
         assert extracted.node == existing_int

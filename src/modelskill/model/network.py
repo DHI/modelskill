@@ -193,27 +193,8 @@ class NetworkModelResult:
         if observation.at is None and observation.node is None:
             raise ValueError("NodeObservation must have either 'node' or 'at' set")
 
-        if observation.at is not None:
-            raw_id: tuple[str, float] = observation.at
-            if raw_id not in self.network._alias_map:
-                available = list(self.network._alias_map.keys())[:5]
-                raise ValueError(
-                    f"Breakpoint {raw_id} not found in network. "
-                    f"Available aliases (first 5): {available}"
-                )
-            else:
-                node_id = self.network._alias_map[raw_id]
-        else:
-            node_ref: int | str = observation.node  # type: ignore[assignment]
-            if isinstance(node_ref, str):
-                node_id = self._resolve_alias(node_ref)
-            else:
-                node_id = node_ref
-
-        if node_id not in self.data.node:
-            raise ValueError(
-                f"Node {node_id} not found. Available: {list(self.nodes[:5])}..."
-            )
+        raw_id = observation.at if observation.at is not None else observation.node
+        node_id = self._resolve_alias(raw_id)
 
         return NodeModelResult(
             data=self.data.sel(node=node_id).drop_vars("node"),
@@ -277,7 +258,7 @@ class NetworkModelResult:
             f"Re-create the NetworkModelResult with the relevant reaches populated."
         )
 
-    def _resolve_alias(self, alias: str | tuple[str, float]) -> int:
+    def _resolve_alias(self, alias: int | str | tuple[str, float]) -> int:
         # Resolve a node alias to an internal node ID.
 
         # Breakpoint tuple aliases are matched first by exact key lookup and then
@@ -301,6 +282,12 @@ class NetworkModelResult:
                 return min(
                     candidates, key=lambda candidate: (candidate[0], candidate[1])
                 )[1]
+        elif isinstance(alias, int):
+            if alias not in self.data.node:
+                raise ValueError(
+                    f"Node {alias} not found. Available: {list(self.nodes[:5])}..."
+                )
+            return alias
 
         available = list(self.network._alias_map.keys())[:5]
         if isinstance(alias, tuple):
