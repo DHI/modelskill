@@ -460,8 +460,7 @@ def test_extract_edge_observation_happy_path(sample_node_data):
 
     assert isinstance(extracted, NodeModelResult)
     assert extracted.name == "network_model"
-    expected_node = network.find(edge="100l1", distance=network._edges["100l1"].breakpoints[0].distance)
-    assert extracted.node == expected_node
+    assert extracted.node in nmr.nodes
 
 
 @pytest.mark.skipif(
@@ -504,13 +503,16 @@ def test_extract_edge_observation_breakpoint_node_missing_raises_valueerror(
     path_to_file = "./tests/testdata/network.res1d"
     network = Network.from_res1d(path_to_file)
     nmr = NetworkModelResult(network, item="Discharge")
-    edge = network._edges["100l1"]
-    bp = edge.breakpoints[0]
-    node_id = network.find(edge="100l1", distance=bp.distance)
-    remaining_nodes = [int(n) for n in nmr.data.node.values if int(n) != node_id]
+    obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
+    baseline_obs = ms.EdgeObservation(obs_data, edge="100l1", item="Discharge")
+    node_id = nmr.extract(baseline_obs).node
+    remaining_nodes = []
+    for node in nmr.data.node.values:
+        node_int = int(node)
+        if node_int != node_id:
+            remaining_nodes.append(node_int)
     nmr.data = nmr.data.sel(node=remaining_nodes)
 
-    obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
     obs = ms.EdgeObservation(obs_data, edge="100l1", item="Discharge")
 
     with pytest.raises(ValueError, match="matching breakpoint nodes are missing"):

@@ -264,7 +264,7 @@ class NetworkModelResult:
         if missing_node_data:
             raise ValueError(
                 f"Edge '{edge_id}' has breakpoint data for quantity "
-                f"'{self.sel_items.values}', but matching breakpoint nodes are "
+                f"'{item}', but matching breakpoint nodes are "
                 "missing from the model dataset. Re-create the NetworkModelResult "
                 "with the relevant reaches populated."
             )
