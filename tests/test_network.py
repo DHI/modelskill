@@ -540,7 +540,7 @@ def test_from_res1d_nodes_filter_creates_full_network():
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
 def test_from_res1d_nodes_filter_only_selected_have_data():
-    """When nodes is specified, only selected nodes contain data; others have None."""
+    """When nodes is specified, only selected nodes contain non-empty data."""
     path_to_file = "./tests/testdata/network.res1d"
 
     selected_nodes = ["1", "108"]
@@ -548,9 +548,9 @@ def test_from_res1d_nodes_filter_only_selected_have_data():
     g = network.graph.copy()
 
     n_nodes = network.graph.number_of_nodes()
-    assert sum([g.nodes[n]["data"] is None for n in g.nodes]) == n_nodes - 2
+    assert sum([g.nodes[n]["data"].empty for n in g.nodes]) == n_nodes - 2
     for n in selected_nodes:
-        assert g.nodes[network.find(n)]["data"] is not None
+        assert not g.nodes[network.find(n)]["data"].empty
 
 
 @pytest.mark.skipif(
@@ -566,7 +566,7 @@ def test_from_res1d_nodes_single_string():
 
     assert g.number_of_nodes() == full_network.graph.number_of_nodes()
 
-    nodes_with_data = [n for n in g.nodes if g.nodes[n]["data"] is not None]
+    nodes_with_data = [n for n in g.nodes if not g.nodes[n]["data"].empty]
     nodes_with_data = [network.recall(n)["node"] for n in nodes_with_data]
     assert nodes_with_data == ["108"]
 
