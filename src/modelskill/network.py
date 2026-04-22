@@ -18,6 +18,7 @@ import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Sequence, overload, TYPE_CHECKING
+from copy import deepcopy
 
 import networkx as nx
 import pandas as pd
@@ -25,6 +26,8 @@ import xarray as xr
 
 if TYPE_CHECKING:
     from mikeio1d import Res1D
+    from mikeio1d.result_network import ResultReach
+    from .model.adapters._res1d import Res1DReach
 
 
 class NetworkNode(ABC):
@@ -324,30 +327,59 @@ class Network:
     """Network built from a set of edges, with coordinate lookup and data access."""
 
     def __init__(self, edges: Sequence[NetworkEdge]):
-        self._edges: dict[str, NetworkEdge] = {e.id: e for e in edges}
-        self._graph = self._initialize_graph()
-        self._alias_map = self._initialize_alias_map()
-        self._df = self._build_dataframe()
+        graph = self._generate_graph(edges)
+        self._initialize_network_attributes(graph)
+        self._edges = self._generate_edges_dict(edges)
+
+    def _initialize_network_attributes(self, graph: nx.Graph):
+        self._alias_map = self._generate_alias_map(graph)
+        self._df = self._build_dataframe(graph)
+        self._graph = graph.copy()
 
     def __repr__(self) -> str:
         time = self._df.index
+        time_window = "N/A - N/A" if len(time) == 0 else f"{time[0]} - {time[-1]}"
         out = [
             "<Network>",
             f"Edges: {len(self._edges)}",
             f"Nodes: {self._graph.number_of_nodes()}",
             f"Quantities: {self.quantities}",
-            f"Time: {time[0]} - {time[-1]}",
+            f"Time: {time_window}",
         ]
         return "\n".join(out)
 
     @classmethod
-    def from_res1d(cls, res: str | Path | Res1D) -> Network:
+    def from_res1d(
+        cls,
+        res: str | Path | Res1D,
+        *,
+        nodes: str | list[str] | None = None,
+        reaches: str | list[str] | None = None,
+    ) -> Network:
         """Create a Network from a Res1D file or object.
 
         Parameters
         ----------
         res : str, Path or Res1D
             Path to a .res1d file, or an already-opened :class:`mikeio1d.Res1D` object.
+        nodes : str, list of str, or None, optional
+            Controls which nodes have their timeseries data loaded into memory.
+
+            * ``None`` *(default)* — data is loaded for every node.
+            * A single node ID or a list of node IDs — only those nodes get
+              data; others are topology-only.
+            * ``[]`` (empty list) — no node data is loaded at all.
+
+            The full network topology is always constructed regardless of this
+            setting, so ``find()`` and ``recall()`` still work on all nodes.
+        reaches : str, list of str, or None, optional
+            Controls which reaches have their intermediate gridpoint data
+            populated.
+
+            * ``None`` *(default)* — gridpoints are populated for every reach.
+            * A single reach name or a list of reach names — only those reaches
+              get gridpoint data; others are topology-only.
+            * ``[]`` (empty list) — no gridpoint data is loaded at all.
 
         Returns
         -------
@@ -355,16 +387,35 @@ class Network:
 
         Examples
         --------
+        Load everything (default behaviour):
+
         >>> from modelskill.network import Network
         >>> network = Network.from_res1d("model.res1d")
-        >>> network = Network.from_res1d(Res1D("model.res1d"))
-        """
-        if sys.version_info >= (3, 14):
-            raise NotImplementedError(f"Current version of 'mikeio1d' requires python < 3.14 and {sys.version} is being used.")
-        
-        from mikeio1d import Res1D as _Res1D
-        from modelskill.model.adapters._res1d import Res1DReach
 
+        Load data only for the two nodes where observations exist, and skip
+        all intermediate gridpoint data to keep memory usage low:
+
+        >>> network = Network.from_res1d(
+        ...     "model.res1d",
+        ...     nodes=["node_a", "node_b"],
+        ...     reaches=[],
+        ... )
+
+        Load data for selected nodes and gridpoints for one specific reach:
+
+        >>> network = Network.from_res1d(
+        ...     "model.res1d",
+        ...     nodes=["node_a", "node_b"],
+        ...     reaches=["reach_1"],
+        ... )
+        """
+
+        if sys.version_info >= (3, 14):
+            raise NotImplementedError(
+                f"Current version of 'mikeio1d' requires python < 3.14 and {sys.version} is being used."
+            )
+
+        from mikeio1d import Res1D as _Res1D
 
         if isinstance(res, (str, Path)):
             path = Path(res)
@@ -378,17 +429,79 @@ class Network:
                 f"Expected a str, Path or Res1D object, got {type(res).__name__!r}"
             )
 
-        edges = [
-            Res1DReach(reach, res.nodes[reach.start_node], res.nodes[reach.end_node])
+        if nodes is None:
+            nodes_list: list[str] = list(res.nodes.keys())
+        elif isinstance(nodes, str):
+            nodes_list = [nodes]
+        else:
+            nodes_list = list(nodes)
+
+        if reaches is None:
+            reaches_list: list[str] = list(res.reaches.keys())
+        elif isinstance(reaches, str):
+            reaches_list = [reaches]
+        else:
+            reaches_list = list(reaches)
+
+        list_of_reaches = cls._load_res1d_network(res, nodes_list, reaches_list)
+        return cls(list_of_reaches)
+
+    @staticmethod
+    def _load_res1d_network(
+        res: Res1D, nodes: list[str], reaches: list[str],
+    ) -> list[Res1DReach]:
+        from modelskill.model.adapters._res1d import (
+            Res1DReach,
+            Res1DNode,
+            _simplify_colnames,
+        )
+
+        nodes_set = set(nodes)
+        reaches_set = set(reaches)
+
+        # In order to work with bigger files, we might want to select a subset of nodes and avoid
+        # potential memory issues. For this reason, we create this intermediate step that populates
+        # only the data in the passed nodes
+
+        def _init_node(reach: ResultReach, is_end: bool) -> Res1DNode:
+            id = reach.end_node if is_end else reach.start_node
+            gpt_idx = -1 if is_end else 0
+            if id in nodes_set:
+                node = res.nodes[id]
+                df = _simplify_colnames(node)
+                overlapping_gridpoint = reach.gridpoints[gpt_idx]
+                boundary = _simplify_colnames(overlapping_gridpoint)
+                return Res1DNode(id, data=df, boundary={reach.name: boundary})
+            else:
+                return Res1DNode(id)
+
+        return [
+            Res1DReach(
+                reach,
+                _init_node(reach, False),
+                _init_node(reach, True),
+                populate_gridpoints=reach.name in reaches_set,
+            )
             for reach in res.reaches.values()
         ]
-        return cls(edges)
 
-    def _initialize_alias_map(self) -> dict[str | tuple[str, float], int]:
-        return {self.graph.nodes[id]["alias"]: id for id in self.graph.nodes()}
+    @staticmethod
+    def _generate_alias_map(g: nx.Graph) -> dict[str | tuple[str, float], int]:
+        return {g.nodes[id]["alias"]: id for id in g.nodes()}
 
-    def _build_dataframe(self) -> pd.DataFrame:
-        df = pd.concat({k: v["data"] for k, v in self._graph.nodes.items()}, axis=1)
+    @staticmethod
+    def _generate_edges_dict(edges: Sequence[NetworkEdge]) -> dict[str, NetworkEdge]:
+        return {e.id: e for e in edges}
+
+    @staticmethod
+    def _build_dataframe(g: nx.Graph) -> pd.DataFrame:
+        data_in_nodes = {
+            k: v["data"] for k, v in g.nodes.items() if v["data"] is not None
+        }
+        if len(data_in_nodes) == 0:
+            columns = pd.MultiIndex.from_arrays([[], []], names=["node", "quantity"])
+            return pd.DataFrame(index=pd.Index([], name="time"), columns=columns)
+        df = pd.concat(data_in_nodes, axis=1)
         df.columns = df.columns.set_names(["node", "quantity"])
         df.index.name = "time"
         return df.copy()
@@ -423,7 +536,10 @@ class Network:
         xr.Dataset
             Timeseries contained in graph nodes
         """
-        df = self.to_dataframe().reorder_levels(["quantity", "node"], axis=1)
+        df_raw = self.to_dataframe()
+        if len(df_raw.columns) == 0:
+            return xr.Dataset()
+        df = df_raw.reorder_levels(["quantity", "node"], axis=1)
         quantities = df.columns.get_level_values("quantity").unique()
         return xr.Dataset(
             {q: xr.DataArray(df[q], dims=["time", "node"]) for q in quantities}
@@ -445,9 +561,10 @@ class Network:
         """
         return list(self.to_dataframe().columns.get_level_values(1).unique())
 
-    def _initialize_graph(self) -> nx.Graph:
+    @staticmethod
+    def _generate_graph(edges: Sequence[NetworkEdge]) -> nx.Graph:
         g0 = nx.Graph()
-        for edge in self._edges.values():
+        for edge in edges:
             # 1) Add start and end nodes
             for node in [edge.start, edge.end]:
                 node_key = node.id
@@ -693,6 +810,16 @@ class Network:
             return results[0]
         else:
             return results
+
+    def copy(self) -> "Network":
+        """Create a deep copy of the Network.
+
+        Returns
+        -------
+        Network
+            Deep copy of the Network object
+        """
+        return deepcopy(self)
 
 
 def _make_basic_network(node_ids, time, data, quantity="WaterLevel"):

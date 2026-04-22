@@ -138,6 +138,7 @@ class NetworkModelResult:
         self.data = ds[sel_items.all]
         self.name = name
         self.sel_items = sel_items
+        self._alias_map: dict[str | tuple[str, float], int] = data._alias_map
 
         if quantity is None:
             da = self.data[sel_items.values]
@@ -149,6 +150,8 @@ class NetworkModelResult:
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>: {self.name}"
+
+    _CHAINAGE_TOLERANCE = 1e-3  # Tolerance in source-network distance units (e.g., meters if chainage is in meters).
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -181,7 +184,15 @@ class NetworkModelResult:
                 f"NetworkModelResult only supports NodeObservation, got {type(observation).__name__}"
             )
 
-        node_id = observation.node
+        if observation.at is not None:
+            at = observation.at
+            node_id = self._resolve_alias(at)
+        else:
+            raw_id: int | str = observation.node  # type: ignore[assignment]
+            if isinstance(raw_id, str):
+                node_id = self._resolve_alias(raw_id)
+            else:
+                node_id = raw_id
         if node_id not in self.data.node:
             raise ValueError(
                 f"Node {node_id} not found. Available: {list(self.nodes[:5])}..."
@@ -194,4 +205,53 @@ class NetworkModelResult:
             item=self.sel_items.values,
             quantity=self.quantity,
             aux_items=self.sel_items.aux,
+        )
+
+    def _resolve_alias(self, alias: str | tuple[str, float]) -> int:
+        """Resolve a node alias to an internal node ID.
+
+        Parameters
+        ----------
+        alias : str | tuple[str, float]
+            Node alias as either a node name string or a breakpoint tuple
+            ``(edge_id, distance)``.
+
+        Returns
+        -------
+        int
+            Internal node ID.
+
+        Notes
+        -----
+        Breakpoint tuple aliases are matched first by exact key lookup and then
+        by edge ID and distance within ``_CHAINAGE_TOLERANCE``. If multiple
+        candidates are within tolerance, the closest distance is selected; ties
+        are broken by choosing the smallest node ID. Distance units are the
+        same as the network chainage units.
+        """
+        if alias in self._alias_map:
+            return self._alias_map[alias]
+
+        if isinstance(alias, tuple):
+            edge_id, distance = alias
+            candidates: list[tuple[float, int]] = []
+            for key, node_id in self._alias_map.items():
+                if isinstance(key, tuple) and key[0] == edge_id:
+                    diff = abs(key[1] - distance)
+                    if diff <= self._CHAINAGE_TOLERANCE:
+                        candidates.append((diff, node_id))
+            if candidates:
+                return min(candidates, key=lambda candidate: (candidate[0], candidate[1]))[
+                    1
+                ]
+
+        available = list(self._alias_map.keys())[:5]
+        if isinstance(alias, tuple):
+            raise ValueError(
+                f"Breakpoint {alias} not found in network. "
+                f"Available aliases (first 5): {available}"
+            )
+        raise ValueError(
+            f"Node alias '{alias}' not found in network. "
+            f"Available aliases (first 5): {available}"
         )

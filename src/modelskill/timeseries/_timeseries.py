@@ -67,9 +67,13 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     # Check for either traditional x,y coordinates OR node-based coordinates
     has_spatial_coords = "x" in ds.coords and "y" in ds.coords
     has_node_coord = "node" in ds.coords
+    has_breakpoint_coords = "edge" in ds.coords and "distance" in ds.coords
 
-    if not has_spatial_coords and not has_node_coord:
-        raise ValueError("data must have either x,y coordinates or a node coordinate")
+    if not has_spatial_coords and not has_node_coord and not has_breakpoint_coords:
+        raise ValueError(
+            "data must have either x,y coordinates, a node coordinate, "
+            "or edge+distance coordinates"
+        )
 
     if has_spatial_coords:
         # Traditional spatial data - ensure z coordinate exists

@@ -25,7 +25,9 @@ from .timeseries import (
     _parse_xyz_point_input,
     _parse_track_input,
     _parse_network_node_input,
+    _parse_network_breakpoint_input,
 )
+
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
 Serializable = Union[str, int, float]
@@ -351,7 +353,11 @@ class NodeObservation(Observation):
     """Class for observations at network nodes.
 
     Create a NodeObservation from a DataFrame or other data source.
-    The node ID is specified as an integer.
+    The node ID can be an integer (internal network ID) or a string alias
+    (e.g. the original Res1D node name). String aliases are resolved to
+    integer IDs automatically when matched against a
+    :class:`~modelskill.model.network.NetworkModelResult`.
+    For breakpoint locations (edge + distance), use the ``at`` parameter.
 
     To create multiple NodeObservation objects from a single data source,
     use :method:`from_multiple`.
@@ -360,11 +366,22 @@ class NodeObservation(Observation):
     ----------
     data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
         data source with time series for the node
+    node : int or str, optional
+        Node ID. Accepted forms:
+
+        * **int** — internal network ID, used directly.
+        * **str** — original node alias (e.g. Res1D node name), resolved
+          when matched against a :class:`~modelskill.model.network.NetworkModelResult`.
+
+        Mutually exclusive with ``at``.
+    at : tuple[str, float], optional
+        Breakpoint location as ``(edge_id, distance)`` along an edge, resolved
+        via the alias map when matched against a
+        :class:`~modelskill.model.network.NetworkModelResult`.
+        Mutually exclusive with ``node``.
     item : (int, str), optional
         index or name of the wanted item/column, by default None
         if data contains more than one item, item must be given
-    node : int, optional
-        node ID (integer), by default None
     name : str, optional
         user-defined name for easy identification in plots etc, by default derived from data
     weight : float, optional
@@ -382,6 +399,11 @@ class NodeObservation(Observation):
     >>> o1 = ms.NodeObservation(data, node=123, name="123")
     >>> o2 = ms.NodeObservation(df, item="Water Level", node=456)
     >>>
+    >>> o3 = ms.NodeObservation(data, node="node_A")
+    >>>
+    >>> # Breakpoint as (edge_id, distance) tuple
+    >>> o4 = ms.NodeObservation(data, at=("reach_1", 24.5))
+    >>>
     >>> # Multiple node observations from separate data sources
     >>> obs = ms.NodeObservation.from_multiple(nodes={123: df1, 456: df2})
     """
@@ -389,8 +411,9 @@ class NodeObservation(Observation):
     def __init__(
         self,
         data: PointType,
-        node: int,
+        node: int | str | None = None,
         *,
+        at: tuple[str, float] | None = None,
         item: int | str | None = None,
         name: str | None = None,
         weight: float = 1.0,
@@ -398,29 +421,63 @@ class NodeObservation(Observation):
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> None:
-        if not self._is_input_validated(data):
-            data = _parse_network_node_input(
-                data,
-                name=name,
-                item=item,
-                quantity=quantity,
-                node=node,
-                aux_items=aux_items,
-            )
-
+        if node is not None and at is not None:
+            raise ValueError("Only one of 'node' or 'at' can be provided, not both.")
+        if node is None and at is None:
+            raise ValueError("Either 'node' or 'at' must be provided.")
+        if at is not None:
+            edge, distance = str(at[0]), float(at[1])
+            if not self._is_input_validated(data):
+                data = _parse_network_breakpoint_input(
+                    data,
+                    name=name,
+                    item=item,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    edge=edge,
+                    distance=distance,
+                )
+        else:
+            if not self._is_input_validated(data):
+                data = _parse_network_node_input(
+                    data,
+                    name=name,
+                    item=item,
+                    quantity=quantity,
+                    node=node,
+                    aux_items=aux_items,
+                )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
 
     @property
-    def node(self) -> int:
-        """Node ID of observation"""
-        node_val = self.data.coords["node"]
-        return int(node_val.item())
+    def node(self) -> int | str | None:
+        """Node ID of observation, or ``None`` if this is a breakpoint observation (use ``at`` instead)."""
+        if "edge" in self.data.coords:
+            return None
+        return self.data.coords["node"].item()  # int or str
+
+    @property
+    def at(self) -> tuple[str, float] | None:
+        """Breakpoint location as ``(edge_id, distance)``, or ``None`` if this is a node observation (use ``node`` instead)."""
+        if "edge" in self.data.coords:
+            return (
+                str(self.data.coords["edge"].item()),
+                float(self.data.coords["distance"].item()),
+            )
+        return None
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
-        """Extract node from data and create new instance"""
-        node = int(data.coords["node"].item())
-        return self.__class__(data, node=node)
+        """Reconstruct instance from a dataset slice."""
+        if "edge" in data.coords:
+            return self.__class__(
+                data,
+                at=(
+                    str(data.coords["edge"].item()),
+                    float(data.coords["distance"].item()),
+                ),
+            )
+        return self.__class__(data, node=data.coords["node"].item())
 
     @overload
     @classmethod

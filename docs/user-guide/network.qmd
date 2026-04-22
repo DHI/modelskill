@@ -168,6 +168,48 @@ A `Res1D` network contains multiple levels that are unified into a generic netwo
 
 ![How a Res1D file maps to a Network object. Reaches and nodes are re-indexed as integers; boundary nodes expose `find()`/`recall()` round-trip lookups.](../images/res1d_network_mapping.png)
 
+#### Selective loading
+
+Large Res1D files can contain thousands of nodes and gridpoints. Loading all of that data into memory is slow and may cause memory issues — especially when you only need the timeseries at a handful of nodes where observations exist.
+
+`from_res1d` accepts two optional arguments to restrict what gets loaded:
+
+| Argument | Type | Effect |
+|---|---|---|
+| `nodes` | `"all"` \| `str` \| `list[str]` | Control which nodes have timeseries data loaded. `"all"` (default) loads all nodes; `[]` skips all node data; a name or list loads only those nodes. |
+| `reaches` | `"all"` \| `str` \| `list[str]` | Control which reaches have intermediate gridpoint data populated. `"all"` (default) loads everything; `[]` skips all gridpoints; a name or list of names loads only those reaches. |
+
+::: {.callout-note}
+Selective loading only controls **which timeseries are held in memory**. The full network topology (nodes, edges, lengths) is always constructed so that `find()`, `recall()`, and graph algorithms still work on the complete network.
+:::
+
+The most memory-efficient setup — useful when you only care about specific junction nodes — is to pass the node IDs you need and skip all intermediate gridpoints with `reaches=[]`:
+
+```{python}
+network_subset = Network.from_res1d(
+    path_to_res1d,
+    nodes=["78", "46"],
+    reaches=[],
+)
+network_subset
+```
+
+If you also need gridpoint data along a particular reach, pass its name (or a list of names):
+
+```{python}
+network_subset = Network.from_res1d(
+    path_to_res1d,
+    nodes=["78", "46"],
+    reaches=["94l1"],
+)
+network_subset
+```
+
+When only some nodes are loaded, `to_dataframe()` and `to_dataset()` only contain columns for those nodes — the rest are graph-connected but data-free:
+
+```{python}
+network_subset.to_dataframe(sel="WaterLevel").head()
+```
 
 ## Inspecting the Network
 
@@ -219,6 +261,10 @@ network.to_dataframe(sel="WaterLevel").head()
 
 After construction, nodes are re-labelled as integers.  Use `find()` to go from original coordinates to the integer ID and `recall()` to go back.
 
+::: {.callout-tip}
+When creating `NodeObservation` objects for skill assessment you generally do **not** need to call `find()`.  You can pass the original string ID or a `(edge, distance)` tuple directly as `node=`, and `NetworkModelResult` will resolve it for you during matching.  See [Skill assessment workflow](#skill-assessment-workflow) for details.
+:::
+
 ```{python}
 # Look up a named node by its original id
 node_id = network.find(node="117")
@@ -267,6 +313,11 @@ mr
 
 `NodeObservation` accepts a file path directly; the observation name is taken from the filename.
 
+The `node=` argument can be specified in three ways, depending on what information you have at hand.
+
+#### Option A — integer node ID (direct)
+
+Pass the integer ID assigned by the `Network`.  This is the most explicit form:
 
 ```{python}
 obs_1 = ms.NodeObservation(path_to_sensor_data_1, node=network.find(node="78"))
@@ -275,6 +326,41 @@ obs_2 = ms.NodeObservation(path_to_sensor_data_2, node=network.find(node="46"))
 cc = ms.match(obs=[obs_1, obs_2], mod=mr)
 cc.skill()
 ```
+
+#### Option B — original string alias
+
+Pass the original node identifier from the source format (e.g. the Res1D node name) as a plain string.  The `NetworkModelResult` resolves it to the correct integer ID at match time, so you never need to call `network.find()` yourself:
+
+```{python}
+obs_1 = ms.NodeObservation(path_to_sensor_data_1, node="78")
+obs_2 = ms.NodeObservation(path_to_sensor_data_2, node="46")
+
+cc = ms.match(obs=[obs_1, obs_2], mod=mr)
+cc.skill()
+```
+
+::: {.callout-note}
+Resolution happens inside `ms.match()`.  If the string is not found in the network's alias map a `ValueError` is raised with a clear message indicating which alias could not be resolved.
+:::
+
+#### Option C — breakpoint by `(edge, distance)` tuple
+
+When your observation sits at a chainage along a reach rather than at a named junction node, pass a `(edge_id, distance)` tuple.  The `NetworkModelResult` looks up the corresponding breakpoint at match time:
+
+```python
+obs_bp = ms.NodeObservation(path_to_sensor_data_1, node=("94l1", 21.285))
+
+cc = ms.match(obs=obs_bp, mod=mr)
+cc.skill()
+```
+
+The tuple form is equivalent to calling `network.find(edge="94l1", distance=21.285)` beforehand and is resolved during matching.
+
+::: {.callout-note}
+## Chainage tolerance
+
+Breakpoint distances are matched with a tolerance of **1 × 10⁻³** (i.e. ±0.001 in whatever distance units the network uses).  This means that small floating-point discrepancies between the distance you type and the value stored in the network are handled gracefully.  If no breakpoint falls within that tolerance a `ValueError` is raised.
+:::
 
 ## Development
 

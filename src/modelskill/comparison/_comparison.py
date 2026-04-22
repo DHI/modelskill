@@ -465,7 +465,9 @@ class Comparer:
         | None = None,
     ) -> None:
         self.data = _parse_dataset(matched_data)
-        self.raw_mod_data = (
+        self.raw_mod_data: dict[
+            str, PointModelResult | TrackModelResult | NodeModelResult
+        ] = (
             raw_mod_data
             if raw_mod_data is not None
             else {
