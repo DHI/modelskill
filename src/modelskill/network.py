@@ -17,7 +17,7 @@ import sys
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Literal, Sequence, overload, TYPE_CHECKING
+from typing import Any, Sequence, overload, TYPE_CHECKING
 from copy import deepcopy
 
 import networkx as nx
@@ -353,8 +353,8 @@ class Network:
         cls,
         res: str | Path | Res1D,
         *,
-        nodes: Literal["all"] | str | list[str] = "all",
-        reaches: Literal["all"] | str | list[str] = "all",
+        nodes: str | list[str] | None = None,
+        reaches: str | list[str] | None = None,
     ) -> Network:
         """Create a Network from a Res1D file or object.
 
@@ -362,21 +362,21 @@ class Network:
         ----------
         res : str, Path or Res1D
             Path to a .res1d file, or an already-opened :class:`mikeio1d.Res1D` object.
-        nodes : "all", str, or list of str, optional
+        nodes : str, list of str, or None, optional
             Controls which nodes have their timeseries data loaded into memory.
 
-            * ``"all"`` *(default)* — data is loaded for every node.
+            * ``None`` *(default)* — data is loaded for every node.
             * A single node ID or a list of node IDs — only those nodes get
               data; others are topology-only.
             * ``[]`` (empty list) — no node data is loaded at all.
 
             The full network topology is always constructed regardless of this
             setting, so ``find()`` and ``recall()`` still work on all nodes.
-        reaches : "all", str, or list of str, optional
+        reaches : str, list of str, or None, optional
             Controls which reaches have their intermediate gridpoint data
             populated.
 
-            * ``"all"`` *(default)* — gridpoints are populated for every reach.
+            * ``None`` *(default)* — gridpoints are populated for every reach.
             * A single reach name or a list of reach names — only those reaches
               get gridpoint data; others are topology-only.
             * ``[]`` (empty list) — no gridpoint data is loaded at all.
@@ -429,34 +429,14 @@ class Network:
                 f"Expected a str, Path or Res1D object, got {type(res).__name__!r}"
             )
 
-        if "all" in res.nodes:
-            import warnings
-            warnings.warn(
-                "This Res1D file contains a node named 'all', which conflicts with the "
-                "sentinel value used by the 'nodes' parameter. To load data for "
-                "that node specifically, pass it as a list: nodes=['all'].",
-                UserWarning,
-                stacklevel=2,
-            )
-
-        if "all" in res.reaches:
-            import warnings
-            warnings.warn(
-                "This Res1D file contains a reach named 'all', which conflicts with the "
-                "sentinel value used by the 'reaches' parameter. To load gridpoints for "
-                "that reach specifically, pass it as a list: reaches=['all'].",
-                UserWarning,
-                stacklevel=2,
-            )
-
-        if nodes == "all":
+        if nodes is None:
             nodes_list: list[str] = list(res.nodes.keys())
         elif isinstance(nodes, str):
             nodes_list = [nodes]
         else:
             nodes_list = list(nodes)
 
-        if reaches == "all":
+        if reaches is None:
             reaches_list: list[str] = list(res.reaches.keys())
         elif isinstance(reaches, str):
             reaches_list = [reaches]
