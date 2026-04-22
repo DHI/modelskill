@@ -643,7 +643,7 @@ class TestNetworkModelResultAliasResolution:
         existing_int = int(sample_network.find(node="123"))
         base_distance = 10.0
         tol = NetworkModelResult._CHAINAGE_TOLERANCE
-        nmr._alias_map[("reach_test", base_distance)] = existing_int
+        nmr.network._alias_map[("reach_test", base_distance)] = existing_int
         obs = NodeObservation(
             sample_node_data, at=("reach_test", base_distance + tol / 2)
         )
@@ -657,7 +657,7 @@ class TestNetworkModelResultAliasResolution:
         existing_int = int(sample_network.find(node="123"))
         base_distance = 10.0
         tol = NetworkModelResult._CHAINAGE_TOLERANCE
-        nmr._alias_map[("reach_test", base_distance)] = existing_int
+        nmr.network._alias_map[("reach_test", base_distance)] = existing_int
         obs = NodeObservation(
             sample_node_data, at=("reach_test", base_distance + tol + 1e-4)
         )
@@ -672,8 +672,8 @@ class TestNetworkModelResultAliasResolution:
         tol = NetworkModelResult._CHAINAGE_TOLERANCE
         node_a = int(sample_network.find(node="123"))
         node_b = int(sample_network.find(node="456"))
-        nmr._alias_map[("reach_test", base_distance + 2e-4)] = node_a
-        nmr._alias_map[("reach_test", base_distance + 8e-4)] = node_b
+        nmr.network._alias_map[("reach_test", base_distance + 2e-4)] = node_a
+        nmr.network._alias_map[("reach_test", base_distance + 8e-4)] = node_b
 
         obs = NodeObservation(
             sample_node_data, at=("reach_test", base_distance + tol * 0.6)
@@ -689,8 +689,8 @@ class TestNetworkModelResultAliasResolution:
         tol = NetworkModelResult._CHAINAGE_TOLERANCE
         node_a = int(sample_network.find(node="123"))
         node_b = int(sample_network.find(node="456"))
-        nmr._alias_map[("reach_test", base_distance + 4e-4)] = node_a
-        nmr._alias_map[("reach_test", base_distance + 8e-4)] = node_b
+        nmr.network._alias_map[("reach_test", base_distance + 4e-4)] = node_a
+        nmr.network._alias_map[("reach_test", base_distance + 8e-4)] = node_b
 
         obs = NodeObservation(
             sample_node_data, at=("reach_test", base_distance + tol * 0.6)
