@@ -78,7 +78,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-3a7abe8a1fb041dadcb9b079f1f7e447.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-96b13ddc560c007864b0ea336d1d1856.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -485,26 +485,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1>NodeObservation</h1>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>NodeObservation(</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    data,</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    node,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    node<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    item<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    weight<span class="op">=</span><span class="fl">1.0</span>,</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    quantity<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    aux_items<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    attrs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    at<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    item<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    weight<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    quantity<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    aux_items<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    attrs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Class for observations at network nodes.</p>
-<p>Create a NodeObservation from a DataFrame or other data source. The node ID is specified as an integer.</p>
+<p>Create a NodeObservation from a DataFrame or other data source. The node ID can be an integer (internal network ID) or a string alias (e.g.&nbsp;the original Res1D node name). String aliases are resolved to integer IDs automatically when matched against a :class:<code>~modelskill.model.network.NetworkModelResult</code>. For breakpoint locations (edge + distance), use the <code>at</code> parameter.</p>
 <p>To create multiple NodeObservation objects from a single data source, use :method:<code>from_multiple</code>.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 4%">
-<col style="width: 42%">
-<col style="width: 48%">
-<col style="width: 5%">
+<col style="width: 2%">
+<col style="width: 26%">
+<col style="width: 67%">
+<col style="width: 3%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -522,42 +523,48 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><em>required</em></td>
 </tr>
 <tr class="even">
+<td>node</td>
+<td>int or str</td>
+<td>Node ID. Accepted forms: * <strong>int</strong> — internal network ID, used directly. * <strong>str</strong> — original node alias (e.g.&nbsp;Res1D node name), resolved when matched against a :class:<code>~modelskill.model.network.NetworkModelResult</code>. Mutually exclusive with <code>at</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>at</td>
+<td>tuple[str, float]</td>
+<td>Breakpoint location as <code>(edge_id, distance)</code> along an edge, resolved via the alias map when matched against a :class:<code>~modelskill.model.network.NetworkModelResult</code>. Mutually exclusive with <code>node</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
 <td>item</td>
 <td>(int, str)</td>
 <td>index or name of the wanted item/column, by default None if data contains more than one item, item must be given</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td>node</td>
-<td>int</td>
-<td>node ID (integer), by default None</td>
-<td><em>required</em></td>
-</tr>
-<tr class="even">
 <td>name</td>
 <td>str</td>
 <td>user-defined name for easy identification in plots etc, by default derived from data</td>
 <td><code>None</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>weight</td>
 <td>float</td>
 <td>weighting factor for skill scores, by default 1.0</td>
 <td><code>1.0</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>quantity</td>
 <td>Quantity</td>
 <td>The quantity of the observation, for validation with model results</td>
 <td><code>None</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>aux_items</td>
 <td>list</td>
 <td>list of names or indices of auxiliary items, by default None</td>
 <td><code>None</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>attrs</td>
 <td>dict</td>
 <td>additional attributes to be added to the data, by default None</td>
@@ -572,8 +579,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o1 <span class="op">=</span> ms.NodeObservation(data, node<span class="op">=</span><span class="dv">123</span>, name<span class="op">=</span><span class="st">"123"</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o2 <span class="op">=</span> ms.NodeObservation(df, item<span class="op">=</span><span class="st">"Water Level"</span>, node<span class="op">=</span><span class="dv">456</span>)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># Multiple node observations from separate data sources</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> ms.NodeObservation.from_multiple(nodes<span class="op">=</span>{<span class="dv">123</span>: df1, <span class="dv">456</span>: df2})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o3 <span class="op">=</span> ms.NodeObservation(data, node<span class="op">=</span><span class="st">"node_A"</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># Breakpoint as (edge_id, distance) tuple</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o4 <span class="op">=</span> ms.NodeObservation(data, at<span class="op">=</span>(<span class="st">"reach_1"</span>, <span class="fl">24.5</span>))</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># Multiple node observations from separate data sources</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> ms.NodeObservation.from_multiple(nodes<span class="op">=</span>{<span class="dv">123</span>: df1, <span class="dv">456</span>: df2})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
@@ -586,50 +598,54 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#modelskill.NodeObservation.at">at</a></td>
+<td>Breakpoint location as <code>(edge_id, distance)</code>, or <code>None</code> if this is a node observation (use <code>node</code> instead).</td>
+</tr>
+<tr class="even">
 <td><a href="#modelskill.NodeObservation.attrs">attrs</a></td>
 <td>Attributes of the observation</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#modelskill.NodeObservation.gtype">gtype</a></td>
 <td>Geometry type</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#modelskill.NodeObservation.n_points">n_points</a></td>
 <td>Number of data points</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#modelskill.NodeObservation.name">name</a></td>
 <td>Name of time series (value item name)</td>
 </tr>
-<tr class="odd">
-<td><a href="#modelskill.NodeObservation.node">node</a></td>
-<td>Node ID of observation</td>
-</tr>
 <tr class="even">
+<td><a href="#modelskill.NodeObservation.node">node</a></td>
+<td>Node ID of observation, or <code>None</code> if this is a breakpoint observation (use <code>at</code> instead).</td>
+</tr>
+<tr class="odd">
 <td><a href="#modelskill.NodeObservation.plot">plot</a></td>
 <td>Plot using the ComparerPlotter</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#modelskill.NodeObservation.quantity">quantity</a></td>
 <td>Quantity of time series</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#modelskill.NodeObservation.time">time</a></td>
 <td>Time index</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#modelskill.NodeObservation.values">values</a></td>
 <td>Values as numpy array</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#modelskill.NodeObservation.weight">weight</a></td>
 <td>Weighting factor for skill scores</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#modelskill.NodeObservation.x">x</a></td>
 <td>x-coordinate</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#modelskill.NodeObservation.y">y</a></td>
 <td>y-coordinate</td>
 </tr>
