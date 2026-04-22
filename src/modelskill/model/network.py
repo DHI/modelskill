@@ -190,6 +190,9 @@ class NetworkModelResult:
             )
 
     def _extract_node(self, observation: NodeObservation) -> NodeModelResult:
+        if observation.at is None and observation.node is None:
+            raise ValueError("NodeObservation must have either 'node' or 'at' set")
+
         if observation.at is not None:
             raw_id: tuple[str, float] = observation.at
             if raw_id not in self.network._alias_map:
@@ -201,11 +204,11 @@ class NetworkModelResult:
             else:
                 node_id = self.network._alias_map[raw_id]
         else:
-            raw_id: int | str = observation.node  # type: ignore[assignment]
-            if isinstance(raw_id, str):
-                node_id = self._resolve_alias(raw_id)
+            node_ref: int | str = observation.node  # type: ignore[assignment]
+            if isinstance(node_ref, str):
+                node_id = self._resolve_alias(node_ref)
             else:
-                node_id = raw_id
+                node_id = node_ref
 
         if node_id not in self.data.node:
             raise ValueError(
