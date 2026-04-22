@@ -131,7 +131,7 @@ class NetworkModelResult:
     ):
         self.network = data.copy()
 
-        ds = data.to_dataset()
+        ds = self.network.to_dataset()
         sel_items = SelectedItems.parse(
             list(ds.data_vars), item=item, aux_items=aux_items
         )
