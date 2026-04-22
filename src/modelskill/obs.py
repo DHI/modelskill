@@ -656,6 +656,10 @@ class EdgeObservation(Observation):
         """Edge ID of this observation."""
         return str(self.data.coords["edge"].item())
 
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Reconstruct instance from a dataset slice."""
+        return self.__class__(data, edge=str(data.coords["edge"].item()))
+
 
 def unit_display_name(name: str) -> str:
     """Display name

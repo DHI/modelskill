@@ -345,10 +345,10 @@ Resolution happens inside `ms.match()`.  If the string is not found in the netwo
 
 #### Option C — breakpoint by `(edge, distance)` tuple
 
-When your observation sits at a chainage along a reach rather than at a named junction node, pass a `(edge_id, distance)` tuple.  The `NetworkModelResult` looks up the corresponding breakpoint at match time:
+When your observation sits at a chainage along a reach rather than at a named junction node, you can use the `at` argument and pass a `(edge_id, distance)` tuple.  The `NetworkModelResult` looks up the corresponding breakpoint at match time:
 
 ```python
-obs_bp = ms.NodeObservation(path_to_sensor_data_1, node=("94l1", 21.285))
+obs_bp = ms.NodeObservation(path_to_sensor_data_1, at=("94l1", 21.285))
 
 cc = ms.match(obs=obs_bp, mod=mr)
 cc.skill()
@@ -360,6 +360,29 @@ The tuple form is equivalent to calling `network.find(edge="94l1", distance=21.2
 ## Chainage tolerance
 
 Breakpoint distances are matched with a tolerance of **1 × 10⁻³** (i.e. ±0.001 in whatever distance units the network uses).  This means that small floating-point discrepancies between the distance you type and the value stored in the network are handled gracefully.  If no breakpoint falls within that tolerance a `ValueError` is raised.
+:::
+
+### 3. Using EdgeObservation for edge-uniform quantities
+
+Some physical quantities — such as **discharge in a pipe** — are conceptually uniform across the whole edge, even though the model stores values at individual breakpoints along the reach. `EdgeObservation` lets you associate a timeseries with a named edge without having to identify a specific breakpoint.
+
+When matched against a `NetworkModelResult`, modelskill automatically extracts model data from an arbitrary breakpoint that belongs to the given edge and verifies that all breakpoints on the edge carry equivalent values.
+
+```{python}
+obs_q = ms.EdgeObservation(path_to_sensor_data_1, edge="94l1", name="Q_94l1")
+obs_q
+```
+
+Pass the observation to `ms.match()` exactly as you would a `NodeObservation`. modelskill resolves which breakpoint to use automatically:
+
+```{python}
+mr_q = NetworkModelResult(network, name="MyModel", item="Discharge")
+cc_q = ms.match(obs=obs_q, mod=mr_q)
+cc_q.skill()
+```
+
+::: {.callout-note}
+Use `EdgeObservation` when your measured quantity is representative of the whole reach (e.g. discharge, which is constant along a reach in steady flow).  If you need to compare a quantity that varies spatially along the edge (e.g. water level at a specific chainage), use a `NodeObservation` with a `(edge, distance)` tuple instead (see [Option C](#option-c-breakpoint-by-edge-distance-tuple) above).
 :::
 
 ## Development
@@ -489,3 +512,4 @@ network = Network(edges=[edge1, edge2])
 
 * [API reference — NetworkModelResult](../api/NetworkModelResult.qmd)
 * [API reference — NodeObservation](../api/NodeObservation.qmd)
+* [API reference — EdgeObservation](../api/EdgeObservation.qmd)
