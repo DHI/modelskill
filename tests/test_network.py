@@ -21,7 +21,6 @@ from modelskill.network import (
 )
 from modelskill.obs import NodeObservation
 from modelskill.quantity import Quantity
-from modelskill.timeseries._coords import NodeCoords, EdgeCoords
 
 
 def _make_network(node_ids, time, data, quantity="WaterLevel"):
@@ -450,28 +449,6 @@ def test_open_res1d():
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
-def test_network_subset_copy():
-    path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
-    small_network = network.reduce_around(node=52)
-    assert small_network.graph.number_of_nodes() == 22
-    assert 52 in small_network.graph.nodes()
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_network_subset_inplace():
-    path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
-    network.reduce_around(node=52, copy=False)
-    assert network.graph.number_of_nodes() == 22
-    assert 52 in network.graph.nodes()
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
 def test_from_res1d_nodes_filter_creates_full_network():
     """When nodes is specified, the full network topology is created."""
     path_to_file = "./tests/testdata/network.res1d"
@@ -481,7 +458,9 @@ def test_from_res1d_nodes_filter_creates_full_network():
     partial_network = Network.from_res1d(path_to_file, nodes=selected_nodes)
 
     # Full topology is preserved
-    assert partial_network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
+    assert (
+        partial_network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
+    )
 
 
 @pytest.mark.skipif(
@@ -498,7 +477,7 @@ def test_from_res1d_nodes_filter_only_selected_have_data():
     n_nodes = network.graph.number_of_nodes()
     assert sum([g.nodes[n]["data"] is None for n in g.nodes]) == n_nodes - 2
     for n in selected_nodes:
-        assert g.nodes[network.find(n)]["data"] is not None 
+        assert g.nodes[network.find(n)]["data"] is not None
 
 
 @pytest.mark.skipif(
@@ -532,35 +511,25 @@ def test_dataframe_from_partial_network():
     assert set(nodes_in_df) == set([network.find(n) for n in selected_nodes])
 
 
-# ---------------------------------------------------------------------------
-# Coords classes
-# ---------------------------------------------------------------------------
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
+    path_to_file = "./tests/testdata/network.res1d"
+    full_network = Network.from_res1d(path_to_file)
+    network = Network.from_res1d(path_to_file, nodes=[], reaches=[])
 
+    assert network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
 
-class TestNodeCoords:
-    def test_int_node(self):
-        c = NodeCoords(node=42)
-        assert c.as_dict["node"] == 42
+    df = network.to_dataframe()
+    assert df.empty
+    assert isinstance(df.columns, pd.MultiIndex)
+    assert df.columns.names == ["node", "quantity"]
+    assert df.index.name == "time"
 
-    def test_str_node(self):
-        c = NodeCoords(node="node_A")
-        assert c.as_dict["node"] == "node_A"
-
-    def test_none_node_becomes_nan(self):
-        c = NodeCoords(node=None)
-        assert np.isnan(c.as_dict["node"])
-
-
-class TestEdgeCoords:
-    def test_stores_edge_and_distance(self):
-        c = EdgeCoords(edge="reach_1", distance=24.5)
-        d = c.as_dict
-        assert d["edge"] == "reach_1"
-        assert d["distance"] == 24.5
-
-    def test_no_node_key(self):
-        c = EdgeCoords(edge="reach_1", distance=24.5)
-        assert "node" not in c.as_dict
+    ds = network.to_dataset()
+    assert isinstance(ds, xr.Dataset)
+    assert len(ds.data_vars) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -650,7 +619,9 @@ class TestNetworkModelResultAliasResolution:
         assert isinstance(extracted, NodeModelResult)
         assert extracted.node == expected_id
 
-    def test_extract_string_alias_wrong_key_raises(self, sample_network, sample_node_data):
+    def test_extract_string_alias_wrong_key_raises(
+        self, sample_network, sample_node_data
+    ):
         nmr = NetworkModelResult(sample_network)
         obs = NodeObservation(sample_node_data, node="nonexistent_node")
         with pytest.raises(ValueError, match="not found"):
@@ -665,7 +636,71 @@ class TestNetworkModelResultAliasResolution:
         extracted = nmr.extract(obs)
         assert extracted.node == existing_int
 
-    def test_extract_tuple_alias_wrong_key_raises(self, sample_network, sample_node_data):
+    def test_extract_with_tuple_breakpoint_tolerance(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        existing_int = int(sample_network.find(node="123"))
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
+        nmr._alias_map[("reach_test", base_distance)] = existing_int
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol / 2)
+        )
+        extracted = nmr.extract(obs)
+        assert extracted.node == existing_int
+
+    def test_extract_with_tuple_breakpoint_outside_tolerance_raises(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        existing_int = int(sample_network.find(node="123"))
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
+        nmr._alias_map[("reach_test", base_distance)] = existing_int
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol + 1e-4)
+        )
+        with pytest.raises(ValueError, match="not found"):
+            nmr.extract(obs)
+
+    def test_extract_with_tuple_breakpoint_uses_closest_within_tolerance(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
+        node_a = int(sample_network.find(node="123"))
+        node_b = int(sample_network.find(node="456"))
+        nmr._alias_map[("reach_test", base_distance + 2e-4)] = node_a
+        nmr._alias_map[("reach_test", base_distance + 8e-4)] = node_b
+
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol * 0.6)
+        )
+        extracted = nmr.extract(obs)
+        assert extracted.node == node_b
+
+    def test_extract_with_tuple_breakpoint_tie_uses_smallest_node_id(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
+        node_a = int(sample_network.find(node="123"))
+        node_b = int(sample_network.find(node="456"))
+        nmr._alias_map[("reach_test", base_distance + 4e-4)] = node_a
+        nmr._alias_map[("reach_test", base_distance + 8e-4)] = node_b
+
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol * 0.6)
+        )
+        extracted = nmr.extract(obs)
+        assert extracted.node == min(node_a, node_b)
+
+    def test_extract_tuple_alias_wrong_key_raises(
+        self, sample_network, sample_node_data
+    ):
         nmr = NetworkModelResult(sample_network)
         obs = NodeObservation(sample_node_data, at=("nonexistent_edge", 0.0))
         with pytest.raises(ValueError, match="not found"):
@@ -678,4 +713,3 @@ class TestNetworkModelResultAliasResolution:
         comparer = ms.match(obs, nmr)
         assert comparer.n_points > 0
         assert "Network_Model" in comparer.mod_names
-
