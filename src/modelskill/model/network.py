@@ -194,6 +194,7 @@ class NetworkModelResult:
             raise ValueError("NodeObservation must have either 'node' or 'at' set")
 
         raw_id = observation.at if observation.at is not None else observation.node
+        assert raw_id is not None  # Redundant assertion, included for mypy
         node_id = self._resolve_alias(raw_id)
 
         return NodeModelResult(
@@ -267,35 +268,37 @@ class NetworkModelResult:
         # are broken by choosing the smallest node ID. Distance units are the
         # same as the network chainage units.
 
-        if alias in self.network._alias_map:
-            return self.network._alias_map[alias]
-
-        if isinstance(alias, tuple):
-            edge_id, distance = alias
-            candidates: list[tuple[float, int]] = []
-            for key, node_id in self.network._alias_map.items():
-                if isinstance(key, tuple) and key[0] == edge_id:
-                    diff = abs(key[1] - distance)
-                    if diff <= self._CHAINAGE_TOLERANCE:
-                        candidates.append((diff, node_id))
-            if candidates:
-                return min(
-                    candidates, key=lambda candidate: (candidate[0], candidate[1])
-                )[1]
-        elif isinstance(alias, int):
+        if isinstance(alias, int):
             if alias not in self.data.node:
                 raise ValueError(
                     f"Node {alias} not found. Available: {list(self.nodes[:5])}..."
                 )
             return alias
+        else:
+            if alias in self.network._alias_map:
+                return self.network._alias_map[alias]
 
-        available = list(self.network._alias_map.keys())[:5]
-        if isinstance(alias, tuple):
+            if isinstance(alias, tuple):
+                # Handle tolerances
+                edge_id, distance = alias
+                candidates: list[tuple[float, int]] = []
+                for key, node_id in self.network._alias_map.items():
+                    if isinstance(key, tuple) and key[0] == edge_id:
+                        diff = abs(key[1] - distance)
+                        if diff <= self._CHAINAGE_TOLERANCE:
+                            candidates.append((diff, node_id))
+                if candidates:
+                    return min(
+                        candidates, key=lambda candidate: (candidate[0], candidate[1])
+                    )[1]
+
+            available = list(self.network._alias_map.keys())[:5]
+            if isinstance(alias, tuple):
+                raise ValueError(
+                    f"Breakpoint {alias} not found in network. "
+                    f"Available aliases (first 5): {available}"
+                )
             raise ValueError(
-                f"Breakpoint {alias} not found in network. "
+                f"Node alias '{alias}' not found in network. "
                 f"Available aliases (first 5): {available}"
             )
-        raise ValueError(
-            f"Node alias '{alias}' not found in network. "
-            f"Available aliases (first 5): {available}"
-        )
