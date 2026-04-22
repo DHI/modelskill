@@ -262,7 +262,7 @@ network.to_dataframe(sel="WaterLevel").head()
 After construction, nodes are re-labelled as integers.  Use `find()` to go from original coordinates to the integer ID and `recall()` to go back.
 
 ::: {.callout-tip}
-When creating `NodeObservation` objects for skill assessment you generally do **not** need to call `find()`.  You can pass the original string ID or a `(edge, distance)` tuple directly as `node=`, and `NetworkModelResult` will resolve it for you during matching.  See [Skill assessment workflow](#skill-assessment-workflow) for details.
+When creating `NodeObservation` objects for skill assessment you generally do **not** need to call `find()`.  You can pass the original string ID as `node=`, and `NetworkModelResult` will resolve it for you during matching.  For breakpoints, use `at=(edge, distance)` rather than `node=`.  See [Skill assessment workflow](#skill-assessment-workflow) for details.
 :::
 
 ```{python}
