@@ -225,25 +225,34 @@ class NetworkModelResult:
         # This only searches intermediate breakpoints since edge-level data is not
         # expected in nodes.
 
+        available_nodes = {int(node_id) for node_id in self.data.node.values}
         found_ds = None
+        found_int_id: int | None = None
+        missing_node_data = False
         for breakpoint in edge.breakpoints:
-            if item in breakpoint.quantities:
-                int_id = self.network.find(
-                    edge=breakpoint.id[0], distance=breakpoint.distance
-                )
-                ds = self.data.sel(node=int_id).drop_vars("node")
-                if found_ds is not None:
-                    da1, da2 = xr.align(ds[item], found_ds[item], join="inner")
-                    if not np.allclose(da1.values, da2.values, equal_nan=True):
-                        raise ValueError(
-                            "Not all data in breakpoints are equivalent. "
-                            "Select a specific node instead of the edge."
-                        )
-                else:
-                    found_ds = ds
-                    found_int_id = int_id
+            if breakpoint.data is None:
+                continue
+            if item not in breakpoint.data.columns:
+                continue
 
-        if found_ds is not None:
+            int_id = self.network.find(edge=breakpoint.id[0], distance=breakpoint.distance)
+            if int_id not in available_nodes:
+                missing_node_data = True
+                continue
+
+            ds = self.data.sel(node=int_id).drop_vars("node")
+            if found_ds is not None:
+                da1, da2 = xr.align(ds[item], found_ds[item], join="inner")
+                if not np.allclose(da1.values, da2.values, equal_nan=True):
+                    raise ValueError(
+                        "Not all data in breakpoints are equivalent. "
+                        "Select a specific node instead of the edge."
+                    )
+            else:
+                found_ds = ds
+                found_int_id = int_id
+
+        if found_ds is not None and found_int_id is not None:
             return NodeModelResult(
                 data=found_ds,
                 node=found_int_id,
@@ -251,6 +260,13 @@ class NetworkModelResult:
                 item=item,
                 quantity=self.quantity,
                 aux_items=self.sel_items.aux,
+            )
+        if missing_node_data:
+            raise ValueError(
+                f"Edge '{edge_id}' has breakpoint data for quantity "
+                f"'{self.sel_items.values}', but matching breakpoint nodes are "
+                "missing from the model dataset. Re-create the NetworkModelResult "
+                "with the relevant reaches populated."
             )
 
         raise ValueError(

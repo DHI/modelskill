@@ -449,6 +449,77 @@ def test_open_res1d():
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
+def test_extract_edge_observation_happy_path(sample_node_data):
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_res1d(path_to_file)
+    nmr = NetworkModelResult(network, item="Discharge", name="network_model")
+    obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
+    obs = ms.EdgeObservation(obs_data, edge="100l1", item="Discharge")
+
+    extracted = nmr.extract(obs)
+
+    assert isinstance(extracted, NodeModelResult)
+    assert extracted.name == "network_model"
+    expected_node = network.find(edge="100l1", distance=network._edges["100l1"].breakpoints[0].distance)
+    assert extracted.node == expected_node
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_extract_edge_observation_non_equivalent_breakpoints_raises(sample_node_data):
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_res1d(path_to_file)
+    nmr = NetworkModelResult(network, item="Discharge")
+    obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
+    obs = ms.EdgeObservation(obs_data, edge="113l1", item="Discharge")
+
+    with pytest.raises(
+        ValueError, match="Not all data in breakpoints are equivalent"
+    ):
+        nmr.extract(obs)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_extract_edge_observation_with_reaches_not_populated_raises_valueerror(
+    sample_node_data,
+):
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_res1d(path_to_file, reaches=[])
+    nmr = NetworkModelResult(network, item="WaterLevel")
+    obs = ms.EdgeObservation(sample_node_data, edge="100l1", item="WaterLevel")
+
+    with pytest.raises(ValueError, match="none of its breakpoints have data loaded"):
+        nmr.extract(obs)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_extract_edge_observation_breakpoint_node_missing_raises_valueerror(
+    sample_node_data,
+):
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_res1d(path_to_file)
+    nmr = NetworkModelResult(network, item="Discharge")
+    edge = network._edges["100l1"]
+    bp = edge.breakpoints[0]
+    node_id = network.find(edge="100l1", distance=bp.distance)
+    remaining_nodes = [int(n) for n in nmr.data.node.values if int(n) != node_id]
+    nmr.data = nmr.data.sel(node=remaining_nodes)
+
+    obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
+    obs = ms.EdgeObservation(obs_data, edge="100l1", item="Discharge")
+
+    with pytest.raises(ValueError, match="matching breakpoint nodes are missing"):
+        nmr.extract(obs)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
 def test_from_res1d_nodes_filter_creates_full_network():
     """When nodes is specified, the full network topology is created."""
     path_to_file = "./tests/testdata/network.res1d"
