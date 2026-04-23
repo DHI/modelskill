@@ -78,7 +78,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-96b13ddc560c007864b0ea336d1d1856.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-c7a15224e96ab7bc3cb7c9d6274e7285.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -332,7 +332,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="skill-assessment" class="level2">
 <h2 class="anchored" data-anchor-id="skill-assessment">Skill assessment</h2>
 <p>The simplest use-case for skill assessment is when you have a dataset of matched model results and observations in tabular format.</p>
-<div id="ba15cc45" class="cell" data-execution_count="1">
+<div id="c46b6e32" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"../data/Vistula/sim1/6158100.csv"</span>, parse_dates<span class="op">=</span><span class="va">True</span>, index_col<span class="op">=</span><span class="st">"Date"</span>)</span>
@@ -393,7 +393,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="bcb560d6" class="cell" data-execution_count="2">
+<div id="4b26b28a" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.from_matched(df, obs_item<span class="op">=</span><span class="st">"Qobs"</span>, mod_items<span class="op">=</span><span class="st">"Qsim"</span>, quantity<span class="op">=</span>ms.Quantity(<span class="st">"Discharge"</span>, <span class="st">"m3/s"</span>))</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="2">
@@ -405,7 +405,7 @@ Model(s):
 </div>
 </div>
 <p>A time series plot is a common way to visualize the comparison.</p>
-<div id="62c11058" class="cell" data-execution_count="3">
+<div id="83303fdf" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.timeseries()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -416,7 +416,7 @@ Model(s):
 </div>
 </div>
 <p>Another more quantitative way to analyze the compared data is to use a scatter plot, which optionally includes a skill table (<a href="../api/metrics.html#modelskill.metrics">Definition of the metrics</a>).</p>
-<div id="2d4c4a06" class="cell" data-execution_count="4">
+<div id="fbbbfd33" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.scatter(skill_table<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -427,7 +427,7 @@ Model(s):
 </div>
 </div>
 <p>The skill table can also be produced in tabular format, including specifing other metrics.</p>
-<div id="002488c5" class="cell" data-execution_count="5">
+<div id="b95fe4fe" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.skill(metrics<span class="op">=</span>[<span class="st">"bias"</span>, <span class="st">"mae"</span>, <span class="st">"rmse"</span>, <span class="st">"kge"</span>, <span class="st">"si"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
 <div>
