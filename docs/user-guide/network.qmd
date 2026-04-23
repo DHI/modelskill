@@ -315,21 +315,9 @@ mr
 
 The `node=` argument can be specified in three ways, depending on what information you have at hand.
 
-#### Option A — integer node ID (direct)
+#### Option A — original string alias
 
-Pass the integer ID assigned by the `Network`.  This is the most explicit form:
-
-```{python}
-obs_1 = ms.NodeObservation(path_to_sensor_data_1, node=network.find(node="78"))
-obs_2 = ms.NodeObservation(path_to_sensor_data_2, node=network.find(node="46"))
-
-cc = ms.match(obs=[obs_1, obs_2], mod=mr)
-cc.skill()
-```
-
-#### Option B — original string alias
-
-Pass the original node identifier from the source format (e.g. the Res1D node name) as a plain string.  The `NetworkModelResult` resolves it to the correct integer ID at match time, so you never need to call `network.find()` yourself:
+Pass the original node identifier from the source format (e.g. the Res1D node name) as a plain string.  The `NetworkModelResult` resolves it to the correct integer ID at match time, so you do not need to call `network.find()` yourself:
 
 ```{python}
 obs_1 = ms.NodeObservation(path_to_sensor_data_1, node="78")
@@ -343,7 +331,7 @@ cc.skill()
 Resolution happens inside `ms.match()`.  If the string is not found in the network's alias map a `ValueError` is raised with a clear message indicating which alias could not be resolved.
 :::
 
-#### Option C — breakpoint by `(edge, distance)` tuple
+#### Option B — breakpoint by `(edge, distance)` tuple
 
 When your observation sits at a chainage along a reach rather than at a named junction node, you can use the `at` argument and pass a `(edge_id, distance)` tuple.  The `NetworkModelResult` looks up the corresponding breakpoint at match time:
 
