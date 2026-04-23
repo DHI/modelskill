@@ -45,6 +45,13 @@ just docs               # Build documentation with quartodoc and quarto
                         # Located in docs/_site after building
 ```
 
+### Roadmap
+After editing any file in `roadmap/features/`, regenerate the overview:
+```bash
+uv run roadmap/scripts/generate_overview.py
+```
+This updates `roadmap/README.md` from the feature frontmatter.
+
 ## Coding Conventions
 
 ### Docstrings

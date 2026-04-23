@@ -18,10 +18,6 @@ For questions or feature requests, please open a [GitHub Discussion](https://git
 
 
 - **[Network Model Support](features/network-models.md)** — Compare MIKE 1D hydraulic network simulations against observations at network nodes, covering collection systems, water distribution, and river networks.
-
-## Planned
-
-
 - **[Vertical Profile Assessment](features/vertical-profiles.md)** — Validate 3D models by comparing against depth-varying observations such as temperature and salinity profiles.
 
 ## Under Consideration

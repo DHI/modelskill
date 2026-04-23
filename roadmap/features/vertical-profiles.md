@@ -1,6 +1,6 @@
 ---
 title: "Vertical Profile Assessment"
-status: "Planned"
+status: "In Development"
 category: "Domain Expansion"
 summary: "Validate 3D models by comparing against depth-varying observations such as temperature and salinity profiles."
 ---
