@@ -71,8 +71,16 @@ def observation(
     >>> o_node = ms.observation(df, item="Water Level", node=123, name="123")
     >>> o_edge = ms.observation(df, item="Discharge", edge="reach_1", name="reach_1_Q")
     """
-    # EdgeObservation is handled directly since it shares the NODE gtype internally
+    # EdgeObservation is handled directly since it shares the NODE gtype internally.
+    # If both edge and distance are provided, this represents a network location
+    # along an edge and should be treated as a NodeObservation via at=(edge, distance).
     if gtype == "edge" or (gtype is None and "edge" in kwargs):
+        if "distance" in kwargs:
+            node_kwargs = dict(kwargs)
+            edge = node_kwargs.pop("edge")
+            distance = node_kwargs.pop("distance")
+            node_kwargs["at"] = (edge, distance)
+            return NodeObservation(data=data, **node_kwargs)
         return EdgeObservation(data=data, **kwargs)
 
     if gtype is None:

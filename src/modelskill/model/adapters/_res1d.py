@@ -42,7 +42,7 @@ class Res1DNode(NetworkNode):
         boundary: dict[str, pd.DataFrame] | None = None,
     ):
         self._id = id
-        self._data = data
+        self._data = pd.DataFrame() if data is None else data
         self._boundary = {} if boundary is None else boundary
 
     @property
@@ -50,7 +50,7 @@ class Res1DNode(NetworkNode):
         return self._id
 
     @property
-    def data(self) -> pd.DataFrame | None:
+    def data(self) -> pd.DataFrame:
         return self._data
 
     @property
@@ -63,14 +63,14 @@ class GridPoint(EdgeBreakPoint):
         self, reach_id: str, chainage: float, data: pd.DataFrame | None = None
     ):
         self._id = (reach_id, chainage)
-        self._data = data
+        self._data = pd.DataFrame() if data is None else data
 
     @property
     def id(self) -> tuple[str, float]:
         return self._id
 
     @property
-    def data(self) -> pd.DataFrame | None:
+    def data(self) -> pd.DataFrame:
         return self._data
 
 
