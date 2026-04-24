@@ -17,7 +17,7 @@ from modelskill.model.network import (
 from modelskill.network import (
     Network,
     BasicNode,
-    BasicEdge,
+    BasicReach,
 )
 from modelskill.obs import NodeObservation
 from modelskill.quantity import Quantity
@@ -28,11 +28,11 @@ def _make_network(node_ids, time, data, quantity="WaterLevel"):
         BasicNode(nid, pd.DataFrame({quantity: data[:, i]}, index=time))
         for i, nid in enumerate(node_ids)
     ]
-    edges = [
-        BasicEdge(f"e{i}", nodes[i], nodes[i + 1], length=100.0)
+    reaches = [
+        BasicReach(f"r{i}", nodes[i], nodes[i + 1], length=100.0)
         for i in range(len(nodes) - 1)
     ]
-    return Network(edges)
+    return Network(reaches)
 
 
 @pytest.fixture
@@ -85,7 +85,7 @@ def sample_network_multivars():
         )
         for i, nid in enumerate(["123", "456"])
     ]
-    edges = [BasicEdge("e1", nodes[0], nodes[1], length=100.0)]
+    edges = [BasicReach("r1", nodes[0], nodes[1], length=100.0)]
     return Network(edges)
 
 
@@ -200,7 +200,7 @@ class TestNetworkModelResult:
         obs = ms.PointObservation(df, x=0.0, y=0.0)
 
         with pytest.raises(
-            TypeError, match="NetworkModelResult supports NodeObservation and EdgeObservation"
+            TypeError, match="NetworkModelResult supports NodeObservation and ReachObservation"
         ):
             nmr.extract(obs)
 
@@ -454,7 +454,7 @@ def test_extract_edge_observation_happy_path(sample_node_data):
     network = Network.from_res1d(path_to_file)
     nmr = NetworkModelResult(network, item="Discharge", name="network_model")
     obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
-    obs = ms.EdgeObservation(obs_data, edge="100l1", item="Discharge")
+    obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
 
     extracted = nmr.extract(obs)
 
@@ -471,7 +471,7 @@ def test_extract_edge_observation_non_equivalent_breakpoints_raises(sample_node_
     network = Network.from_res1d(path_to_file)
     nmr = NetworkModelResult(network, item="Discharge")
     obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
-    obs = ms.EdgeObservation(obs_data, edge="113l1", item="Discharge")
+    obs = ms.ReachObservation(obs_data, reach="113l1", item="Discharge")
 
     with pytest.raises(
         ValueError, match="Not all data in breakpoints are equivalent"
@@ -488,7 +488,7 @@ def test_extract_edge_observation_with_reaches_not_populated_raises_valueerror(
     path_to_file = "./tests/testdata/network.res1d"
     network = Network.from_res1d(path_to_file, reaches=[])
     nmr = NetworkModelResult(network, item="WaterLevel")
-    obs = ms.EdgeObservation(sample_node_data, edge="100l1", item="WaterLevel")
+    obs = ms.ReachObservation(sample_node_data, reach="100l1", item="WaterLevel")
 
     with pytest.raises(ValueError, match="none of its breakpoints have data loaded"):
         nmr.extract(obs)
@@ -504,7 +504,7 @@ def test_extract_edge_observation_breakpoint_node_missing_raises_valueerror(
     network = Network.from_res1d(path_to_file)
     nmr = NetworkModelResult(network, item="Discharge")
     obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
-    baseline_obs = ms.EdgeObservation(obs_data, edge="100l1", item="Discharge")
+    baseline_obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
     node_id = nmr.extract(baseline_obs).node
     remaining_nodes = []
     for node in nmr.data.node.values:
@@ -513,7 +513,7 @@ def test_extract_edge_observation_breakpoint_node_missing_raises_valueerror(
             remaining_nodes.append(node_int)
     nmr.data = nmr.data.sel(node=remaining_nodes)
 
-    obs = ms.EdgeObservation(obs_data, edge="100l1", item="Discharge")
+    obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
 
     with pytest.raises(ValueError, match="matching breakpoint nodes are missing"):
         nmr.extract(obs)
@@ -611,7 +611,7 @@ def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
 
 
 class TestNodeObservationAliases:
-    """NodeObservation accepts int, str alias, and (edge, distance) tuple."""
+    """NodeObservation accepts int, str alias, and (reach, distance) tuple."""
 
     def test_integer_node_unchanged(self, sample_node_data):
         obs = NodeObservation(sample_node_data, node=42)
@@ -647,11 +647,11 @@ class TestNodeObservationAliases:
         obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
         assert obs.data.attrs["gtype"] == "node"
 
-    def test_tuple_node_has_edge_distance_coords(self, sample_node_data):
+    def test_tuple_node_has_reach_distance_coords(self, sample_node_data):
         obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
-        assert "edge" in obs.data.coords
+        assert "reach" in obs.data.coords
         assert "distance" in obs.data.coords
-        assert str(obs.data.coords["edge"].item()) == "reach_1"
+        assert str(obs.data.coords["reach"].item()) == "reach_1"
         assert float(obs.data.coords["distance"].item()) == pytest.approx(24.5)
 
     def test_tuple_node_has_no_node_coord(self, sample_node_data):
@@ -775,7 +775,7 @@ class TestNetworkModelResultAliasResolution:
         self, sample_network, sample_node_data
     ):
         nmr = NetworkModelResult(sample_network)
-        obs = NodeObservation(sample_node_data, at=("nonexistent_edge", 0.0))
+        obs = NodeObservation(sample_node_data, at=("nonexistent_reach", 0.0))
         with pytest.raises(ValueError, match="not found"):
             nmr.extract(obs)
 

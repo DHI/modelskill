@@ -28,7 +28,7 @@ uv add modelskill[networks]
 import pandas as pd
 import numpy as np
 from typing import Any
-from modelskill.network import Network, NetworkNode, NetworkEdge, EdgeBreakPoint
+from modelskill.network import Network, NetworkNode, NetworkReach, ReachBreakPoint
 
 
 class ExampleNode(NetworkNode):
@@ -51,18 +51,18 @@ class ExampleNode(NetworkNode):
         return {}
 
 
-class ExampleEdge(NetworkEdge):
-    """Edge connecting two nodes with a given length."""
+class ExampleReach(NetworkReach):
+    """Reach connecting two nodes with a given length."""
 
     def __init__(
         self,
-        edge_id: str,
+        reach_id: str,
         start: NetworkNode,
         end: NetworkNode,
         length: float,
         breakpoints: list | None = None,
     ):
-        self._id = edge_id
+        self._id = reach_id
         self._start = start
         self._end = end
         self._length = length
@@ -89,9 +89,9 @@ class ExampleEdge(NetworkEdge):
         return self._breakpoints
 
 
-class ExampleBreakPoint(EdgeBreakPoint):
-    def __init__(self, edge_id: str, distance: float, data: pd.DataFrame):
-        self._id = (edge_id, distance)
+class ExampleBreakPoint(ReachBreakPoint):
+    def __init__(self, reach_id: str, distance: float, data: pd.DataFrame):
+        self._id = (reach_id, distance)
         self._data = data
 
     @property
@@ -117,12 +117,12 @@ node_s2 = ExampleNode("sensor_2", df2)
 node_s3 = ExampleNode("sensor_3", df3)
 
 bp = ExampleBreakPoint("r1", 200.0, df4)
-edge1 = ExampleEdge("r1", node_s1, node_s2, length=500.0, breakpoints=[bp])
-edge2 = ExampleEdge("r2", node_s2, node_s3, length=300.0)
-network = Network(edges=[edge1, edge2])
+reach1 = ExampleReach("r1", node_s1, node_s2, length=500.0, breakpoints=[bp])
+reach2 = ExampleReach("r2", node_s2, node_s3, length=300.0)
+network = Network(reaches=[reach1, reach2])
 ```
 
-A **Network** represents a 1D pipe or river network as a directed graph: nodes hold timeseries data (e.g. water level at a junction) and edges carry the topology and reach length between them.  Break points along an edge (e.g. cross-section chainages) are supported as observation locations too.
+A **Network** represents a 1D pipe or river network as a directed graph: nodes hold timeseries data (e.g. water level at a junction) and reaches carry the topology and reach length between them.  Break points along a reach (e.g. cross-section chainages) are supported as observation locations too.
 
 The typical workflow is:
 
@@ -262,7 +262,7 @@ network.to_dataframe(sel="WaterLevel").head()
 After construction, nodes are re-labelled as integers.  Use `find()` to go from original coordinates to the integer ID and `recall()` to go back.
 
 ::: {.callout-tip}
-When creating `NodeObservation` objects for skill assessment you generally do **not** need to call `find()`.  You can pass the original string ID as `node=`, and `NetworkModelResult` will resolve it for you during matching.  For breakpoints, use `at=(edge, distance)` rather than `node=`.  See [Skill assessment workflow](#skill-assessment-workflow) for details.
+When creating `NodeObservation` objects for skill assessment you generally do **not** need to call `find()`.  You can pass the original string ID as `node=`, and `NetworkModelResult` will resolve it for you during matching.  For breakpoints, use `at=(reach, distance)` rather than `node=`.  See [Skill assessment workflow](#skill-assessment-workflow) for details.
 :::
 
 ```{python}
@@ -276,7 +276,7 @@ print(network.recall(node_id))
 
 ```{python}
 # Look up a break point by reach + chainage
-bp_id = network.find(edge="94l1", distance=21.285)
+bp_id = network.find(reach="94l1", distance=21.285)
 print(f"Break point (94l1, 21.285) → integer id {bp_id}")
 print(network.recall(bp_id))
 ```
@@ -288,12 +288,12 @@ print(ids)
 ```
 
 ```{python}
-# Edge lookup
-ids = network.find(edge="58l1", distance="start")
+# Reach lookup
+ids = network.find(reach="58l1", distance="start")
 print(ids)
-ids = network.find(edge="58l1", distance=[51.456, 77.185])
+ids = network.find(reach="58l1", distance=[51.456, 77.185])
 print(ids)
-ids = network.find(edge="58l1", distance=["start", 77.185])
+ids = network.find(reach="58l1", distance=["start", 77.185])
 print(ids)
 ```
 
@@ -331,9 +331,9 @@ cc.skill()
 Resolution happens inside `ms.match()`.  If the string is not found in the network's alias map a `ValueError` is raised with a clear message indicating which alias could not be resolved.
 :::
 
-#### Option B — breakpoint by `(edge, distance)` tuple
+#### Option B — breakpoint by `(reach, distance)` tuple
 
-When your observation sits at a chainage along a reach rather than at a named junction node, you can use the `at` argument and pass a `(edge_id, distance)` tuple.  The `NetworkModelResult` looks up the corresponding breakpoint at match time:
+When your observation sits at a chainage along a reach rather than at a named junction node, you can use the `at` argument and pass a `(reach_id, distance)` tuple.  The `NetworkModelResult` looks up the corresponding breakpoint at match time:
 
 ```python
 obs_bp = ms.NodeObservation(path_to_sensor_data_1, at=("94l1", 21.285))
@@ -342,7 +342,7 @@ cc = ms.match(obs=obs_bp, mod=mr)
 cc.skill()
 ```
 
-The tuple form is equivalent to calling `network.find(edge="94l1", distance=21.285)` beforehand and is resolved during matching.
+The tuple form is equivalent to calling `network.find(reach="94l1", distance=21.285)` beforehand and is resolved during matching.
 
 ::: {.callout-note}
 ## Chainage tolerance
@@ -350,14 +350,14 @@ The tuple form is equivalent to calling `network.find(edge="94l1", distance=21.2
 Breakpoint distances are matched with a tolerance of **1 × 10⁻³** (i.e. ±0.001 in whatever distance units the network uses).  This means that small floating-point discrepancies between the distance you type and the value stored in the network are handled gracefully.  If no breakpoint falls within that tolerance a `ValueError` is raised.
 :::
 
-### 3. Using EdgeObservation for edge-uniform quantities
+### 3. Using ReachObservation for reach-uniform quantities
 
-Some physical quantities — such as **discharge in a pipe** — are conceptually uniform across the whole edge, even though the model stores values at individual breakpoints along the reach. `EdgeObservation` lets you associate a timeseries with a named edge without having to identify a specific breakpoint.
+Some physical quantities — such as **discharge in a pipe** — are conceptually uniform across the whole reach, even though the model stores values at individual breakpoints along the reach. `ReachObservation` lets you associate a timeseries with a named reach without having to identify a specific breakpoint.
 
-When matched against a `NetworkModelResult`, modelskill automatically extracts model data from an arbitrary breakpoint that belongs to the given edge and verifies that all breakpoints on the edge carry equivalent values.
+When matched against a `NetworkModelResult`, modelskill automatically extracts model data from an arbitrary breakpoint that belongs to the given reach and verifies that all breakpoints on the reach carry equivalent values.
 
 ```{python}
-obs_q = ms.EdgeObservation(path_to_sensor_data_1, edge="94l1", name="Q_94l1")
+obs_q = ms.ReachObservation(path_to_sensor_data_1, reach="94l1", name="Q_94l1")
 obs_q
 ```
 
@@ -370,17 +370,17 @@ cc_q.skill()
 ```
 
 ::: {.callout-note}
-Use `EdgeObservation` when your measured quantity is representative of the whole reach (e.g. discharge, which is constant along a reach in steady flow).  If you need to compare a quantity that varies spatially along the edge (e.g. water level at a specific chainage), use a `NodeObservation` with a `(edge, distance)` tuple instead (see [Option C](#option-c-breakpoint-by-edge-distance-tuple) above).
+Use `ReachObservation` when your measured quantity is representative of the whole reach (e.g. discharge, which is constant along a reach in steady flow).  If you need to compare a quantity that varies spatially along the reach (e.g. water level at a specific chainage), use a `NodeObservation` with a `(reach, distance)` tuple instead (see [Option B](#option-b-breakpoint-by-reach-distance-tuple) above).
 :::
 
 ## Development
 
 ### Custom network formats
 
-In case you have your network data in a format that is not included in [Building a Network](#building-a-network), you can assemble a `Network` object by subclassing the abstract base classes `NetworkNode` and `NetworkEdge`.
+In case you have your network data in a format that is not included in [Building a Network](#building-a-network), you can assemble a `Network` object by subclassing the abstract base classes `NetworkNode` and `NetworkReach`.
 
 `NetworkNode` requires three properties: `id`, `data`, and `boundary`.
-`NetworkEdge` requires five: `id`, `start`, `end`, `length`, and `breakpoints`.
+`NetworkReach` requires five: `id`, `start`, `end`, `length`, and `breakpoints`.
 
 
 The following is a simple implementation example:
@@ -389,7 +389,7 @@ The following is a simple implementation example:
 import pandas as pd
 import numpy as np
 from typing import Any
-from modelskill.network import NetworkNode, NetworkEdge, Network
+from modelskill.network import NetworkNode, NetworkReach, Network
 
 
 class ExampleNode(NetworkNode):
@@ -412,14 +412,14 @@ class ExampleNode(NetworkNode):
         return {}
 
 
-class ExampleEdge(NetworkEdge):
-    """Edge connecting two nodes with a given length."""
+class ExampleReach(NetworkReach):
+    """Reach connecting two nodes with a given length."""
 
     def __init__(
-        self, edge_id: str, start: NetworkNode, end: NetworkNode, length: float,
+        self, reach_id: str, start: NetworkNode, end: NetworkNode, length: float,
         breakpoints: list | None = None,
     ):
-        self._id = edge_id
+        self._id = reach_id
         self._start = start
         self._end = end
         self._length = length
@@ -447,7 +447,7 @@ class ExampleEdge(NetworkEdge):
 ```
 
 ::: {.callout-tip}
-The three abstract properties that **every** `NetworkNode` subclass must implement are `id`, `data` and `boundary`. If `boundary` is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a `NetworkEdge` with no intermediate points can return an empty `breakpoints` list.
+The three abstract properties that **every** `NetworkNode` subclass must implement are `id`, `data` and `boundary`. If `boundary` is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a `NetworkReach` with no intermediate points can return an empty `breakpoints` list.
 :::
 
 
@@ -459,24 +459,24 @@ node_s1 = ExampleNode("sensor_1", df1)
 node_s2 = ExampleNode("sensor_2", df2)
 node_s3 = ExampleNode("sensor_3", df3)
 
-edge1 = ExampleEdge("r1", node_s1, node_s2, length=500.0)
-edge2 = ExampleEdge("r2", node_s2, node_s3, length=300.0)
+reach1 = ExampleReach("r1", node_s1, node_s2, length=500.0)
+reach2 = ExampleReach("r2", node_s2, node_s3, length=300.0)
 
-network = Network(edges=[edge1, edge2])
+network = Network(reaches=[reach1, reach2])
 network
 ```
 
 ### Adding break points along a reach
 
-Break points represent intermediate chainage locations on a reach (e.g. cross-sections).  Subclass `EdgeBreakPoint` the same way — implement `id` (a `(edge_id, distance)` tuple) and `data`:
+Break points represent intermediate chainage locations on a reach (e.g. cross-sections).  Subclass `ReachBreakPoint` the same way — implement `id` (a `(reach_id, distance)` tuple) and `data`:
 
 ```python
-from modelskill.network import EdgeBreakPoint
+from modelskill.network import ReachBreakPoint
 
 
-class ExampleBreakPoint(EdgeBreakPoint):
-    def __init__(self, edge_id: str, distance: float, data: pd.DataFrame):
-        self._id = (edge_id, distance)
+class ExampleBreakPoint(ReachBreakPoint):
+    def __init__(self, reach_id: str, distance: float, data: pd.DataFrame):
+        self._id = (reach_id, distance)
         self._data = data
 
     @property
@@ -490,9 +490,9 @@ class ExampleBreakPoint(EdgeBreakPoint):
 
 # df4 is a DataFrame object that has been loaded in memory
 bp = ExampleBreakPoint("r1", 200.0, df4)
-edge1 = ExampleEdge("r1", node_s1, node_s2, length=500.0, breakpoints=[bp])
-edge2 = ExampleEdge("r2", node_s2, node_s3, length=300.0)
-network = Network(edges=[edge1, edge2])
+reach1 = ExampleReach("r1", node_s1, node_s2, length=500.0, breakpoints=[bp])
+reach2 = ExampleReach("r2", node_s2, node_s3, length=300.0)
+network = Network(reaches=[reach1, reach2])
 ```
 
 
@@ -500,4 +500,4 @@ network = Network(edges=[edge1, edge2])
 
 * [API reference — NetworkModelResult](../api/NetworkModelResult.qmd)
 * [API reference — NodeObservation](../api/NodeObservation.qmd)
-* [API reference — EdgeObservation](../api/EdgeObservation.qmd)
+* [API reference — ReachObservation](../api/ReachObservation.qmd)

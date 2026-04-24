@@ -34,7 +34,7 @@ from .obs import (
     PointObservation,
     TrackObservation,
     NodeObservation,
-    EdgeObservation,
+    ReachObservation,
 )
 from .timeseries import TimeSeries
 from .types import Period
@@ -72,7 +72,7 @@ ObsTypes = Union[
     PointObservation,
     TrackObservation,
     NodeObservation,
-    EdgeObservation,
+    ReachObservation,
 ]
 ObsInputType = Union[
     str,
@@ -407,8 +407,8 @@ def _match_space_time(
             case NodeModelResult() as nmr, NodeObservation():
                 # mr is the extracted NodeModelResult
                 aligned = align_data(nmr.data, observation, max_gap=max_model_gap)
-            case NodeModelResult() as nmr, EdgeObservation():
-                # EdgeObservation is extracted to a NodeModelResult (any breakpoint on the edge)
+            case NodeModelResult() as nmr, ReachObservation():
+                # ReachObservation is extracted to a NodeModelResult (any breakpoint on the reach)
                 aligned = align_data(nmr.data, observation, max_gap=max_model_gap)
             case _:
                 raise TypeError(
