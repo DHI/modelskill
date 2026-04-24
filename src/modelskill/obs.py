@@ -446,6 +446,11 @@ class VerticalObservation(Observation):
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
 
+    @property
+    def z(self):
+        return self._coordinate_values("z")
+        # return self.data.z
+
 
 def unit_display_name(name: str) -> str:
     """Display name

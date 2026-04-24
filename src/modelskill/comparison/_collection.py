@@ -293,6 +293,7 @@ class ComparerCollection(Mapping):
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,
         area: Optional[List[float]] = None,
+        z: Optional[Union[float, slice]] = None,
         **kwargs: Any,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
@@ -313,6 +314,7 @@ class ComparerCollection(Mapping):
             Time. If None, all times are selected.
         area : list of float, optional
             bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
+        z: Optional[float | slice] = None,
         **kwargs
             Filtering by comparer attrs similar to xarray.Dataset.filter_by_attrs
             e.g. `sel(gtype='track')` or `sel(obs_provider='CMEMS')` if at least
@@ -357,6 +359,7 @@ class ComparerCollection(Mapping):
                     end=end,
                     time=time,
                     area=area,
+                    z=z
                 )
                 if cmpsel is not None:
                     # TODO: check if cmpsel is empty
