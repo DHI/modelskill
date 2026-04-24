@@ -835,7 +835,7 @@ class Comparer:
         area : list of float, optional
             bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
         z : float or slice, optional
-            Select by z coordinate. 
+            Select by z coordinate.
 
         Returns
         -------
@@ -867,11 +867,14 @@ class Comparer:
             raw_mod = {}
             # Nearest time selection for raw_mod_data,
             # as it may not have the same time points as the matched data
-            for k, v in raw_mod_data.items():
-                time_vals = v.time.values
-                idx = np.abs(time_vals - np.datetime64(time)).argmin()
-                raw_mod[k] = v.sel(time=time_vals[idx])
-            raw_mod_data = raw_mod
+            if isinstance(time, slice):
+                raw_mod_data = {k: v.sel(time=time) for k, v in raw_mod_data.items()}  # type: ignore
+            else:
+                for k, v in raw_mod_data.items():
+                    time_vals = v.time.values
+                    idx = np.abs(time_vals - np.datetime64(time)).argmin()
+                    raw_mod[k] = v.sel(time=time_vals[idx])
+                raw_mod_data = raw_mod
         if area is not None:
             if _area_is_bbox(area):
                 x0, y0, x1, y1 = area
@@ -963,7 +966,10 @@ class Comparer:
     ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
 
-        data = self.data.drop_vars("z", errors="ignore")
+        if self.gtype == "vertical":
+            data = self.data
+        else:
+            data = self.data.drop_vars("z", errors="ignore")
 
         # this step is necessary since we keep arbitrary derived data in the dataset, but not z
         # i.e. using a hardcoded whitelist of variables to keep is less flexible
