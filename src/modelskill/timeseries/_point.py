@@ -12,7 +12,7 @@ from ..types import GeometryType, PointType
 from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
-from ._coords import XYZCoords, NodeCoords, BreakpointCoords
+from ._coords import XYZCoords, NodeCoords, ReachCoords
 
 
 @dataclass
@@ -143,7 +143,7 @@ def _convert_to_dataset(
 def _include_coords(
     ds: xr.Dataset,
     *,
-    coords: XYZCoords | NodeCoords | BreakpointCoords | None = None,
+    coords: XYZCoords | NodeCoords | ReachCoords | None = None,
 ) -> xr.Dataset:
     ds = ds.copy()
     if coords is not None:
@@ -166,7 +166,7 @@ def _include_attributes(
 ) -> xr.Dataset:
     ds = ds.copy()
 
-    if "node" in ds.coords or "edge" in ds.coords:
+    if "node" in ds.coords or "reach" in ds.coords:
         ds.attrs["gtype"] = str(GeometryType.NODE)
     else:
         ds.attrs["gtype"] = str(GeometryType.POINT)
@@ -243,7 +243,7 @@ def _parse_point_input(
     quantity: Quantity | None,
     aux_items: Sequence[int | str] | None,
     *,
-    coords: XYZCoords | NodeCoords | BreakpointCoords,
+    coords: XYZCoords | NodeCoords | ReachCoords,
 ) -> xr.Dataset:
     """Convert accepted input data to an xr.Dataset."""
 
@@ -299,10 +299,15 @@ def _parse_network_breakpoint_input(
     quantity: Quantity | None,
     aux_items: Sequence[int | str] | None,
     *,
-    edge: str,
-    distance: float,
+    reach: str,
+    distance: float | None = None,
 ) -> xr.Dataset:
-    """Parse input for a breakpoint observation identified by edge + distance."""
-    coords = BreakpointCoords(edge=edge, distance=distance)
+    """Parse input for a breakpoint (or reach-level) observation.
+
+    When ``distance`` is ``None`` the observation is reach-level — no
+    ``distance`` coordinate is stored and the result can be matched to any
+    breakpoint on the reach.
+    """
+    coords = ReachCoords(reach=reach, distance=distance)
     ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds

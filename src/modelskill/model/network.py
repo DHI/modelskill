@@ -9,7 +9,7 @@ import xarray as xr
 
 from modelskill.timeseries import TimeSeries, _parse_network_node_input
 from ._base import SelectedItems
-from ..obs import NodeObservation
+from ..obs import NodeObservation, ReachObservation
 from ..quantity import Quantity
 from ..types import PointType
 
@@ -114,7 +114,7 @@ class NetworkModelResult:
     --------
     >>> import modelskill as ms
     >>> from modelskill.network import Network
-    >>> network = Network(edges)  # edges is a list[NetworkEdge]
+    >>> network = Network(reaches)  # reaches is a list[NetworkReach]
     >>> mr = ms.NetworkModelResult(network, name="MyModel")
     >>> obs = ms.NodeObservation(data, node=network.find(node="node_A"))
     >>> extracted = mr.extract(obs)
@@ -129,7 +129,9 @@ class NetworkModelResult:
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
     ):
-        ds = data.to_dataset()
+        self.network = data.copy()
+
+        ds = self.network.to_dataset()
         sel_items = SelectedItems.parse(
             list(ds.data_vars), item=item, aux_items=aux_items
         )
@@ -138,7 +140,6 @@ class NetworkModelResult:
         self.data = ds[sel_items.all]
         self.name = name
         self.sel_items = sel_items
-        self._alias_map: dict[str | tuple[str, float], int] = data._alias_map
 
         if quantity is None:
             da = self.data[sel_items.values]
@@ -165,38 +166,36 @@ class NetworkModelResult:
 
     def extract(
         self,
-        observation: NodeObservation,
+        observation: NodeObservation | ReachObservation,
     ) -> NodeModelResult:
-        """Extract ModelResult at exact node locations
+        """Extract ModelResult at exact node or reach locations
 
         Parameters
         ----------
-        observation : NodeObservation
-            observation with node ID (only NodeObservation supported)
+        observation : NodeObservation or ReachObservation
+            observation with node ID or reach ID
 
         Returns
         -------
         NodeModelResult
             extracted model result
         """
-        if not isinstance(observation, NodeObservation):
+        if isinstance(observation, NodeObservation):
+            return self._extract_node(observation)
+        elif isinstance(observation, ReachObservation):
+            return self._extract_reach(observation)
+        else:
             raise TypeError(
-                f"NetworkModelResult only supports NodeObservation, got {type(observation).__name__}"
+                f"NetworkModelResult supports NodeObservation and ReachObservation, got {type(observation).__name__}"
             )
 
-        if observation.at is not None:
-            at = observation.at
-            node_id = self._resolve_alias(at)
-        else:
-            raw_id: int | str = observation.node  # type: ignore[assignment]
-            if isinstance(raw_id, str):
-                node_id = self._resolve_alias(raw_id)
-            else:
-                node_id = raw_id
-        if node_id not in self.data.node:
-            raise ValueError(
-                f"Node {node_id} not found. Available: {list(self.nodes[:5])}..."
-            )
+    def _extract_node(self, observation: NodeObservation) -> NodeModelResult:
+        if observation.at is None and observation.node is None:
+            raise ValueError("NodeObservation must have either 'node' or 'at' set")
+
+        raw_id = observation.at if observation.at is not None else observation.node
+        assert raw_id is not None  # Redundant assertion, included for mypy
+        node_id = self._resolve_alias(raw_id)
 
         return NodeModelResult(
             data=self.data.sel(node=node_id).drop_vars("node"),
@@ -207,51 +206,115 @@ class NetworkModelResult:
             aux_items=self.sel_items.aux,
         )
 
-    def _resolve_alias(self, alias: str | tuple[str, float]) -> int:
-        """Resolve a node alias to an internal node ID.
+    def _extract_reach(self, observation: ReachObservation) -> NodeModelResult:
+        # Extract model result from an arbitrary breakpoint belonging to the reach.
 
-        Parameters
-        ----------
-        alias : str | tuple[str, float]
-            Node alias as either a node name string or a breakpoint tuple
-            ``(edge_id, distance)``.
+        # Searches the alias map for breakpoints whose reach component matches
+        # ``observation.reach``, then returns the first one that has data in the
+        # dataset.  Raises if no breakpoint with data is found or if the quantity
+        # is not present for any breakpoint of that reach.
 
-        Returns
-        -------
-        int
-            Internal node ID.
+        item = self.sel_items.values
+        reach_id = observation.reach
 
-        Notes
-        -----
-        Breakpoint tuple aliases are matched first by exact key lookup and then
-        by edge ID and distance within ``_CHAINAGE_TOLERANCE``. If multiple
-        candidates are within tolerance, the closest distance is selected; ties
-        are broken by choosing the smallest node ID. Distance units are the
-        same as the network chainage units.
-        """
-        if alias in self._alias_map:
-            return self._alias_map[alias]
+        try:
+            reach = self.network._reaches[reach_id]
+        except KeyError:
+            raise ValueError(f"Reach {reach_id} not found in network.")
 
-        if isinstance(alias, tuple):
-            edge_id, distance = alias
-            candidates: list[tuple[float, int]] = []
-            for key, node_id in self._alias_map.items():
-                if isinstance(key, tuple) and key[0] == edge_id:
-                    diff = abs(key[1] - distance)
-                    if diff <= self._CHAINAGE_TOLERANCE:
-                        candidates.append((diff, node_id))
-            if candidates:
-                return min(candidates, key=lambda candidate: (candidate[0], candidate[1]))[
-                    1
-                ]
+        # This only searches intermediate breakpoints since reach-level data is not
+        # expected in nodes.
 
-        available = list(self._alias_map.keys())[:5]
-        if isinstance(alias, tuple):
+        available_nodes = {int(node_id) for node_id in self.data.node.values}
+        found_ds = None
+        found_int_id: int | None = None
+        missing_node_data = False
+        for breakpoint in reach.breakpoints:
+            if breakpoint.data is None:
+                continue
+            if item not in breakpoint.data.columns:
+                continue
+
+            int_id = self.network.find(reach=breakpoint.id[0], distance=breakpoint.distance)
+            if int_id not in available_nodes:
+                missing_node_data = True
+                continue
+
+            ds = self.data.sel(node=int_id).drop_vars("node")
+            if found_ds is not None:
+                da1, da2 = xr.align(ds[item], found_ds[item], join="inner")
+                if not np.allclose(da1.values, da2.values, equal_nan=True):
+                    raise ValueError(
+                        "Not all data in breakpoints are equivalent. "
+                        "Select a specific node instead of the reach."
+                    )
+            else:
+                found_ds = ds
+                found_int_id = int_id
+
+        if found_ds is not None and found_int_id is not None:
+            return NodeModelResult(
+                data=found_ds,
+                node=found_int_id,
+                name=self.name,
+                item=item,
+                quantity=self.quantity,
+                aux_items=self.sel_items.aux,
+            )
+        if missing_node_data:
             raise ValueError(
-                f"Breakpoint {alias} not found in network. "
+                f"Reach '{reach_id}' has breakpoint data for quantity "
+                f"'{item}', but matching breakpoint nodes are "
+                "missing from the model dataset. Re-create the NetworkModelResult "
+                "with the relevant reaches populated."
+            )
+
+        raise ValueError(
+            f"Reach '{reach_id}' was found in the network but none of its "
+            f"breakpoints have data loaded for quantity '{self.sel_items.values}'. "
+            f"Re-create the NetworkModelResult with the relevant reaches populated."
+        )
+
+    def _resolve_alias(self, alias: int | str | tuple[str, float]) -> int:
+        # Resolve a node alias to an internal node ID.
+
+        # Breakpoint tuple aliases are matched first by exact key lookup and then
+        # by reach ID and distance within ``_CHAINAGE_TOLERANCE``. If multiple
+        # candidates are within tolerance, the closest distance is selected; ties
+        # are broken by choosing the smallest node ID. Distance units are the
+        # same as the network chainage units.
+
+        if isinstance(alias, int):
+            if alias not in self.data.node:
+                raise ValueError(
+                    f"Node {alias} not found. Available: {list(self.nodes[:5])}..."
+                )
+            return alias
+        else:
+            if alias in self.network._alias_map:
+                return self.network._alias_map[alias]
+
+            if isinstance(alias, tuple):
+                # Handle tolerances
+                reach_id, distance = alias
+                candidates: list[tuple[float, int]] = []
+                for key, node_id in self.network._alias_map.items():
+                    if isinstance(key, tuple) and key[0] == reach_id:
+                        diff = abs(key[1] - distance)
+                        if diff <= self._CHAINAGE_TOLERANCE:
+                            candidates.append((diff, node_id))
+                if candidates:
+                    return min(
+                        candidates, key=lambda candidate: (candidate[0], candidate[1])
+                    )[1]
+
+            available = list(self.network._alias_map.keys())[:5]
+            if isinstance(alias, tuple):
+                raise ValueError(
+                    f"Breakpoint {alias} not found in network. "
+                    f"Available aliases (first 5): {available}"
+                )
+            raise ValueError(
+                f"Node alias '{alias}' not found in network. "
                 f"Available aliases (first 5): {available}"
             )
-        raise ValueError(
-            f"Node alias '{alias}' not found in network. "
-            f"Available aliases (first 5): {available}"
-        )
