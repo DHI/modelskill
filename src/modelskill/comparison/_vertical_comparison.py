@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import matplotlib
 import numpy as np
+import pandas as pd
 from typing import TYPE_CHECKING, Callable, Iterable, Sequence, Tuple
 from ..types import GeometryType
 
@@ -9,6 +10,9 @@ from ..plotting._misc import _get_fig_ax
 import xarray as xr
 from matplotlib import dates as mdates
 from ..model import PointModelResult
+from ..metrics import _parse_metric
+from ..skill_profile import SkillProfile
+from ._utils import _groupby_df, _parse_groupby
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -18,12 +22,10 @@ class VerticalPlotter:
     def __init__(self, comparer):
         self.comparer = comparer
 
-    def __call__(
-        self, *args, **kwargs
-    ) -> matplotlib.axes.Axes:
+    def __call__(self, *args, **kwargs) -> matplotlib.axes.Axes:
         """Plot scatter plot of modelled vs observed data"""
         return self.profile(*args, **kwargs)
-    
+
     def profile(
         self,
         title: str | None = None,
@@ -85,6 +87,8 @@ class VerticalPlotter:
         ax.legend([*cmp.mod_names, cmp._obs_name])
         ax.grid(True)
         ax.set_title(title)
+        if self._pos_z():
+            ax.invert_yaxis()
         return ax
 
     def hovmoller(
@@ -93,7 +97,7 @@ class VerticalPlotter:
         title: str | None = None,
         ylim: Tuple[float, float] | None = None,
         ax: matplotlib.axes.Axes | None = None,
-        figsize: Tuple[float, float] | None = None,
+        figsize: Tuple[float, float] | None = (12, 4),
         obs_marker_size: float = 20.0,
         **kwargs,
     ) -> matplotlib.axes.Axes:
@@ -137,19 +141,30 @@ class VerticalPlotter:
         t = cmp.raw_mod_data[mod_name].time
         v = mod_at_obs
 
-        T = np.array(sorted(set(t)))
-        n_layers = len(z) // len(T)  # assuming equal number of layers
+        T = np.unique(t)
+        n_times = T.size
+
+        if n_times == 0:
+            raise ValueError(
+                "No timesteps found in vertical profile data (t is empty)."
+            )
+
+        n_layers, remainder = divmod(len(z), n_times)
+        if remainder:
+            raise ValueError(
+                "Inconsistent vertical profile data: expected equal number of z layers per time step. "
+                f"Got len(z)={len(z)} and len(unique time)={n_times}."
+            )
 
         Z = z.reshape(len(T), n_layers)
         V = v.reshape(len(T), n_layers)
         T_grid, _ = np.meshgrid(T, np.arange(n_layers), indexing="ij")
         cf = ax.contourf(T_grid, Z, V, **kwargs)
-        ax.figure.colorbar(cf, ax=ax)
-        z_pos = False
-        if z_pos:
+        cbar = ax.figure.colorbar(cf, ax=ax)
+        cbar.set_label(cmp._unit_text)
+        if self._pos_z():
             ax.invert_yaxis()
 
-        # observations
         # # Overlay observation points
         obs = cmp.data["Observation"]
         obs_t = set(sorted(obs.time.values))
@@ -161,10 +176,23 @@ class VerticalPlotter:
                 obs_on_date["z"],
                 c=obs_on_date.values,
                 s=marker_size,
+                edgecolors="none",
+                linewidths=1,
+                vmin=V.min(),
+                vmax=V.max(),
+                marker="s",
+            )
+
+            ax.scatter(
+                [date] * len(obs_on_date),
+                obs_on_date["z"],
+                c=obs_on_date.values,
+                s=10,
                 edgecolors="white",
                 linewidths=1,
                 vmin=V.min(),
                 vmax=V.max(),
+                marker=".",
             )
 
         # Scale dates
@@ -175,12 +203,14 @@ class VerticalPlotter:
         )
 
         ax.set_title(title)
-        unit_text = cmp._unit_text
-        ax.set_ylabel(kwargs.get("ylabel", f"Model, {unit_text}"))
+        ax.set_ylabel("z")
         if ylim is not None:
             ax.set_ylim(ylim)
 
         return ax
+
+    def _pos_z(self):
+        return abs(self.comparer.z.max()) > abs(self.comparer.z.min())
 
 
 class VerticalAccessor:
@@ -245,54 +275,109 @@ class VerticalAccessor:
         self,
         bins: int | Sequence[Tuple[float, float]] | None = 5,
         binsize: float | None = None,
+        by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-    ):
-        """
-        Compute skill metrics as a function of depth (z).
+        n_min: int | None = None,
+    ) -> SkillProfile:
+        """Compute skill metrics as a function of depth using depth bins.
+
+        This method computes metrics directly on binned long-format data (similar to
+        `Comparer.gridded_skill`) and returns an xarray-backed `SkillProfile`.
 
         Parameters
         ----------
-        metrics : list or None
-            List of metric names or callables to compute (default: standard metrics).
-        bins : int, sequence of tuple, or None
-            Number of equal-width bins or sequence of depth bin edges as tuples (min, max). Mutually exclusive with binsize.
-        binsize : float or None
-            Bin size for depth (overrides bins if provided). Mutually exclusive with bins.
+        bins : int, sequence of tuple, or None, optional
+            Number of equal-width bins or sequence of explicit depth intervals as
+            tuples (min, max). If `None`, returns `None`.
+        binsize : float, optional
+            Bin size for depth. If provided, overrides `bins`.
+        by : str or iterable of str, optional
+            Additional group-by fields, e.g. ``"freq:M"``.
+        metrics : list, str, callable, optional
+            Metrics to compute.
+        n_min : int, optional
+            Minimum number of observations in a depth bin; bins with fewer
+            observations get metric values of `np.nan`.
 
         Returns
         -------
         SkillProfile
-            Skill metrics aggregated by depth.
+            Depth-binned skill metrics.
         """
-        from ._collection import ComparerCollection
+        cmp = self._comparer
+        if cmp.n_points == 0:
+            raise ValueError("No data selected for skill assessment")
 
-        ds = self._comparer.data
-
-        # Determine binning strategy
-        zmin, zmax = float(ds["z"].min()), float(ds["z"].max())
-        if binsize is not None:
-            _bins = np.arange(zmin, zmax + binsize, binsize)
-            _bins = [(bin, bin + binsize) for bin in _bins[:-1]]
-        elif bins is not None:
-            if isinstance(bins, int):
-                binsize = (zmax - zmin) / bins
-                _bins = np.arange(zmin, zmax + binsize, binsize)
-                _bins = [(bin, bin + binsize) for bin in _bins[:-1]]
-            else:
-                _bins = bins
-        else:
-            return None
-
-        cmps = []
-        for b in _bins:
-            name = f"{round(abs(b[0]), 2)}m-{round(abs(b[1]), 2)}m"
-            cmps.append(
-                self._comparer.where(
-                    (self._comparer.data["z"] >= b[0])
-                    & (self._comparer.data["z"] < b[1])
-                ).rename({self._comparer.name: name})
+        z_bins = self._resolve_z_bins(cmp.data, bins=bins, binsize=binsize)
+        if len(z_bins) <= 1:
+            raise ValueError(
+                "Only one depth bin found, skill profile requires multiple bins. "
+                "Adjust 'bins' or 'binsize' parameters or use skill() "
+                "method on Comparer directly for overall skill."
             )
-        return ComparerCollection(cmps).skill(metrics=metrics)
+
+        metric_funcs = _parse_metric(metrics, directional=cmp.quantity.is_directional)
+
+        df = cmp._to_long_dataframe()
+
+        df = self._add_depth_bins_to_df(df=df, z_bins=z_bins)
+
+        agg_cols = _parse_groupby(by=by, n_mod=cmp.n_models, n_qnt=1)
+        if "z" not in agg_cols:
+            agg_cols.insert(0, "z")
+
+        df = df.drop(columns=["z"]).rename(columns={"zBin": "z"})
+        res = _groupby_df(df, by=agg_cols, metrics=metric_funcs, n_min=n_min)
+
+        ds = res.to_xarray().squeeze()
+
+        return SkillProfile(ds)
+
+    @staticmethod
+    def _resolve_z_bins(
+        ds: xr.Dataset,
+        *,
+        bins: int | Sequence[Tuple[float, float]] | None,
+        binsize: float | None,
+    ) -> list[tuple[float, float]]:
+        zmin, zmax = float(ds["z"].min()), float(ds["z"].max())
+
+        if binsize is not None:
+            edges = np.arange(zmin, zmax + binsize, binsize)
+            return [(float(edge), float(edge + binsize)) for edge in edges[:-1]]
+
+        if bins is None:
+            raise ValueError("bins cannot be None")
+
+        if isinstance(bins, int):
+            binsize = (zmax - zmin) / bins
+            edges = np.arange(zmin, zmax + binsize, binsize)
+            return [(float(edge), float(edge + binsize)) for edge in edges[:-1]]
+
+        return [(float(lo), float(hi)) for lo, hi in bins]
+
+    @staticmethod
+    def _add_depth_bins_to_df(
+        *, df: pd.DataFrame, z_bins: Sequence[tuple[float, float]]
+    ) -> pd.DataFrame:
+        labels = [f"{round(abs(lo), 2)}-{round(abs(hi), 2)}" for lo, hi in z_bins]
+
+        zbin = pd.Series(
+            pd.Categorical([np.nan] * len(df), categories=labels, ordered=True),
+            index=df.index,
+        )
+        last_idx = len(z_bins) - 1
+        for i, ((lo, hi), label) in enumerate(zip(z_bins, labels)):
+            # Make the last bin right-inclusive to ensure full coverage of max depth.
+            if i == last_idx:
+                mask = (df["z"] >= lo) & (df["z"] <= hi)
+            else:
+                mask = (df["z"] >= lo) & (df["z"] < hi)
+            zbin = zbin.where(~mask, label)
+
+        df = df.copy()
+        df["zBin"] = zbin
+        return df
 
     def _raw_model_to_z(self, raw_mod, z):
         df = raw_mod.data[[raw_mod.name]].to_dataframe()
