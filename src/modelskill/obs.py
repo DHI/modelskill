@@ -36,9 +36,9 @@ Serializable = Union[str, int, float]
 def observation(
     data: DataInputType,
     *,
-    gtype: Literal["point", "track", "node", "edge"] | None = None,
+    gtype: Literal["point", "track", "node", "reach"] | None = None,
     **kwargs,
-) -> PointObservation | TrackObservation | NodeObservation | EdgeObservation:
+) -> PointObservation | TrackObservation | NodeObservation | ReachObservation:
     """Create an appropriate observation object.
 
     A factory function for creating an appropriate observation object
@@ -47,20 +47,20 @@ def observation(
     If 'x' or 'y' is given, a PointObservation is created.
     If 'x_item' or 'y_item' is given, a TrackObservation is created.
     If 'node' is given, a NodeObservation is created.
-    If 'edge' is given (without 'distance'), an EdgeObservation is created.
+    If 'reach' is given (without 'distance'), a ReachObservation is created.
 
     Parameters
     ----------
     data : DataInputType
         The data to be used for creating the Observation object.
-    gtype : Literal["point", "track", "node", "edge"] | None
+    gtype : Literal["point", "track", "node", "reach"] | None
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
         Additional keyword arguments to be passed to the Observation constructor.
 
     Returns
     -------
-    PointObservation or TrackObservation or NodeObservation or EdgeObservation
+    PointObservation or TrackObservation or NodeObservation or ReachObservation
         An observation object of the appropriate type
 
     Examples
@@ -69,19 +69,19 @@ def observation(
     >>> o_pt = ms.observation(df, item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o_tr = ms.observation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
     >>> o_node = ms.observation(df, item="Water Level", node=123, name="123")
-    >>> o_edge = ms.observation(df, item="Discharge", edge="reach_1", name="reach_1_Q")
+    >>> o_reach = ms.observation(df, item="Discharge", reach="reach_1", name="reach_1_Q")
     """
-    # EdgeObservation is handled directly since it shares the NODE gtype internally.
-    # If both edge and distance are provided, this represents a network location
-    # along an edge and should be treated as a NodeObservation via at=(edge, distance).
-    if gtype == "edge" or (gtype is None and "edge" in kwargs):
+    # ReachObservation is handled directly since it shares the NODE gtype internally.
+    # If both reach and distance are provided, this represents a network location
+    # along a reach and should be treated as a NodeObservation via at=(reach, distance).
+    if gtype == "reach" or (gtype is None and "reach" in kwargs):
         if "distance" in kwargs:
             node_kwargs = dict(kwargs)
-            edge = node_kwargs.pop("edge")
+            reach = node_kwargs.pop("reach")
             distance = node_kwargs.pop("distance")
-            node_kwargs["at"] = (edge, distance)
+            node_kwargs["at"] = (reach, distance)
             return NodeObservation(data=data, **node_kwargs)
-        return EdgeObservation(data=data, **kwargs)
+        return ReachObservation(data=data, **kwargs)
 
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
@@ -105,7 +105,7 @@ def _guess_gtype(**kwargs) -> GeometryType:
         return GeometryType.NODE
     else:
         warnings.warn(
-            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation, TrackObservation, NodeObservation, or EdgeObservation to be explicit."
+            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation, TrackObservation, NodeObservation, or ReachObservation to be explicit."
         )
         return GeometryType.POINT
 
@@ -371,7 +371,7 @@ class NodeObservation(Observation):
     (e.g. the original Res1D node name). String aliases are resolved to
     integer IDs automatically when matched against a
     :class:`~modelskill.model.network.NetworkModelResult`.
-    For breakpoint locations (edge + distance), use the ``at`` parameter.
+    For breakpoint locations (reach + distance), use the ``at`` parameter.
 
     To create multiple NodeObservation objects from a single data source,
     use :method:`from_multiple`.
@@ -389,7 +389,7 @@ class NodeObservation(Observation):
 
         Mutually exclusive with ``at``.
     at : tuple[str, float], optional
-        Breakpoint location as ``(edge_id, distance)`` along an edge, resolved
+        Breakpoint location as ``(reach_id, distance)`` along a reach, resolved
         via the alias map when matched against a
         :class:`~modelskill.model.network.NetworkModelResult`.
         Mutually exclusive with ``node``.
@@ -415,7 +415,7 @@ class NodeObservation(Observation):
     >>>
     >>> o3 = ms.NodeObservation(data, node="node_A")
     >>>
-    >>> # Breakpoint as (edge_id, distance) tuple
+    >>> # Breakpoint as (reach_id, distance) tuple
     >>> o4 = ms.NodeObservation(data, at=("reach_1", 24.5))
     >>>
     >>> # Multiple node observations from separate data sources
@@ -440,7 +440,7 @@ class NodeObservation(Observation):
         if node is None and at is None:
             raise ValueError("Either 'node' or 'at' must be provided.")
         if at is not None:
-            edge, distance = str(at[0]), float(at[1])
+            reach, distance = str(at[0]), float(at[1])
             if not self._is_input_validated(data):
                 data = _parse_network_breakpoint_input(
                     data,
@@ -448,7 +448,7 @@ class NodeObservation(Observation):
                     item=item,
                     quantity=quantity,
                     aux_items=aux_items,
-                    edge=edge,
+                    reach=reach,
                     distance=distance,
                 )
         else:
@@ -467,27 +467,27 @@ class NodeObservation(Observation):
     @property
     def node(self) -> int | str | None:
         """Node ID of observation, or ``None`` if this is a breakpoint observation (use ``at`` instead)."""
-        if "edge" in self.data.coords:
+        if "reach" in self.data.coords:
             return None
         return self.data.coords["node"].item()  # int or str
 
     @property
     def at(self) -> tuple[str, float] | None:
-        """Breakpoint location as ``(edge_id, distance)``, or ``None`` if this is a node observation (use ``node`` instead)."""
-        if "edge" in self.data.coords:
+        """Breakpoint location as ``(reach_id, distance)``, or ``None`` if this is a node observation (use ``node`` instead)."""
+        if "reach" in self.data.coords:
             return (
-                str(self.data.coords["edge"].item()),
+                str(self.data.coords["reach"].item()),
                 float(self.data.coords["distance"].item()),
             )
         return None
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
         """Reconstruct instance from a dataset slice."""
-        if "edge" in data.coords:
+        if "reach" in data.coords:
             return self.__class__(
                 data,
                 at=(
-                    str(data.coords["edge"].item()),
+                    str(data.coords["reach"].item()),
                     float(data.coords["distance"].item()),
                 ),
             )
@@ -597,22 +597,22 @@ class NodeObservation(Observation):
             ]
 
 
-class EdgeObservation(Observation):
-    """Class for observations representing a quantity uniform across a network edge.
+class ReachObservation(Observation):
+    """Class for observations representing a quantity uniform across a network reach.
 
     Some quantities (e.g. discharge in a river reach) are constant for the
-    whole edge, even though the underlying model stores values at
-    nodes/breakpoints.  An EdgeObservation associates a timeseries with a
-    named edge; when matched against a
+    whole reach, even though the underlying model stores values at
+    nodes/breakpoints.  A ReachObservation associates a timeseries with a
+    named reach; when matched against a
     :class:`~modelskill.model.network.NetworkModelResult` the data is
-    extracted from an arbitrary breakpoint that belongs to that edge.
+    extracted from an arbitrary breakpoint that belongs to that reach.
 
     Parameters
     ----------
     data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
-        data source with time series for the edge quantity
-    edge : str
-        Edge identifier (reach name / edge ID) in the network.
+        data source with time series for the reach quantity
+    reach : str
+        Reach identifier (reach name / reach ID) in the network.
     item : (int, str), optional
         index or name of the wanted item/column, by default None
         if data contains more than one item, item must be given
@@ -630,14 +630,14 @@ class EdgeObservation(Observation):
     Examples
     --------
     >>> import modelskill as ms
-    >>> o1 = ms.EdgeObservation(df, edge="reach_1", name="Q_reach_1")
-    >>> o2 = ms.EdgeObservation(df, item="Discharge", edge="reach_2")
+    >>> o1 = ms.ReachObservation(df, reach="reach_1", name="Q_reach_1")
+    >>> o2 = ms.ReachObservation(df, item="Discharge", reach="reach_2")
     """
 
     def __init__(
         self,
         data: PointType,
-        edge: str,
+        reach: str,
         *,
         item: int | str | None = None,
         name: str | None = None,
@@ -653,20 +653,20 @@ class EdgeObservation(Observation):
                 item=item,
                 quantity=quantity,
                 aux_items=aux_items,
-                edge=edge,
+                reach=reach,
                 distance=None,
             )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
 
     @property
-    def edge(self) -> str:
-        """Edge ID of this observation."""
-        return str(self.data.coords["edge"].item())
+    def reach(self) -> str:
+        """Reach ID of this observation."""
+        return str(self.data.coords["reach"].item())
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
         """Reconstruct instance from a dataset slice."""
-        return self.__class__(data, edge=str(data.coords["edge"].item()))
+        return self.__class__(data, reach=str(data.coords["reach"].item()))
 
 
 def unit_display_name(name: str) -> str:

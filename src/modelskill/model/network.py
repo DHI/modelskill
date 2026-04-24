@@ -9,7 +9,7 @@ import xarray as xr
 
 from modelskill.timeseries import TimeSeries, _parse_network_node_input
 from ._base import SelectedItems
-from ..obs import NodeObservation, EdgeObservation
+from ..obs import NodeObservation, ReachObservation
 from ..quantity import Quantity
 from ..types import PointType
 
@@ -114,7 +114,7 @@ class NetworkModelResult:
     --------
     >>> import modelskill as ms
     >>> from modelskill.network import Network
-    >>> network = Network(edges)  # edges is a list[NetworkEdge]
+    >>> network = Network(reaches)  # reaches is a list[NetworkReach]
     >>> mr = ms.NetworkModelResult(network, name="MyModel")
     >>> obs = ms.NodeObservation(data, node=network.find(node="node_A"))
     >>> extracted = mr.extract(obs)
@@ -166,14 +166,14 @@ class NetworkModelResult:
 
     def extract(
         self,
-        observation: NodeObservation | EdgeObservation,
+        observation: NodeObservation | ReachObservation,
     ) -> NodeModelResult:
-        """Extract ModelResult at exact node or edge locations
+        """Extract ModelResult at exact node or reach locations
 
         Parameters
         ----------
-        observation : NodeObservation or EdgeObservation
-            observation with node ID or edge ID
+        observation : NodeObservation or ReachObservation
+            observation with node ID or reach ID
 
         Returns
         -------
@@ -182,11 +182,11 @@ class NetworkModelResult:
         """
         if isinstance(observation, NodeObservation):
             return self._extract_node(observation)
-        elif isinstance(observation, EdgeObservation):
-            return self._extract_edge(observation)
+        elif isinstance(observation, ReachObservation):
+            return self._extract_reach(observation)
         else:
             raise TypeError(
-                f"NetworkModelResult supports NodeObservation and EdgeObservation, got {type(observation).__name__}"
+                f"NetworkModelResult supports NodeObservation and ReachObservation, got {type(observation).__name__}"
             )
 
     def _extract_node(self, observation: NodeObservation) -> NodeModelResult:
@@ -206,36 +206,36 @@ class NetworkModelResult:
             aux_items=self.sel_items.aux,
         )
 
-    def _extract_edge(self, observation: EdgeObservation) -> NodeModelResult:
-        # Extract model result from an arbitrary breakpoint belonging to the edge.
+    def _extract_reach(self, observation: ReachObservation) -> NodeModelResult:
+        # Extract model result from an arbitrary breakpoint belonging to the reach.
 
-        # Searches the alias map for breakpoints whose edge component matches
-        # ``observation.edge``, then returns the first one that has data in the
+        # Searches the alias map for breakpoints whose reach component matches
+        # ``observation.reach``, then returns the first one that has data in the
         # dataset.  Raises if no breakpoint with data is found or if the quantity
-        # is not present for any breakpoint of that edge.
+        # is not present for any breakpoint of that reach.
 
         item = self.sel_items.values
-        edge_id = observation.edge
+        reach_id = observation.reach
 
         try:
-            edge = self.network._edges[edge_id]
+            reach = self.network._reaches[reach_id]
         except KeyError:
-            raise ValueError(f"Edge {edge_id} not found in network.")
+            raise ValueError(f"Reach {reach_id} not found in network.")
 
-        # This only searches intermediate breakpoints since edge-level data is not
+        # This only searches intermediate breakpoints since reach-level data is not
         # expected in nodes.
 
         available_nodes = {int(node_id) for node_id in self.data.node.values}
         found_ds = None
         found_int_id: int | None = None
         missing_node_data = False
-        for breakpoint in edge.breakpoints:
+        for breakpoint in reach.breakpoints:
             if breakpoint.data is None:
                 continue
             if item not in breakpoint.data.columns:
                 continue
 
-            int_id = self.network.find(edge=breakpoint.id[0], distance=breakpoint.distance)
+            int_id = self.network.find(reach=breakpoint.id[0], distance=breakpoint.distance)
             if int_id not in available_nodes:
                 missing_node_data = True
                 continue
@@ -246,7 +246,7 @@ class NetworkModelResult:
                 if not np.allclose(da1.values, da2.values, equal_nan=True):
                     raise ValueError(
                         "Not all data in breakpoints are equivalent. "
-                        "Select a specific node instead of the edge."
+                        "Select a specific node instead of the reach."
                     )
             else:
                 found_ds = ds
@@ -263,14 +263,14 @@ class NetworkModelResult:
             )
         if missing_node_data:
             raise ValueError(
-                f"Edge '{edge_id}' has breakpoint data for quantity "
+                f"Reach '{reach_id}' has breakpoint data for quantity "
                 f"'{item}', but matching breakpoint nodes are "
                 "missing from the model dataset. Re-create the NetworkModelResult "
                 "with the relevant reaches populated."
             )
 
         raise ValueError(
-            f"Edge '{edge_id}' was found in the network but none of its "
+            f"Reach '{reach_id}' was found in the network but none of its "
             f"breakpoints have data loaded for quantity '{self.sel_items.values}'. "
             f"Re-create the NetworkModelResult with the relevant reaches populated."
         )
@@ -279,7 +279,7 @@ class NetworkModelResult:
         # Resolve a node alias to an internal node ID.
 
         # Breakpoint tuple aliases are matched first by exact key lookup and then
-        # by edge ID and distance within ``_CHAINAGE_TOLERANCE``. If multiple
+        # by reach ID and distance within ``_CHAINAGE_TOLERANCE``. If multiple
         # candidates are within tolerance, the closest distance is selected; ties
         # are broken by choosing the smallest node ID. Distance units are the
         # same as the network chainage units.
@@ -296,10 +296,10 @@ class NetworkModelResult:
 
             if isinstance(alias, tuple):
                 # Handle tolerances
-                edge_id, distance = alias
+                reach_id, distance = alias
                 candidates: list[tuple[float, int]] = []
                 for key, node_id in self.network._alias_map.items():
-                    if isinstance(key, tuple) and key[0] == edge_id:
+                    if isinstance(key, tuple) and key[0] == reach_id:
                         diff = abs(key[1] - distance)
                         if diff <= self._CHAINAGE_TOLERANCE:
                             candidates.append((diff, node_id))

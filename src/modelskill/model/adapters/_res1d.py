@@ -7,7 +7,7 @@ import pandas as pd
 if TYPE_CHECKING:
     from mikeio1d.result_network import ResultNode, ResultGridPoint, ResultReach
 
-from modelskill.network import NetworkNode, EdgeBreakPoint, NetworkEdge
+from modelskill.network import NetworkNode, ReachBreakPoint, NetworkReach
 
 
 def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
@@ -58,7 +58,7 @@ class Res1DNode(NetworkNode):
         return self._boundary
 
 
-class GridPoint(EdgeBreakPoint):
+class GridPoint(ReachBreakPoint):
     def __init__(
         self, reach_id: str, chainage: float, data: pd.DataFrame | None = None
     ):
@@ -74,8 +74,8 @@ class GridPoint(EdgeBreakPoint):
         return self._data
 
 
-class Res1DReach(NetworkEdge):
-    """NetworkEdge adapter for a mikeio1d ResultReach."""
+class Res1DReach(NetworkReach):
+    """NetworkReach adapter for a mikeio1d ResultReach."""
 
     def __init__(
         self,
@@ -99,7 +99,7 @@ class Res1DReach(NetworkEdge):
         self._start = start_node
         self._end = end_node
         self._length = reach.length
-        self._breakpoints: list[EdgeBreakPoint] = [
+        self._breakpoints: list[ReachBreakPoint] = [
             GridPoint(
                 gridpoint.reach_name,
                 gridpoint.chainage,
@@ -125,5 +125,5 @@ class Res1DReach(NetworkEdge):
         return self._length
 
     @property
-    def breakpoints(self) -> list[EdgeBreakPoint]:
+    def breakpoints(self) -> list[ReachBreakPoint]:
         return self._breakpoints

@@ -63,21 +63,21 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
         ds.time.to_index().is_monotonic_increasing
     ), "time must be increasing (please check for duplicate times))"
 
-    # Validate coordinates: x,y spatial, node-based, or edge-based (with or without chainage)
+    # Validate coordinates: x,y spatial, node-based, or reach-based (with or without chainage)
     has_spatial_coords = "x" in ds.coords and "y" in ds.coords
     has_node_coord = "node" in ds.coords
-    has_breakpoint_coords = "edge" in ds.coords and "distance" in ds.coords
-    has_edge_coord = "edge" in ds.coords and "distance" not in ds.coords
+    has_breakpoint_coords = "reach" in ds.coords and "distance" in ds.coords
+    has_reach_coord = "reach" in ds.coords and "distance" not in ds.coords
 
     if (
         not has_spatial_coords
         and not has_node_coord
         and not has_breakpoint_coords
-        and not has_edge_coord
+        and not has_reach_coord
     ):
         raise ValueError(
             "data must have either x,y coordinates, a node coordinate, "
-            "edge+distance coordinates, or an edge coordinate"
+            "reach+distance coordinates, or a reach coordinate"
         )
 
     if has_spatial_coords:

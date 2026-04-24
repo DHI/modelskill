@@ -82,7 +82,7 @@ website:
             - api/PointObservation.qmd
             - api/TrackObservation.qmd
             - api/NodeObservation.qmd
-            - api/EdgeObservation.qmd
+            - api/ReachObservation.qmd
         - section: "Model Result"
           href: api/model.qmd
           contents:
@@ -171,7 +171,7 @@ quartodoc:
         - PointObservation
         - TrackObservation
         - NodeObservation
-        - EdgeObservation
+        - ReachObservation
     - title: Model Result
       desc: ""
       contents:

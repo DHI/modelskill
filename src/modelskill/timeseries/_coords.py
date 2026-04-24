@@ -26,26 +26,26 @@ class NodeCoords:
         return {"node": self.node}
 
 
-class EdgeCoords:
-    """Coordinates for an observation along a network edge.
+class ReachCoords:
+    """Coordinates for an observation along a network reach.
 
     Parameters
     ----------
-    edge : str
-        Edge (reach) identifier.
+    reach : str
+        Reach identifier.
     distance : float or None, optional
-        Along-edge distance (chainage).  When ``None`` the observation is
-        edge-level (no specific chainage) and no ``distance`` coordinate is
+        Along-reach distance (chainage).  When ``None`` the observation is
+        reach-level (no specific chainage) and no ``distance`` coordinate is
         stored in the dataset.
     """
 
-    def __init__(self, edge: str, distance: float | None = None):
-        self.edge = edge
+    def __init__(self, reach: str, distance: float | None = None):
+        self.reach = reach
         self.distance = distance
 
     @property
     def as_dict(self) -> dict:
-        d: dict = {"edge": self.edge}
+        d: dict = {"reach": self.reach}
         if self.distance is not None:
             d["distance"] = self.distance
         return d
