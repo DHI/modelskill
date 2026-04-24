@@ -243,7 +243,7 @@ def _parse_point_input(
     quantity: Quantity | None,
     aux_items: Sequence[int | str] | None,
     *,
-    coords: XYZCoords | NodeCoords | EdgeCoords,
+    coords: XYZCoords | NodeCoords | ReachCoords,
 ) -> xr.Dataset:
     """Convert accepted input data to an xr.Dataset."""
 

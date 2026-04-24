@@ -180,7 +180,7 @@ Large Res1D files can contain thousands of nodes and gridpoints. Loading all of 
 | `reaches` | `None` \| `str` \| `list[str]` | Control which reaches have intermediate gridpoint data populated. `None` (default) loads everything; `[]` skips all gridpoints; a name or list of names loads only those reaches. |
 
 ::: {.callout-note}
-Selective loading only controls **which timeseries are held in memory**. The full network topology (nodes, edges, lengths) is always constructed so that `find()`, `recall()`, and graph algorithms still work on the complete network.
+Selective loading only controls **which timeseries are held in memory**. The full network topology (nodes, reaches, lengths) is always constructed so that `find()`, `recall()`, and graph algorithms still work on the complete network.
 :::
 
 The most memory-efficient setup — useful when you only care about specific junction nodes — is to pass the node IDs you need and skip all intermediate gridpoints with `reaches=[]`:

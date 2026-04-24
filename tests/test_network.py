@@ -85,8 +85,8 @@ def sample_network_multivars():
         )
         for i, nid in enumerate(["123", "456"])
     ]
-    edges = [BasicReach("r1", nodes[0], nodes[1], length=100.0)]
-    return Network(edges)
+    reaches = [BasicReach("r1", nodes[0], nodes[1], length=100.0)]
+    return Network(reaches)
 
 
 @pytest.fixture
@@ -449,7 +449,7 @@ def test_open_res1d():
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
-def test_extract_edge_observation_happy_path(sample_node_data):
+def test_extract_reach_observation_happy_path(sample_node_data):
     path_to_file = "./tests/testdata/network.res1d"
     network = Network.from_res1d(path_to_file)
     nmr = NetworkModelResult(network, item="Discharge", name="network_model")
@@ -466,7 +466,7 @@ def test_extract_edge_observation_happy_path(sample_node_data):
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
-def test_extract_edge_observation_non_equivalent_breakpoints_raises(sample_node_data):
+def test_extract_reach_observation_non_equivalent_breakpoints_raises(sample_node_data):
     path_to_file = "./tests/testdata/network.res1d"
     network = Network.from_res1d(path_to_file)
     nmr = NetworkModelResult(network, item="Discharge")
@@ -482,7 +482,7 @@ def test_extract_edge_observation_non_equivalent_breakpoints_raises(sample_node_
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
-def test_extract_edge_observation_with_reaches_not_populated_raises_valueerror(
+def test_extract_reach_observation_with_reaches_not_populated_raises_valueerror(
     sample_node_data,
 ):
     path_to_file = "./tests/testdata/network.res1d"
@@ -497,7 +497,7 @@ def test_extract_edge_observation_with_reaches_not_populated_raises_valueerror(
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
-def test_extract_edge_observation_breakpoint_node_missing_raises_valueerror(
+def test_extract_reach_observation_breakpoint_node_missing_raises_valueerror(
     sample_node_data,
 ):
     path_to_file = "./tests/testdata/network.res1d"
