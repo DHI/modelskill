@@ -54,41 +54,84 @@ def test_vertical_skill_with_int_bins(simple_vertical_comparer):
     df = sk.to_dataframe()
     assert "n" in df.columns
     assert "rmse" in df.columns
-    assert list(df.index) == ["2.0-1.5", "1.5-1.0"]
+    assert isinstance(df.index, pd.IntervalIndex)
     assert np.all(df["n"].to_numpy() == [2, 2])
-    assert df.loc["2.0-1.5", "rmse"] == pytest.approx(0.1)
-    assert df.loc["1.5-1.0", "rmse"] == pytest.approx(0.1)
+
+    assert df.iloc[0, df.columns.get_loc("rmse")] == pytest.approx(0.1)
+    assert df.iloc[1, df.columns.get_loc("rmse")] == pytest.approx(0.1)
 
 
 def test_vertical_skill_with_explicit_bins(simple_vertical_comparer):
     sk = simple_vertical_comparer.vertical.skill(
-        bins=[(-2.1, -1.9), (-1.1, -0.9)],
+        bins=[-2.1, -1.9, -1.1, -0.9],
         metrics="rmse",
     )
 
     assert sk is not None
     df = sk.to_dataframe()
-    assert list(df.index) == ["2.1-1.9", "1.1-0.9"]
-    assert np.all(df["n"].to_numpy() == [2, 2])
-    assert np.allclose(df["rmse"].to_numpy(), [0.1, 0.1])
+    print(df["n"].to_numpy())
+
+    assert isinstance(df.index, pd.IntervalIndex)
+    assert np.array_equal(df["n"].to_numpy(), [2, np.nan, 2], equal_nan=True)
+    assert np.allclose(df["rmse"].to_numpy(), [0.1, np.nan, 0.1], equal_nan=True)
 
 
-def test_vertical_skill_with_binsize(simple_vertical_comparer):
-    sk = simple_vertical_comparer.vertical.skill(binsize=0.5, metrics="rmse")
+def test_vertical_skill_multiple_models(simple_vertical_comparer):
+    cmp = simple_vertical_comparer
+    mod_time = cmp.raw_mod_data["mod"].data.time.values
+    z_vals = cmp.raw_mod_data["mod"].data["z"].values
+    mod_vals = cmp.raw_mod_data["mod"].values
+
+    # Create a second model with a constant offset
+    mod2 = ms.VerticalModelResult(
+        pd.DataFrame(
+            {"mod2": mod_vals + 0.1, "z": z_vals},
+            index=mod_time,
+        ),
+        z_item="z",
+        item="mod2",
+    )
+
+    obs_df = (
+        cmp.data[["Observation", "z", "x", "y"]]
+        .to_dataframe()
+        .rename(columns={"Observation": "v"})
+    )
+    obs = ms.VerticalObservation(
+        obs_df, z_item="z", item="v", name=cmp.name, x=cmp.x, y=cmp.y
+    )
+    mod1 = ms.VerticalModelResult(
+        pd.DataFrame({"mod": mod_vals, "z": z_vals}, index=mod_time),
+        z_item="z",
+        item="mod",
+    )
+
+    cmp2 = ms.match(obs, [mod1, mod2])
+    sk = cmp2.vertical.skill(bins=2, metrics="rmse")
 
     assert sk is not None
+    assert "model" in sk.data.dims
+    assert set(sk.mod_names) == {"mod", "mod2"}
     df = sk.to_dataframe()
-    assert df.loc["2.0-1.5", "n"] == 2
-    assert df.loc["2.0-1.5", "rmse"] == pytest.approx(0.1)
+    assert "rmse" in df.columns
+    assert "n" in df.columns
+    assert isinstance(df.index, pd.MultiIndex)
+    # assert first index level is pd.IntervalIndex and seconds is model name
+    assert isinstance(df.index.levels[0], pd.IntervalIndex)
+    assert np.array_equal(df.index.levels[1].values, ["mod", "mod2"])
 
 
-def test_vertical_skill_raises_for_single_bin(simple_vertical_comparer):
-    with pytest.raises(ValueError, match="Only one depth bin found"):
-        simple_vertical_comparer.vertical.skill(bins=1, metrics="rmse")
+def test_vertical_skill_n_min(simple_vertical_comparer):
+    # Each bin has n=2, so n_min=3 should NaN out metrics but preserve n
+    sk = simple_vertical_comparer.vertical.skill(bins=2, metrics="rmse", n_min=3)
+
+    df = sk.to_dataframe()
+    assert np.all(df["n"].to_numpy() == [2, 2])
+    assert np.all(np.isnan(df["rmse"].to_numpy()))
 
 
 def test_vertical_skill_raises_for_none_bins(simple_vertical_comparer):
-    with pytest.raises(ValueError, match="bins cannot be None"):
+    with pytest.raises(ValueError, match="All bin edges are NaN"):
         simple_vertical_comparer.vertical.skill(bins=None, metrics="rmse")
 
 

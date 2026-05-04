@@ -230,22 +230,10 @@ class VerticalAccessor:
             (r.z >= cmp.z.min()) & (r.z <= cmp.z.max()), drop=True
         ).groupby("time")
 
-        if agg_func == "mean":
-            obs = cmp.data.Observation.groupby("time").mean()
-            mod = cmp.data[cmp.mod_names[0]].groupby("time").mean()
-            raw = r_grouped.mean()
-        elif agg_func == "min":
-            obs = cmp.data.Observation.groupby("time").min()
-            mod = cmp.data[cmp.mod_names[0]].groupby("time").min()
-            raw = r_grouped.min()
-        elif agg_func == "max":
-            obs = cmp.data.Observation.groupby("time").max()
-            mod = cmp.data[cmp.mod_names[0]].groupby("time").max()
-            raw = r_grouped.max()
-        else:
-            raise ValueError(f"Unsupported aggregation function: {agg_func}")
+        grouped = cmp.data.groupby("time")
+        ds = getattr(grouped, agg_func)()
+        raw = getattr(r_grouped, agg_func)()
 
-        ds = xr.Dataset({"Observation": obs, cmp.mod_names[0]: mod})
         ds.attrs = cmp.data.attrs
         ds.attrs["gtype"] = GeometryType.POINT
         ds.attrs["name"] = f"vertical_{agg_func}"
@@ -273,9 +261,7 @@ class VerticalAccessor:
 
     def skill(
         self,
-        bins: int | Sequence[Tuple[float, float]] | None = 5,
-        binsize: float | None = None,
-        by: str | Iterable[str] | None = None,
+        bins: int | Sequence | None = 5,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: int | None = None,
     ) -> SkillProfile:
@@ -286,13 +272,13 @@ class VerticalAccessor:
 
         Parameters
         ----------
-        bins : int, sequence of tuple, or None, optional
-            Number of equal-width bins or sequence of explicit depth intervals as
-            tuples (min, max). If `None`, returns `None`.
-        binsize : float, optional
-            Bin size for depth. If provided, overrides `bins`.
-        by : str or iterable of str, optional
-            Additional group-by fields, e.g. ``"freq:M"``.
+        bins : int or sequence
+            Depth bins, passed directly to ``xarray.Dataset.groupby_bins``.
+            See ``xarray.Dataset.groupby_bins(bins=...)`` for full details.
+
+            - If int: number of equal-width bins.
+            - If sequence: explicit bin edges.
+
         metrics : list, str, callable, optional
             Metrics to compute.
         n_min : int, optional
@@ -308,76 +294,36 @@ class VerticalAccessor:
         if cmp.n_points == 0:
             raise ValueError("No data selected for skill assessment")
 
-        z_bins = self._resolve_z_bins(cmp.data, bins=bins, binsize=binsize)
-        if len(z_bins) <= 1:
-            raise ValueError(
-                "Only one depth bin found, skill profile requires multiple bins. "
-                "Adjust 'bins' or 'binsize' parameters or use skill() "
-                "method on Comparer directly for overall skill."
-            )
-
         metric_funcs = _parse_metric(metrics, directional=cmp.quantity.is_directional)
 
-        df = cmp._to_long_dataframe()
+        def calculate_metric(g):
+            obs = g[cmp._obs_name]
+            mod_results = []
+            for model_name in cmp.mod_names:
+                mod = g[model_name]
+                n = int(obs.count())
 
-        df = self._add_depth_bins_to_df(df=df, z_bins=z_bins)
+                if n_min is not None and n < n_min:
+                    metrics_dict = {f.__name__: np.nan for f in metric_funcs}
+                else:
+                    metrics_dict = {
+                        f.__name__: float(f(obs.values, mod.values))
+                        for f in metric_funcs
+                    }
+                metrics_dict["n"] = n
 
-        agg_cols = _parse_groupby(by=by, n_mod=cmp.n_models, n_qnt=1)
-        if "z" not in agg_cols:
-            agg_cols.insert(0, "z")
+                ds_metric = xr.Dataset(metrics_dict).expand_dims(model=[model_name])
+                mod_results.append(ds_metric)
 
-        df = df.drop(columns=["z"]).rename(columns={"zBin": "z"})
-        res = _groupby_df(df, by=agg_cols, metrics=metric_funcs, n_min=n_min)
+            return xr.concat(mod_results, dim="model")
 
-        ds = res.to_xarray().squeeze()
+        ds = cmp.data.groupby_bins("z", bins).map(calculate_metric)
+        ds = ds.rename({"z_bins": "z"})
+        ds = ds.drop_vars(["x", "y"], errors="ignore")
+        if cmp.n_models == 1:
+            ds = ds.squeeze("model", drop=True)
 
         return SkillProfile(ds)
-
-    @staticmethod
-    def _resolve_z_bins(
-        ds: xr.Dataset,
-        *,
-        bins: int | Sequence[Tuple[float, float]] | None,
-        binsize: float | None,
-    ) -> list[tuple[float, float]]:
-        zmin, zmax = float(ds["z"].min()), float(ds["z"].max())
-
-        if binsize is not None:
-            edges = np.arange(zmin, zmax + binsize, binsize)
-            return [(float(edge), float(edge + binsize)) for edge in edges[:-1]]
-
-        if bins is None:
-            raise ValueError("bins cannot be None")
-
-        if isinstance(bins, int):
-            binsize = (zmax - zmin) / bins
-            edges = np.arange(zmin, zmax + binsize, binsize)
-            return [(float(edge), float(edge + binsize)) for edge in edges[:-1]]
-
-        return [(float(lo), float(hi)) for lo, hi in bins]
-
-    @staticmethod
-    def _add_depth_bins_to_df(
-        *, df: pd.DataFrame, z_bins: Sequence[tuple[float, float]]
-    ) -> pd.DataFrame:
-        labels = [f"{round(abs(lo), 2)}-{round(abs(hi), 2)}" for lo, hi in z_bins]
-
-        zbin = pd.Series(
-            pd.Categorical([np.nan] * len(df), categories=labels, ordered=True),
-            index=df.index,
-        )
-        last_idx = len(z_bins) - 1
-        for i, ((lo, hi), label) in enumerate(zip(z_bins, labels)):
-            # Make the last bin right-inclusive to ensure full coverage of max depth.
-            if i == last_idx:
-                mask = (df["z"] >= lo) & (df["z"] <= hi)
-            else:
-                mask = (df["z"] >= lo) & (df["z"] < hi)
-            zbin = zbin.where(~mask, label)
-
-        df = df.copy()
-        df["zBin"] = zbin
-        return df
 
     def _raw_model_to_z(self, raw_mod, z):
         df = raw_mod.data[[raw_mod.name]].to_dataframe()
