@@ -907,7 +907,8 @@ class Comparer:
                     raw_mod[k] = type(v)(m_data)
                 raw_mod_data = raw_mod
             else:
-                d = d.where(d["z"] == float(z), drop=True)
+                z_mask = xr.apply_ufunc(np.isclose, d["z"], float(z))
+                d = d.sel(time=z_mask)
 
                 raw_mod = {}
                 for k, v in raw_mod_data.items():
