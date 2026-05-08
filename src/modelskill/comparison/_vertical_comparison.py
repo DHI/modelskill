@@ -216,6 +216,7 @@ class VerticalPlotter:
         return ax
 
     def _pos_z(self):
+        """True when z uses positive-down convention (deepest point has largest abs value)."""
         return abs(self.comparer.z.max()) > abs(self.comparer.z.min())
 
     def _get_model_name(self, model: str | int | None) -> str:
