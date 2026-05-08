@@ -770,7 +770,7 @@ class Comparer:
             return NodeObservation(
                 data=df,
                 name=self.name,
-                node=self.node,
+                at=self.node,
                 quantity=self.quantity,
                 # TODO: add attrs
             )
