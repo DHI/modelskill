@@ -408,3 +408,26 @@ def test_vertical_aggregations_use_observation_depth_range(
     assert np.allclose(agg_cmp.data["Observation"].values, expected_obs)
     assert np.allclose(agg_cmp.data[mod_name].values, expected_mod)
     assert np.allclose(agg_cmp.raw_mod_data[mod_name].values, expected_mod)
+
+
+@pytest.mark.parametrize(
+    "method, expected_mod, expected_mod2",
+    [
+        ("mean", [1.6, 1.7], [1.7, 1.8]),
+        ("min", [1.1, 1.2], [1.2, 1.3]),
+        ("max", [2.1, 2.2], [2.2, 2.3]),
+    ],
+)
+def test_vertical_aggregations_multi_model_keeps_raw_mod_data_consistent(
+    simple_vertical_comparer, method, expected_mod, expected_mod2
+):
+    cmp2 = _add_second_model(simple_vertical_comparer)
+    agg_cmp = getattr(cmp2.vertical, method)()
+
+    assert set(agg_cmp.mod_names) == {"mod", "mod2"}
+    assert set(agg_cmp.raw_mod_data.keys()) == {"mod", "mod2"}
+
+    assert np.allclose(agg_cmp.data["mod"].values, expected_mod)
+    assert np.allclose(agg_cmp.data["mod2"].values, expected_mod2)
+    assert np.allclose(agg_cmp.raw_mod_data["mod"].values, expected_mod)
+    assert np.allclose(agg_cmp.raw_mod_data["mod2"].values, expected_mod2)

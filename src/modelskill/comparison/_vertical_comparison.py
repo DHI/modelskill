@@ -255,28 +255,25 @@ class VerticalAccessor:
 
         cmp = self._comparer
 
-        mod_name = cmp.mod_names[0]
-        r = cmp.raw_mod_data[mod_name].data
-        r_grouped = r.where(
-            (r.z >= cmp.z.min()) & (r.z <= cmp.z.max()), drop=True
-        ).groupby("time")
-
         grouped = cmp.data.groupby("time")
         ds = getattr(grouped, agg_func)()
-        raw = getattr(r_grouped, agg_func)()
+
+        raw_mod_data = {}
+        for mod_name in cmp.mod_names:
+            r = cmp.raw_mod_data[mod_name].data
+            r_grouped = r.where(
+                (r.z >= cmp.z.min()) & (r.z <= cmp.z.max()), drop=True
+            ).groupby("time")
+            raw = getattr(r_grouped, agg_func)()
+            raw_mod_data[mod_name] = PointModelResult(
+                raw, x=cmp.x, y=cmp.y, z=0, quantity=cmp.quantity
+            )
 
         ds.attrs = cmp.data.attrs
         ds.attrs["gtype"] = GeometryType.POINT
         ds.attrs["name"] = f"vertical_{agg_func}"
 
-        return Comparer(
-            ds,
-            raw_mod_data={
-                mod_name: PointModelResult(
-                    raw, x=cmp.x, y=cmp.y, z=0, quantity=cmp.quantity
-                )
-            },
-        )
+        return Comparer(ds, raw_mod_data=raw_mod_data)
 
     def mean(self):
         """Aggregate the comparison vertically using a specified aggregation function."""
