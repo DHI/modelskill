@@ -361,9 +361,3 @@ class VerticalAccessor:
         )
         sel_data = raw_mod.data.isel(time=np.sort(nearest_idx))
         return type(raw_mod)(sel_data)
-
-    def _raw_model_to_fixed_z(self, raw_mod, z):
-        z_layers = np.unique(raw_mod.data["z"].values)
-        nearest = z_layers[np.argmin(np.abs(z_layers - float(z)))]
-        sel_data = raw_mod.data.where(raw_mod.data["z"] == nearest, drop=True)
-        return type(raw_mod)(sel_data)
