@@ -539,10 +539,10 @@ class Comparer:
     @property
     def vertical(self) -> VerticalAccessor:
         """Accessor for vertical comparisons (only available if gtype is vertical)"""
-        # if self.gtype != str(GeometryType.VERTICAL):
-        #     raise AttributeError(
-        #         "vertical accessor is only available for vertical data"
-        #     )
+        if self.gtype != str(GeometryType.VERTICAL):
+            raise AttributeError(
+                "vertical accessor is only available for vertical data"
+            )
         return VerticalAccessor(self)
 
     @property

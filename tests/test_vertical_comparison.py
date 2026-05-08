@@ -228,6 +228,22 @@ def test_sel_z_slice_filters_whole_comparer(simple_vertical_comparer):
     assert np.allclose(cmp_sel.raw_mod_data["mod"].values, [2.1, 2.2])
 
 
+def test_vertical_accessor_raises_for_non_vertical_comparer():
+    df_point = pd.DataFrame(
+        {
+            "obs": [1.0, 2.0, 3.0],
+            "mod": [1.1, 2.1, 3.1],
+        },
+        index=pd.date_range("2020-01-01", periods=3, freq="h"),
+    )
+    cmp_point = ms.from_matched(df_point, obs_item="obs", mod_items=["mod"])
+
+    with pytest.raises(
+        AttributeError, match="vertical accessor is only available for vertical data"
+    ):
+        cmp_point.vertical
+
+
 def test_sel_z_scalar_outside_matched_range_returns_empty_match(
     simple_vertical_comparer,
 ):
