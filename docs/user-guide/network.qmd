@@ -317,7 +317,7 @@ The `at=` argument can be specified in three ways, depending on what information
 
 ::: {.callout-note}
 ## MIKE 1D vocabulary vs the modelskill API
-In MIKE 1D, "nodes" are junction points in the 1D network (e.g. manholes, basins) while "reaches" are the pipe or channel segments that connect them.  The modelskill API uses `NodeObservation` more broadly: the `at=` argument accepts either a node ID (int or string) **or** a `(reach_id, distance)` breakpoint tuple that identifies a specific chainage along a reach.  If you only need a reach-level quantity (uniform across the reach), use `ReachObservation` with `reach=` instead.
+In MIKE 1D, "nodes" are the named connection points in the 1D network (manholes, junctions, outfalls) while "reaches" are the pipe or channel segments that connect them.  The modelskill API uses `NodeObservation` more broadly: the `at=` argument accepts either a node ID (int or string) **or** a `(reach_id, distance)` breakpoint tuple that identifies a specific chainage along a reach.  If you only need a reach-level quantity (uniform across the reach), use `ReachObservation` with `reach=` instead.
 :::
 
 #### Option A — original string alias
