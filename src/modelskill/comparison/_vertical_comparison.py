@@ -12,7 +12,6 @@ from matplotlib import dates as mdates
 from ..model import PointModelResult
 from ..metrics import _parse_metric
 from ..skill_profile import SkillProfile
-from ._utils import _groupby_df, _parse_groupby
 
 if TYPE_CHECKING:
     import matplotlib.axes
