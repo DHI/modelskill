@@ -121,6 +121,55 @@ def test_vertical_skill_multiple_models(simple_vertical_comparer):
     assert np.array_equal(df.index.levels[1].values, ["mod", "mod2"])
 
 
+def _add_second_model(cmp):
+    mod_time = cmp.raw_mod_data["mod"].data.time.values
+    z_vals = cmp.raw_mod_data["mod"].data["z"].values
+    mod_vals = cmp.raw_mod_data["mod"].values
+
+    mod2 = ms.VerticalModelResult(
+        pd.DataFrame(
+            {"mod2": mod_vals + 0.1, "z": z_vals},
+            index=mod_time,
+        ),
+        z_item="z",
+        item="mod2",
+    )
+
+    obs_df = (
+        cmp.data[["Observation", "z", "x", "y"]]
+        .to_dataframe()
+        .rename(columns={"Observation": "v"})
+    )
+    obs = ms.VerticalObservation(
+        obs_df, z_item="z", item="v", name=cmp.name, x=cmp.x, y=cmp.y
+    )
+    mod1 = ms.VerticalModelResult(
+        pd.DataFrame({"mod": mod_vals, "z": z_vals}, index=mod_time),
+        z_item="z",
+        item="mod",
+    )
+
+    return ms.match(obs, [mod1, mod2])
+
+
+def test_vertical_hovmoller_requires_model_for_multi_model_comparer(
+    simple_vertical_comparer,
+):
+    cmp2 = _add_second_model(simple_vertical_comparer)
+
+    with pytest.raises(ValueError, match="Multiple models found"):
+        cmp2.vertical.plot.hovmoller()
+
+
+def test_vertical_hovmoller_accepts_named_model(simple_vertical_comparer):
+    cmp2 = _add_second_model(simple_vertical_comparer)
+
+    ax = cmp2.vertical.plot.hovmoller(model="mod2")
+
+    assert ax is not None
+    assert "mod2" in ax.get_title()
+
+
 def test_vertical_skill_n_min(simple_vertical_comparer):
     # Each bin has n=2, so n_min=3 should NaN out metrics but preserve n
     sk = simple_vertical_comparer.vertical.skill(bins=2, metrics="rmse", n_min=3)

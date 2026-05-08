@@ -94,6 +94,7 @@ class VerticalPlotter:
         self,
         *,
         title: str | None = None,
+        model: str | int | None = None,
         ylim: Tuple[float, float] | None = None,
         ax: matplotlib.axes.Axes | None = None,
         figsize: Tuple[float, float] | None = (12, 4),
@@ -107,6 +108,10 @@ class VerticalPlotter:
         ----------
         title : str, optional
             Title of the plot.
+        model : str or int, optional
+            Model to plot when multiple model results are present.
+            If omitted and only one model is available, that model is used.
+            If omitted and multiple models are available, a ValueError is raised.
         ylim : tuple, optional
             Limits for the depth axis (z).
         ax : matplotlib.axes.Axes, optional
@@ -126,15 +131,17 @@ class VerticalPlotter:
         Examples
         -------
         >>> ax = cmp.vertical.plot.hovmoller(figsize=(16,5))
+        >>> ax = cmp.vertical.plot.hovmoller(model="mod2", figsize=(16,5))
         """
+        cmp = self.comparer
+        mod_name = self._get_model_name(model)
+
         _, ax = _get_fig_ax(ax, figsize)
         if title is None:
-            title = f"Hovmöller Plot of {self.comparer.mod_names[0]} vs Observations"
+            title = f"{mod_name} and Observations"
 
         marker_size = 20 if obs_marker_size is None else obs_marker_size
 
-        cmp = self.comparer
-        mod_name = cmp.mod_names[0]
         mod_at_obs = cmp.raw_mod_data[mod_name].values
         z = cmp.raw_mod_data[mod_name].z
         t = cmp.raw_mod_data[mod_name].time
@@ -210,6 +217,30 @@ class VerticalPlotter:
 
     def _pos_z(self):
         return abs(self.comparer.z.max()) > abs(self.comparer.z.min())
+
+    def _get_model_name(self, model: str | int | None) -> str:
+        cmp = self.comparer
+
+        if model is None:
+            if cmp.n_models == 1:
+                return cmp.mod_names[0]
+            raise ValueError(
+                "Multiple models found. Please specify model by name or index."
+            )
+
+        if isinstance(model, int):
+            if model < 0 or model >= cmp.n_models:
+                raise IndexError(
+                    f"Model index {model} out of range [0, {cmp.n_models - 1}]"
+                )
+            return cmp.mod_names[model]
+
+        if model not in cmp.mod_names:
+            raise KeyError(
+                f"Unknown model '{model}'. Available models: {cmp.mod_names}"
+            )
+
+        return model
 
 
 class VerticalAccessor:
