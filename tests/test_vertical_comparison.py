@@ -228,6 +228,26 @@ def test_sel_z_slice_filters_whole_comparer(simple_vertical_comparer):
     assert np.allclose(cmp_sel.raw_mod_data["mod"].values, [2.1, 2.2])
 
 
+def test_sel_z_exact_depth_matches_exact_slice(simple_vertical_comparer):
+    cmp_scalar = simple_vertical_comparer.sel(z=-2.0)
+    cmp_slice = simple_vertical_comparer.sel(z=slice(-2.0, -2.0))
+
+    assert cmp_scalar.n_points == 2
+    assert cmp_slice.n_points == 2
+    assert np.allclose(cmp_scalar.data["z"].to_numpy(), [-2.0, -2.0])
+    assert np.allclose(cmp_slice.data["z"].to_numpy(), [-2.0, -2.0])
+    assert np.allclose(cmp_scalar.data["Observation"].to_numpy(), [2.0, 2.1])
+    assert np.allclose(cmp_slice.data["Observation"].to_numpy(), [2.0, 2.1])
+    assert np.allclose(cmp_scalar.data["mod"].to_numpy(), [2.1, 2.2])
+    assert np.allclose(cmp_slice.data["mod"].to_numpy(), [2.1, 2.2])
+    assert np.allclose(
+        cmp_scalar.raw_mod_data["mod"].data["z"].to_numpy(), [-2.0, -2.0]
+    )
+    assert np.allclose(cmp_slice.raw_mod_data["mod"].data["z"].to_numpy(), [-2.0, -2.0])
+    assert np.allclose(cmp_scalar.raw_mod_data["mod"].values, [2.1, 2.2])
+    assert np.allclose(cmp_slice.raw_mod_data["mod"].values, [2.1, 2.2])
+
+
 def test_vertical_accessor_raises_for_non_vertical_comparer():
     df_point = pd.DataFrame(
         {
