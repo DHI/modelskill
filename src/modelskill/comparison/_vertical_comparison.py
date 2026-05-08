@@ -266,7 +266,7 @@ class VerticalAccessor:
             ).groupby("time")
             raw = getattr(r_grouped, agg_func)()
             raw_mod_data[mod_name] = PointModelResult(
-                raw, x=cmp.x, y=cmp.y, z=0, quantity=cmp.quantity
+                raw, x=cmp.x, y=cmp.y, quantity=cmp.quantity
             )
 
         ds.attrs = cmp.data.attrs
