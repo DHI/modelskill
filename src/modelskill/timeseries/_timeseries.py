@@ -123,9 +123,10 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
         str(GeometryType.POINT),
         str(GeometryType.TRACK),
         str(GeometryType.NODE),
+        str(GeometryType.REACH),
     ]:
         raise ValueError(
-            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK}, or {GeometryType.NODE}"
+            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK}, {GeometryType.NODE}, or {GeometryType.REACH}"
         )
     if "long_name" not in da.attrs:
         da.attrs["long_name"] = Quantity.undefined().name
@@ -340,6 +341,8 @@ class TimeSeries:
             return df[cols]
         elif self.gtype == str(GeometryType.NODE):
             return self.data.drop_vars(["node"]).to_dataframe()
+        elif self.gtype == str(GeometryType.REACH):
+            return self.data.drop_vars(["reach"]).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 

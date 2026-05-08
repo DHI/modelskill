@@ -174,7 +174,7 @@ class TestNetworkModelResult:
         """Test extraction of a valid node"""
         nmr = NetworkModelResult(sample_network)
         node_id = sample_network.find(node="123")
-        obs = NodeObservation(sample_node_data, node=node_id, name="Node_123")
+        obs = NodeObservation(sample_node_data, at=node_id, name="Node_123")
 
         extracted = nmr.extract(obs)
 
@@ -185,7 +185,7 @@ class TestNetworkModelResult:
     def test_extract_invalid_node(self, sample_network, sample_node_data):
         """Test extraction of a node not present in the network"""
         nmr = NetworkModelResult(sample_network)
-        obs = NodeObservation(sample_node_data, node=999, name="Node_999")
+        obs = NodeObservation(sample_node_data, at=999, name="Node_999")
 
         with pytest.raises(ValueError, match="Node 999 not found"):
             nmr.extract(obs)
@@ -223,26 +223,26 @@ class TestNodeObservation:
         """Test initialization with pandas DataFrame"""
 
         obs = NodeObservation(
-            sample_node_data, node=123, name="Sensor_1", item="WaterLevel"
+            sample_node_data, at=123, name="Sensor_1", item="WaterLevel"
         )
 
-        assert obs.node == 123
+        assert obs.at == 123
         assert obs.name == "Sensor_1"
         assert len(obs.time) == 10
         assert isinstance(obs.time, pd.DatetimeIndex)
 
     def test_init_with_series(self, sample_series):
         """Test initialization with pandas Series"""
-        obs = NodeObservation(sample_series, node=456, name="Node_456")
+        obs = NodeObservation(sample_series, at=456, name="Node_456")
 
-        assert obs.node == 456
+        assert obs.at == 456
         assert obs.name == "Node_456"
         assert len(obs.time) == 10
 
     def test_node_attrs(self, sample_node_data):
         """Test attrs property"""
         attrs = {"source": "test", "version": "1.0"}
-        obs = NodeObservation(sample_node_data, node=123, attrs=attrs, weight=2.5)
+        obs = NodeObservation(sample_node_data, at=123, attrs=attrs, weight=2.5)
 
         assert obs.attrs["source"] == "test"
         assert obs.attrs["version"] == "1.0"
@@ -313,10 +313,10 @@ class TestNodeObservation:
 
     def test_init_from_csv(self):
         obs = NodeObservation(
-            "tests/testdata/network_sensor_1.csv", node=1, item="water_level@sens1"
+            "tests/testdata/network_sensor_1.csv", at=1, item="water_level@sens1"
         )
 
-        assert obs.node == 1
+        assert obs.at == 1
         assert len(obs.time) == 110
         assert isinstance(obs.time, pd.DatetimeIndex)
 
@@ -383,7 +383,7 @@ class TestNetworkIntegration:
         """Test complete workflow from network model to node extraction"""
         nmr = NetworkModelResult(sample_network, name="Network_Model")
         node_id = sample_network.find(node="123")
-        obs = NodeObservation(sample_node_data, node=node_id, name="Node_123_Obs")
+        obs = NodeObservation(sample_node_data, at=node_id, name="Node_123_Obs")
 
         extracted = nmr.extract(obs)
 
@@ -396,7 +396,7 @@ class TestNetworkIntegration:
         """Test matching workflow with network data"""
         nmr = NetworkModelResult(sample_network, name="Network_Model")
         node_id = sample_network.find(node="123")
-        obs = NodeObservation(sample_node_data, node=node_id, name="Node_123_Obs")
+        obs = NodeObservation(sample_node_data, at=node_id, name="Node_123_Obs")
 
         comparer = ms.match(obs, nmr)
 
@@ -614,34 +614,33 @@ class TestNodeObservationAliases:
     """NodeObservation accepts int, str alias, and (reach, distance) tuple."""
 
     def test_integer_node_unchanged(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, node=42)
-        assert obs.node == 42
-        assert isinstance(obs.node, int)
+        obs = NodeObservation(sample_node_data, at=42)
+        assert obs.at == 42
+        assert isinstance(obs.at, int)
 
     def test_integer_node_coord(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, node=42)
+        obs = NodeObservation(sample_node_data, at=42)
         assert "node" in obs.data.coords
         assert int(obs.data.coords["node"].item()) == 42
 
     def test_string_alias_stored(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, node="node_A", name="test")
-        assert obs.node == "node_A"
-        assert isinstance(obs.node, str)
+        obs = NodeObservation(sample_node_data, at="node_A", name="test")
+        assert obs.at == "node_A"
+        assert isinstance(obs.at, str)
 
     def test_string_alias_has_node_coord(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, node="node_A")
+        obs = NodeObservation(sample_node_data, at="node_A")
         assert "node" in obs.data.coords
         assert obs.data.coords["node"].item() == "node_A"
 
     def test_string_alias_gtype_is_node(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, node="node_A")
+        obs = NodeObservation(sample_node_data, at="node_A")
         assert obs.data.attrs["gtype"] == "node"
 
     def test_tuple_node_stored(self, sample_node_data):
         obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
         assert obs.at == ("reach_1", 24.5)
         assert isinstance(obs.at, tuple)
-        assert obs.node is None
 
     def test_tuple_node_gtype_is_node(self, sample_node_data):
         obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
@@ -664,9 +663,9 @@ class TestNodeObservationAliases:
         assert obs2.at == ("reach_1", 24.5)
 
     def test_string_roundtrip_via_create_new_instance(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, node="node_A")
+        obs = NodeObservation(sample_node_data, at="node_A")
         obs2 = obs._create_new_instance(obs.data)
-        assert obs2.node == "node_A"
+        assert obs2.at == "node_A"
 
 
 # ---------------------------------------------------------------------------
@@ -686,7 +685,7 @@ class TestNetworkModelResultAliasResolution:
 
     def test_extract_with_string_alias(self, sample_network, sample_node_data):
         nmr = NetworkModelResult(sample_network)
-        obs = NodeObservation(sample_node_data, node="123", name="Node_123")
+        obs = NodeObservation(sample_node_data, at="123", name="Node_123")
         extracted = nmr.extract(obs)
         expected_id = sample_network.find(node="123")
         assert isinstance(extracted, NodeModelResult)
@@ -696,7 +695,7 @@ class TestNetworkModelResultAliasResolution:
         self, sample_network, sample_node_data
     ):
         nmr = NetworkModelResult(sample_network)
-        obs = NodeObservation(sample_node_data, node="nonexistent_node")
+        obs = NodeObservation(sample_node_data, at="nonexistent_node")
         with pytest.raises(ValueError, match="not found"):
             nmr.extract(obs)
 
@@ -782,7 +781,7 @@ class TestNetworkModelResultAliasResolution:
     def test_match_with_string_alias(self, sample_network, sample_node_data):
         """Full ms.match() workflow works end-to-end with a string alias."""
         nmr = NetworkModelResult(sample_network, name="Network_Model")
-        obs = NodeObservation(sample_node_data, node="123", name="Node_123")
+        obs = NodeObservation(sample_node_data, at="123", name="Node_123")
         comparer = ms.match(obs, nmr)
         assert comparer.n_points > 0
         assert "Network_Model" in comparer.mod_names

@@ -190,12 +190,15 @@ class NetworkModelResult:
             )
 
     def _extract_node(self, observation: NodeObservation) -> NodeModelResult:
-        if observation.at is None and observation.node is None:
-            raise ValueError("NodeObservation must have either 'node' or 'at' set")
+        node_id = self._resolve_alias(observation.at)
 
-        raw_id = observation.at if observation.at is not None else observation.node
-        assert raw_id is not None  # Redundant assertion, included for mypy
-        node_id = self._resolve_alias(raw_id)
+        available_nodes = set(self.data.node.values)
+        if node_id not in available_nodes:
+            raise ValueError(
+                f"Node {node_id} exists in the network topology but its timeseries was not loaded. "
+                f"Re-create the NetworkModelResult with the relevant nodes populated, "
+                f"e.g. Network.from_res1d(nodes=[...])."
+            )
 
         return NodeModelResult(
             data=self.data.sel(node=node_id).drop_vars("node"),
