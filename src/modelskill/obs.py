@@ -449,7 +449,6 @@ class VerticalObservation(Observation):
     @property
     def z(self):
         return self._coordinate_values("z")
-        # return self.data.z
 
 
 def unit_display_name(name: str) -> str:
