@@ -38,14 +38,14 @@ class VerticalPlotter:
         ----------
         title : str, optional
             Title of the plot.
-            ax : matplotlib Axes, optional
+        ax : matplotlib.axes.Axes, optional
             Matplotlib Axes to plot on (if None, a new figure and axes will be created).
         figsize : tuple, optional
             Size of the figure (only used if ax is None).
 
         Returns
         -------
-        matplotlib Axes
+        matplotlib.axes.Axes
             Axes object with the vertical profile plot.
         """
         from ._comparison import MOD_COLORS
@@ -109,7 +109,7 @@ class VerticalPlotter:
             Title of the plot.
         ylim : tuple, optional
             Limits for the depth axis (z).
-        ax : matplotlib Axes, optional
+        ax : matplotlib.axes.Axes, optional
             Matplotlib Axes to plot on (if None, a new figure and axes will be created).
         figsize : tuple, optional
             Size of the figure (only used if ax is None).
@@ -120,10 +120,10 @@ class VerticalPlotter:
 
         Returns
         -------
-        matplotlib Axes
+        matplotlib.axes.Axes
             Axes object with the Hovmöller plot.
 
-        Example usage:
+        Examples
         -------
         >>> ax = cmp.vertical.plot.hovmoller(figsize=(16,5))
         """
