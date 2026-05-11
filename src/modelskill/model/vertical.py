@@ -142,7 +142,7 @@ class VerticalModelResult(TimeSeries):
     ) -> xr.Dataset:
         """Align model result to observation by matching nearest times and interpolating to observation depths.
 
-        Model depths outside the range of observation depths are extrapolated using nearest model values.
+        Observation depths outside the model depth range are assigned NaN values; no extrapolation is performed.
 
         Parameters
         ----------
