@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import List, Tuple, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -387,10 +387,10 @@ def directional_labels(n: int) -> Tuple[str, ...]:
 
 def pretty_intervals(
     magmax: float,
-    mag_bins: Optional[List[float]] = None,
-    mag_step: Optional[float] = None,
-    vmin: Optional[float] = None,
-    max_bin: Optional[float] = None,
+    mag_bins: List[float] | None = None,
+    mag_step: float | None = None,
+    vmin: float | None = None,
+    max_bin: float | None = None,
     n_decimals: int = 3,
 ):
     """Pretty intervals for the magnitude bins"""
@@ -497,7 +497,7 @@ def _calc_mag_step(magmax: float) -> float:
     return mag_step
 
 
-def _calc_radial_ticks(*, counts: np.ndarray, step: float, stop: Optional[float]):
+def _calc_radial_ticks(*, counts: np.ndarray, step: float, stop: float | None):
     cmax = counts.sum(axis=0).max()
     if stop is None:
         rmax = np.ceil((cmax + step) / step) * step

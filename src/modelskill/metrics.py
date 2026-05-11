@@ -11,7 +11,6 @@ from typing import (
     Iterable,
     List,
     Literal,
-    Optional,
     Set,
     Tuple,
     TypeVar,
@@ -43,7 +42,7 @@ F = TypeVar("F", bound=Callable)
 def metric(
     best: Literal["+", "-", 0, 1] | None = None,
     has_units: bool = False,
-    display_name: Optional[str] = None,
+    display_name: str | None = None,
 ) -> Callable[[F], F]:
     """Decorator to indicate a function as a metric.
 
@@ -101,7 +100,7 @@ def max_error(obs: ArrayLike, model: ArrayLike) -> Any:
 
 
 @metric(best="-", has_units=True)
-def mae(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None) -> Any:
+def mae(obs: ArrayLike, model: ArrayLike, weights: ArrayLike | None = None) -> Any:
     """alias for mean_absolute_error"""
     assert obs.size == model.size
     return mean_absolute_error(obs, model, weights)
@@ -109,7 +108,7 @@ def mae(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None) -
 
 @metric(best="-", has_units=True)
 def mean_absolute_error(
-    obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None
+    obs: ArrayLike, model: ArrayLike, weights: ArrayLike | None = None
 ) -> Any:
     r"""Mean Absolute Error (MAE)
 
@@ -155,7 +154,7 @@ def mean_absolute_percentage_error(obs: ArrayLike, model: ArrayLike) -> Any:
 
 
 @metric(best="-", has_units=True)
-def urmse(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None) -> Any:
+def urmse(obs: ArrayLike, model: ArrayLike, weights: ArrayLike | None = None) -> Any:
     r"""Unbiased Root Mean Squared Error (uRMSE)
 
     $$
@@ -183,7 +182,7 @@ def urmse(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None)
 def rmse(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
     unbiased: bool = False,
 ) -> Any:
     """alias for root_mean_squared_error"""
@@ -194,7 +193,7 @@ def rmse(
 def root_mean_squared_error(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
     unbiased: bool = False,
 ) -> Any:
     r"""Root Mean Squared Error (RMSE)
@@ -985,7 +984,7 @@ def c_max_error(obs: ArrayLike, model: ArrayLike) -> Any:
 def c_mean_absolute_error(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """Circular mean absolute error
 
@@ -1016,7 +1015,7 @@ def c_mean_absolute_error(
 def c_mae(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """alias for circular mean absolute error"""
     return c_mean_absolute_error(obs, model, weights)
@@ -1026,7 +1025,7 @@ def c_mae(
 def c_root_mean_squared_error(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """Circular root mean squared error
 
@@ -1056,7 +1055,7 @@ def c_root_mean_squared_error(
 def c_rmse(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """alias for circular root mean squared error"""
     return c_root_mean_squared_error(obs, model, weights)
@@ -1066,7 +1065,7 @@ def c_rmse(
 def c_unbiased_root_mean_squared_error(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """Circular unbiased root mean squared error
 
@@ -1099,7 +1098,7 @@ def c_unbiased_root_mean_squared_error(
 def c_urmse(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """alias for circular unbiased root mean squared error"""
     return c_unbiased_root_mean_squared_error(obs, model, weights)

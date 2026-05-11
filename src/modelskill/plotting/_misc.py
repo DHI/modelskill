@@ -1,6 +1,6 @@
 from __future__ import annotations
 import warnings
-from typing import Optional, Sequence, Tuple, Union, Mapping
+from typing import Sequence, Tuple, Union, Mapping
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -115,7 +115,7 @@ def sample_points(
 def quantiles_xy(
     x: np.ndarray,
     y: np.ndarray,
-    quantiles: Optional[Union[int, Sequence[float]]] = None,
+    quantiles: Union[int, Sequence[float]] | None = None,
 ):
     """Calculate quantiles of x and y
 
