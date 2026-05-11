@@ -1,7 +1,7 @@
 # Guidelines for contribution
 
 1. Clone the repository
-2. Install [uv](https://docs.astral.sh/uv/) if you don't have it already
+2. Install [uv](https://docs.astral.sh/uv/) and [just](https://github.com/casey/just) if you don't have them already
 3. Install the package with development dependencies:
    ```bash
    uv sync --group dev
@@ -9,14 +9,24 @@
 4. Make your changes
 5. Run quality checks before committing:
    ```bash
-   make check        # Run all checks: lint, typecheck, test, doctest
+   just check        # Run all checks: lint, typecheck, test, doctest
    # Or run individually:
-   make lint         # Check code style with ruff
-   make typecheck    # Type check with mypy
-   make test         # Run pytest
-   make format       # Auto-format code with ruff
+   just lint         # Check code style with ruff
+   just typecheck    # Type check with mypy
+   just test         # Run pytest
+   just format       # Auto-format code with ruff
+   just --list       # Show all available recipes
    ```
 6. Make a pull request with a clear summary of the changes
+
+## Building documentation locally
+
+To build the docs locally, install [Quarto](https://quarto.org/docs/get-started/) (version is specified in the [CI workflow](.github/workflows/docs.yml)), then:
+
+```bash
+uv sync --group docs
+make docs
+```
 
 ## Running specific tests
 
@@ -28,7 +38,7 @@ uv run pytest tests/test_comparer.py
 uv run pytest tests/test_comparer.py::test_function_name
 
 # Run with coverage
-make coverage
+just coverage
 ```
 
 ## Project structure

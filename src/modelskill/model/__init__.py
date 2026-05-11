@@ -9,6 +9,7 @@ A model result can either be a simple point/track, or spatial field (e.g. 2d dfs
 * SpatialField (extractable)
     - [`GridModelResult`](`modelskill.GridModelResult`) - a spatial field from a dfs2/nc file or a Xarray Dataset
     - [`DfsuModelResult`](`modelskill.DfsuModelResult`) - a spatial field from a dfsu file
+    - [`NetworkModelResult`](`modelskill.NetworkModelResult`) - a network field from xarray Dataset with time and node coordinates
 
 A model result can be created by explicitly invoking one of the above classes or using the [`model_result()`](`modelskill.model_result`) function which will return the appropriate type based on the input data (if possible).
 """
@@ -21,6 +22,8 @@ from .track import TrackModelResult
 from .vertical import VerticalModelResult
 from .dfsu import DfsuModelResult
 from .grid import GridModelResult
+from .network import NetworkModelResult
+from .network import NodeModelResult
 from .dummy import DummyModelResult
 
 __all__ = [
@@ -29,6 +32,8 @@ __all__ = [
     "VerticalModelResult",
     "DfsuModelResult",
     "GridModelResult",
+    "NetworkModelResult",
+    "NodeModelResult",
     "model_result",
     "DummyModelResult",
 ]

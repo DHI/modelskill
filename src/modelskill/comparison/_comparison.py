@@ -8,7 +8,6 @@ from typing import (
     List,
     Literal,
     Mapping,
-    Optional,
     Union,
     Iterable,
     Sequence,
@@ -20,11 +19,13 @@ import pandas as pd
 import xarray as xr
 from copy import deepcopy
 
+from ..model.network import NodeModelResult
+
 
 from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
-from ..obs import PointObservation, TrackObservation
+from ..obs import PointObservation, TrackObservation, NodeObservation
 from ..model import PointModelResult, TrackModelResult, VerticalModelResult
 from ..timeseries._timeseries import _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
@@ -50,6 +51,12 @@ if TYPE_CHECKING:
 Serializable = Union[str, int, float]
 
 
+def _drop_scalar_coords(data: xr.Dataset) -> xr.Dataset:
+    """Drop scalar coordinate variables that shouldn't appear as columns in dataframes"""
+    coords_to_drop = ["x", "y", "z", "node"]
+    return data.drop_vars(coords_to_drop, errors="ignore")
+
+
 def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
     if not isinstance(data, xr.Dataset):
         raise ValueError("matched_data must be an xarray.Dataset")
@@ -61,12 +68,15 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
         raise ValueError("Observation data must not contain missing values.")
 
     # coordinates
-    if "x" not in data.coords:
-        data.coords["x"] = np.nan
-    if "y" not in data.coords:
-        data.coords["y"] = np.nan
-    if "z" not in data.coords:
-        data.coords["z"] = np.nan
+    # Only add x, y, z coordinates if they don't exist and we don't have node coordinates
+    has_node_coords = "node" in data.coords
+    if not has_node_coords:
+        if "x" not in data.coords:
+            data.coords["x"] = np.nan
+        if "y" not in data.coords:
+            data.coords["y"] = np.nan
+        if "z" not in data.coords:
+            data.coords["z"] = np.nan
 
     # Validate data
     vars = [v for v in data.data_vars]
@@ -98,7 +108,11 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
 
     # Validate attrs
     if "gtype" not in data.attrs:
-        data.attrs["gtype"] = str(GeometryType.POINT)
+        # Determine gtype based on available coordinates
+        if "node" in data.coords:
+            data.attrs["gtype"] = str(GeometryType.NODE)
+        else:
+            data.attrs["gtype"] = str(GeometryType.POINT)
     # assert "gtype" in data.attrs, "data must have a gtype attribute"
     # assert data.attrs["gtype"] in [
     #     str(GeometryType.POINT),
@@ -174,9 +188,9 @@ class ItemSelection:
     obs: str
     model: Sequence[str]
     aux: Sequence[str]
-    x: Optional[str] = None
-    y: Optional[str] = None
-    z: Optional[str] = None
+    x: str | None = None
+    y: str | None = None
+    z: str | None = None
 
     def __post_init__(self) -> None:
         # check that obs, model and aux are unique, and that they are not overlapping
@@ -199,8 +213,8 @@ class ItemSelection:
     def parse(
         items: Sequence[str],
         obs_item: str | int | None = None,
-        mod_items: Optional[Iterable[str | int]] = None,
-        aux_items: Optional[Iterable[str | int]] = None,
+        mod_items: Iterable[str | int] | None = None,
+        aux_items: Iterable[str | int] | None = None,
         x_item: str | int | None = None,
         y_item: str | int | None = None,
         z_item: str | int | None = None,
@@ -303,16 +317,16 @@ def _inside_polygon(polygon: Any, xy: np.ndarray) -> np.ndarray:
 def _matched_data_to_xarray(
     df: pd.DataFrame,
     obs_item: int | str | None = None,
-    mod_items: Optional[Iterable[str | int]] = None,
-    aux_items: Optional[Iterable[str | int]] = None,
-    name: Optional[str] = None,
-    x: Optional[float] = None,
-    y: Optional[float] = None,
-    z: Optional[float] = None,
+    mod_items: Iterable[str | int] | None = None,
+    aux_items: Iterable[str | int] | None = None,
+    name: str | None = None,
+    x: float | None = None,
+    y: float | None = None,
+    z: float | None = None,
     x_item: str | int | None = None,
     y_item: str | int | None = None,
     z_item: str | int | None = None,
-    quantity: Optional[Quantity] = None,
+    quantity: Quantity | None = None,
 ) -> xr.Dataset:
     """Convert matched data to accepted xarray.Dataset format"""
     assert isinstance(df, pd.DataFrame)
@@ -463,12 +477,14 @@ class Comparer:
         self,
         matched_data: xr.Dataset,
         raw_mod_data: dict[
-            str, PointModelResult | TrackModelResult | VerticalModelResult
+            str, PointModelResult | TrackModelResult | VerticalModelResult | NodeModelResult
         ]
         | None = None,
     ) -> None:
         self.data = _parse_dataset(matched_data)
-        self.raw_mod_data = (
+        self.raw_mod_data: dict[
+            str, PointModelResult | TrackModelResult | NodeModelResult
+        ] = (
             raw_mod_data
             if raw_mod_data is not None
             else {
@@ -485,21 +501,23 @@ class Comparer:
     @staticmethod
     def from_matched_data(
         data: xr.Dataset | pd.DataFrame,
-        raw_mod_data: Optional[
-            Dict[str, PointModelResult | TrackModelResult | VerticalModelResult]
-        ] = None,
+        raw_mod_data: Dict[
+            str,
+            PointModelResult | TrackModelResult | VerticalModelResult | NodeModelResult,
+        ]
+        | None = None,
         obs_item: str | int | None = None,
-        mod_items: Optional[Iterable[str | int]] = None,
-        aux_items: Optional[Iterable[str | int]] = None,
-        name: Optional[str] = None,
+        mod_items: Iterable[str | int] | None = None,
+        aux_items: Iterable[str | int] | None = None,
+        name: str | None = None,
         weight: float = 1.0,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
-        z: Optional[float] = None,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
         x_item: str | int | None = None,
         y_item: str | int | None = None,
         z_item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
+        quantity: Quantity | None = None,
     ) -> "Comparer":
         """Initialize from compared data"""
         if not isinstance(data, xr.Dataset):
@@ -617,7 +635,15 @@ class Comparer:
         """z-coordinate"""
         return self._coordinate_values("z")
 
-    def _coordinate_values(self, coord: str) -> Any:
+    @property
+    def node(self) -> Any:
+        """node-coordinate"""
+        return self._coordinate_values("node")
+
+    def _coordinate_values(self, coord: str) -> None | Any:
+        """Get coordinate values if they exist, otherwise return None"""
+        if coord not in self.data.coords:
+            return None
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
@@ -742,10 +768,10 @@ class Comparer:
 
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
-    def _to_observation(self) -> PointObservation | TrackObservation:
+    def _to_observation(self) -> PointObservation | TrackObservation | NodeObservation:
         """Convert to Observation"""
         if self.gtype == "point":
-            df = self.data.drop_vars(["x", "y", "z"])[self._obs_str].to_dataframe()
+            df = _drop_scalar_coords(self.data)[self._obs_str].to_dataframe()
             return PointObservation(
                 data=df,
                 name=self.name,
@@ -756,7 +782,9 @@ class Comparer:
                 # TODO: add attrs
             )
         elif self.gtype == "track":
-            df = self.data.drop_vars(["z"])[[self._obs_str]].to_dataframe()
+            df = self.data.drop_vars(["z"], errors="ignore")[
+                [self._obs_str]
+            ].to_dataframe()
             return TrackObservation(
                 data=df,
                 item=0,
@@ -766,12 +794,21 @@ class Comparer:
                 quantity=self.quantity,
                 # TODO: add attrs
             )
+        elif self.gtype == "node":
+            df = _drop_scalar_coords(self.data)[self._obs_str].to_dataframe()
+            return NodeObservation(
+                data=df,
+                name=self.name,
+                node=self.node,
+                quantity=self.quantity,
+                # TODO: add attrs
+            )
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def _to_model(
         self,
-    ) -> list[PointModelResult | TrackModelResult | VerticalModelResult]:
+    ) -> list[PointModelResult | TrackModelResult | VerticalModelResult | NodeModelResult]:
         mods = list(self.raw_mod_data.values())
         return mods
 
@@ -813,12 +850,13 @@ class Comparer:
 
     def sel(
         self,
-        model: Optional[IdxOrNameTypes] = None,
-        start: Optional[TimeTypes] = None,
-        end: Optional[TimeTypes] = None,
-        time: Optional[TimeTypes] = None,
-        area: Optional[List[float]] = None,
-        z: Optional[float | slice] = None,
+        model: IdxOrNameTypes | None = None,
+        start: TimeTypes | None = None,
+        end: TimeTypes | None = None,
+        time: TimeTypes | None = None,
+        area: List[float] | None = None,
+        z: float | slice | None = None,
+
     ) -> "Comparer":
         """Select data based on model, time and/or area.
 
@@ -970,9 +1008,9 @@ class Comparer:
         if self.gtype == "vertical":
             data = self.data
         else:
-            data = self.data.drop_vars("z", errors="ignore")
+            data = self.data.drop_vars(["z", "node"], errors="ignore")
 
-        # this step is necessary since we keep arbitrary derived data in the dataset, but not z
+        # this step is necessary since we keep arbitrary derived data in the dataset, but not z/node
         # i.e. using a hardcoded whitelist of variables to keep is less flexible
         id_vars = [v for v in data.variables if v not in self.mod_names]
 
@@ -1055,8 +1093,8 @@ class Comparer:
 
         df = cmp._to_long_dataframe()
         res = _groupby_df(df, by=by, metrics=metrics)
-        res["x"] = np.nan if self.gtype == "track" else cmp.x
-        res["y"] = np.nan if self.gtype == "track" else cmp.y
+        res["x"] = np.nan if self.gtype == "track" or cmp.x is None else cmp.x
+        res["y"] = np.nan if self.gtype == "track" or cmp.y is None else cmp.y
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
@@ -1212,7 +1250,7 @@ class Comparer:
 
     @property
     def _residual(self) -> np.ndarray:
-        df = self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+        df = _drop_scalar_coords(self.data).to_dataframe()
         obs = df[self._obs_str].values
         mod = df[self.mod_names].values
         return mod - np.vstack(obs)
@@ -1277,11 +1315,13 @@ class Comparer:
         if self.gtype == str(GeometryType.POINT):
             # we remove the scalar coordinate variables as they
             # will otherwise be columns in the dataframe
-            return self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+            return _drop_scalar_coords(self.data).to_dataframe()
         elif self.gtype == str(GeometryType.TRACK):
-            df = self.data.drop_vars(["z"]).to_dataframe()
-            # make sure that x, y cols are first
-            cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
+            df = self.data.drop_vars(["z"], errors="ignore").to_dataframe()
+            # make sure that x, y cols are first if they exist
+            coord_cols = [c for c in ["x", "y"] if c in df.columns]
+            other_cols = [c for c in df.columns if c not in ["x", "y"]]
+            cols = coord_cols + other_cols
             return df[cols]
         elif self.gtype == str(GeometryType.VERTICAL):
             df = self.data.drop_vars(["x", "y"]).to_dataframe()
@@ -1292,7 +1332,9 @@ class Comparer:
                 + ["z"]
             )
             return df[cols]
-
+        elif self.gtype == str(GeometryType.NODE):
+            # For network data, drop node coordinate like other geometries drop their coordinates
+            return _drop_scalar_coords(self.data).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
@@ -1350,7 +1392,7 @@ class Comparer:
 
         if data.gtype == "point":
             raw_mod_data: Dict[
-                str, PointModelResult | TrackModelResult | VerticalModelResult
+                str, PointModelResult | TrackModelResult | VerticalModelResult | NodeModelResult
             ] = {}
 
             for var in data.data_vars:

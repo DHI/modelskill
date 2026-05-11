@@ -1,7 +1,7 @@
 from __future__ import annotations
 import inspect
 from pathlib import Path
-from typing import Literal, Optional, get_args, cast
+from typing import Literal, get_args, cast
 
 import mikeio
 import numpy as np
@@ -24,7 +24,7 @@ class DfsuModelResult(SpatialField):
     ----------
     data : types.UnstructuredType
         the input data or file path
-    name : Optional[str], optional
+    name : str | None, optional
         The name of the model result,
         by default None (will be set to file name or item name)
     item : str | int | None, optional
@@ -32,7 +32,7 @@ class DfsuModelResult(SpatialField):
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
         Model quantity, for MIKE files this is inferred from the EUM information
-    aux_items : Optional[list[int | str]], optional
+    aux_items : list[int | str] | None, optional
         Auxiliary items, by default None
     """
 
@@ -40,10 +40,10 @@ class DfsuModelResult(SpatialField):
         self,
         data: UnstructuredType,
         *,
-        name: Optional[str] = None,
-        item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
+        name: str | None = None,
+        item: int | str | None = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
     ) -> None:
         filename = None
 
@@ -115,7 +115,7 @@ class DfsuModelResult(SpatialField):
         return self.data.geometry.contains([x, y])  # type: ignore
 
     def extract(
-        self, observation: Observation, spatial_method: Optional[str] = None
+        self, observation: Observation, spatial_method: str | None = None
     ) -> PointModelResult | TrackModelResult | VerticalModelResult:
         """Extract ModelResult at observation positions
 
@@ -125,7 +125,7 @@ class DfsuModelResult(SpatialField):
         ----------
         observation : <PointObservation>, <TrackObservation>, or <VerticalObservation>
             positions (and times) at which modelresult should be extracted
-        spatial_method : Optional[str], optional
+        spatial_method : str | None, optional
             spatial selection/interpolation method, 'contained' (=isel),
             'nearest', 'inverse_distance' (with 5 nearest points),
             by default None = 'inverse_distance'
@@ -238,7 +238,7 @@ class DfsuModelResult(SpatialField):
         )
 
     def _extract_point(
-        self, observation: PointObservation, spatial_method: Optional[str] = None
+        self, observation: PointObservation, spatial_method: str | None = None
     ) -> PointModelResult:
         """Extract point.
 
@@ -317,7 +317,7 @@ class DfsuModelResult(SpatialField):
             )
 
     def _extract_track(
-        self, observation: TrackObservation, spatial_method: Optional[str] = None
+        self, observation: TrackObservation, spatial_method: str | None = None
     ) -> TrackModelResult:
         """Extract track.
 
