@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import matplotlib
 import numpy as np
-import pandas as pd
 from typing import TYPE_CHECKING, Callable, Iterable, Sequence, Tuple
 from ..types import GeometryType
 
