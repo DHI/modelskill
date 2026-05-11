@@ -7,6 +7,61 @@ import modelskill as ms
 mpl.use("Agg")
 
 
+def test_from_matched_scalar_z_does_not_force_vertical_for_point():
+    df = pd.DataFrame(
+        {
+            "c2": [1.2, 1.3],
+            "mike": [1.22, 1.3],
+        },
+    )
+    cmp = ms.from_matched(
+        data=df,
+        obs_item="c2",
+        mod_items="mike",
+        z=3.0,
+    )
+    assert cmp.gtype == "point"
+    assert cmp.z == pytest.approx(3.0)
+
+
+def test_from_matched_scalar_z_does_not_force_vertical_for_track():
+    df = pd.DataFrame(
+        {
+            "lat": [55.0, 55.1],
+            "lon": [-0.1, 0.01],
+            "c2": [1.2, 1.3],
+            "mike": [1.22, 1.3],
+        },
+    )
+    cmp = ms.from_matched(
+        data=df,
+        obs_item="c2",
+        mod_items="mike",
+        x_item="lon",
+        y_item="lat",
+        z=3.0,
+    )
+    assert cmp.gtype == "track"
+    assert cmp.z == pytest.approx(3.0)
+
+
+def test_from_matched_z_item_still_sets_vertical_gtype():
+    df = pd.DataFrame(
+        {
+            "z": [-1.0, -2.0],
+            "c2": [1.2, 1.3],
+            "mike": [1.22, 1.3],
+        },
+    )
+    cmp = ms.from_matched(
+        data=df,
+        obs_item="c2",
+        mod_items="mike",
+        z_item="z",
+    )
+    assert cmp.gtype == "vertical"
+
+
 @pytest.fixture
 def simple_vertical_comparer():
     obs_time = pd.DatetimeIndex(

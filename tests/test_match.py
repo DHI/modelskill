@@ -203,7 +203,7 @@ class TestVerticalObservation:
     # ==========
     def test_round_trip_from_matched_df(self, o4, mr4):
         cmp = ms.match(o4, mr4)
-        cmp2 = ms.from_matched(cmp.to_dataframe(), x=cmp.x, y=cmp.y)
+        cmp2 = ms.from_matched(cmp.to_dataframe(), x=cmp.x, y=cmp.y, z_item="z")
         assert cmp2.gtype == "vertical"
         assert cmp2.n_models == 1
         assert cmp2.n_points == cmp.n_points
@@ -217,7 +217,7 @@ class TestVerticalObservation:
         cmp = ms.match(simple_vo, simple_vm)
         # create df0 from matched data and create comparer from that again
         ds = mikeio.from_pandas(cmp.to_dataframe())
-        cmp2 = ms.from_matched(ds)
+        cmp2 = ms.from_matched(ds, z_item="z")
         assert cmp2.gtype == cmp.gtype == "vertical"
         assert cmp2.n_models == 1
         assert cmp2.n_points == cmp.n_points

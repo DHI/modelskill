@@ -392,7 +392,7 @@ def _matched_data_to_xarray(
     else:
         pass  # z is optional, if not provided, we don't add it as a coordinate
 
-    if "z" in ds.coords:
+    if z_item is not None:
         ds.attrs["gtype"] = str(GeometryType.VERTICAL)
     elif ds.coords["x"].size == 1:
         ds.attrs["gtype"] = str(GeometryType.POINT)
