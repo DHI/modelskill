@@ -123,7 +123,7 @@ class TestVerticalObservation:
             index=[pd.Timestamp("2019-01-01")] * 3,
         )
         with pytest.warns(UserWarning, match="Removed 1 duplicate"):
-            obs = ms.VerticalObservation(
+            ms.VerticalObservation(
                 df,
                 item="value",
                 z_item="z",
