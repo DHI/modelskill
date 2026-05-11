@@ -55,22 +55,15 @@ class VerticalPlotter:
 
         title = title if title is not None else cmp.name
 
+        obs_values = cmp.data["Observation"].values
+        z_obs = cmp.data["z"].values
+
         for j in range(cmp.n_models):
             key = cmp.mod_names[j]
             raw_data = cmp.raw_mod_data[key].data
             mod_values = raw_data[key].values
             z = raw_data["z"].values
             ax.plot(mod_values, z, color=MOD_COLORS[j])
-
-            obs_values = cmp.data["Observation"].values
-            z_obs = cmp.data["z"].values
-
-            ax.scatter(
-                obs_values,
-                z_obs,
-                color=cmp.data[cmp._obs_name].attrs["color"],
-                marker=".",
-            )
 
             if show_matched_model:
                 mod_values_int = cmp.data[key].values
@@ -80,6 +73,13 @@ class VerticalPlotter:
                     color=MOD_COLORS[j],
                     marker=".",
                 )
+
+        ax.scatter(
+            obs_values,
+            z_obs,
+            color=cmp.data[cmp._obs_name].attrs["color"],
+            marker=".",
+        )
 
         ax.set_xlabel(f"{cmp._unit_text}")
         ax.set_ylabel("z")
