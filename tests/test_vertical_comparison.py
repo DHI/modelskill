@@ -69,7 +69,6 @@ def test_vertical_skill_with_explicit_bins(simple_vertical_comparer):
 
     assert sk is not None
     df = sk.to_dataframe()
-    print(df["n"].to_numpy())
 
     assert isinstance(df.index, pd.IntervalIndex)
     assert np.array_equal(df["n"].to_numpy(), [2, np.nan, 2], equal_nan=True)
