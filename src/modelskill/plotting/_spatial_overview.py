@@ -83,11 +83,7 @@ def spatial_overview(
         g.plot.outline(ax=ax)  # type: ignore
 
     for o in obs:
-        if (
-            isinstance(o, PointObservation)
-            or isinstance(o, TrackObservation)
-            or isinstance(o, VerticalObservation)
-        ):
+        if isinstance(o, (PointObservation, VerticalObservation)):
             ax.scatter(x=o.x, y=o.y, marker="x")
         elif isinstance(o, TrackObservation):
             if o.n_points < 10000:
