@@ -176,7 +176,7 @@ class DfsuModelResult(SpatialField):
 
         if not self._in_domain(x, y):
             raise ValueError(
-                f"PointObservation '{observation.name}' (x={x}, y={y}) outside model domain!"
+                f"VerticalObservation '{observation.name}' (x={x}, y={y}) outside model domain!"
             )
 
         elemids = self.data.geometry.find_index(x=x, y=y)
