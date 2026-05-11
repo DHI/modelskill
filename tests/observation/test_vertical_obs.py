@@ -109,7 +109,7 @@ class TestVerticalObservation:
         fn = Path("tests/testdata/vertical/VerticalProfile_ST.dfs0")
         # no item specified, but multiple items in file
         with pytest.raises(ValueError):
-            obs = ms.observation(fn, z_item="z")
+            ms.observation(fn, z_item="z")
         # below should be fine...only one item
         fn = Path("tests/testdata/vertical/VerticalProfile_obs1.dfs0")
         assert isinstance(ms.observation(fn, z_item="z"), ms.VerticalObservation)
