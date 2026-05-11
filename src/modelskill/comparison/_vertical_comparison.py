@@ -63,7 +63,7 @@ class VerticalPlotter:
             raw_data = cmp.raw_mod_data[key].data
             mod_values = raw_data[key].values
             z = raw_data["z"].values
-            ax.plot(mod_values, z, color=MOD_COLORS[j])
+            ax.plot(mod_values, z, color=MOD_COLORS[j], label=key)
 
             if show_matched_model:
                 mod_values_int = cmp.data[key].values
@@ -72,6 +72,7 @@ class VerticalPlotter:
                     z_obs,
                     color=MOD_COLORS[j],
                     marker=".",
+                    label=key,
                 )
 
         ax.scatter(
@@ -79,11 +80,12 @@ class VerticalPlotter:
             z_obs,
             color=cmp.data[cmp._obs_name].attrs["color"],
             marker=".",
+            label=cmp._obs_name,
         )
 
         ax.set_xlabel(f"{cmp._unit_text}")
         ax.set_ylabel("z")
-        ax.legend([*cmp.mod_names, cmp._obs_name])
+        ax.legend()
         ax.grid(True)
         ax.set_title(title)
         if self._pos_z():
