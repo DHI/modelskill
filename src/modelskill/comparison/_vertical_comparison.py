@@ -8,7 +8,9 @@ from ..types import GeometryType
 from ..plotting._misc import _get_fig_ax
 import xarray as xr
 from matplotlib import dates as mdates
-from ..model import PointModelResult
+from ..model import PointModelResult, TrackModelResult
+from ..model.network import NodeModelResult
+from ..model.vertical import VerticalModelResult
 from ..metrics import _parse_metric
 from ..skill_profile import SkillProfile
 
@@ -259,7 +261,10 @@ class VerticalAccessor:
         grouped = cmp.data.groupby("time")
         ds = getattr(grouped, agg_func)()
 
-        raw_mod_data = {}
+        raw_mod_data: dict[
+            str,
+            PointModelResult | TrackModelResult | VerticalModelResult | NodeModelResult,
+        ] = {}
         for mod_name in cmp.mod_names:
             r = cmp.raw_mod_data[mod_name].data
             r_grouped = r.where(

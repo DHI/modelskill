@@ -945,7 +945,7 @@ class Comparer:
                     m_data = v.data.where(
                         (v.data["z"] >= lo) & (v.data["z"] <= hi), drop=True
                     )
-                    raw_mod[k] = type(v)(m_data)
+                    raw_mod[k] = type(v)(m_data)  # type: ignore[call-arg]
                 raw_mod_data = raw_mod
             else:
                 z_mask = xr.apply_ufunc(np.isclose, d["z"], float(z))

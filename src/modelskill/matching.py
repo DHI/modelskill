@@ -347,7 +347,10 @@ def _match_single_obs(
     if len(names) != len(set(names)):
         raise ValueError(f"Duplicate model names found: {names}")
 
-    raw_mod_data: dict[str, PointModelResult | TrackModelResult | NodeModelResult] = {}
+    raw_mod_data: dict[
+        str,
+        PointModelResult | TrackModelResult | VerticalModelResult | NodeModelResult,
+    ] = {}
     for m in models:
         is_field = isinstance(m, (GridModelResult, DfsuModelResult))
         is_dummy = isinstance(m, DummyModelResult)
