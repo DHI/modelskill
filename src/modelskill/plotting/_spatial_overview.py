@@ -80,6 +80,10 @@ def spatial_overview(
         else:
             g = m
 
+        # mikeio's 3D geometries (GeometryFM3D) cannot be plotted directly
+        if hasattr(g, "to_2d_geometry"):
+            g = g.to_2d_geometry()
+
             # TODO this is not supported for all model types
         g.plot.outline(ax=ax)  # type: ignore
 
