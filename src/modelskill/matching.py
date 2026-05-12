@@ -34,7 +34,7 @@ from .obs import (
     Observation,
     PointObservation,
     TrackObservation,
-    VerticalObservation
+    VerticalObservation,
     NodeObservation,
 )
 from .timeseries import TimeSeries
