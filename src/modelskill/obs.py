@@ -36,9 +36,9 @@ Serializable = Union[str, int, float]
 def observation(
     data: DataInputType,
     *,
-    gtype: Literal["point", "track", "node"] | None = None,
+    gtype: Literal["point", "track", "node", "reach"] | None = None,
     **kwargs,
-) -> PointObservation | TrackObservation | NodeObservation:
+) -> PointObservation | TrackObservation | NodeObservation | ReachObservation:
     """Create an appropriate observation object.
 
     A factory function for creating an appropriate observation object
@@ -46,20 +46,21 @@ def observation(
 
     If 'x' or 'y' is given, a PointObservation is created.
     If 'x_item' or 'y_item' is given, a TrackObservation is created.
-    If 'node' is given, a NodeObservation is created.
+    If 'at' is given, a NodeObservation is created.
+    If 'reach' is given, a ReachObservation is created.
 
     Parameters
     ----------
     data : DataInputType
         The data to be used for creating the Observation object.
-    gtype : Literal["point", "track", "node"] | None
+    gtype : Literal["point", "track", "node", "reach"] | None
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
         Additional keyword arguments to be passed to the Observation constructor.
 
     Returns
     -------
-    PointObservation or TrackObservation or NodeObservation
+    PointObservation or TrackObservation or NodeObservation or ReachObservation
         An observation object of the appropriate type
 
     Examples
@@ -67,7 +68,8 @@ def observation(
     >>> import modelskill as ms
     >>> o_pt = ms.observation(df, item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o_tr = ms.observation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
-    >>> o_node = ms.observation(df, item="Water Level", node=123, name="123")
+    >>> o_node = ms.observation(df, item="Water Level", at=123, name="123")
+    >>> o_reach = ms.observation(df, item="Discharge", reach="reach_1", name="reach_1_Q")
     """
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
@@ -87,11 +89,13 @@ def _guess_gtype(**kwargs) -> GeometryType:
         return GeometryType.POINT
     elif "x_item" in kwargs or "y_item" in kwargs:
         return GeometryType.TRACK
-    elif "node" in kwargs:
+    elif "at" in kwargs:
         return GeometryType.NODE
+    elif "reach" in kwargs:
+        return GeometryType.REACH
     else:
         warnings.warn(
-            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation, TrackObservation, or NodeObservation to be explicit."
+            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation, TrackObservation, NodeObservation, or ReachObservation to be explicit."
         )
         return GeometryType.POINT
 
@@ -353,32 +357,36 @@ class NodeObservation(Observation):
     """Class for observations at network nodes.
 
     Create a NodeObservation from a DataFrame or other data source.
-    The node ID can be an integer (internal network ID) or a string alias
-    (e.g. the original Res1D node name). String aliases are resolved to
-    integer IDs automatically when matched against a
-    :class:`~modelskill.model.network.NetworkModelResult`.
-    For breakpoint locations (edge + distance), use the ``at`` parameter.
+    The ``at`` parameter accepts three forms:
+
+    * **int** — internal network ID, used directly.
+    * **str** — original node alias (e.g. Res1D node name), resolved to an
+      integer ID automatically when matched against a
+      :class:`~modelskill.model.network.NetworkModelResult`.
+    * **tuple[str, float]** — breakpoint location as ``(reach_id, distance)``
+      along a reach, resolved via the alias map at match time.
+
+    .. note::
+        "Node" in this API follows the broad graph sense: it covers both
+        junctions (named connection points) and chainage points (breakpoints
+        along a reach).  MIKE 1D users who distinguish *node* (junction) from
+        *gridpoint* sharply can use the ``(reach_id, distance)`` tuple form to
+        target a specific chainage point, or :class:`ReachObservation` when
+        the quantity is uniform across the whole reach and any breakpoint will do.
 
     To create multiple NodeObservation objects from a single data source,
-    use :method:`from_multiple`.
+    use :meth:`from_multiple`.
 
     Parameters
     ----------
     data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
         data source with time series for the node
-    node : int or str, optional
-        Node ID. Accepted forms:
+    at : int, str, or tuple[str, float]
+        Observation location. Accepted forms:
 
-        * **int** — internal network ID, used directly.
-        * **str** — original node alias (e.g. Res1D node name), resolved
-          when matched against a :class:`~modelskill.model.network.NetworkModelResult`.
-
-        Mutually exclusive with ``at``.
-    at : tuple[str, float], optional
-        Breakpoint location as ``(edge_id, distance)`` along an edge, resolved
-        via the alias map when matched against a
-        :class:`~modelskill.model.network.NetworkModelResult`.
-        Mutually exclusive with ``node``.
+        * **int** — internal network ID.
+        * **str** — original node alias (e.g. Res1D node name).
+        * **tuple[str, float]** — breakpoint as ``(reach_id, distance)``.
     item : (int, str), optional
         index or name of the wanted item/column, by default None
         if data contains more than one item, item must be given
@@ -396,12 +404,13 @@ class NodeObservation(Observation):
     Examples
     --------
     >>> import modelskill as ms
-    >>> o1 = ms.NodeObservation(data, node=123, name="123")
-    >>> o2 = ms.NodeObservation(df, item="Water Level", node=456)
+    >>> o1 = ms.NodeObservation(data, at=123, name="123")
+    >>> o2 = ms.NodeObservation(df, item="Water Level", at=456)
     >>>
-    >>> o3 = ms.NodeObservation(data, node="node_A")
+    >>> # String alias resolved at match time
+    >>> o3 = ms.NodeObservation(data, at="node_A")
     >>>
-    >>> # Breakpoint as (edge_id, distance) tuple
+    >>> # Breakpoint as (reach_id, distance) tuple
     >>> o4 = ms.NodeObservation(data, at=("reach_1", 24.5))
     >>>
     >>> # Multiple node observations from separate data sources
@@ -411,9 +420,8 @@ class NodeObservation(Observation):
     def __init__(
         self,
         data: PointType,
-        node: int | str | None = None,
         *,
-        at: tuple[str, float] | None = None,
+        at: int | str | tuple[str, float],
         item: int | str | None = None,
         name: str | None = None,
         weight: float = 1.0,
@@ -421,12 +429,8 @@ class NodeObservation(Observation):
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> None:
-        if node is not None and at is not None:
-            raise ValueError("Only one of 'node' or 'at' can be provided, not both.")
-        if node is None and at is None:
-            raise ValueError("Either 'node' or 'at' must be provided.")
-        if at is not None:
-            edge, distance = str(at[0]), float(at[1])
+        if isinstance(at, tuple):
+            reach, distance = str(at[0]), float(at[1])
             if not self._is_input_validated(data):
                 data = _parse_network_breakpoint_input(
                     data,
@@ -434,7 +438,7 @@ class NodeObservation(Observation):
                     item=item,
                     quantity=quantity,
                     aux_items=aux_items,
-                    edge=edge,
+                    reach=reach,
                     distance=distance,
                 )
         else:
@@ -444,40 +448,33 @@ class NodeObservation(Observation):
                     name=name,
                     item=item,
                     quantity=quantity,
-                    node=node,
+                    node=at,
                     aux_items=aux_items,
                 )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
 
     @property
-    def node(self) -> int | str | None:
-        """Node ID of observation, or ``None`` if this is a breakpoint observation (use ``at`` instead)."""
-        if "edge" in self.data.coords:
-            return None
-        return self.data.coords["node"].item()  # int or str
-
-    @property
-    def at(self) -> tuple[str, float] | None:
-        """Breakpoint location as ``(edge_id, distance)``, or ``None`` if this is a node observation (use ``node`` instead)."""
-        if "edge" in self.data.coords:
+    def at(self) -> int | str | tuple[str, float]:
+        """Observation location: node ID (int/str) or breakpoint ``(reach_id, distance)`` tuple."""
+        if "reach" in self.data.coords:
             return (
-                str(self.data.coords["edge"].item()),
+                str(self.data.coords["reach"].item()),
                 float(self.data.coords["distance"].item()),
             )
-        return None
+        return self.data.coords["node"].item()  # int or str
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
         """Reconstruct instance from a dataset slice."""
-        if "edge" in data.coords:
+        if "reach" in data.coords:
             return self.__class__(
                 data,
                 at=(
-                    str(data.coords["edge"].item()),
+                    str(data.coords["reach"].item()),
                     float(data.coords["distance"].item()),
                 ),
             )
-        return self.__class__(data, node=data.coords["node"].item())
+        return self.__class__(data, at=data.coords["node"].item())
 
     @overload
     @classmethod
@@ -560,7 +557,7 @@ class NodeObservation(Observation):
             return [
                 cls(
                     data_i,
-                    node=node_i,
+                    at=node_i,
                     item=None,
                     quantity=quantity,
                     aux_items=aux_items,
@@ -573,7 +570,7 @@ class NodeObservation(Observation):
             return [
                 cls(
                     data,
-                    node=node_i,
+                    at=node_i,
                     item=item_i,
                     quantity=quantity,
                     aux_items=aux_items,
@@ -581,6 +578,78 @@ class NodeObservation(Observation):
                 )
                 for node_i, item_i in zip(node_ids, node_items)
             ]
+
+
+class ReachObservation(Observation):
+    """Class for observations representing a quantity uniform across a network reach.
+
+    Some quantities (e.g. discharge in a river reach) are constant for the
+    whole reach, even though the underlying model stores values at
+    nodes/breakpoints.  A ReachObservation associates a timeseries with a
+    named reach; when matched against a
+    :class:`~modelskill.model.network.NetworkModelResult` the data is
+    extracted from an arbitrary breakpoint that belongs to that reach.
+
+    Parameters
+    ----------
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        data source with time series for the reach quantity
+    reach : str
+        Reach identifier (reach name / reach ID) in the network.
+    item : (int, str), optional
+        index or name of the wanted item/column, by default None
+        if data contains more than one item, item must be given
+    name : str, optional
+        user-defined name for easy identification in plots etc, by default derived from data
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
+    quantity : Quantity, optional
+        The quantity of the observation, for validation with model results
+    aux_items : list, optional
+        list of names or indices of auxiliary items, by default None
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> o1 = ms.ReachObservation(df, reach="reach_1", name="Q_reach_1")
+    >>> o2 = ms.ReachObservation(df, item="Discharge", reach="reach_2")
+    """
+
+    def __init__(
+        self,
+        data: PointType,
+        *,
+        reach: str,
+        item: int | str | None = None,
+        name: str | None = None,
+        weight: float = 1.0,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> None:
+        if not self._is_input_validated(data):
+            data = _parse_network_breakpoint_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                reach=reach,
+                distance=None,
+            )
+        assert isinstance(data, xr.Dataset)
+        super().__init__(data=data, weight=weight, attrs=attrs)
+
+    @property
+    def reach(self) -> str:
+        """Reach ID of this observation."""
+        return str(self.data.coords["reach"].item())
+
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Reconstruct instance from a dataset slice."""
+        return self.__class__(data, reach=str(data.coords["reach"].item()))
 
 
 def unit_display_name(name: str) -> str:
@@ -608,4 +677,5 @@ _obs_class_lookup = {
     GeometryType.POINT: PointObservation,
     GeometryType.TRACK: TrackObservation,
     GeometryType.NODE: NodeObservation,
+    GeometryType.REACH: ReachObservation,
 }

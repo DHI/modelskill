@@ -18,30 +18,34 @@ class XYZCoords:
 
 
 class NodeCoords:
-    def __init__(
-        self,
-        node: int | str | None = None,
-        boundary: str | None = None,
-    ):
+    def __init__(self, node: int | str | None = None):
         self.node = node if node is not None else np.nan
-        self.boundary = boundary if boundary is not None else np.nan
 
     @property
     def as_dict(self) -> dict:
-        return {"node": self.node, "boundary": self.boundary}
+        return {"node": self.node}
 
 
-class BreakpointCoords:
-    def __init__(
-        self,
-        edge: str,
-        distance: float,
-        boundary: str | None = None,
-    ):
-        self.edge = edge
+class ReachCoords:
+    """Coordinates for an observation along a network reach.
+
+    Parameters
+    ----------
+    reach : str
+        Reach identifier.
+    distance : float or None, optional
+        Along-reach distance (chainage).  When ``None`` the observation is
+        reach-level (no specific chainage) and no ``distance`` coordinate is
+        stored in the dataset.
+    """
+
+    def __init__(self, reach: str, distance: float | None = None):
+        self.reach = reach
         self.distance = distance
-        self.boundary = boundary if boundary is not None else np.nan
 
     @property
     def as_dict(self) -> dict:
-        return {"edge": self.edge, "distance": self.distance, "boundary": self.boundary}
+        d: dict = {"reach": self.reach}
+        if self.distance is not None:
+            d["distance"] = self.distance
+        return d

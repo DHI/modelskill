@@ -111,7 +111,7 @@ def node_obs1(network):
     np.random.seed(123)
     data = np.random.normal(1.4, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
-    return ms.NodeObservation(df, node=node_id, name="Station_A")
+    return ms.NodeObservation(df, at=node_id, name="Station_A")
 
 
 @pytest.fixture
@@ -122,7 +122,7 @@ def node_obs2(network):
     np.random.seed(456)
     data = np.random.normal(1.6, 0.25, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
-    return ms.NodeObservation(df, node=node_id, name="Station_B")
+    return ms.NodeObservation(df, at=node_id, name="Station_B")
 
 
 @pytest.fixture
@@ -131,7 +131,7 @@ def node_obs_invalid(network):
     time = pd.date_range("2017-10-27", periods=10, freq="h")
     data = np.random.normal(1.5, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
-    return ms.NodeObservation(df, node=999, name="Node_999_Obs")
+    return ms.NodeObservation(df, at=999, name="Node_999_Obs")
 
 
 @pytest.fixture
@@ -153,7 +153,7 @@ def node_obs_gaps(network):
     time = pd.date_range("2017-10-27", periods=10, freq="2h")  # Different frequency
     data = np.random.normal(1.5, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
-    return ms.NodeObservation(df, node=node_id, name="Node_100_Gaps")
+    return ms.NodeObservation(df, at=node_id, name="Node_100_Gaps")
 
 
 @pytest.fixture
@@ -783,7 +783,7 @@ def test_network_match_multi_obs_multi_model_comprehensive(
 def test_network_match_error_non_node_observation(network_mr, point_obs_error):
     """Test that non-NodeObservation raises appropriate error"""
     with pytest.raises(
-        TypeError, match="NetworkModelResult only supports NodeObservation"
+        TypeError, match="NetworkModelResult supports NodeObservation and ReachObservation"
     ):
         ms.match(point_obs_error, network_mr)
 

@@ -7,7 +7,7 @@ import pandas as pd
 if TYPE_CHECKING:
     from mikeio1d.result_network import ResultNode, ResultGridPoint, ResultReach
 
-from modelskill.network import NetworkNode, EdgeBreakPoint, NetworkEdge
+from modelskill.network import NetworkNode, ReachBreakPoint, NetworkReach
 
 
 def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
@@ -19,7 +19,11 @@ def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
     df = node.to_dataframe()
     renamer_dict = {}
     for quantity in node.quantities:
-        column_pairs = [(col, quantity) for col in df.columns if quantity in col.split(RES1D_NAME_SEP)]
+        column_pairs = [
+            (col, quantity)
+            for col in df.columns
+            if quantity in col.split(RES1D_NAME_SEP)
+        ]
         if len(column_pairs) != 1:
             raise ValueError(
                 f"There must be exactly one column per quantity, found {column_pairs}."
@@ -30,9 +34,15 @@ def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
 
 
 class Res1DNode(NetworkNode):
-    def __init__(self, id: str, *, data: pd.DataFrame | None = None, boundary: dict[str, pd.DataFrame] | None = None):
+    def __init__(
+        self,
+        id: str,
+        *,
+        data: pd.DataFrame | None = None,
+        boundary: dict[str, pd.DataFrame] | None = None,
+    ):
         self._id = id
-        self._data = data
+        self._data = pd.DataFrame() if data is None else data
         self._boundary = {} if boundary is None else boundary
 
     @property
@@ -40,7 +50,7 @@ class Res1DNode(NetworkNode):
         return self._id
 
     @property
-    def data(self) -> pd.DataFrame | None:
+    def data(self) -> pd.DataFrame:
         return self._data
 
     @property
@@ -48,22 +58,24 @@ class Res1DNode(NetworkNode):
         return self._boundary
 
 
-class GridPoint(EdgeBreakPoint):
-    def __init__(self, reach_id: str, chainage: float, data: pd.DataFrame | None = None):
+class GridPoint(ReachBreakPoint):
+    def __init__(
+        self, reach_id: str, chainage: float, data: pd.DataFrame | None = None
+    ):
         self._id = (reach_id, chainage)
-        self._data = data
+        self._data = pd.DataFrame() if data is None else data
 
     @property
     def id(self) -> tuple[str, float]:
         return self._id
 
     @property
-    def data(self) -> pd.DataFrame | None:
+    def data(self) -> pd.DataFrame:
         return self._data
 
 
-class Res1DReach(NetworkEdge):
-    """NetworkEdge adapter for a mikeio1d ResultReach."""
+class Res1DReach(NetworkReach):
+    """NetworkReach adapter for a mikeio1d ResultReach."""
 
     def __init__(
         self,
@@ -87,7 +99,7 @@ class Res1DReach(NetworkEdge):
         self._start = start_node
         self._end = end_node
         self._length = reach.length
-        self._breakpoints: list[EdgeBreakPoint] = [
+        self._breakpoints: list[ReachBreakPoint] = [
             GridPoint(
                 gridpoint.reach_name,
                 gridpoint.chainage,
@@ -113,5 +125,5 @@ class Res1DReach(NetworkEdge):
         return self._length
 
     @property
-    def breakpoints(self) -> list[EdgeBreakPoint]:
+    def breakpoints(self) -> list[ReachBreakPoint]:
         return self._breakpoints
