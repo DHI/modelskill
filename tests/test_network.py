@@ -17,7 +17,7 @@ from modelskill.model.network import (
 from modelskill.network import (
     Network,
     BasicNode,
-    BasicEdge,
+    BasicReach,
 )
 from modelskill.obs import NodeObservation
 from modelskill.quantity import Quantity
@@ -28,11 +28,11 @@ def _make_network(node_ids, time, data, quantity="WaterLevel"):
         BasicNode(nid, pd.DataFrame({quantity: data[:, i]}, index=time))
         for i, nid in enumerate(node_ids)
     ]
-    edges = [
-        BasicEdge(f"e{i}", nodes[i], nodes[i + 1], length=100.0)
+    reaches = [
+        BasicReach(f"r{i}", nodes[i], nodes[i + 1], length=100.0)
         for i in range(len(nodes) - 1)
     ]
-    return Network(edges)
+    return Network(reaches)
 
 
 @pytest.fixture
@@ -85,8 +85,8 @@ def sample_network_multivars():
         )
         for i, nid in enumerate(["123", "456"])
     ]
-    edges = [BasicEdge("e1", nodes[0], nodes[1], length=100.0)]
-    return Network(edges)
+    reaches = [BasicReach("r1", nodes[0], nodes[1], length=100.0)]
+    return Network(reaches)
 
 
 @pytest.fixture
@@ -174,7 +174,7 @@ class TestNetworkModelResult:
         """Test extraction of a valid node"""
         nmr = NetworkModelResult(sample_network)
         node_id = sample_network.find(node="123")
-        obs = NodeObservation(sample_node_data, node=node_id, name="Node_123")
+        obs = NodeObservation(sample_node_data, at=node_id, name="Node_123")
 
         extracted = nmr.extract(obs)
 
@@ -185,7 +185,7 @@ class TestNetworkModelResult:
     def test_extract_invalid_node(self, sample_network, sample_node_data):
         """Test extraction of a node not present in the network"""
         nmr = NetworkModelResult(sample_network)
-        obs = NodeObservation(sample_node_data, node=999, name="Node_999")
+        obs = NodeObservation(sample_node_data, at=999, name="Node_999")
 
         with pytest.raises(ValueError, match="Node 999 not found"):
             nmr.extract(obs)
@@ -200,7 +200,7 @@ class TestNetworkModelResult:
         obs = ms.PointObservation(df, x=0.0, y=0.0)
 
         with pytest.raises(
-            TypeError, match="NetworkModelResult only supports NodeObservation"
+            TypeError, match="NetworkModelResult supports NodeObservation and ReachObservation"
         ):
             nmr.extract(obs)
 
@@ -223,26 +223,26 @@ class TestNodeObservation:
         """Test initialization with pandas DataFrame"""
 
         obs = NodeObservation(
-            sample_node_data, node=123, name="Sensor_1", item="WaterLevel"
+            sample_node_data, at=123, name="Sensor_1", item="WaterLevel"
         )
 
-        assert obs.node == 123
+        assert obs.at == 123
         assert obs.name == "Sensor_1"
         assert len(obs.time) == 10
         assert isinstance(obs.time, pd.DatetimeIndex)
 
     def test_init_with_series(self, sample_series):
         """Test initialization with pandas Series"""
-        obs = NodeObservation(sample_series, node=456, name="Node_456")
+        obs = NodeObservation(sample_series, at=456, name="Node_456")
 
-        assert obs.node == 456
+        assert obs.at == 456
         assert obs.name == "Node_456"
         assert len(obs.time) == 10
 
     def test_node_attrs(self, sample_node_data):
         """Test attrs property"""
         attrs = {"source": "test", "version": "1.0"}
-        obs = NodeObservation(sample_node_data, node=123, attrs=attrs, weight=2.5)
+        obs = NodeObservation(sample_node_data, at=123, attrs=attrs, weight=2.5)
 
         assert obs.attrs["source"] == "test"
         assert obs.attrs["version"] == "1.0"
@@ -313,10 +313,10 @@ class TestNodeObservation:
 
     def test_init_from_csv(self):
         obs = NodeObservation(
-            "tests/testdata/network_sensor_1.csv", node=1, item="water_level@sens1"
+            "tests/testdata/network_sensor_1.csv", at=1, item="water_level@sens1"
         )
 
-        assert obs.node == 1
+        assert obs.at == 1
         assert len(obs.time) == 110
         assert isinstance(obs.time, pd.DatetimeIndex)
 
@@ -383,7 +383,7 @@ class TestNetworkIntegration:
         """Test complete workflow from network model to node extraction"""
         nmr = NetworkModelResult(sample_network, name="Network_Model")
         node_id = sample_network.find(node="123")
-        obs = NodeObservation(sample_node_data, node=node_id, name="Node_123_Obs")
+        obs = NodeObservation(sample_node_data, at=node_id, name="Node_123_Obs")
 
         extracted = nmr.extract(obs)
 
@@ -396,7 +396,7 @@ class TestNetworkIntegration:
         """Test matching workflow with network data"""
         nmr = NetworkModelResult(sample_network, name="Network_Model")
         node_id = sample_network.find(node="123")
-        obs = NodeObservation(sample_node_data, node=node_id, name="Node_123_Obs")
+        obs = NodeObservation(sample_node_data, at=node_id, name="Node_123_Obs")
 
         comparer = ms.match(obs, nmr)
 
@@ -437,8 +437,351 @@ class TestNetworkIntegration:
             assert comparer.n_points > 0
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14")
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
 def test_open_res1d():
     path_to_file = "./tests/testdata/network.res1d"
     network = Network.from_res1d(path_to_file)
     assert network.graph.number_of_nodes() == 259
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_extract_reach_observation_happy_path(sample_node_data):
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_res1d(path_to_file)
+    nmr = NetworkModelResult(network, item="Discharge", name="network_model")
+    obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
+    obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
+
+    extracted = nmr.extract(obs)
+
+    assert isinstance(extracted, NodeModelResult)
+    assert extracted.name == "network_model"
+    assert extracted.node in nmr.nodes
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_extract_reach_observation_non_equivalent_breakpoints_raises(sample_node_data):
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_res1d(path_to_file)
+    nmr = NetworkModelResult(network, item="Discharge")
+    obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
+    obs = ms.ReachObservation(obs_data, reach="113l1", item="Discharge")
+
+    with pytest.raises(
+        ValueError, match="Not all data in breakpoints are equivalent"
+    ):
+        nmr.extract(obs)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_extract_reach_observation_with_reaches_not_populated_raises_valueerror(
+    sample_node_data,
+):
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_res1d(path_to_file, reaches=[])
+    nmr = NetworkModelResult(network, item="WaterLevel")
+    obs = ms.ReachObservation(sample_node_data, reach="100l1", item="WaterLevel")
+
+    with pytest.raises(ValueError, match="none of its breakpoints have data loaded"):
+        nmr.extract(obs)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_extract_reach_observation_breakpoint_node_missing_raises_valueerror(
+    sample_node_data,
+):
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_res1d(path_to_file)
+    nmr = NetworkModelResult(network, item="Discharge")
+    obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
+    baseline_obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
+    node_id = nmr.extract(baseline_obs).node
+    remaining_nodes = []
+    for node in nmr.data.node.values:
+        node_int = int(node)
+        if node_int != node_id:
+            remaining_nodes.append(node_int)
+    nmr.data = nmr.data.sel(node=remaining_nodes)
+
+    obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
+
+    with pytest.raises(ValueError, match="matching breakpoint nodes are missing"):
+        nmr.extract(obs)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_nodes_filter_creates_full_network():
+    """When nodes is specified, the full network topology is created."""
+    path_to_file = "./tests/testdata/network.res1d"
+    full_network = Network.from_res1d(path_to_file)
+
+    selected_nodes = ["1", "108"]
+    partial_network = Network.from_res1d(path_to_file, nodes=selected_nodes)
+
+    # Full topology is preserved
+    assert (
+        partial_network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
+    )
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_nodes_filter_only_selected_have_data():
+    """When nodes is specified, only selected nodes contain non-empty data."""
+    path_to_file = "./tests/testdata/network.res1d"
+
+    selected_nodes = ["1", "108"]
+    network = Network.from_res1d(path_to_file, nodes=selected_nodes, reaches=[])
+    g = network.graph.copy()
+
+    n_nodes = network.graph.number_of_nodes()
+    assert sum([g.nodes[n]["data"].empty for n in g.nodes]) == n_nodes - 2
+    for n in selected_nodes:
+        assert not g.nodes[network.find(n)]["data"].empty
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_nodes_single_string():
+    """nodes argument accepts a single string (not just a list)."""
+    path_to_file = "./tests/testdata/network.res1d"
+    full_network = Network.from_res1d(path_to_file)
+
+    network = Network.from_res1d(path_to_file, nodes="108", reaches=[])
+    g = network.graph.copy()
+
+    assert g.number_of_nodes() == full_network.graph.number_of_nodes()
+
+    nodes_with_data = [n for n in g.nodes if not g.nodes[n]["data"].empty]
+    nodes_with_data = [network.recall(n)["node"] for n in nodes_with_data]
+    assert nodes_with_data == ["108"]
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_dataframe_from_partial_network():
+    """nodes argument accepts a single string (not just a list)."""
+    path_to_file = "./tests/testdata/network.res1d"
+    selected_nodes = ["108", "101"]
+    network = Network.from_res1d(path_to_file, nodes=selected_nodes, reaches=[])
+    nodes_in_df = network.to_dataframe().droplevel(axis=1, level=1).columns
+
+    assert set(nodes_in_df) == set([network.find(n) for n in selected_nodes])
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
+    path_to_file = "./tests/testdata/network.res1d"
+    full_network = Network.from_res1d(path_to_file)
+    network = Network.from_res1d(path_to_file, nodes=[], reaches=[])
+
+    assert network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
+
+    df = network.to_dataframe()
+    assert df.empty
+    assert isinstance(df.columns, pd.MultiIndex)
+    assert df.columns.names == ["node", "quantity"]
+    assert df.index.name == "time"
+
+    ds = network.to_dataset()
+    assert isinstance(ds, xr.Dataset)
+    assert len(ds.data_vars) == 0
+
+
+# ---------------------------------------------------------------------------
+# NodeObservation — alias / breakpoint node forms
+# ---------------------------------------------------------------------------
+
+
+class TestNodeObservationAliases:
+    """NodeObservation accepts int, str alias, and (reach, distance) tuple."""
+
+    def test_integer_node_unchanged(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at=42)
+        assert obs.at == 42
+        assert isinstance(obs.at, int)
+
+    def test_integer_node_coord(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at=42)
+        assert "node" in obs.data.coords
+        assert int(obs.data.coords["node"].item()) == 42
+
+    def test_string_alias_stored(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at="node_A", name="test")
+        assert obs.at == "node_A"
+        assert isinstance(obs.at, str)
+
+    def test_string_alias_has_node_coord(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at="node_A")
+        assert "node" in obs.data.coords
+        assert obs.data.coords["node"].item() == "node_A"
+
+    def test_string_alias_gtype_is_node(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at="node_A")
+        assert obs.data.attrs["gtype"] == "node"
+
+    def test_tuple_node_stored(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
+        assert obs.at == ("reach_1", 24.5)
+        assert isinstance(obs.at, tuple)
+
+    def test_tuple_node_gtype_is_node(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
+        assert obs.data.attrs["gtype"] == "node"
+
+    def test_tuple_node_has_reach_distance_coords(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
+        assert "reach" in obs.data.coords
+        assert "distance" in obs.data.coords
+        assert str(obs.data.coords["reach"].item()) == "reach_1"
+        assert float(obs.data.coords["distance"].item()) == pytest.approx(24.5)
+
+    def test_tuple_node_has_no_node_coord(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
+        assert "node" not in obs.data.coords
+
+    def test_tuple_node_roundtrip_via_create_new_instance(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
+        obs2 = obs._create_new_instance(obs.data)
+        assert obs2.at == ("reach_1", 24.5)
+
+    def test_string_roundtrip_via_create_new_instance(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at="node_A")
+        obs2 = obs._create_new_instance(obs.data)
+        assert obs2.at == "node_A"
+
+
+# ---------------------------------------------------------------------------
+# NetworkModelResult — alias resolution in extract()
+# ---------------------------------------------------------------------------
+
+
+class TestNetworkModelResultAliasResolution:
+    """NetworkModelResult.extract() resolves str and tuple aliases via alias_map."""
+
+    def test_network_stored(self, sample_network):
+        nmr = NetworkModelResult(sample_network)
+        assert hasattr(nmr, "network")
+        assert "123" in nmr.network._alias_map
+        assert "456" in nmr.network._alias_map
+        assert "789" in nmr.network._alias_map
+
+    def test_extract_with_string_alias(self, sample_network, sample_node_data):
+        nmr = NetworkModelResult(sample_network)
+        obs = NodeObservation(sample_node_data, at="123", name="Node_123")
+        extracted = nmr.extract(obs)
+        expected_id = sample_network.find(node="123")
+        assert isinstance(extracted, NodeModelResult)
+        assert extracted.node == expected_id
+
+    def test_extract_string_alias_wrong_key_raises(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        obs = NodeObservation(sample_node_data, at="nonexistent_node")
+        with pytest.raises(ValueError, match="not found"):
+            nmr.extract(obs)
+
+    def test_extract_with_tuple_breakpoint(self, sample_network, sample_node_data):
+        """Tuple alias is resolved via _alias_map (mapping injected for this test)."""
+        nmr = NetworkModelResult(sample_network)
+        existing_int = int(sample_network.find(node="123"))
+        nmr.network._alias_map[("reach_test", 10.0)] = existing_int
+        obs = NodeObservation(sample_node_data, at=("reach_test", 10.0))
+        extracted = nmr.extract(obs)
+        assert extracted.node == existing_int
+
+    def test_extract_with_tuple_breakpoint_tolerance(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        existing_int = int(sample_network.find(node="123"))
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
+        nmr.network._alias_map[("reach_test", base_distance)] = existing_int
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol / 2)
+        )
+        extracted = nmr.extract(obs)
+        assert extracted.node == existing_int
+
+    def test_extract_with_tuple_breakpoint_outside_tolerance_raises(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        existing_int = int(sample_network.find(node="123"))
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
+        nmr.network._alias_map[("reach_test", base_distance)] = existing_int
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol + 1e-4)
+        )
+        with pytest.raises(ValueError, match="not found"):
+            nmr.extract(obs)
+
+    def test_extract_with_tuple_breakpoint_uses_closest_within_tolerance(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
+        node_a = int(sample_network.find(node="123"))
+        node_b = int(sample_network.find(node="456"))
+        nmr.network._alias_map[("reach_test", base_distance + 2e-4)] = node_a
+        nmr.network._alias_map[("reach_test", base_distance + 8e-4)] = node_b
+
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol * 0.6)
+        )
+        extracted = nmr.extract(obs)
+        assert extracted.node == node_b
+
+    def test_extract_with_tuple_breakpoint_tie_uses_smallest_node_id(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        base_distance = 10.0
+        tol = NetworkModelResult._CHAINAGE_TOLERANCE
+        node_a = int(sample_network.find(node="123"))
+        node_b = int(sample_network.find(node="456"))
+        nmr.network._alias_map[("reach_test", base_distance + 4e-4)] = node_a
+        nmr.network._alias_map[("reach_test", base_distance + 8e-4)] = node_b
+
+        obs = NodeObservation(
+            sample_node_data, at=("reach_test", base_distance + tol * 0.6)
+        )
+        extracted = nmr.extract(obs)
+        assert extracted.node == min(node_a, node_b)
+
+    def test_extract_tuple_alias_wrong_key_raises(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        obs = NodeObservation(sample_node_data, at=("nonexistent_reach", 0.0))
+        with pytest.raises(ValueError, match="not found"):
+            nmr.extract(obs)
+
+    def test_match_with_string_alias(self, sample_network, sample_node_data):
+        """Full ms.match() workflow works end-to-end with a string alias."""
+        nmr = NetworkModelResult(sample_network, name="Network_Model")
+        obs = NodeObservation(sample_node_data, at="123", name="Node_123")
+        comparer = ms.match(obs, nmr)
+        assert comparer.n_points > 0
+        assert "Network_Model" in comparer.mod_names

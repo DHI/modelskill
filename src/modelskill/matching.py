@@ -29,11 +29,14 @@ from .model.grid import GridModelResult
 from .model.network import NetworkModelResult, NodeModelResult
 from .model.track import TrackModelResult
 from .model.point import align_data
+from .model.vertical import VerticalModelResult
 from .obs import (
     Observation,
     PointObservation,
     TrackObservation,
+    VerticalObservation,
     NodeObservation,
+    ReachObservation,
 )
 from .timeseries import TimeSeries
 from .types import Period
@@ -46,6 +49,7 @@ MRTypes = Union[
     GridModelResult,
     DfsuModelResult,
     TrackModelResult,
+    VerticalModelResult,
     NetworkModelResult,
     DummyModelResult,
 ]
@@ -70,7 +74,9 @@ MRInputType = Union[
 ObsTypes = Union[
     PointObservation,
     TrackObservation,
+    VerticalObservation,
     NodeObservation,
+    ReachObservation,
 ]
 ObsInputType = Union[
     str,
@@ -99,6 +105,7 @@ def from_matched(
     z: float | None = None,
     x_item: str | int | None = None,
     y_item: str | int | None = None,
+    z_item: str | int | None = None,
 ) -> Comparer:
     """Create a Comparer from data that is already matched (aligned).
 
@@ -127,6 +134,8 @@ def from_matched(
         Name of x item, only relevant for track data
     y_item: [str, int], optional
         Name of y item, only relevant for track data
+    z_item: [str, int], optional
+        Name of z item, only relevant for vertical data for which it must be provided
 
     Returns
     -------
@@ -179,6 +188,7 @@ def from_matched(
         z=z,
         x_item=x_item,
         y_item=y_item,
+        z_item=z_item,
         quantity=quantity,
     )
 
@@ -339,7 +349,10 @@ def _match_single_obs(
     if len(names) != len(set(names)):
         raise ValueError(f"Duplicate model names found: {names}")
 
-    raw_mod_data: dict[str, PointModelResult | TrackModelResult | NodeModelResult] = {}
+    raw_mod_data: dict[
+        str,
+        PointModelResult | TrackModelResult | VerticalModelResult | NodeModelResult,
+    ] = {}
     for m in models:
         is_field = isinstance(m, (GridModelResult, DfsuModelResult))
         is_dummy = isinstance(m, DummyModelResult)
@@ -378,7 +391,10 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 def _match_space_time(
     observation: Observation,
-    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult | NodeModelResult],
+    raw_mod_data: Mapping[
+        str,
+        PointModelResult | TrackModelResult | VerticalModelResult | NodeModelResult,
+    ],
     max_model_gap: float | None,
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
@@ -402,8 +418,17 @@ def _match_space_time(
                 )
             case PointModelResult() as pmr, PointObservation():
                 aligned = align_data(pmr.data, observation, max_gap=max_model_gap)
+            case VerticalModelResult() as vmr, VerticalObservation():
+                if max_model_gap is not None:
+                    raise NotImplementedError(
+                        "max_model_gap is not yet supported for VerticalModelResult / VerticalObservation matching"
+                    )
+                aligned = vmr.align(observation)
             case NodeModelResult() as nmr, NodeObservation():
                 # mr is the extracted NodeModelResult
+                aligned = align_data(nmr.data, observation, max_gap=max_model_gap)
+            case NodeModelResult() as nmr, ReachObservation():
+                # ReachObservation is extracted to a NodeModelResult (any breakpoint on the reach)
                 aligned = align_data(nmr.data, observation, max_gap=max_model_gap)
             case _:
                 raise TypeError(
@@ -416,7 +441,6 @@ def _match_space_time(
             raise ValueError(
                 f"Aux variables are not allowed to have identical names. Choose either aux from obs or model. Overlapping: {overlapping}"
             )
-
         for dv in aligned:
             data[dv] = aligned[dv]
 

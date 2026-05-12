@@ -17,15 +17,35 @@ class XYZCoords:
         return {"x": self.x, "y": self.y, "z": self.z}
 
 
-class NetworkCoords:
-    def __init__(
-        self,
-        node: int | None = None,
-        boundary: str | None = None,
-    ):
+class NodeCoords:
+    def __init__(self, node: int | str | None = None):
         self.node = node if node is not None else np.nan
-        self.boundary = boundary if boundary is not None else np.nan
 
     @property
     def as_dict(self) -> dict:
-        return {"node": self.node, "boundary": self.boundary}
+        return {"node": self.node}
+
+
+class ReachCoords:
+    """Coordinates for an observation along a network reach.
+
+    Parameters
+    ----------
+    reach : str
+        Reach identifier.
+    distance : float or None, optional
+        Along-reach distance (chainage).  When ``None`` the observation is
+        reach-level (no specific chainage) and no ``distance`` coordinate is
+        stored in the dataset.
+    """
+
+    def __init__(self, reach: str, distance: float | None = None):
+        self.reach = reach
+        self.distance = distance
+
+    @property
+    def as_dict(self) -> dict:
+        d: dict = {"reach": self.reach}
+        if self.distance is not None:
+            d["distance"] = self.distance
+        return d

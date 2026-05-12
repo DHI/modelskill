@@ -7,10 +7,10 @@ import pandas as pd
 if TYPE_CHECKING:
     from mikeio1d.result_network import ResultNode, ResultGridPoint, ResultReach
 
-from modelskill.network import NetworkNode, EdgeBreakPoint, NetworkEdge
+from modelskill.network import NetworkNode, ReachBreakPoint, NetworkReach
 
 
-def _simplify_res1d_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
+def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
     # We remove suffixes and indexes so the columns contain only the quantity names
 
     # The columns in a Res1D dataframe follow the convention "Quantity:Location:Sublocation"
@@ -19,7 +19,11 @@ def _simplify_res1d_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame
     df = node.to_dataframe()
     renamer_dict = {}
     for quantity in node.quantities:
-        column_pairs = [(col, quantity) for col in df.columns if quantity in col.split(RES1D_NAME_SEP)]
+        column_pairs = [
+            (col, quantity)
+            for col in df.columns
+            if quantity in col.split(RES1D_NAME_SEP)
+        ]
         if len(column_pairs) != 1:
             raise ValueError(
                 f"There must be exactly one column per quantity, found {column_pairs}."
@@ -30,12 +34,16 @@ def _simplify_res1d_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame
 
 
 class Res1DNode(NetworkNode):
-    def __init__(self, node: ResultNode, boundary: dict[str, ResultGridPoint]):
-        self._id = node.id
-        self._data = _simplify_res1d_colnames(node)
-        self._boundary = {
-            key: _simplify_res1d_colnames(point) for key, point in boundary.items()
-        }
+    def __init__(
+        self,
+        id: str,
+        *,
+        data: pd.DataFrame | None = None,
+        boundary: dict[str, pd.DataFrame] | None = None,
+    ):
+        self._id = id
+        self._data = pd.DataFrame() if data is None else data
+        self._boundary = {} if boundary is None else boundary
 
     @property
     def id(self) -> str:
@@ -50,10 +58,12 @@ class Res1DNode(NetworkNode):
         return self._boundary
 
 
-class GridPoint(EdgeBreakPoint):
-    def __init__(self, point: ResultGridPoint):
-        self._id = (point.reach_name, point.chainage)
-        self._data = _simplify_res1d_colnames(point)
+class GridPoint(ReachBreakPoint):
+    def __init__(
+        self, reach_id: str, chainage: float, data: pd.DataFrame | None = None
+    ):
+        self._id = (reach_id, chainage)
+        self._data = pd.DataFrame() if data is None else data
 
     @property
     def id(self) -> tuple[str, float]:
@@ -64,11 +74,16 @@ class GridPoint(EdgeBreakPoint):
         return self._data
 
 
-class Res1DReach(NetworkEdge):
-    """NetworkEdge adapter for a mikeio1d ResultReach."""
+class Res1DReach(NetworkReach):
+    """NetworkReach adapter for a mikeio1d ResultReach."""
 
     def __init__(
-        self, reach: ResultReach, start_node: ResultNode, end_node: ResultNode
+        self,
+        reach: ResultReach,
+        start_node: Res1DNode,
+        end_node: Res1DNode,
+        *,
+        populate_gridpoints: bool = True,
     ):
         self._id = reach.name
 
@@ -77,17 +92,20 @@ class Res1DReach(NetworkEdge):
         if end_node.id != reach.end_node:
             raise ValueError("Incorrect ending node.")
 
-        start_gridpoint = reach.gridpoints[0]
-        end_gridpoint = reach.gridpoints[-1]
         intermediate_gridpoints = (
             reach.gridpoints[1:-1] if len(reach.gridpoints) > 2 else []
         )
 
-        self._start = Res1DNode(start_node, {reach.name: start_gridpoint})
-        self._end = Res1DNode(end_node, {reach.name: end_gridpoint})
+        self._start = start_node
+        self._end = end_node
         self._length = reach.length
-        self._breakpoints: list[EdgeBreakPoint] = [
-            GridPoint(gridpoint) for gridpoint in intermediate_gridpoints
+        self._breakpoints: list[ReachBreakPoint] = [
+            GridPoint(
+                gridpoint.reach_name,
+                gridpoint.chainage,
+                _simplify_colnames(gridpoint) if populate_gridpoints else None,
+            )
+            for gridpoint in intermediate_gridpoints
         ]
 
     @property
@@ -107,5 +125,5 @@ class Res1DReach(NetworkEdge):
         return self._length
 
     @property
-    def breakpoints(self) -> list[EdgeBreakPoint]:
+    def breakpoints(self) -> list[ReachBreakPoint]:
         return self._breakpoints

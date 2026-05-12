@@ -36,12 +36,20 @@ from .model import model_result
 from .model import (
     PointModelResult,
     TrackModelResult,
+    VerticalModelResult,
     GridModelResult,
     DfsuModelResult,
     NetworkModelResult,
     DummyModelResult,
 )
-from .obs import observation, PointObservation, TrackObservation, NodeObservation
+from .obs import (
+    observation,
+    PointObservation,
+    TrackObservation,
+    VerticalObservation,
+    NodeObservation,
+    ReachObservation,
+)
 from .matching import from_matched, match
 from .configuration import from_config
 from .settings import options, get_option, set_option, reset_option, load_style
@@ -88,6 +96,7 @@ __all__ = [
     "model_result",
     "PointModelResult",
     "TrackModelResult",
+    "VerticalModelResult",
     "GridModelResult",
     "DfsuModelResult",
     "DummyModelResult",
@@ -95,7 +104,9 @@ __all__ = [
     "observation",
     "PointObservation",
     "TrackObservation",
+    "VerticalObservation",
     "NodeObservation",
+    "ReachObservation",
     "TimeSeries",
     "match",
     "from_matched",

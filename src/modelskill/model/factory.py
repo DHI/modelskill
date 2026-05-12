@@ -7,6 +7,7 @@ import xarray as xr
 
 from .point import PointModelResult
 from .track import TrackModelResult
+from .vertical import VerticalModelResult
 from .dfsu import DfsuModelResult
 from .grid import GridModelResult
 
@@ -16,6 +17,7 @@ from ..types import GeometryType, DataInputType
 _modelresult_lookup = {
     GeometryType.POINT: PointModelResult,
     GeometryType.TRACK: TrackModelResult,
+    GeometryType.VERTICAL: VerticalModelResult,
     GeometryType.UNSTRUCTURED: DfsuModelResult,
     GeometryType.GRID: GridModelResult,
 }
@@ -25,9 +27,15 @@ def model_result(
     data: DataInputType,
     *,
     aux_items: list[int | str] | None = None,
-    gtype: Literal["point", "track", "unstructured", "grid"] | None = None,
+    gtype: Literal["point", "track", "vertical", "unstructured", "grid"] | None = None,
     **kwargs: Any,
-) -> PointModelResult | TrackModelResult | DfsuModelResult | GridModelResult:
+) -> (
+    PointModelResult
+    | TrackModelResult
+    | VerticalModelResult
+    | DfsuModelResult
+    | GridModelResult
+):
     """A factory function for creating an appropriate object based on the data input.
 
     Parameters
@@ -36,7 +44,7 @@ def model_result(
         The data to be used for creating the ModelResult object.
     aux_items : list[int | str] | None
         Auxiliary items, by default None
-    gtype : Literal["point", "track", "unstructured", "grid"] | None
+    gtype : Literal["point", "track", "vertical", "unstructured", "grid"] | None
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
         Additional keyword arguments to be passed to the ModelResult constructor.
@@ -48,6 +56,8 @@ def model_result(
     <DfsuModelResult> 'Oresund2D'
     >>> ms.model_result("ERA5_DutchCoast.nc", item="swh", name="ERA5")
     <GridModelResult> 'ERA5'
+    >>> ms.model_result("VerticalProfile_obs1.dfs0", z_item="z", item="Salinity", name="vmod", gtype="vertical")
+    <VerticalModelResult> 'vmod'
     """
     if gtype is None:
         geometry = _guess_gtype(data)

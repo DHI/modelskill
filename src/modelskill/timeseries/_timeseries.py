@@ -82,18 +82,44 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
         ds.time.to_index().is_monotonic_increasing
     ), "time must be increasing (please check for duplicate times))"
 
-    # Validate coordinates
-    # Check for either traditional x,y coordinates OR node-based coordinates
+    if "gtype" not in ds.attrs:
+        raise ValueError("data must have a gtype attribute")
+
+    # Validate gtype
+    gtype = ds.attrs["gtype"]
+    valid_gtypes = {
+        str(GeometryType.POINT),
+        str(GeometryType.TRACK),
+        str(GeometryType.VERTICAL),
+        str(GeometryType.NODE),
+        str(GeometryType.REACH),
+    }
+    if gtype not in valid_gtypes:
+        raise ValueError(
+            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK}, {GeometryType.VERTICAL}, {GeometryType.NODE}, or {GeometryType.REACH}"
+        )
+
+    # Validate coordinates: x,y spatial, node-based, or reach-based (with or without chainage)
     has_spatial_coords = "x" in ds.coords and "y" in ds.coords
     has_node_coord = "node" in ds.coords
+    has_breakpoint_coords = "reach" in ds.coords and "distance" in ds.coords
+    has_reach_coord = "reach" in ds.coords and "distance" not in ds.coords
 
-    if not has_spatial_coords and not has_node_coord:
-        raise ValueError("data must have either x,y coordinates or a node coordinate")
+    if (
+        not has_spatial_coords
+        and not has_node_coord
+        and not has_breakpoint_coords
+        and not has_reach_coord
+    ):
+        raise ValueError(
+            "data must have either x,y coordinates, a node coordinate, "
+            "reach+distance coordinates, or a reach coordinate"
+        )
 
-    if has_spatial_coords:
-        # Traditional spatial data - ensure z coordinate exists
-        if "z" not in ds.coords:
-            ds.coords["z"] = np.nan
+    if has_spatial_coords and "z" not in ds.coords:
+        if gtype == str(GeometryType.VERTICAL):
+            raise ValueError("data with gtype 'vertical' must have a z-coordinate")
+        ds.coords["z"] = np.nan
 
     # Validate data
     vars = [v for v in ds.data_vars]
@@ -127,16 +153,6 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     da = ds[name]
 
     # Validate attrs
-    if "gtype" not in ds.attrs:
-        raise ValueError("data must have a gtype attribute")
-    if ds.attrs["gtype"] not in [
-        str(GeometryType.POINT),
-        str(GeometryType.TRACK),
-        str(GeometryType.NODE),
-    ]:
-        raise ValueError(
-            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK}, or {GeometryType.NODE}"
-        )
     if "long_name" not in da.attrs:
         da.attrs["long_name"] = Quantity.undefined().name
     if "units" not in da.attrs:
@@ -348,8 +364,12 @@ class TimeSeries:
             priority = {"x": 0, "y": 1}
             cols = sorted(df.columns, key=lambda col: (priority.get(col, 999), col))
             return df[cols]
+        elif self.gtype == str(GeometryType.VERTICAL):
+            return self.data.drop_vars(["x", "y"]).to_dataframe()
         elif self.gtype == str(GeometryType.NODE):
             return self.data.drop_vars(["node"]).to_dataframe()
+        elif self.gtype == str(GeometryType.REACH):
+            return self.data.drop_vars(["reach"]).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
