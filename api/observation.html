@@ -483,15 +483,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>observation(data, <span class="op">*</span>, gtype<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Create an appropriate observation object.</p>
 <p>A factory function for creating an appropriate observation object based on the data and args.</p>
-<p>If ‘x’ or ‘y’ is given, a PointObservation is created. If ‘x_item’ or ‘y_item’ is given, a TrackObservation is created. If ‘at’ is given, a NodeObservation is created. If ‘reach’ is given, a ReachObservation is created.</p>
+<p>If ‘x’ or ‘y’ is given, a PointObservation is created. If ‘x_item’ or ‘y_item’ is given, a TrackObservation is created. If ‘z_item’ is given, a VerticalObservation is created. If ‘at’ is given, a NodeObservation is created. If ‘reach’ is given, a ReachObservation is created. If gtype is explicitly given, it will be used to determine the type of observation.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 5%">
-<col style="width: 36%">
-<col style="width: 50%">
-<col style="width: 7%">
+<col style="width: 41%">
+<col style="width: 46%">
+<col style="width: 6%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -510,7 +510,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>gtype</td>
-<td>Literal['point', 'track', 'node', 'reach'] | None</td>
+<td>Literal['point', 'track', 'vertical', 'node', 'reach'] | None</td>
 <td>The geometry type of the data. If not specified, it will be guessed from the data.</td>
 <td><code>None</code></td>
 </tr>
@@ -527,9 +527,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 6%">
-<col style="width: 58%">
-<col style="width: 35%">
+<col style="width: 5%">
+<col style="width: 64%">
+<col style="width: 30%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -541,7 +541,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td></td>
-<td>PointObservation or TrackObservation or NodeObservation or ReachObservation</td>
+<td>PointObservation or TrackObservation or VerticalObservation or NodeObservation or ReachObservation</td>
 <td>An observation object of the appropriate type</td>
 </tr>
 </tbody>

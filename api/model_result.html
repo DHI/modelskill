@@ -485,9 +485,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 6%">
-<col style="width: 39%">
-<col style="width: 47%">
+<col style="width: 5%">
+<col style="width: 43%">
+<col style="width: 44%">
 <col style="width: 6%">
 </colgroup>
 <thead>
@@ -513,7 +513,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td>gtype</td>
-<td>Literal['point', 'track', 'unstructured', 'grid'] | None</td>
+<td>Literal['point', 'track', 'vertical', 'unstructured', 'grid'] | None</td>
 <td>The geometry type of the data. If not specified, it will be guessed from the data.</td>
 <td><code>None</code></td>
 </tr>
@@ -532,7 +532,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> ms.model_result(<span class="st">"Oresund2D.dfsu"</span>, item<span class="op">=</span><span class="dv">0</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span>DfsuModelResult<span class="op">&gt;</span> <span class="st">'Oresund2D'</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> ms.model_result(<span class="st">"ERA5_DutchCoast.nc"</span>, item<span class="op">=</span><span class="st">"swh"</span>, name<span class="op">=</span><span class="st">"ERA5"</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span>GridModelResult<span class="op">&gt;</span> <span class="st">'ERA5'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span>GridModelResult<span class="op">&gt;</span> <span class="st">'ERA5'</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> ms.model_result(<span class="st">"VerticalProfile_obs1.dfs0"</span>, z_item<span class="op">=</span><span class="st">"z"</span>, item<span class="op">=</span><span class="st">"Salinity"</span>, name<span class="op">=</span><span class="st">"vmod"</span>, gtype<span class="op">=</span><span class="st">"vertical"</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span>VerticalModelResult<span class="op">&gt;</span> <span class="st">'vmod'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 
 </section>

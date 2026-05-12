@@ -445,10 +445,11 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="observations" class="level1">
 <h1>Observations</h1>
-<p>ModelSkill supports three types of observations:</p>
+<p>ModelSkill supports four types of observations:</p>
 <ul>
 <li><a href="../api/PointObservation.html#modelskill.PointObservation"><code>PointObservation</code></a> - a point timeseries from a dfs0/nc file or a DataFrame</li>
 <li><a href="../api/TrackObservation.html#modelskill.TrackObservation"><code>TrackObservation</code></a> - a track (moving point) timeseries from a dfs0/nc file or a DataFrame</li>
+<li><code>VerticalObservation</code> - a vertical profile from a dfs0/nc file or a DataFrame</li>
 <li><a href="../api/NodeObservation.html#modelskill.NodeObservation"><code>NodeObservation</code></a> - a network node timeseries for specific node IDs.</li>
 </ul>
 <p>An observation can be created by explicitly invoking one of the above classes or using the <a href="../api/observation.html#modelskill.observation"><code>observation()</code></a> function which will return the appropriate type based on the input data (if possible).</p>
