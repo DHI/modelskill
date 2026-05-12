@@ -222,6 +222,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">NodeObservation</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/ReachObservation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ReachObservation</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -477,14 +483,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>observation(data, <span class="op">*</span>, gtype<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Create an appropriate observation object.</p>
 <p>A factory function for creating an appropriate observation object based on the data and args.</p>
-<p>If ‘x’ or ‘y’ is given, a PointObservation is created. If ‘x_item’ or ‘y_item’ is given, a TrackObservation is created. If ‘node’ is given, a NodeObservation is created.</p>
+<p>If ‘x’ or ‘y’ is given, a PointObservation is created. If ‘x_item’ or ‘y_item’ is given, a TrackObservation is created. If ‘at’ is given, a NodeObservation is created. If ‘reach’ is given, a ReachObservation is created.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 6%">
-<col style="width: 32%">
-<col style="width: 53%">
+<col style="width: 5%">
+<col style="width: 36%">
+<col style="width: 50%">
 <col style="width: 7%">
 </colgroup>
 <thead>
@@ -504,7 +510,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>gtype</td>
-<td>Literal['point', 'track', 'node'] | None</td>
+<td>Literal['point', 'track', 'node', 'reach'] | None</td>
 <td>The geometry type of the data. If not specified, it will be guessed from the data.</td>
 <td><code>None</code></td>
 </tr>
@@ -521,9 +527,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 7%">
-<col style="width: 50%">
-<col style="width: 41%">
+<col style="width: 6%">
+<col style="width: 58%">
+<col style="width: 35%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -535,7 +541,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td></td>
-<td>PointObservation or TrackObservation or NodeObservation</td>
+<td>PointObservation or TrackObservation or NodeObservation or ReachObservation</td>
 <td>An observation object of the appropriate type</td>
 </tr>
 </tbody>
@@ -546,7 +552,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o_pt <span class="op">=</span> ms.observation(df, item<span class="op">=</span><span class="dv">0</span>, x<span class="op">=</span><span class="dv">366844</span>, y<span class="op">=</span><span class="dv">6154291</span>, name<span class="op">=</span><span class="st">"Klagshamn"</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o_tr <span class="op">=</span> ms.observation(<span class="st">"lon_after_lat.dfs0"</span>, item<span class="op">=</span><span class="st">"wl"</span>, x_item<span class="op">=</span><span class="dv">1</span>, y_item<span class="op">=</span><span class="dv">0</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o_node <span class="op">=</span> ms.observation(df, item<span class="op">=</span><span class="st">"Water Level"</span>, node<span class="op">=</span><span class="dv">123</span>, name<span class="op">=</span><span class="st">"123"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o_node <span class="op">=</span> ms.observation(df, item<span class="op">=</span><span class="st">"Water Level"</span>, at<span class="op">=</span><span class="dv">123</span>, name<span class="op">=</span><span class="st">"123"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o_reach <span class="op">=</span> ms.observation(df, item<span class="op">=</span><span class="st">"Discharge"</span>, reach<span class="op">=</span><span class="st">"reach_1"</span>, name<span class="op">=</span><span class="st">"reach_1_Q"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 
 </section>

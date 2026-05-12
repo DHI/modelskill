@@ -287,6 +287,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#wrap-the-network-in-a-networkmodelresult" id="toc-wrap-the-network-in-a-networkmodelresult" class="nav-link" data-scroll-target="#wrap-the-network-in-a-networkmodelresult">1. Wrap the Network in a NetworkModelResult</a></li>
   <li><a href="#create-nodeobservations-and-compute-skill" id="toc-create-nodeobservations-and-compute-skill" class="nav-link" data-scroll-target="#create-nodeobservations-and-compute-skill">2. Create NodeObservations and compute skill</a></li>
+  <li><a href="#using-reachobservation-for-reach-uniform-quantities" id="toc-using-reachobservation-for-reach-uniform-quantities" class="nav-link" data-scroll-target="#using-reachobservation-for-reach-uniform-quantities">3. Using ReachObservation for reach-uniform quantities</a></li>
   </ul></li>
   <li><a href="#development" id="toc-development" class="nav-link" data-scroll-target="#development">Development</a>
   <ul class="collapse">
@@ -338,7 +339,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>A <strong>Network</strong> represents a 1D pipe or river network as a directed graph: nodes hold timeseries data (e.g.&nbsp;water level at a junction) and edges carry the topology and reach length between them. Break points along an edge (e.g.&nbsp;cross-section chainages) are supported as observation locations too.</p>
+<p>A <strong>Network</strong> represents a 1D pipe or river network as a directed graph: nodes hold timeseries data (e.g.&nbsp;water level at a junction) and reaches carry the topology and reach length between them. Break points along a reach (e.g.&nbsp;cross-section chainages) are supported as observation locations too.</p>
 <p>The typical workflow is:</p>
 <pre><code>Network  →  NetworkModelResult  →  match()  →  Comparer</code></pre>
 <section id="building-a-network" class="level2">
@@ -348,14 +349,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="res1d-file" class="level3">
 <h3 class="anchored" data-anchor-id="res1d-file">Res1D file</h3>
 <p>The quickest way to get a <code>Network</code> is from the path to a MIKE 1D result file:</p>
-<div id="f5ec93ae" class="cell" data-execution_count="3">
+<div id="4019ce29" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> Network</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>network <span class="op">=</span> Network.from_res1d(path_to_res1d)</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>network</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
 <pre><code>&lt;Network&gt;
-Edges: 118
+Reaches: 118
 Nodes: 259
 Quantities: ['WaterLevel', 'Discharge']
 Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
@@ -393,13 +394,13 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 <tbody>
 <tr class="odd">
 <td><code>nodes</code></td>
-<td><code>"all"</code> | <code>str</code> | <code>list[str]</code></td>
-<td>Control which nodes have timeseries data loaded. <code>"all"</code> (default) loads all nodes; <code>[]</code> skips all node data; a name or list loads only those nodes.</td>
+<td><code>None</code> | <code>str</code> | <code>list[str]</code></td>
+<td>Control which nodes have timeseries data loaded. <code>None</code> (default) loads all nodes; <code>[]</code> skips all node data; a name or list loads only those nodes.</td>
 </tr>
 <tr class="even">
 <td><code>reaches</code></td>
-<td><code>"all"</code> | <code>str</code> | <code>list[str]</code></td>
-<td>Control which reaches have intermediate gridpoint data populated. <code>"all"</code> (default) loads everything; <code>[]</code> skips all gridpoints; a name or list of names loads only those reaches.</td>
+<td><code>None</code> | <code>str</code> | <code>list[str]</code></td>
+<td>Control which reaches have intermediate gridpoint data populated. <code>None</code> (default) loads everything; <code>[]</code> skips all gridpoints; a name or list of names loads only those reaches.</td>
 </tr>
 </tbody>
 </table>
@@ -413,11 +414,11 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Selective loading only controls <strong>which timeseries are held in memory</strong>. The full network topology (nodes, edges, lengths) is always constructed so that <code>find()</code>, <code>recall()</code>, and graph algorithms still work on the complete network.</p>
+<p>Selective loading only controls <strong>which timeseries are held in memory</strong>. The full network topology (nodes, reaches, lengths) is always constructed so that <code>find()</code>, <code>recall()</code>, and graph algorithms still work on the complete network.</p>
 </div>
 </div>
 <p>The most memory-efficient setup — useful when you only care about specific junction nodes — is to pass the node IDs you need and skip all intermediate gridpoints with <code>reaches=[]</code>:</p>
-<div id="d4c725d4" class="cell" data-execution_count="4">
+<div id="3830e2fa" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>network_subset <span class="op">=</span> Network.from_res1d(</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    path_to_res1d,</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    nodes<span class="op">=</span>[<span class="st">"78"</span>, <span class="st">"46"</span>],</span>
@@ -426,14 +427,14 @@ Note
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>network_subset</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <pre><code>&lt;Network&gt;
-Edges: 118
+Reaches: 118
 Nodes: 259
 Quantities: ['WaterLevel']
 Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 </div>
 </div>
 <p>If you also need gridpoint data along a particular reach, pass its name (or a list of names):</p>
-<div id="350a3329" class="cell" data-execution_count="5">
+<div id="4c855d78" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>network_subset <span class="op">=</span> Network.from_res1d(</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    path_to_res1d,</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    nodes<span class="op">=</span>[<span class="st">"78"</span>, <span class="st">"46"</span>],</span>
@@ -442,14 +443,14 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>network_subset</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
 <pre><code>&lt;Network&gt;
-Edges: 118
+Reaches: 118
 Nodes: 259
 Quantities: ['WaterLevel', 'Discharge']
 Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 </div>
 </div>
 <p>When only some nodes are loaded, <code>to_dataframe()</code> and <code>to_dataset()</code> only contain columns for those nodes — the rest are graph-connected but data-free:</p>
-<div id="67e54daa" class="cell" data-execution_count="6">
+<div id="f3de188c" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>network_subset.to_dataframe(sel<span class="op">=</span><span class="st">"WaterLevel"</span>).head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="6">
 <div>
@@ -470,27 +471,27 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<th data-quarto-table-cell-role="th">1994-08-07 16:35:00.000</th>
+<th data-quarto-table-cell-role="th">1994-08-07 16:35:00</th>
 <td>194.074997</td>
 <td>194.852997</td>
 </tr>
 <tr class="even">
-<th data-quarto-table-cell-role="th">1994-08-07 16:36:01.870</th>
+<th data-quarto-table-cell-role="th">1994-08-07 16:36:01.870000</th>
 <td>194.074997</td>
 <td>194.853577</td>
 </tr>
 <tr class="odd">
-<th data-quarto-table-cell-role="th">1994-08-07 16:37:07.560</th>
+<th data-quarto-table-cell-role="th">1994-08-07 16:37:07.560000</th>
 <td>194.074997</td>
 <td>194.853760</td>
 </tr>
 <tr class="even">
-<th data-quarto-table-cell-role="th">1994-08-07 16:38:55.828</th>
+<th data-quarto-table-cell-role="th">1994-08-07 16:38:55.828000</th>
 <td>194.074997</td>
 <td>194.853836</td>
 </tr>
 <tr class="odd">
-<th data-quarto-table-cell-role="th">1994-08-07 16:39:55.828</th>
+<th data-quarto-table-cell-role="th">1994-08-07 16:39:55.828000</th>
 <td>194.074997</td>
 <td>194.853867</td>
 </tr>
@@ -507,7 +508,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 <h2 class="anchored" data-anchor-id="inspecting-the-network">Inspecting the Network</h2>
 <section id="available-quantities" class="level3">
 <h3 class="anchored" data-anchor-id="available-quantities">Available quantities</h3>
-<div id="d89068e0" class="cell" data-execution_count="7">
+<div id="dbc0cef2" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>network.quantities</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="7">
 <pre><code>['WaterLevel', 'Discharge']</code></pre>
@@ -517,7 +518,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 <section id="underlying-graph" class="level3">
 <h3 class="anchored" data-anchor-id="underlying-graph">Underlying graph</h3>
 <p>The network exposes a <code>networkx.Graph</code> so you can use any NetworkX algorithm or plotting function directly:</p>
-<div id="feff0e27" class="cell" data-execution_count="9">
+<div id="ac5225d5" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -535,7 +536,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 </section>
 <section id="timeseries-data" class="level3">
 <h3 class="anchored" data-anchor-id="timeseries-data">Timeseries data</h3>
-<div id="083eb57d" class="cell" data-execution_count="10">
+<div id="aac2ab72" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Multi-index DataFrame: columns are (node, quantity)</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>network.to_dataframe().head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="10">
@@ -745,7 +746,7 @@ Time: 1994-08-07 16:35:00 - 1994-08-07 18:35:00</code></pre>
 </div>
 </div>
 </div>
-<div id="3261a0b8" class="cell" data-execution_count="11">
+<div id="992fa577" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select a single quantity</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>network.to_dataframe(sel<span class="op">=</span><span class="st">"WaterLevel"</span>).head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="11">
@@ -946,10 +947,10 @@ Tip
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>When creating <code>NodeObservation</code> objects for skill assessment you generally do <strong>not</strong> need to call <code>find()</code>. You can pass the original string ID or a <code>(edge, distance)</code> tuple directly as <code>node=</code>, and <code>NetworkModelResult</code> will resolve it for you during matching. See <a href="#skill-assessment-workflow">Skill assessment workflow</a> for details.</p>
+<p>When creating <code>NodeObservation</code> objects for skill assessment you generally do <strong>not</strong> need to call <code>find()</code>. You can pass the original string ID as <code>node=</code>, and <code>NetworkModelResult</code> will resolve it for you during matching. For breakpoints, use <code>at=(reach, distance)</code> rather than <code>node=</code>. See <a href="#skill-assessment-workflow">Skill assessment workflow</a> for details.</p>
 </div>
 </div>
-<div id="57f6bb2a" class="cell" data-execution_count="12">
+<div id="b2c64fcb" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Look up a named node by its original id</span></span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>node_id <span class="op">=</span> network.find(node<span class="op">=</span><span class="st">"117"</span>)</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Node '117' → integer id </span><span class="sc">{</span>node_id<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -961,17 +962,17 @@ Tip
 {'node': '117'}</code></pre>
 </div>
 </div>
-<div id="210042d8" class="cell" data-execution_count="13">
+<div id="076d1006" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Look up a break point by reach + chainage</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>bp_id <span class="op">=</span> network.find(edge<span class="op">=</span><span class="st">"94l1"</span>, distance<span class="op">=</span><span class="fl">21.285</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>bp_id <span class="op">=</span> network.find(reach<span class="op">=</span><span class="st">"94l1"</span>, distance<span class="op">=</span><span class="fl">21.285</span>)</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Break point (94l1, 21.285) → integer id </span><span class="sc">{</span>bp_id<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(network.recall(bp_id))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Break point (94l1, 21.285) → integer id 245
-{'edge': '94l1', 'distance': 21.2852238539205}</code></pre>
+{'reach': '94l1', 'distance': 21.2852238539205}</code></pre>
 </div>
 </div>
-<div id="204990d8" class="cell" data-execution_count="14">
+<div id="27a5a219" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Node batch lookup</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(node<span class="op">=</span>[<span class="st">"20"</span>, <span class="st">"113"</span>, <span class="st">"38"</span>])</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ids)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -979,13 +980,13 @@ Tip
 <pre><code>[76, 40, 15]</code></pre>
 </div>
 </div>
-<div id="1e9ecc70" class="cell" data-execution_count="15">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Edge lookup</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(edge<span class="op">=</span><span class="st">"58l1"</span>, distance<span class="op">=</span><span class="st">"start"</span>)</span>
+<div id="4ccca174" class="cell" data-execution_count="15">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Reach lookup</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(reach<span class="op">=</span><span class="st">"58l1"</span>, distance<span class="op">=</span><span class="st">"start"</span>)</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ids)</span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(edge<span class="op">=</span><span class="st">"58l1"</span>, distance<span class="op">=</span>[<span class="fl">51.456</span>, <span class="fl">77.185</span>])</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(reach<span class="op">=</span><span class="st">"58l1"</span>, distance<span class="op">=</span>[<span class="fl">51.456</span>, <span class="fl">77.185</span>])</span>
 <span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ids)</span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(edge<span class="op">=</span><span class="st">"58l1"</span>, distance<span class="op">=</span>[<span class="st">"start"</span>, <span class="fl">77.185</span>])</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>ids <span class="op">=</span> network.find(reach<span class="op">=</span><span class="st">"58l1"</span>, distance<span class="op">=</span>[<span class="st">"start"</span>, <span class="fl">77.185</span>])</span>
 <span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ids)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>57
@@ -998,7 +999,7 @@ Tip
 <h2 class="anchored" data-anchor-id="skill-assessment-workflow">Skill assessment workflow</h2>
 <section id="wrap-the-network-in-a-networkmodelresult" class="level3">
 <h3 class="anchored" data-anchor-id="wrap-the-network-in-a-networkmodelresult">1. Wrap the Network in a NetworkModelResult</h3>
-<div id="c5187ce2" class="cell" data-execution_count="16">
+<div id="79e50498" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.model.network <span class="im">import</span> NetworkModelResult</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1012,85 +1013,30 @@ Tip
 <section id="create-nodeobservations-and-compute-skill" class="level3">
 <h3 class="anchored" data-anchor-id="create-nodeobservations-and-compute-skill">2. Create NodeObservations and compute skill</h3>
 <p><code>NodeObservation</code> accepts a file path directly; the observation name is taken from the filename.</p>
-<p>The <code>node=</code> argument can be specified in three ways, depending on what information you have at hand.</p>
-<section id="option-a-integer-node-id-direct" class="level4">
-<h4 class="anchored" data-anchor-id="option-a-integer-node-id-direct">Option A — integer node ID (direct)</h4>
-<p>Pass the integer ID assigned by the <code>Network</code>. This is the most explicit form:</p>
-<div id="a8b90d0f" class="cell" data-execution_count="17">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>obs_1 <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_1, node<span class="op">=</span>network.find(node<span class="op">=</span><span class="st">"78"</span>))</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>obs_2 <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_2, node<span class="op">=</span>network.find(node<span class="op">=</span><span class="st">"46"</span>))</span>
+<p>The <code>at=</code> argument can be specified in three ways, depending on what information you have at hand.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>MIKE 1D vocabulary vs the modelskill API
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In MIKE 1D, “nodes” are the named connection points in the 1D network (manholes, junctions, outfalls) while “reaches” are the pipe or channel segments that connect them. The modelskill API uses <code>NodeObservation</code> more broadly: the <code>at=</code> argument accepts either a node ID (int or string) <strong>or</strong> a <code>(reach_id, distance)</code> breakpoint tuple that identifies a specific chainage along a reach. If you only need a reach-level quantity (uniform across the reach), use <code>ReachObservation</code> with <code>reach=</code> instead.</p>
+</div>
+</div>
+<section id="option-a-original-string-alias" class="level4">
+<h4 class="anchored" data-anchor-id="option-a-original-string-alias">Option A — original string alias</h4>
+<p>Pass the original node identifier from the source format (e.g.&nbsp;the Res1D node name) as a plain string. The <code>NetworkModelResult</code> resolves it to the correct integer ID at match time, so you do not need to call <code>network.find()</code> yourself:</p>
+<div id="03f3630f" class="cell" data-execution_count="17">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>obs_1 <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_1, at<span class="op">=</span><span class="st">"78"</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>obs_2 <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_2, at<span class="op">=</span><span class="st">"46"</span>)</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>cc <span class="op">=</span> ms.match(obs<span class="op">=</span>[obs_1, obs_2], mod<span class="op">=</span>mr)</span>
 <span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>cc.skill()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="17">
-<div>
-
-
-<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
-<thead>
-<tr class="header">
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th">n</th>
-<th data-quarto-table-cell-role="th">bias</th>
-<th data-quarto-table-cell-role="th">rmse</th>
-<th data-quarto-table-cell-role="th">urmse</th>
-<th data-quarto-table-cell-role="th">mae</th>
-<th data-quarto-table-cell-role="th">cc</th>
-<th data-quarto-table-cell-role="th">si</th>
-<th data-quarto-table-cell-role="th">r2</th>
-</tr>
-<tr class="even">
-<th data-quarto-table-cell-role="th">observation</th>
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th"></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<th data-quarto-table-cell-role="th">network_sensor_1</th>
-<td>109</td>
-<td>0.700685</td>
-<td>0.810246</td>
-<td>0.406865</td>
-<td>0.724734</td>
-<td>0.726882</td>
-<td>0.002095</td>
-<td>-2.245889</td>
-</tr>
-<tr class="even">
-<th data-quarto-table-cell-role="th">network_sensor_2</th>
-<td>80</td>
-<td>0.430548</td>
-<td>0.462543</td>
-<td>0.169040</td>
-<td>0.431153</td>
-<td>0.550352</td>
-<td>0.000873</td>
-<td>-4.548691</td>
-</tr>
-</tbody>
-</table>
-
-</div>
-</div>
-</div>
-</section>
-<section id="option-b-original-string-alias" class="level4">
-<h4 class="anchored" data-anchor-id="option-b-original-string-alias">Option B — original string alias</h4>
-<p>Pass the original node identifier from the source format (e.g.&nbsp;the Res1D node name) as a plain string. The <code>NetworkModelResult</code> resolves it to the correct integer ID at match time, so you never need to call <code>network.find()</code> yourself:</p>
-<div id="593ad242" class="cell" data-execution_count="18">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>obs_1 <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_1, node<span class="op">=</span><span class="st">"78"</span>)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>obs_2 <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_2, node<span class="op">=</span><span class="st">"46"</span>)</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>cc <span class="op">=</span> ms.match(obs<span class="op">=</span>[obs_1, obs_2], mod<span class="op">=</span>mr)</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>cc.skill()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="18">
 <div>
 
 
@@ -1162,14 +1108,14 @@ Note
 </div>
 </div>
 </section>
-<section id="option-c-breakpoint-by-edge-distance-tuple" class="level4">
-<h4 class="anchored" data-anchor-id="option-c-breakpoint-by-edge-distance-tuple">Option C — breakpoint by <code>(edge, distance)</code> tuple</h4>
-<p>When your observation sits at a chainage along a reach rather than at a named junction node, pass a <code>(edge_id, distance)</code> tuple. The <code>NetworkModelResult</code> looks up the corresponding breakpoint at match time:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>obs_bp <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_1, node<span class="op">=</span>(<span class="st">"94l1"</span>, <span class="fl">21.285</span>))</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>cc <span class="op">=</span> ms.match(obs<span class="op">=</span>obs_bp, mod<span class="op">=</span>mr)</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>cc.skill()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The tuple form is equivalent to calling <code>network.find(edge="94l1", distance=21.285)</code> beforehand and is resolved during matching.</p>
+<section id="option-b-breakpoint-by-reach-distance-tuple" class="level4">
+<h4 class="anchored" data-anchor-id="option-b-breakpoint-by-reach-distance-tuple">Option B — breakpoint by <code>(reach, distance)</code> tuple</h4>
+<p>When your observation sits at a chainage along a reach rather than at a named junction node, you can use the <code>at</code> argument and pass a <code>(reach_id, distance)</code> tuple. The <code>NetworkModelResult</code> looks up the corresponding breakpoint at match time:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>obs_bp <span class="op">=</span> ms.NodeObservation(path_to_sensor_data_1, at<span class="op">=</span>(<span class="st">"94l1"</span>, <span class="fl">21.285</span>))</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>cc <span class="op">=</span> ms.match(obs<span class="op">=</span>obs_bp, mod<span class="op">=</span>mr)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>cc.skill()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The tuple form is equivalent to calling <code>network.find(reach="94l1", distance=21.285)</code> beforehand and is resolved during matching.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1185,72 +1131,151 @@ Note
 </div>
 </section>
 </section>
+<section id="using-reachobservation-for-reach-uniform-quantities" class="level3">
+<h3 class="anchored" data-anchor-id="using-reachobservation-for-reach-uniform-quantities">3. Using ReachObservation for reach-uniform quantities</h3>
+<p>Some physical quantities — such as <strong>discharge in a pipe</strong> — are conceptually uniform across the whole reach, even though the model stores values at individual breakpoints along the reach. <code>ReachObservation</code> lets you associate a timeseries with a named reach without having to identify a specific breakpoint.</p>
+<p>When matched against a <code>NetworkModelResult</code>, modelskill automatically extracts model data from an arbitrary breakpoint that belongs to the given reach and verifies that all breakpoints on the reach carry equivalent values.</p>
+<div id="8129ad37" class="cell" data-execution_count="18">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>obs_q <span class="op">=</span> ms.ReachObservation(path_to_sensor_data_1, reach<span class="op">=</span><span class="st">"94l1"</span>, name<span class="op">=</span><span class="st">"Q_94l1"</span>)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>obs_q</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="18">
+<pre><code>&lt;ReachObservation&gt;: Q_94l1
+Time: 1994-08-07 16:35:06.721400 - 1994-08-07 18:35:01.353900
+Quantity:  []</code></pre>
+</div>
+</div>
+<p>Pass the observation to <code>ms.match()</code> exactly as you would a <code>NodeObservation</code>. modelskill resolves which breakpoint to use automatically:</p>
+<div id="711afe27" class="cell" data-execution_count="19">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>mr_q <span class="op">=</span> NetworkModelResult(network, name<span class="op">=</span><span class="st">"MyModel"</span>, item<span class="op">=</span><span class="st">"Discharge"</span>)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>cc_q <span class="op">=</span> ms.match(obs<span class="op">=</span>obs_q, mod<span class="op">=</span>mr_q)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>cc_q.skill()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="19">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">n</th>
+<th data-quarto-table-cell-role="th">bias</th>
+<th data-quarto-table-cell-role="th">rmse</th>
+<th data-quarto-table-cell-role="th">urmse</th>
+<th data-quarto-table-cell-role="th">mae</th>
+<th data-quarto-table-cell-role="th">cc</th>
+<th data-quarto-table-cell-role="th">si</th>
+<th data-quarto-table-cell-role="th">r2</th>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">observation</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">Q_94l1</th>
+<td>109</td>
+<td>-194.191817</td>
+<td>194.192311</td>
+<td>0.438201</td>
+<td>194.191817</td>
+<td>0.563474</td>
+<td>0.002256</td>
+<td>-186449.466671</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Use <code>ReachObservation</code> when your measured quantity is representative of the whole reach (e.g.&nbsp;discharge, which is constant along a reach in steady flow). If you need to compare a quantity that varies spatially along the reach (e.g.&nbsp;water level at a specific chainage), use a <code>NodeObservation</code> with a <code>(reach, distance)</code> tuple instead (see <a href="#option-b-breakpoint-by-reach-distance-tuple">Option B</a> above).</p>
+</div>
+</div>
+</section>
 </section>
 <section id="development" class="level2">
 <h2 class="anchored" data-anchor-id="development">Development</h2>
 <section id="custom-network-formats" class="level3">
 <h3 class="anchored" data-anchor-id="custom-network-formats">Custom network formats</h3>
-<p>In case you have your network data in a format that is not included in <a href="#building-a-network">Building a Network</a>, you can assemble a <code>Network</code> object by subclassing the abstract base classes <code>NetworkNode</code> and <code>NetworkEdge</code>.</p>
-<p><code>NetworkNode</code> requires three properties: <code>id</code>, <code>data</code>, and <code>boundary</code>. <code>NetworkEdge</code> requires five: <code>id</code>, <code>start</code>, <code>end</code>, <code>length</code>, and <code>breakpoints</code>.</p>
+<p>In case you have your network data in a format that is not included in <a href="#building-a-network">Building a Network</a>, you can assemble a <code>Network</code> object by subclassing the abstract base classes <code>NetworkNode</code> and <code>NetworkReach</code>.</p>
+<p><code>NetworkNode</code> requires three properties: <code>id</code>, <code>data</code>, and <code>boundary</code>. <code>NetworkReach</code> requires five: <code>id</code>, <code>start</code>, <code>end</code>, <code>length</code>, and <code>breakpoints</code>.</p>
 <p>The following is a simple implementation example:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Any</span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> NetworkNode, NetworkEdge, Network</span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExampleNode(NetworkNode):</span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Node backed by an in-memory DataFrame, e.g. model output."""</span></span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, node_id: <span class="bu">str</span>, data: pd.DataFrame):</span>
-<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._id <span class="op">=</span> node_id</span>
-<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data <span class="op">=</span> data</span>
-<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
-<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">id</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
-<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._id</span>
-<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
-<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> data(<span class="va">self</span>) <span class="op">-&gt;</span> pd.DataFrame:</span>
-<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._data</span>
-<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
-<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> boundary(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">dict</span>[<span class="bu">str</span>, Any]:</span>
-<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> {}</span>
-<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExampleEdge(NetworkEdge):</span>
-<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Edge connecting two nodes with a given length."""</span></span>
-<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(</span>
-<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, edge_id: <span class="bu">str</span>, start: NetworkNode, end: NetworkNode, length: <span class="bu">float</span>,</span>
-<span id="cb30-32"><a href="#cb30-32" aria-hidden="true" tabindex="-1"></a>        breakpoints: <span class="bu">list</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb30-33"><a href="#cb30-33" aria-hidden="true" tabindex="-1"></a>    ):</span>
-<span id="cb30-34"><a href="#cb30-34" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._id <span class="op">=</span> edge_id</span>
-<span id="cb30-35"><a href="#cb30-35" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._start <span class="op">=</span> start</span>
-<span id="cb30-36"><a href="#cb30-36" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._end <span class="op">=</span> end</span>
-<span id="cb30-37"><a href="#cb30-37" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._length <span class="op">=</span> length</span>
-<span id="cb30-38"><a href="#cb30-38" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._breakpoints <span class="op">=</span> breakpoints <span class="kw">or</span> []</span>
-<span id="cb30-39"><a href="#cb30-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-40"><a href="#cb30-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
-<span id="cb30-41"><a href="#cb30-41" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">id</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
-<span id="cb30-42"><a href="#cb30-42" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._id</span>
-<span id="cb30-43"><a href="#cb30-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-44"><a href="#cb30-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
-<span id="cb30-45"><a href="#cb30-45" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> start(<span class="va">self</span>) <span class="op">-&gt;</span> NetworkNode:</span>
-<span id="cb30-46"><a href="#cb30-46" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._start</span>
-<span id="cb30-47"><a href="#cb30-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-48"><a href="#cb30-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
-<span id="cb30-49"><a href="#cb30-49" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> end(<span class="va">self</span>) <span class="op">-&gt;</span> NetworkNode:</span>
-<span id="cb30-50"><a href="#cb30-50" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._end</span>
-<span id="cb30-51"><a href="#cb30-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-52"><a href="#cb30-52" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
-<span id="cb30-53"><a href="#cb30-53" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> length(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">float</span>:</span>
-<span id="cb30-54"><a href="#cb30-54" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._length</span>
-<span id="cb30-55"><a href="#cb30-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-56"><a href="#cb30-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
-<span id="cb30-57"><a href="#cb30-57" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> breakpoints(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">list</span>:</span>
-<span id="cb30-58"><a href="#cb30-58" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._breakpoints</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Any</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> NetworkNode, NetworkReach, Network</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExampleNode(NetworkNode):</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Node backed by an in-memory DataFrame, e.g. model output."""</span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, node_id: <span class="bu">str</span>, data: pd.DataFrame):</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._id <span class="op">=</span> node_id</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data <span class="op">=</span> data</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">id</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._id</span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> data(<span class="va">self</span>) <span class="op">-&gt;</span> pd.DataFrame:</span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._data</span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> boundary(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">dict</span>[<span class="bu">str</span>, Any]:</span>
+<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> {}</span>
+<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExampleReach(NetworkReach):</span>
+<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Reach connecting two nodes with a given length."""</span></span>
+<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(</span>
+<span id="cb32-31"><a href="#cb32-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, reach_id: <span class="bu">str</span>, start: NetworkNode, end: NetworkNode, length: <span class="bu">float</span>,</span>
+<span id="cb32-32"><a href="#cb32-32" aria-hidden="true" tabindex="-1"></a>        breakpoints: <span class="bu">list</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb32-33"><a href="#cb32-33" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb32-34"><a href="#cb32-34" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._id <span class="op">=</span> reach_id</span>
+<span id="cb32-35"><a href="#cb32-35" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._start <span class="op">=</span> start</span>
+<span id="cb32-36"><a href="#cb32-36" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._end <span class="op">=</span> end</span>
+<span id="cb32-37"><a href="#cb32-37" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._length <span class="op">=</span> length</span>
+<span id="cb32-38"><a href="#cb32-38" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._breakpoints <span class="op">=</span> breakpoints <span class="kw">or</span> []</span>
+<span id="cb32-39"><a href="#cb32-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-40"><a href="#cb32-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb32-41"><a href="#cb32-41" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">id</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb32-42"><a href="#cb32-42" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._id</span>
+<span id="cb32-43"><a href="#cb32-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-44"><a href="#cb32-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb32-45"><a href="#cb32-45" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> start(<span class="va">self</span>) <span class="op">-&gt;</span> NetworkNode:</span>
+<span id="cb32-46"><a href="#cb32-46" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._start</span>
+<span id="cb32-47"><a href="#cb32-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-48"><a href="#cb32-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb32-49"><a href="#cb32-49" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> end(<span class="va">self</span>) <span class="op">-&gt;</span> NetworkNode:</span>
+<span id="cb32-50"><a href="#cb32-50" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._end</span>
+<span id="cb32-51"><a href="#cb32-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-52"><a href="#cb32-52" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb32-53"><a href="#cb32-53" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> length(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">float</span>:</span>
+<span id="cb32-54"><a href="#cb32-54" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._length</span>
+<span id="cb32-55"><a href="#cb32-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-56"><a href="#cb32-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb32-57"><a href="#cb32-57" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> breakpoints(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">list</span>:</span>
+<span id="cb32-58"><a href="#cb32-58" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._breakpoints</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1261,25 +1286,25 @@ Tip
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The three abstract properties that <strong>every</strong> <code>NetworkNode</code> subclass must implement are <code>id</code>, <code>data</code> and <code>boundary</code>. If <code>boundary</code> is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a <code>NetworkEdge</code> with no intermediate points can return an empty <code>breakpoints</code> list.</p>
+<p>The three abstract properties that <strong>every</strong> <code>NetworkNode</code> subclass must implement are <code>id</code>, <code>data</code> and <code>boundary</code>. If <code>boundary</code> is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a <code>NetworkReach</code> with no intermediate points can return an empty <code>breakpoints</code> list.</p>
 </div>
 </div>
-<div id="5c02b3f7" class="cell" data-execution_count="19">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> Network</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="co"># df1, df2 and df3 are DataFrame objects that are loaded in memory</span></span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>node_s1 <span class="op">=</span> ExampleNode(<span class="st">"sensor_1"</span>, df1)</span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>node_s2 <span class="op">=</span> ExampleNode(<span class="st">"sensor_2"</span>, df2)</span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>node_s3 <span class="op">=</span> ExampleNode(<span class="st">"sensor_3"</span>, df3)</span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>edge1 <span class="op">=</span> ExampleEdge(<span class="st">"r1"</span>, node_s1, node_s2, length<span class="op">=</span><span class="fl">500.0</span>)</span>
-<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>edge2 <span class="op">=</span> ExampleEdge(<span class="st">"r2"</span>, node_s2, node_s3, length<span class="op">=</span><span class="fl">300.0</span>)</span>
-<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>network <span class="op">=</span> Network(edges<span class="op">=</span>[edge1, edge2])</span>
-<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>network</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="19">
+<div id="da65523c" class="cell" data-execution_count="20">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> Network</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="co"># df1, df2 and df3 are DataFrame objects that are loaded in memory</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>node_s1 <span class="op">=</span> ExampleNode(<span class="st">"sensor_1"</span>, df1)</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>node_s2 <span class="op">=</span> ExampleNode(<span class="st">"sensor_2"</span>, df2)</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>node_s3 <span class="op">=</span> ExampleNode(<span class="st">"sensor_3"</span>, df3)</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>reach1 <span class="op">=</span> ExampleReach(<span class="st">"r1"</span>, node_s1, node_s2, length<span class="op">=</span><span class="fl">500.0</span>)</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>reach2 <span class="op">=</span> ExampleReach(<span class="st">"r2"</span>, node_s2, node_s3, length<span class="op">=</span><span class="fl">300.0</span>)</span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>network <span class="op">=</span> Network(reaches<span class="op">=</span>[reach1, reach2])</span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>network</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="20">
 <pre><code>&lt;Network&gt;
-Edges: 2
+Reaches: 2
 Nodes: 3
 Quantities: ['WaterLevel']
 Time: 1994-08-07 16:00:00 - 1994-08-07 18:59:00</code></pre>
@@ -1288,29 +1313,29 @@ Time: 1994-08-07 16:00:00 - 1994-08-07 18:59:00</code></pre>
 </section>
 <section id="adding-break-points-along-a-reach" class="level3">
 <h3 class="anchored" data-anchor-id="adding-break-points-along-a-reach">Adding break points along a reach</h3>
-<p>Break points represent intermediate chainage locations on a reach (e.g.&nbsp;cross-sections). Subclass <code>EdgeBreakPoint</code> the same way — implement <code>id</code> (a <code>(edge_id, distance)</code> tuple) and <code>data</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> EdgeBreakPoint</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExampleBreakPoint(EdgeBreakPoint):</span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, edge_id: <span class="bu">str</span>, distance: <span class="bu">float</span>, data: pd.DataFrame):</span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._id <span class="op">=</span> (edge_id, distance)</span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data <span class="op">=</span> data</span>
-<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
-<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">id</span>(<span class="va">self</span>):</span>
-<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._id</span>
-<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
-<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> data(<span class="va">self</span>):</span>
-<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._data</span>
-<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a><span class="co"># df4 is a DataFrame object that has been loaded in memory</span></span>
-<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>bp <span class="op">=</span> ExampleBreakPoint(<span class="st">"r1"</span>, <span class="fl">200.0</span>, df4)</span>
-<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>edge1 <span class="op">=</span> ExampleEdge(<span class="st">"r1"</span>, node_s1, node_s2, length<span class="op">=</span><span class="fl">500.0</span>, breakpoints<span class="op">=</span>[bp])</span>
-<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>edge2 <span class="op">=</span> ExampleEdge(<span class="st">"r2"</span>, node_s2, node_s3, length<span class="op">=</span><span class="fl">300.0</span>)</span>
-<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>network <span class="op">=</span> Network(edges<span class="op">=</span>[edge1, edge2])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Break points represent intermediate chainage locations on a reach (e.g.&nbsp;cross-sections). Subclass <code>ReachBreakPoint</code> the same way — implement <code>id</code> (a <code>(reach_id, distance)</code> tuple) and <code>data</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.network <span class="im">import</span> ReachBreakPoint</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExampleBreakPoint(ReachBreakPoint):</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, reach_id: <span class="bu">str</span>, distance: <span class="bu">float</span>, data: pd.DataFrame):</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._id <span class="op">=</span> (reach_id, distance)</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data <span class="op">=</span> data</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">id</span>(<span class="va">self</span>):</span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._id</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> data(<span class="va">self</span>):</span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._data</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a><span class="co"># df4 is a DataFrame object that has been loaded in memory</span></span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>bp <span class="op">=</span> ExampleBreakPoint(<span class="st">"r1"</span>, <span class="fl">200.0</span>, df4)</span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a>reach1 <span class="op">=</span> ExampleReach(<span class="st">"r1"</span>, node_s1, node_s2, length<span class="op">=</span><span class="fl">500.0</span>, breakpoints<span class="op">=</span>[bp])</span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>reach2 <span class="op">=</span> ExampleReach(<span class="st">"r2"</span>, node_s2, node_s3, length<span class="op">=</span><span class="fl">300.0</span>)</span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a>network <span class="op">=</span> Network(reaches<span class="op">=</span>[reach1, reach2])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="see-also" class="level2">
@@ -1318,6 +1343,7 @@ Time: 1994-08-07 16:00:00 - 1994-08-07 18:59:00</code></pre>
 <ul>
 <li><a href="../api/NetworkModelResult.html">API reference — NetworkModelResult</a></li>
 <li><a href="../api/NodeObservation.html">API reference — NodeObservation</a></li>
+<li><a href="../api/ReachObservation.html">API reference — ReachObservation</a></li>
 </ul>
 
 

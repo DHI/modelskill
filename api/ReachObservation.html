@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>API Reference – ModelSkill</title>
+<title>reachobservation – ModelSkill</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -30,7 +65,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../api/obs.html" rel="next">
+<link href="../api/model.html" rel="next">
+<link href="../api/NodeObservation.html" rel="prev">
 <link href="../dhi.ico" rel="icon">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
@@ -136,7 +172,7 @@ ul.task-list li input[type="checkbox"] {
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
         <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-          <h1 class="quarto-secondary-nav-title">API Reference</h1>
+          <h1 class="quarto-secondary-nav-title"></h1>
         </a>     
     </div>
   </nav>
@@ -149,7 +185,7 @@ ul.task-list li input[type="checkbox"] {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/index.html" class="sidebar-item-text sidebar-link active">
+  <a href="../api/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">API Reference</span></a>
   </div>
 </li>
@@ -188,7 +224,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/ReachObservation.html" class="sidebar-item-text sidebar-link">
+  <a href="../api/ReachObservation.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">ReachObservation</span></a>
   </div>
 </li>
@@ -423,50 +459,338 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
-    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="index.ipynb" download="index.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></div>
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#modelskill.ReachObservation" id="toc-modelskill.ReachObservation" class="nav-link active" data-scroll-target="#modelskill.ReachObservation">ReachObservation</a>
+  <ul class="collapse">
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
+  <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a></li>
+  <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
+  <ul class="collapse">
+  <li><a href="#modelskill.ReachObservation.copy" id="toc-modelskill.ReachObservation.copy" class="nav-link" data-scroll-target="#modelskill.ReachObservation.copy">copy</a></li>
+  <li><a href="#modelskill.ReachObservation.equals" id="toc-modelskill.ReachObservation.equals" class="nav-link" data-scroll-target="#modelskill.ReachObservation.equals">equals</a></li>
+  <li><a href="#modelskill.ReachObservation.sel" id="toc-modelskill.ReachObservation.sel" class="nav-link" data-scroll-target="#modelskill.ReachObservation.sel">sel</a></li>
+  <li><a href="#modelskill.ReachObservation.to_dataframe" id="toc-modelskill.ReachObservation.to_dataframe" class="nav-link" data-scroll-target="#modelskill.ReachObservation.to_dataframe">to_dataframe</a></li>
+  <li><a href="#modelskill.ReachObservation.trim" id="toc-modelskill.ReachObservation.trim" class="nav-link" data-scroll-target="#modelskill.ReachObservation.trim">trim</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="ReachObservation.ipynb" download="ReachObservation.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></nav>
+    </div>
 <!-- main -->
-<main class="content" id="quarto-document-content">
-
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title d-none d-lg-block">API Reference</h1>
-</div>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
 
 
 
-<div class="quarto-title-meta">
 
-    
-  
-    
-  </div>
-  
+<section id="modelskill.ReachObservation" class="level1">
+<h1>ReachObservation</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ReachObservation(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    data,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    reach,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    item<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    weight<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    quantity<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    aux_items<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    attrs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Class for observations representing a quantity uniform across a network reach.</p>
+<p>Some quantities (e.g.&nbsp;discharge in a river reach) are constant for the whole reach, even though the underlying model stores values at nodes/breakpoints. A ReachObservation associates a timeseries with a named reach; when matched against a :class:<code>~modelskill.model.network.NetworkModelResult</code> the data is extracted from an arbitrary breakpoint that belongs to that reach.</p>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 42%">
+<col style="width: 48%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>data</td>
+<td>(str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray)</td>
+<td>data source with time series for the reach quantity</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>reach</td>
+<td>str</td>
+<td>Reach identifier (reach name / reach ID) in the network.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>item</td>
+<td>(int, str)</td>
+<td>index or name of the wanted item/column, by default None if data contains more than one item, item must be given</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>name</td>
+<td>str</td>
+<td>user-defined name for easy identification in plots etc, by default derived from data</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>weight</td>
+<td>float</td>
+<td>weighting factor for skill scores, by default 1.0</td>
+<td><code>1.0</code></td>
+</tr>
+<tr class="even">
+<td>quantity</td>
+<td>Quantity</td>
+<td>The quantity of the observation, for validation with model results</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>aux_items</td>
+<td>list</td>
+<td>list of names or indices of auxiliary items, by default None</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>attrs</td>
+<td>dict</td>
+<td>additional attributes to be added to the data, by default None</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">import</span> modelskill <span class="im">as</span> ms</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o1 <span class="op">=</span> ms.ReachObservation(df, reach<span class="op">=</span><span class="st">"reach_1"</span>, name<span class="op">=</span><span class="st">"Q_reach_1"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o2 <span class="op">=</span> ms.ReachObservation(df, item<span class="op">=</span><span class="st">"Discharge"</span>, reach<span class="op">=</span><span class="st">"reach_2"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="attributes" class="level2">
+<h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#modelskill.ReachObservation.attrs">attrs</a></td>
+<td>Attributes of the observation</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.ReachObservation.gtype">gtype</a></td>
+<td>Geometry type</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.ReachObservation.n_points">n_points</a></td>
+<td>Number of data points</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.ReachObservation.name">name</a></td>
+<td>Name of time series (value item name)</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.ReachObservation.node">node</a></td>
+<td>node-coordinate</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.ReachObservation.plot">plot</a></td>
+<td>Plot using the ComparerPlotter</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.ReachObservation.quantity">quantity</a></td>
+<td>Quantity of time series</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.ReachObservation.reach">reach</a></td>
+<td>Reach ID of this observation.</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.ReachObservation.time">time</a></td>
+<td>Time index</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.ReachObservation.values">values</a></td>
+<td>Values as numpy array</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.ReachObservation.weight">weight</a></td>
+<td>Weighting factor for skill scores</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.ReachObservation.x">x</a></td>
+<td>x-coordinate</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.ReachObservation.y">y</a></td>
+<td>y-coordinate</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#modelskill.ReachObservation.copy">copy</a></td>
+<td>Create a deep copy of the TimeSeries.</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.ReachObservation.equals">equals</a></td>
+<td>Check if two TimeSeries are equal</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.ReachObservation.sel">sel</a></td>
+<td>Select data by label</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.ReachObservation.to_dataframe">to_dataframe</a></td>
+<td>Convert matched data to pandas DataFrame</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.ReachObservation.trim">trim</a></td>
+<td>Trim observation data to a given time interval</td>
+</tr>
+</tbody>
+</table>
+<section id="modelskill.ReachObservation.copy" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.ReachObservation.copy">copy</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ReachObservation.copy()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Create a deep copy of the TimeSeries.</p>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>TimeSeries</td>
+<td>Deep copy of the TimeSeries object</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="modelskill.ReachObservation.equals" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.ReachObservation.equals">equals</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ReachObservation.equals(other)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Check if two TimeSeries are equal</p>
+</section>
+<section id="modelskill.ReachObservation.sel" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.ReachObservation.sel">sel</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ReachObservation.sel(<span class="op">**</span>kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Select data by label</p>
+</section>
+<section id="modelskill.ReachObservation.to_dataframe" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.ReachObservation.to_dataframe">to_dataframe</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ReachObservation.to_dataframe()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Convert matched data to pandas DataFrame</p>
+<p>Include x, y coordinates only if gtype=track</p>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>pd.DataFrame</td>
+<td>data as a pandas DataFrame</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="modelskill.ReachObservation.trim" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.ReachObservation.trim">trim</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ReachObservation.trim(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    start_time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    end_time<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">buffer</span><span class="op">=</span><span class="st">'1s'</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    no_overlap<span class="op">=</span><span class="st">'error'</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Trim observation data to a given time interval</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 35%">
+<col style="width: 45%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>start_time</td>
+<td>pd.Timestamp</td>
+<td>start time</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>end_time</td>
+<td>pd.Timestamp</td>
+<td>end time</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>buffer</td>
+<td>str</td>
+<td>buffer time around start and end time, by default “1s”</td>
+<td><code>'1s'</code></td>
+</tr>
+<tr class="even">
+<td>no_overlap</td>
+<td>Literal['ignore', 'error', 'warn']</td>
+<td>Empty data handling.</td>
+<td><code>'error'</code></td>
+</tr>
+</tbody>
+</table>
 
 
-</header>
-
-
-<p>Obtain a comparer object in one of the following ways:</p>
-<ul>
-<li>From matched data with <a href="../api/from_matched.html#modelskill.from_matched">from_matched()</a></li>
-<li>After defining <a href="../api/obs.html">observation</a>s and <a href="../api/model.html">model result</a>s using the <a href="../api/match.html#modelskill.match">match()</a> function.</li>
-<li>From a config file with <a href="../api/from_config.html#modelskill.from_config">from_config()</a></li>
-</ul>
-<p>Do analysis and plotting with the returned <a href="../api/Comparer.html#modelskill.Comparer">Comparer</a> (a single observation) or <a href="../api/ComparerCollection.html#modelskill.ComparerCollection">ComparerCollection</a> (multiple observations):</p>
-<ul>
-<li><a href="../api/ComparerCollection.html#modelskill.ComparerCollection.skill">skill()</a> - returns a <a href="../api/SkillTable.html#modelskill.SkillTable">SkillTable</a> with the skill scores</li>
-<li>plot using the various plot methods of the comparer objects
-<ul>
-<li><code>plot.scatter()</code></li>
-<li><code>plot.timeseries()</code></li>
-<li><code>plot.kde()</code></li>
-<li><code>plot.qq()</code></li>
-<li><code>plot.hist()</code></li>
-</ul></li>
-</ul>
-
-
+</section>
+</section>
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -871,10 +1195,13 @@ ul.task-list li input[type="checkbox"] {
   </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
+      <a href="../api/NodeObservation.html" class="pagination-link" aria-label="NodeObservation">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">NodeObservation</span>
+      </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../api/obs.html" class="pagination-link" aria-label="Observations">
-        <span class="nav-page-text">Observations</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../api/model.html" class="pagination-link" aria-label="Model Result">
+        <span class="nav-page-text">Model Result</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

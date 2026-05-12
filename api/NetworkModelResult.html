@@ -222,6 +222,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">NodeObservation</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/ReachObservation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ReachObservation</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -536,7 +542,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> modelskill.network <span class="im">import</span> Network</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> network <span class="op">=</span> Network(edges)  <span class="co"># edges is a list[NetworkEdge]</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> network <span class="op">=</span> Network(reaches)  <span class="co"># reaches is a list[NetworkReach]</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> mr <span class="op">=</span> ms.NetworkModelResult(network, name<span class="op">=</span><span class="st">"MyModel"</span>)</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> ms.NodeObservation(data, node<span class="op">=</span>network.find(node<span class="op">=</span><span class="st">"node_A"</span>))</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> extracted <span class="op">=</span> mr.extract(obs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -574,22 +580,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#modelskill.NetworkModelResult.extract">extract</a></td>
-<td>Extract ModelResult at exact node locations</td>
+<td>Extract ModelResult at exact node or reach locations</td>
 </tr>
 </tbody>
 </table>
 <section id="modelskill.NetworkModelResult.extract" class="level3">
 <h3 class="anchored" data-anchor-id="modelskill.NetworkModelResult.extract">extract</h3>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>NetworkModelResult.extract(observation)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Extract ModelResult at exact node locations</p>
+<p>Extract ModelResult at exact node or reach locations</p>
 <section id="parameters-1" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
+<col style="width: 13%">
+<col style="width: 37%">
+<col style="width: 38%">
 <col style="width: 12%">
-<col style="width: 16%">
-<col style="width: 58%">
-<col style="width: 11%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -602,8 +608,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>observation</td>
-<td>NodeObservation</td>
-<td>observation with node ID (only NodeObservation supported)</td>
+<td>NodeObservation or ReachObservation</td>
+<td>observation with node ID or reach ID</td>
 <td><em>required</em></td>
 </tr>
 </tbody>

@@ -65,7 +65,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../api/model.html" rel="next">
+<link href="../api/ReachObservation.html" rel="next">
 <link href="../api/TrackObservation.html" rel="prev">
 <link href="../dhi.ico" rel="icon">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
@@ -220,6 +220,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../api/NodeObservation.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">NodeObservation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/ReachObservation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ReachObservation</span></a>
   </div>
 </li>
       </ul>
@@ -485,26 +491,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1>NodeObservation</h1>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>NodeObservation(</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    data,</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    node<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    at<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    item<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    weight<span class="op">=</span><span class="fl">1.0</span>,</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    quantity<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    aux_items<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    attrs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    at,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    item<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    weight<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    quantity<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    aux_items<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    attrs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Class for observations at network nodes.</p>
-<p>Create a NodeObservation from a DataFrame or other data source. The node ID can be an integer (internal network ID) or a string alias (e.g.&nbsp;the original Res1D node name). String aliases are resolved to integer IDs automatically when matched against a :class:<code>~modelskill.model.network.NetworkModelResult</code>. For breakpoint locations (edge + distance), use the <code>at</code> parameter.</p>
-<p>To create multiple NodeObservation objects from a single data source, use :method:<code>from_multiple</code>.</p>
+<p>Create a NodeObservation from a DataFrame or other data source. The <code>at</code> parameter accepts three forms:</p>
+<ul>
+<li><strong>int</strong> — internal network ID, used directly.</li>
+<li><strong>str</strong> — original node alias (e.g.&nbsp;Res1D node name), resolved to an integer ID automatically when matched against a :class:<code>~modelskill.model.network.NetworkModelResult</code>.</li>
+<li><strong>tuple[str, float]</strong> — breakpoint location as <code>(reach_id, distance)</code> along a reach, resolved via the alias map at match time.</li>
+</ul>
+<p>.. note:: “Node” in this API follows the broad graph sense: it covers both junctions (named connection points) and chainage points (breakpoints along a reach). MIKE 1D users who distinguish <em>node</em> (junction) from <em>gridpoint</em> sharply can use the <code>(reach_id, distance)</code> tuple form to target a specific chainage point, or :class:<code>ReachObservation</code> when the quantity is uniform across the whole reach and any breakpoint will do.</p>
+<p>To create multiple NodeObservation objects from a single data source, use :meth:<code>from_multiple</code>.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 2%">
-<col style="width: 26%">
-<col style="width: 67%">
+<col style="width: 3%">
+<col style="width: 31%">
+<col style="width: 61%">
 <col style="width: 3%">
 </colgroup>
 <thead>
@@ -523,48 +534,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><em>required</em></td>
 </tr>
 <tr class="even">
-<td>node</td>
-<td>int or str</td>
-<td>Node ID. Accepted forms: * <strong>int</strong> — internal network ID, used directly. * <strong>str</strong> — original node alias (e.g.&nbsp;Res1D node name), resolved when matched against a :class:<code>~modelskill.model.network.NetworkModelResult</code>. Mutually exclusive with <code>at</code>.</td>
-<td><code>None</code></td>
+<td>at</td>
+<td>int, str, or tuple[str, float]</td>
+<td>Observation location. Accepted forms: * <strong>int</strong> — internal network ID. * <strong>str</strong> — original node alias (e.g.&nbsp;Res1D node name). * <strong>tuple[str, float]</strong> — breakpoint as <code>(reach_id, distance)</code>.</td>
+<td><em>required</em></td>
 </tr>
 <tr class="odd">
-<td>at</td>
-<td>tuple[str, float]</td>
-<td>Breakpoint location as <code>(edge_id, distance)</code> along an edge, resolved via the alias map when matched against a :class:<code>~modelskill.model.network.NetworkModelResult</code>. Mutually exclusive with <code>node</code>.</td>
-<td><code>None</code></td>
-</tr>
-<tr class="even">
 <td>item</td>
 <td>(int, str)</td>
 <td>index or name of the wanted item/column, by default None if data contains more than one item, item must be given</td>
 <td><code>None</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>name</td>
 <td>str</td>
 <td>user-defined name for easy identification in plots etc, by default derived from data</td>
 <td><code>None</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>weight</td>
 <td>float</td>
 <td>weighting factor for skill scores, by default 1.0</td>
 <td><code>1.0</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>quantity</td>
 <td>Quantity</td>
 <td>The quantity of the observation, for validation with model results</td>
 <td><code>None</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>aux_items</td>
 <td>list</td>
 <td>list of names or indices of auxiliary items, by default None</td>
 <td><code>None</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>attrs</td>
 <td>dict</td>
 <td>additional attributes to be added to the data, by default None</td>
@@ -576,16 +581,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="examples" class="level2 doc-section doc-section-examples">
 <h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">import</span> modelskill <span class="im">as</span> ms</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o1 <span class="op">=</span> ms.NodeObservation(data, node<span class="op">=</span><span class="dv">123</span>, name<span class="op">=</span><span class="st">"123"</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o2 <span class="op">=</span> ms.NodeObservation(df, item<span class="op">=</span><span class="st">"Water Level"</span>, node<span class="op">=</span><span class="dv">456</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o1 <span class="op">=</span> ms.NodeObservation(data, at<span class="op">=</span><span class="dv">123</span>, name<span class="op">=</span><span class="st">"123"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o2 <span class="op">=</span> ms.NodeObservation(df, item<span class="op">=</span><span class="st">"Water Level"</span>, at<span class="op">=</span><span class="dv">456</span>)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o3 <span class="op">=</span> ms.NodeObservation(data, node<span class="op">=</span><span class="st">"node_A"</span>)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># Breakpoint as (edge_id, distance) tuple</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o4 <span class="op">=</span> ms.NodeObservation(data, at<span class="op">=</span>(<span class="st">"reach_1"</span>, <span class="fl">24.5</span>))</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># Multiple node observations from separate data sources</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> ms.NodeObservation.from_multiple(nodes<span class="op">=</span>{<span class="dv">123</span>: df1, <span class="dv">456</span>: df2})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># String alias resolved at match time</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o3 <span class="op">=</span> ms.NodeObservation(data, at<span class="op">=</span><span class="st">"node_A"</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># Breakpoint as (reach_id, distance) tuple</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o4 <span class="op">=</span> ms.NodeObservation(data, at<span class="op">=</span>(<span class="st">"reach_1"</span>, <span class="fl">24.5</span>))</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># Multiple node observations from separate data sources</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> ms.NodeObservation.from_multiple(nodes<span class="op">=</span>{<span class="dv">123</span>: df1, <span class="dv">456</span>: df2})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
@@ -599,7 +605,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#modelskill.NodeObservation.at">at</a></td>
-<td>Breakpoint location as <code>(edge_id, distance)</code>, or <code>None</code> if this is a node observation (use <code>node</code> instead).</td>
+<td>Observation location: node ID (int/str) or breakpoint <code>(reach_id, distance)</code> tuple.</td>
 </tr>
 <tr class="even">
 <td><a href="#modelskill.NodeObservation.attrs">attrs</a></td>
@@ -619,7 +625,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#modelskill.NodeObservation.node">node</a></td>
-<td>Node ID of observation, or <code>None</code> if this is a breakpoint observation (use <code>at</code> instead).</td>
+<td>node-coordinate</td>
 </tr>
 <tr class="odd">
 <td><a href="#modelskill.NodeObservation.plot">plot</a></td>
@@ -1303,8 +1309,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../api/model.html" class="pagination-link" aria-label="Model Result">
-        <span class="nav-page-text">Model Result</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../api/ReachObservation.html" class="pagination-link" aria-label="ReachObservation">
+        <span class="nav-page-text">ReachObservation</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
