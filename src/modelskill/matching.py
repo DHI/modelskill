@@ -419,6 +419,10 @@ def _match_space_time(
             case PointModelResult() as pmr, PointObservation():
                 aligned = align_data(pmr.data, observation, max_gap=max_model_gap)
             case VerticalModelResult() as vmr, VerticalObservation():
+                if max_model_gap is not None:
+                    raise NotImplementedError(
+                        "max_model_gap is not yet supported for VerticalModelResult / VerticalObservation matching"
+                    )
                 aligned = vmr.align(observation)
             case NodeModelResult() as nmr, NodeObservation():
                 # mr is the extracted NodeModelResult
