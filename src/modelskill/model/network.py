@@ -238,7 +238,9 @@ class NetworkModelResult:
             if item not in breakpoint.data.columns:
                 continue
 
-            int_id = self.network.find(reach=breakpoint.id[0], distance=breakpoint.distance)
+            int_id = self.network.find(
+                reach=breakpoint.id[0], distance=breakpoint.distance
+            )
             if int_id not in available_nodes:
                 missing_node_data = True
                 continue

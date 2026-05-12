@@ -36,6 +36,7 @@ from .model import model_result
 from .model import (
     PointModelResult,
     TrackModelResult,
+    VerticalModelResult,
     GridModelResult,
     DfsuModelResult,
     NetworkModelResult,
@@ -45,6 +46,7 @@ from .obs import (
     observation,
     PointObservation,
     TrackObservation,
+    VerticalObservation,
     NodeObservation,
     ReachObservation,
 )
@@ -94,6 +96,7 @@ __all__ = [
     "model_result",
     "PointModelResult",
     "TrackModelResult",
+    "VerticalModelResult",
     "GridModelResult",
     "DfsuModelResult",
     "DummyModelResult",
@@ -101,6 +104,7 @@ __all__ = [
     "observation",
     "PointObservation",
     "TrackObservation",
+    "VerticalObservation",
     "NodeObservation",
     "ReachObservation",
     "TimeSeries",
