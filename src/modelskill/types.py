@@ -16,6 +16,7 @@ class GeometryType(Enum):
     GRID = "grid"
     VERTICAL = "vertical"
     NODE = "node"
+    REACH = "reach"
 
     def __str__(self) -> str:
         return self.name.lower()

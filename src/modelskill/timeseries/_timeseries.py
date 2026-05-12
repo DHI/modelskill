@@ -73,22 +73,28 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
         str(GeometryType.TRACK),
         str(GeometryType.VERTICAL),
         str(GeometryType.NODE),
+        str(GeometryType.REACH),
     }
     if gtype not in valid_gtypes:
         raise ValueError(
-            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK}, {GeometryType.VERTICAL}, or {GeometryType.NODE}"
+            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK}, {GeometryType.VERTICAL}, {GeometryType.NODE}, or {GeometryType.REACH}"
         )
 
-    # Validate coordinates
-    # Spatial (x, y), node, or edge+distance coordinates are valid.
+    # Validate coordinates: x,y spatial, node-based, or reach-based (with or without chainage)
     has_spatial_coords = "x" in ds.coords and "y" in ds.coords
     has_node_coord = "node" in ds.coords
-    has_breakpoint_coords = "edge" in ds.coords and "distance" in ds.coords
+    has_breakpoint_coords = "reach" in ds.coords and "distance" in ds.coords
+    has_reach_coord = "reach" in ds.coords and "distance" not in ds.coords
 
-    if not has_spatial_coords and not has_node_coord and not has_breakpoint_coords:
+    if (
+        not has_spatial_coords
+        and not has_node_coord
+        and not has_breakpoint_coords
+        and not has_reach_coord
+    ):
         raise ValueError(
             "data must have either x,y coordinates, a node coordinate, "
-            "or edge+distance coordinates"
+            "reach+distance coordinates, or a reach coordinate"
         )
 
     if has_spatial_coords and "z" not in ds.coords:
@@ -343,6 +349,8 @@ class TimeSeries:
             return self.data.drop_vars(["x", "y"]).to_dataframe()
         elif self.gtype == str(GeometryType.NODE):
             return self.data.drop_vars(["node"]).to_dataframe()
+        elif self.gtype == str(GeometryType.REACH):
+            return self.data.drop_vars(["reach"]).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 

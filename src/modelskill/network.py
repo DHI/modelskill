@@ -50,8 +50,8 @@ class NetworkNode(ABC):
     See Also
     --------
     BasicNode : Ready-to-use concrete implementation.
-    NetworkEdge : Connects two NetworkNode instances.
-    Network : Container that assembles nodes and edges into a graph.
+    NetworkReach : Connects two NetworkNode instances.
+    Network : Container that assembles nodes and reaches into a graph.
     """
 
     @property
@@ -78,30 +78,30 @@ class NetworkNode(ABC):
         return list(self.data.columns)
 
 
-class EdgeBreakPoint(ABC):
-    """Abstract base class for an intermediate break point along a network edge.
+class ReachBreakPoint(ABC):
+    """Abstract base class for an intermediate break point along a network reach.
 
-    Break points represent locations between the start and end nodes of an
-    edge (e.g. cross-section chainage points along a river reach) that carry
+    Break points represent locations between the start and end nodes of a
+    reach (e.g. cross-section chainage points along a river reach) that carry
     their own time-series data.
 
     Two properties must be implemented:
 
-    * :attr:`id` - a ``(edge_id, distance)`` tuple that uniquely locates the
+    * :attr:`id` - a ``(reach_id, distance)`` tuple that uniquely locates the
       break point within the network.
     * :attr:`data` - a time-indexed :class:`pandas.DataFrame` whose columns
       are quantity names.
 
     The :attr:`distance` convenience property returns ``id[1]`` (the
-    along-edge distance in the units used by the parent network).
+    along-reach distance in the units used by the parent network).
 
     Examples
     --------
     Minimal subclass:
 
-    >>> class MyBreakPoint(EdgeBreakPoint):
-    ...     def __init__(self, edge_id, chainage, df):
-    ...         self._id = (edge_id, chainage)
+    >>> class MyBreakPoint(ReachBreakPoint):
+    ...     def __init__(self, reach_id, chainage, df):
+    ...         self._id = (reach_id, chainage)
     ...         self._data = df
     ...     @property
     ...     def id(self): return self._id
@@ -110,15 +110,15 @@ class EdgeBreakPoint(ABC):
 
     See Also
     --------
-    NetworkEdge : Owns a list of EdgeBreakPoint instances.
-    NetworkNode : Represents a start/end node of an edge.
-    Network : Assembles edges (and their break points) into a graph.
+    NetworkReach : Owns a list of ReachBreakPoint instances.
+    NetworkNode : Represents a start/end node of a reach.
+    Network : Assembles reaches (and their break points) into a graph.
     """
 
     @property
     @abstractmethod
     def id(self) -> tuple[str, float]:
-        """``(edge_id, distance)`` tuple uniquely identifying this break point."""
+        """``(reach_id, distance)`` tuple uniquely identifying this break point."""
         pass
 
     @property
@@ -129,7 +129,7 @@ class EdgeBreakPoint(ABC):
 
     @property
     def distance(self) -> float:
-        """Along-edge distance of this break point (same units as :attr:`NetworkEdge.length`)."""
+        """Along-reach distance of this break point (same units as :attr:`NetworkReach.length`)."""
         return self.id[1]
 
     @property
@@ -138,35 +138,35 @@ class EdgeBreakPoint(ABC):
         return list(self.data.columns)
 
 
-class NetworkEdge(ABC):
-    """Abstract base class for an edge in a network.
+class NetworkReach(ABC):
+    """Abstract base class for a reach in a network.
 
-    An edge represents a directed connection between two :class:`NetworkNode`
+    A reach represents a directed connection between two :class:`NetworkNode`
     instances (e.g. a river reach between two junctions).  It may also carry
-    a list of :class:`EdgeBreakPoint` objects for intermediate chainage
+    a list of :class:`ReachBreakPoint` objects for intermediate chainage
     locations.
 
     Subclass this to integrate your own network topology.  Five properties
     must be implemented:
 
-    * :attr:`id` - a unique string identifier for the edge.
+    * :attr:`id` - a unique string identifier for the reach.
     * :attr:`start` - the upstream/start :class:`NetworkNode`.
     * :attr:`end` - the downstream/end :class:`NetworkNode`.
-    * :attr:`length` - total edge length (in the units of your coordinate
+    * :attr:`length` - total reach length (in the units of your coordinate
       system).
-    * :attr:`breakpoints` - list of :class:`EdgeBreakPoint` instances ordered
+    * :attr:`breakpoints` - list of :class:`ReachBreakPoint` instances ordered
       by increasing distance from the start node (empty list if none).
 
-    The concrete helper :class:`BasicEdge` is provided for the common case
+    The concrete helper :class:`BasicReach` is provided for the common case
     where all data is already available in memory.
 
     Examples
     --------
     Minimal subclass:
 
-    >>> class MyEdge(NetworkEdge):
-    ...     def __init__(self, eid, start_node, end_node, length):
-    ...         self._id = eid
+    >>> class MyReach(NetworkReach):
+    ...     def __init__(self, rid, start_node, end_node, length):
+    ...         self._id = rid
     ...         self._start = start_node
     ...         self._end = end_node
     ...         self._length = length
@@ -183,45 +183,45 @@ class NetworkEdge(ABC):
 
     See Also
     --------
-    BasicEdge : Ready-to-use concrete implementation.
-    NetworkNode : Represents the start/end of this edge.
-    EdgeBreakPoint : Intermediate data points along this edge.
-    Network : Assembles a list of NetworkEdge objects into a graph.
+    BasicReach : Ready-to-use concrete implementation.
+    NetworkNode : Represents the start/end of this reach.
+    ReachBreakPoint : Intermediate data points along this reach.
+    Network : Assembles a list of NetworkReach objects into a graph.
     """
 
     @property
     @abstractmethod
     def id(self) -> str:
-        """Unique string identifier for this edge."""
+        """Unique string identifier for this reach."""
         pass
 
     @property
     @abstractmethod
     def start(self) -> NetworkNode:
-        """Start (upstream) node of this edge."""
+        """Start (upstream) node of this reach."""
         pass
 
     @property
     @abstractmethod
     def end(self) -> NetworkNode:
-        """End (downstream) node of this edge."""
+        """End (downstream) node of this reach."""
         pass
 
     @property
     @abstractmethod
     def length(self) -> float:
-        """Total length of this edge in network units."""
+        """Total length of this reach in network units."""
         pass
 
     @property
     @abstractmethod
-    def breakpoints(self) -> list[EdgeBreakPoint]:
-        """Ordered list of intermediate :class:`EdgeBreakPoint` objects (may be empty)."""
+    def breakpoints(self) -> list[ReachBreakPoint]:
+        """Ordered list of intermediate :class:`ReachBreakPoint` objects (may be empty)."""
         pass
 
     @property
     def n_breakpoints(self) -> int:
-        """Number of break points in the edge."""
+        """Number of break points in the reach."""
         return len(self.breakpoints)
 
 
@@ -267,25 +267,25 @@ class BasicNode(NetworkNode):
         return self._boundary
 
 
-class BasicEdge(NetworkEdge):
-    """Concrete :class:`NetworkEdge` for programmatic network construction.
+class BasicReach(NetworkReach):
+    """Concrete :class:`NetworkReach` for programmatic network construction.
 
     Parameters
     ----------
     id : str
-        Unique edge identifier.
+        Unique reach identifier.
     start : NetworkNode
         Start node.
     end : NetworkNode
         End node.
     length : float
-        Edge length.
-    breakpoints : list[EdgeBreakPoint], optional
+        Reach length.
+    breakpoints : list[ReachBreakPoint], optional
         Intermediate break points, by default empty.
 
     Examples
     --------
-    >>> edge = BasicEdge("reach_1", node_a, node_b, length=250.0)
+    >>> reach = BasicReach("reach_1", node_a, node_b, length=250.0)
     """
 
     def __init__(
@@ -294,13 +294,13 @@ class BasicEdge(NetworkEdge):
         start: NetworkNode,
         end: NetworkNode,
         length: float,
-        breakpoints: list[EdgeBreakPoint] | None = None,
+        breakpoints: list[ReachBreakPoint] | None = None,
     ) -> None:
         self._id = id
         self._start = start
         self._end = end
         self._length = length
-        self._breakpoints: list[EdgeBreakPoint] = breakpoints or []
+        self._breakpoints: list[ReachBreakPoint] = breakpoints or []
 
     @property
     def id(self) -> str:
@@ -319,17 +319,17 @@ class BasicEdge(NetworkEdge):
         return self._length
 
     @property
-    def breakpoints(self) -> list[EdgeBreakPoint]:
+    def breakpoints(self) -> list[ReachBreakPoint]:
         return self._breakpoints
 
 
 class Network:
-    """Network built from a set of edges, with coordinate lookup and data access."""
+    """Network built from a set of reaches, with coordinate lookup and data access."""
 
-    def __init__(self, edges: Sequence[NetworkEdge]):
-        graph = self._generate_graph(edges)
+    def __init__(self, reaches: Sequence[NetworkReach]):
+        graph = self._generate_graph(reaches)
         self._initialize_network_attributes(graph)
-        self._edges = self._generate_edges_dict(edges)
+        self._reaches = self._generate_reaches_dict(reaches)
 
     def _initialize_network_attributes(self, graph: nx.Graph):
         self._alias_map = self._generate_alias_map(graph)
@@ -341,7 +341,7 @@ class Network:
         time_window = "N/A - N/A" if len(time) == 0 else f"{time[0]} - {time[-1]}"
         out = [
             "<Network>",
-            f"Edges: {len(self._edges)}",
+            f"Reaches: {len(self._reaches)}",
             f"Nodes: {self._graph.number_of_nodes()}",
             f"Quantities: {self.quantities}",
             f"Time: {time_window}",
@@ -445,7 +445,6 @@ class Network:
 
         list_of_reaches = cls._load_res1d_network(res, nodes_list, reaches_list)
         return cls(list_of_reaches)
-
     @staticmethod
     def _load_res1d_network(
         res: Res1D,
@@ -492,8 +491,8 @@ class Network:
         return {g.nodes[id]["alias"]: id for id in g.nodes()}
 
     @staticmethod
-    def _generate_edges_dict(edges: Sequence[NetworkEdge]) -> dict[str, NetworkEdge]:
-        return {e.id: e for e in edges}
+    def _generate_reaches_dict(reaches: Sequence[NetworkReach]) -> dict[str, NetworkReach]:
+        return {r.id: r for r in reaches}
 
     @staticmethod
     def _build_dataframe(g: nx.Graph) -> pd.DataFrame:
@@ -564,11 +563,11 @@ class Network:
         return list(self.to_dataframe().columns.get_level_values(1).unique())
 
     @staticmethod
-    def _generate_graph(edges: Sequence[NetworkEdge]) -> nx.Graph:
+    def _generate_graph(reaches: Sequence[NetworkReach]) -> nx.Graph:
         g0 = nx.Graph()
-        for edge in edges:
+        for reach in reaches:
             # 1) Add start and end nodes
-            for node in [edge.start, edge.end]:
+            for node in [reach.start, reach.end]:
                 node_key = node.id
                 if node_key in g0.nodes:
                     g0.nodes[node_key]["boundary"].update(node.boundary)
@@ -576,26 +575,26 @@ class Network:
                     g0.add_node(node_key, data=node.data, boundary=node.boundary)
 
             # 2) Add edges connecting start/end nodes to their adjacent breakpoints
-            start_key = edge.start.id
-            end_key = edge.end.id
-            if edge.n_breakpoints == 0:
-                g0.add_edge(start_key, end_key, length=edge.length)
+            start_key = reach.start.id
+            end_key = reach.end.id
+            if reach.n_breakpoints == 0:
+                g0.add_edge(start_key, end_key, length=reach.length)
             else:
-                bp_keys = [bp.id for bp in edge.breakpoints]
-                for bp, bp_key in zip(edge.breakpoints, bp_keys):
+                bp_keys = [bp.id for bp in reach.breakpoints]
+                for bp, bp_key in zip(reach.breakpoints, bp_keys):
                     g0.add_node(bp_key, data=bp.data)
 
-                g0.add_edge(start_key, bp_keys[0], length=edge.breakpoints[0].distance)
+                g0.add_edge(start_key, bp_keys[0], length=reach.breakpoints[0].distance)
                 g0.add_edge(
                     bp_keys[-1],
                     end_key,
-                    length=edge.length - edge.breakpoints[-1].distance,
+                    length=reach.length - reach.breakpoints[-1].distance,
                 )
 
             # 3) Connect consecutive intermediate breakpoints
-            for i in range(edge.n_breakpoints - 1):
-                current_ = edge.breakpoints[i]
-                next_ = edge.breakpoints[i + 1]
+            for i in range(reach.n_breakpoints - 1):
+                current_ = reach.breakpoints[i]
+                next_ = reach.breakpoints[i + 1]
                 length = next_.distance - current_.distance
                 g0.add_edge(
                     current_.id,
@@ -610,7 +609,7 @@ class Network:
         self,
         *,
         node: str,
-        edge: None = None,
+        reach: None = None,
         distance: None = None,
     ) -> int:
         pass
@@ -620,7 +619,7 @@ class Network:
         self,
         *,
         node: list[str],
-        edge: None = None,
+        reach: None = None,
         distance: None = None,
     ) -> list[int]:
         pass
@@ -630,7 +629,7 @@ class Network:
         self,
         *,
         node: None = None,
-        edge: str | list[str],
+        reach: str | list[str],
         distance: str | float,
     ) -> int:
         pass
@@ -640,7 +639,7 @@ class Network:
         self,
         *,
         node: None = None,
-        edge: str | list[str],
+        reach: str | list[str],
         distance: list[str | float],
     ) -> list[int]:
         pass
@@ -648,7 +647,7 @@ class Network:
     def find(
         self,
         node: str | list[str] | None = None,
-        edge: str | list[str] | None = None,
+        reach: str | list[str] | None = None,
         distance: str | float | list[str | float] | None = None,
     ) -> int | list[int]:
         """Find node or breakpoint id in the Network object based on former coordinates.
@@ -657,11 +656,11 @@ class Network:
         ----------
         node : str | List[str], optional
             Node id(s) in the original network, by default None
-        edge : str | List[str], optional
-            Edge id(s) for breakpoint lookup or edge endpoint lookup, by default None
+        reach : str | List[str], optional
+            Reach id(s) for breakpoint lookup or reach endpoint lookup, by default None
         distance : str | float | List[str | float], optional
-            Distance(s) along edge for breakpoint lookup, or "start"/"end"
-            for edge endpoints, by default None
+            Distance(s) along reach for breakpoint lookup, or "start"/"end"
+            for reach endpoints, by default None
 
         Returns
         -------
@@ -676,16 +675,16 @@ class Network:
             If requested node/breakpoint is not found in the network
         """
         by_node = node is not None
-        by_breakpoint = edge is not None or distance is not None
+        by_breakpoint = reach is not None or distance is not None
 
         if by_node and by_breakpoint:
             raise ValueError(
-                "Cannot specify both 'node' and 'edge'/'distance' parameters simultaneously"
+                "Cannot specify both 'node' and 'reach'/'distance' parameters simultaneously"
             )
 
         if not by_node and not by_breakpoint:
             raise ValueError(
-                "Must specify either 'node' or both 'edge' and 'distance' parameters"
+                "Must specify either 'node' or both 'reach' and 'distance' parameters"
             )
 
         ids: list[str | tuple[str, float]]
@@ -697,43 +696,43 @@ class Network:
             ids = list(node)
 
         else:
-            if edge is None or distance is None:
+            if reach is None or distance is None:
                 raise ValueError(
-                    "Both 'edge' and 'distance' parameters are required for breakpoint/endpoint lookup"
+                    "Both 'reach' and 'distance' parameters are required for breakpoint/endpoint lookup"
                 )
 
-            if not isinstance(edge, list):
-                edge = [edge]
+            if not isinstance(reach, list):
+                reach = [reach]
 
             if not isinstance(distance, list):
                 distance = [distance]
 
-            if len(edge) == 1:
-                edge = edge * len(distance)
+            if len(reach) == 1:
+                reach = reach * len(distance)
 
-            if len(edge) != len(distance):
+            if len(reach) != len(distance):
                 raise ValueError(
-                    "Incompatible lengths of 'edge' and 'distance' arguments. One 'edge' admits multiple distances, otherwise they must be the same length."
+                    "Incompatible lengths of 'reach' and 'distance' arguments. One 'reach' admits multiple distances, otherwise they must be the same length."
                 )
 
             ids = []
-            for edge_i, distance_i in zip(edge, distance):
+            for reach_i, distance_i in zip(reach, distance):
                 if distance_i in ["start", "end"]:
-                    if edge_i not in self._edges:
-                        raise KeyError(f"Edge '{edge_i}' not found in the network.")
+                    if reach_i not in self._reaches:
+                        raise KeyError(f"Reach '{reach_i}' not found in the network.")
 
-                    network_edge = self._edges[edge_i]
+                    network_reach = self._reaches[reach_i]
                     if distance_i == "start":
-                        ids.append(network_edge.start.id)
+                        ids.append(network_reach.start.id)
                     else:
-                        ids.append(network_edge.end.id)
+                        ids.append(network_reach.end.id)
                 else:
                     if not isinstance(distance_i, (int, float)):
                         raise ValueError(
                             "Invalid 'distance' value for breakpoint lookup: "
                             f"{distance_i!r}. Expected a numeric value or 'start'/'end'."
                         )
-                    ids.append((edge_i, distance_i))
+                    ids.append((reach_i, distance_i))
 
         _CHAINAGE_TOLERANCE = 1e-3
 
@@ -741,11 +740,11 @@ class Network:
             if id in self._alias_map:
                 return self._alias_map[id]
             if isinstance(id, tuple):
-                edge_id, distance = id
+                reach_id, distance = id
                 for key, val in self._alias_map.items():
                     if (
                         isinstance(key, tuple)
-                        and key[0] == edge_id
+                        and key[0] == reach_id
                         and abs(key[1] - distance) <= _CHAINAGE_TOLERANCE
                     ):
                         return val
@@ -783,7 +782,7 @@ class Network:
             Original coordinates. For single input returns dict, for multiple inputs returns list of dicts.
             Dict contains coordinates:
             - For nodes: 'node' key with node id
-            - For breakpoints: 'edge' and 'distance' keys with edge id and distance
+            - For breakpoints: 'reach' and 'distance' keys with reach id and distance
 
         Raises
         ------
@@ -806,7 +805,7 @@ class Network:
             if isinstance(key, str):
                 results.append({"node": key})
             else:
-                results.append({"edge": key[0], "distance": key[1]})
+                results.append({"reach": key[0], "distance": key[1]})
 
         if len(results) == 1:
             return results[0]
@@ -829,8 +828,8 @@ def _make_basic_network(node_ids, time, data, quantity="WaterLevel"):
         BasicNode(nid, pd.DataFrame({quantity: data[:, i]}, index=time))
         for i, nid in enumerate(node_ids)
     ]
-    edges = [
-        BasicEdge(f"e{i}", nodes[i], nodes[i + 1], length=100.0)
+    reaches = [
+        BasicReach(f"r{i}", nodes[i], nodes[i + 1], length=100.0)
         for i in range(len(nodes) - 1)
     ]
-    return Network(edges)
+    return Network(reaches)
