@@ -11,7 +11,7 @@ import mikeio
 from ..types import GeometryType, PointType
 from ..quantity import Quantity
 from ..utils import _get_name
-from ._timeseries import _validate_data_var_name
+from ._timeseries import _normalize_time_to_ns, _validate_data_var_name
 from ._coords import XYZCoords, NodeCoords, ReachCoords
 
 
@@ -120,6 +120,8 @@ def _convert_to_dataset(
         if time_dim_name != "time":
             data = data.rename({time_dim_name: "time"})
         ds = data
+
+    ds = _normalize_time_to_ns(ds)
 
     name = _validate_data_var_name(varname)
 

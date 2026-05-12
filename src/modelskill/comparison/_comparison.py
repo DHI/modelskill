@@ -17,6 +17,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
+from pandas.api.types import is_numeric_dtype
 from copy import deepcopy
 
 from ..model.network import NodeModelResult
@@ -27,7 +28,7 @@ from .. import Quantity
 from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation, NodeObservation
 from ..model import PointModelResult, TrackModelResult, VerticalModelResult
-from ..timeseries._timeseries import _validate_data_var_name
+from ..timeseries._timeseries import _normalize_time_to_ns, _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
 
@@ -62,6 +63,8 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
         raise ValueError("matched_data must be an xarray.Dataset")
         # matched_data = self._matched_data_to_xarray(matched_data)
     assert "Observation" in data.data_vars
+
+    data = _normalize_time_to_ns(data)
 
     # no missing values allowed in Observation
     if data["Observation"].isnull().any():
@@ -358,12 +361,12 @@ def _matched_data_to_xarray(
                 f"y must be scalar, not {type(y)}; if y is a coordinate variable, use y_item"
             )
     # check that items.obs and items.model are numeric
-    if not np.issubdtype(df[items.obs].dtype, np.number):
+    if not is_numeric_dtype(df[items.obs].dtype):
         raise ValueError(
             "Observation data is of type {df[items.obs].dtype}, it must be numeric"
         )
     for m in items.model:
-        if not np.issubdtype(df[m].dtype, np.number):
+        if not is_numeric_dtype(df[m].dtype):
             raise ValueError(
                 f"Model data: {m} is of type {df[m].dtype}, it must be numeric"
             )
