@@ -448,7 +448,9 @@ class Network:
 
     @staticmethod
     def _load_res1d_network(
-        res: Res1D, nodes: list[str], reaches: list[str],
+        res: Res1D,
+        nodes: list[str],
+        reaches: list[str],
     ) -> list[Res1DReach]:
         from modelskill.model.adapters._res1d import (
             Res1DReach,

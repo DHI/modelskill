@@ -241,9 +241,9 @@ class NetworkModelResult:
                     if diff <= self._CHAINAGE_TOLERANCE:
                         candidates.append((diff, node_id))
             if candidates:
-                return min(candidates, key=lambda candidate: (candidate[0], candidate[1]))[
-                    1
-                ]
+                return min(
+                    candidates, key=lambda candidate: (candidate[0], candidate[1])
+                )[1]
 
         available = list(self._alias_map.keys())[:5]
         if isinstance(alias, tuple):

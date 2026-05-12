@@ -1396,7 +1396,10 @@ class Comparer:
         if data.gtype == "point":
             raw_mod_data: Dict[
                 str,
-                PointModelResult | TrackModelResult | VerticalModelResult | NodeModelResult,
+                PointModelResult
+                | TrackModelResult
+                | VerticalModelResult
+                | NodeModelResult,
             ] = {}
 
             for var in data.data_vars:

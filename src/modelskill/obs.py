@@ -1,7 +1,7 @@
 """
 # Observations
 
-ModelSkill supports three types of observations:
+ModelSkill supports four types of observations:
 
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
