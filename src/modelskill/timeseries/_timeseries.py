@@ -39,6 +39,25 @@ def _validate_data_var_name(name: str) -> str:
     return name
 
 
+def _normalize_time_to_ns(ds: xr.Dataset) -> xr.Dataset:
+    """Cast a dataset's time coordinate to ``datetime64[ns]``.
+
+    Under pandas 3.0 the default datetime resolution is no longer nanoseconds,
+    so different sources (dfs0, DataFrame, NetCDF) may yield mixed precisions
+    that break ``xarray.interp``. Standardising on ``ns`` keeps behaviour
+    identical on pandas 2.x while avoiding the pandas 3.x interp failure.
+
+    Datasets whose time coordinate is not datetime (e.g. a ``RangeIndex``
+    used in some tests) are returned unchanged.
+    """
+    if ds.time.dtype.kind != "M":
+        return ds
+    time_pd = ds.time.to_index()  # preserves freq attribute
+    if time_pd.dtype == "datetime64[ns]":
+        return ds
+    return ds.assign_coords(time=time_pd.as_unit("ns"))
+
+
 def _parse_color(name: str, color: str | None = None) -> str:
     from matplotlib.colors import is_color_like
 
