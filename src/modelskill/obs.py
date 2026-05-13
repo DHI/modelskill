@@ -1,28 +1,35 @@
 """
 # Observations
 
-ModelSkill supports two types of observations:
+ModelSkill supports four types of observations:
 
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
+* [`VerticalObservation`](`modelskill.VerticalObservation`) - a vertical profile from a dfs0/nc file or a DataFrame
+* [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs.
 
 An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
 
 from __future__ import annotations
 
-from typing import Literal, Optional, Any, Union
+from typing import Literal, Any, Union, overload
+from typing_extensions import Self
 import warnings
 import pandas as pd
 import xarray as xr
 
-from .types import PointType, TrackType, GeometryType, DataInputType
+from .types import PointType, TrackType, VerticalType, GeometryType, DataInputType
 from . import Quantity
 from .timeseries import (
     TimeSeries,
     _parse_xyz_point_input,
     _parse_track_input,
+    _parse_vertical_input,
+    _parse_network_node_input,
+    _parse_network_breakpoint_input,
 )
+
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
 Serializable = Union[str, int, float]
@@ -31,9 +38,15 @@ Serializable = Union[str, int, float]
 def observation(
     data: DataInputType,
     *,
-    gtype: Optional[Literal["point", "track"]] = None,
+    gtype: Literal["point", "track", "vertical", "node", "reach"] | None = None,
     **kwargs,
-) -> PointObservation | TrackObservation:
+) -> (
+    PointObservation
+    | TrackObservation
+    | VerticalObservation
+    | NodeObservation
+    | ReachObservation
+):
     """Create an appropriate observation object.
 
     A factory function for creating an appropriate observation object
@@ -41,19 +54,23 @@ def observation(
 
     If 'x' or 'y' is given, a PointObservation is created.
     If 'x_item' or 'y_item' is given, a TrackObservation is created.
+    If 'z_item' is given, a VerticalObservation is created.
+    If 'at' is given, a NodeObservation is created.
+    If 'reach' is given, a ReachObservation is created.
+    If gtype is explicitly given, it will be used to determine the type of observation.
 
     Parameters
     ----------
     data : DataInputType
         The data to be used for creating the Observation object.
-    gtype : Optional[Literal["point", "track"]]
+    gtype : Literal["point", "track", "vertical", "node", "reach"] | None
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
         Additional keyword arguments to be passed to the Observation constructor.
 
     Returns
     -------
-    PointObservation or TrackObservation
+    PointObservation or TrackObservation or VerticalObservation or NodeObservation or ReachObservation
         An observation object of the appropriate type
 
     Examples
@@ -61,6 +78,8 @@ def observation(
     >>> import modelskill as ms
     >>> o_pt = ms.observation(df, item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o_tr = ms.observation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
+    >>> o_node = ms.observation(df, item="Water Level", at=123, name="123")
+    >>> o_reach = ms.observation(df, item="Discharge", reach="reach_1", name="reach_1_Q")
     """
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
@@ -76,18 +95,25 @@ def observation(
 def _guess_gtype(**kwargs) -> GeometryType:
     """Guess geometry type from data"""
 
-    if "x" in kwargs and "y" in kwargs:
+    if "z_item" in kwargs:
+        return GeometryType.VERTICAL
+    elif "x" in kwargs and "y" in kwargs:
         return GeometryType.POINT
     elif "x_item" in kwargs or "y_item" in kwargs:
         return GeometryType.TRACK
+    elif "at" in kwargs:
+        return GeometryType.NODE
+    elif "reach" in kwargs:
+        return GeometryType.REACH
     else:
         warnings.warn(
-            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation or TrackObservation to be explicit."
+            "Could not guess geometry type from data or args, assuming POINT geometry. "
+            "Use PointObservation, TrackObservation, VerticalObservation, NodeObservation, ReachObservation to be explicit."
         )
         return GeometryType.POINT
 
 
-def _validate_attrs(data_attrs: dict, attrs: Optional[dict]) -> None:
+def _validate_attrs(data_attrs: dict, attrs: dict | None) -> None:
     # See similar method in xarray https://github.com/pydata/xarray/blob/main/xarray/backends/api.py#L165
 
     if attrs is None:
@@ -109,7 +135,7 @@ class Observation(TimeSeries):
         data: xr.Dataset,
         weight: float,
         color: str = "#d62728",  # TODO: cannot currently be set by user
-        attrs: Optional[dict] = None,
+        attrs: dict | None = None,
     ) -> None:
         assert isinstance(data, xr.Dataset)
 
@@ -196,15 +222,15 @@ class PointObservation(Observation):
         self,
         data: PointType,
         *,
-        item: Optional[int | str] = None,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
-        z: Optional[float] = None,
-        name: Optional[str] = None,
+        item: int | str | None = None,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
+        name: str | None = None,
         weight: float = 1.0,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
-        attrs: Optional[dict] = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_xyz_point_input(
@@ -315,15 +341,15 @@ class TrackObservation(Observation):
         self,
         data: TrackType,
         *,
-        item: Optional[int | str] = None,
-        name: Optional[str] = None,
+        item: int | str | None = None,
+        name: str | None = None,
         weight: float = 1.0,
-        x_item: Optional[int | str] = 0,
-        y_item: Optional[int | str] = 1,
+        x_item: int | str | None = 0,
+        y_item: int | str | None = 1,
         keep_duplicates: Literal["first", "last", False] = "first",
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
-        attrs: Optional[dict] = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_track_input(
@@ -338,6 +364,409 @@ class TrackObservation(Observation):
             )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
+
+
+class VerticalObservation(Observation):
+    """Class for observations of vertical profiles.
+
+    Create a VerticalObservation from a dfs0/nc file or tabular data
+    containing time, vertical coordinate, and observed values.
+
+    Parameters
+    ----------
+    data : (str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset)
+        Input data with vertical profile observations.
+    item : int or str, optional
+        Index or name of the primary observation item.
+        If the input contains more than one candidate value item,
+        this argument must be provided.
+    x : float, optional
+        x-coordinate of the observation location. If not provided,
+        it is inferred from data when possible.
+    y : float, optional
+        y-coordinate of the observation location. If not provided,
+        it is inferred from data when possible.
+    z_item : int or str, optional
+        Index or name of the vertical coordinate item, by default 0.
+    name : str, optional
+        User-defined name for identification in plots and summaries.
+    weight : float, optional
+        Weighting factor for skill scores, by default 1.0.
+    keep_duplicates : {"first", "last", False}, optional
+        Strategy for handling duplicate timestamps/z pairs.
+    quantity : Quantity, optional
+        Physical quantity metadata used for validation against model results.
+    aux_items : list[int | str], optional
+        List of auxiliary item names or indices to keep in the dataset.
+    attrs : dict, optional
+        Additional attributes to be added to the underlying dataset.
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> import pandas as pd
+    >>> df = pd.DataFrame(
+    ...     {
+    ...         "z": [0.0, -5.0, -10.0, 0.0, -5.0, -10.0],
+    ...         "value": [0.1, 0.3, 0.4, 0.5, 0.3, 0.3],
+    ...     },
+    ...     index=pd.to_datetime(
+    ...         [
+    ...             "2010-01-01 01:00:00",
+    ...             "2010-01-01 01:00:00",
+    ...             "2010-01-01 01:00:00",
+    ...             "2010-01-01 02:00:00",
+    ...             "2010-01-01 02:00:00",
+    ...             "2010-01-01 02:00:00",
+    ...         ]
+    ...     ),
+    ... )
+    >>> df.index.name = "t"
+    >>> print(df.to_string())
+                           z  value
+    t
+    2010-01-01 01:00:00   0.0    0.1
+    2010-01-01 01:00:00  -5.0    0.3
+    2010-01-01 01:00:00 -10.0    0.4
+    2010-01-01 02:00:00   0.0    0.5
+    2010-01-01 02:00:00  -5.0    0.3
+    2010-01-01 02:00:00 -10.0    0.3
+
+    >>> o = ms.VerticalObservation(df, item="value", z_item="z", x=12.0, y=55.0)
+    """
+
+    def __init__(
+        self,
+        data: VerticalType,
+        *,
+        item: int | str | None = None,
+        x: float | None = None,
+        y: float | None = None,
+        z_item: int | str | None = 0,
+        name: str | None = None,
+        weight: float = 1.0,
+        keep_duplicates: Literal["first", "last", False] = "first",
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> None:
+        if not self._is_input_validated(data):
+            data = _parse_vertical_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                z_item=z_item,
+                x=x,
+                y=y,
+                keep_duplicates=keep_duplicates,
+            )
+        assert isinstance(data, xr.Dataset)
+        super().__init__(data=data, weight=weight, attrs=attrs)
+
+    @property
+    def z(self):
+        return self._coordinate_values("z")
+
+
+class NodeObservation(Observation):
+    """Class for observations at network nodes.
+
+    Create a NodeObservation from a DataFrame or other data source.
+    The ``at`` parameter accepts three forms:
+
+    * **int** — internal network ID, used directly.
+    * **str** — original node alias (e.g. Res1D node name), resolved to an
+      integer ID automatically when matched against a
+      :class:`~modelskill.model.network.NetworkModelResult`.
+    * **tuple[str, float]** — breakpoint location as ``(reach_id, distance)``
+      along a reach, resolved via the alias map at match time.
+
+    .. note::
+        "Node" in this API follows the broad graph sense: it covers both
+        junctions (named connection points) and chainage points (breakpoints
+        along a reach).  MIKE 1D users who distinguish *node* (junction) from
+        *gridpoint* sharply can use the ``(reach_id, distance)`` tuple form to
+        target a specific chainage point, or :class:`ReachObservation` when
+        the quantity is uniform across the whole reach and any breakpoint will do.
+
+    To create multiple NodeObservation objects from a single data source,
+    use :meth:`from_multiple`.
+
+    Parameters
+    ----------
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        data source with time series for the node
+    at : int, str, or tuple[str, float]
+        Observation location. Accepted forms:
+
+        * **int** — internal network ID.
+        * **str** — original node alias (e.g. Res1D node name).
+        * **tuple[str, float]** — breakpoint as ``(reach_id, distance)``.
+    item : (int, str), optional
+        index or name of the wanted item/column, by default None
+        if data contains more than one item, item must be given
+    name : str, optional
+        user-defined name for easy identification in plots etc, by default derived from data
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
+    quantity : Quantity, optional
+        The quantity of the observation, for validation with model results
+    aux_items : list, optional
+        list of names or indices of auxiliary items, by default None
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> o1 = ms.NodeObservation(data, at=123, name="123")
+    >>> o2 = ms.NodeObservation(df, item="Water Level", at=456)
+    >>>
+    >>> # String alias resolved at match time
+    >>> o3 = ms.NodeObservation(data, at="node_A")
+    >>>
+    >>> # Breakpoint as (reach_id, distance) tuple
+    >>> o4 = ms.NodeObservation(data, at=("reach_1", 24.5))
+    >>>
+    >>> # Multiple node observations from separate data sources
+    >>> obs = ms.NodeObservation.from_multiple(nodes={123: df1, 456: df2})
+    """
+
+    def __init__(
+        self,
+        data: PointType,
+        *,
+        at: int | str | tuple[str, float],
+        item: int | str | None = None,
+        name: str | None = None,
+        weight: float = 1.0,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> None:
+        if isinstance(at, tuple):
+            reach, distance = str(at[0]), float(at[1])
+            if not self._is_input_validated(data):
+                data = _parse_network_breakpoint_input(
+                    data,
+                    name=name,
+                    item=item,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    reach=reach,
+                    distance=distance,
+                )
+        else:
+            if not self._is_input_validated(data):
+                data = _parse_network_node_input(
+                    data,
+                    name=name,
+                    item=item,
+                    quantity=quantity,
+                    node=at,
+                    aux_items=aux_items,
+                )
+        assert isinstance(data, xr.Dataset)
+        super().__init__(data=data, weight=weight, attrs=attrs)
+
+    @property
+    def at(self) -> int | str | tuple[str, float]:
+        """Observation location: node ID (int/str) or breakpoint ``(reach_id, distance)`` tuple."""
+        if "reach" in self.data.coords:
+            return (
+                str(self.data.coords["reach"].item()),
+                float(self.data.coords["distance"].item()),
+            )
+        return self.data.coords["node"].item()  # int or str
+
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Reconstruct instance from a dataset slice."""
+        if "reach" in data.coords:
+            return self.__class__(
+                data,
+                at=(
+                    str(data.coords["reach"].item()),
+                    float(data.coords["distance"].item()),
+                ),
+            )
+        return self.__class__(data, at=data.coords["node"].item())
+
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType,
+        nodes: dict[int, str | int],
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[NodeObservation]: ...
+
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        nodes: dict[int, PointType],
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[NodeObservation]:
+        pass
+
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType | None = None,
+        nodes: dict[int, Any] | None = None,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[NodeObservation]:
+        """Create multiple NodeObservation objects.
+
+        Two calling conventions are supported:
+
+        1. **Separate data sources** — pass only ``nodes`` as a dict mapping
+           each node ID to its own data source (file path, DataFrame, etc.)::
+
+               obs = NodeObservation.from_multiple(nodes={123: df1, 456: "sensor.csv"})
+
+        2. **Shared data source** — pass a single ``data`` object together with
+           ``nodes`` as a dict mapping each node ID to the column name or index
+           to select from ``data``::
+
+               obs = NodeObservation.from_multiple(data=df, nodes={123: "col_a", 456: "col_b"})
+
+        Parameters
+        ----------
+        data : PointType, optional
+            Shared data source (required when ``nodes`` values are column selectors).
+        nodes : dict[int, PointType | str | int]
+            Mapping of node_id -> data source or column selector.
+        quantity : Quantity | None, optional
+            Physical quantity metadata, by default None.
+        aux_items : list[int | str] | None, optional
+            Auxiliary items, by default None.
+        attrs : dict | None, optional
+            Additional attributes, by default None.
+
+        Returns
+        -------
+        list[NodeObservation]
+            List of NodeObservation objects.
+        """
+        if nodes is None:
+            raise ValueError("'nodes' argument is required")
+        if not isinstance(nodes, dict):
+            raise TypeError(
+                f"'nodes' must be a dict mapping node_id -> data_source, got {type(nodes).__name__}"
+            )
+
+        node_ids = list(nodes.keys())
+
+        if data is None:
+            data_sources: list[PointType] = list(nodes.values())  # type: ignore[list-item]
+            return [
+                cls(
+                    data_i,
+                    at=node_i,
+                    item=None,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    attrs=attrs,
+                )
+                for data_i, node_i in zip(data_sources, node_ids)
+            ]
+        else:
+            node_items: list[int | str | None] = list(nodes.values())  # type: ignore[list-item]
+            return [
+                cls(
+                    data,
+                    at=node_i,
+                    item=item_i,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    attrs=attrs,
+                )
+                for node_i, item_i in zip(node_ids, node_items)
+            ]
+
+
+class ReachObservation(Observation):
+    """Class for observations representing a quantity uniform across a network reach.
+
+    Some quantities (e.g. discharge in a river reach) are constant for the
+    whole reach, even though the underlying model stores values at
+    nodes/breakpoints.  A ReachObservation associates a timeseries with a
+    named reach; when matched against a
+    :class:`~modelskill.model.network.NetworkModelResult` the data is
+    extracted from an arbitrary breakpoint that belongs to that reach.
+
+    Parameters
+    ----------
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        data source with time series for the reach quantity
+    reach : str
+        Reach identifier (reach name / reach ID) in the network.
+    item : (int, str), optional
+        index or name of the wanted item/column, by default None
+        if data contains more than one item, item must be given
+    name : str, optional
+        user-defined name for easy identification in plots etc, by default derived from data
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
+    quantity : Quantity, optional
+        The quantity of the observation, for validation with model results
+    aux_items : list, optional
+        list of names or indices of auxiliary items, by default None
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> o1 = ms.ReachObservation(df, reach="reach_1", name="Q_reach_1")
+    >>> o2 = ms.ReachObservation(df, item="Discharge", reach="reach_2")
+    """
+
+    def __init__(
+        self,
+        data: PointType,
+        *,
+        reach: str,
+        item: int | str | None = None,
+        name: str | None = None,
+        weight: float = 1.0,
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> None:
+        if not self._is_input_validated(data):
+            data = _parse_network_breakpoint_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                reach=reach,
+                distance=None,
+            )
+        assert isinstance(data, xr.Dataset)
+        super().__init__(data=data, weight=weight, attrs=attrs)
+
+    @property
+    def reach(self) -> str:
+        """Reach ID of this observation."""
+        return str(self.data.coords["reach"].item())
+
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Reconstruct instance from a dataset slice."""
+        return self.__class__(data, reach=str(data.coords["reach"].item()))
 
 
 def unit_display_name(name: str) -> str:
@@ -364,4 +793,7 @@ def unit_display_name(name: str) -> str:
 _obs_class_lookup = {
     GeometryType.POINT: PointObservation,
     GeometryType.TRACK: TrackObservation,
+    GeometryType.VERTICAL: VerticalObservation,
+    GeometryType.NODE: NodeObservation,
+    GeometryType.REACH: ReachObservation,
 }

@@ -48,6 +48,9 @@ website:
         - user-guide/selecting-data.qmd
         - user-guide/plotting.qmd
         - user-guide/statistics.qmd
+        - section: "Extensions"
+          contents:
+            - user-guide/network.qmd
 
     - title: "Examples"
       contents:
@@ -78,6 +81,8 @@ website:
             - api/observation.qmd
             - api/PointObservation.qmd
             - api/TrackObservation.qmd
+            - api/NodeObservation.qmd
+            - api/ReachObservation.qmd
         - section: "Model Result"
           href: api/model.qmd
           contents:
@@ -87,6 +92,7 @@ website:
             - api/DfsuModelResult.qmd
             - api/GridModelResult.qmd
             - api/DummyModelResult.qmd
+            - api/NetworkModelResult.qmd
         - section: "Matching"
           contents:
             - api/match.qmd
@@ -164,6 +170,8 @@ quartodoc:
         - observation
         - PointObservation
         - TrackObservation
+        - NodeObservation
+        - ReachObservation
     - title: Model Result
       desc: ""
       contents:
@@ -175,6 +183,7 @@ quartodoc:
         - DfsuModelResult
         - GridModelResult
         - DummyModelResult
+        - NetworkModelResult
     - title: Matching
       desc: Matching functions
       contents:

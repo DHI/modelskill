@@ -1,7 +1,8 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import ClassVar, Literal, Optional, TypeVar, Any
+from typing import ClassVar, Literal, TypeVar, Any
+from typing_extensions import Self
 import warnings
 import numpy as np
 import pandas as pd
@@ -38,6 +39,25 @@ def _validate_data_var_name(name: str) -> str:
     return name
 
 
+def _normalize_time_to_ns(ds: xr.Dataset) -> xr.Dataset:
+    """Cast a dataset's time coordinate to ``datetime64[ns]``.
+
+    Under pandas 3.0 the default datetime resolution is no longer nanoseconds,
+    so different sources (dfs0, DataFrame, NetCDF) may yield mixed precisions
+    that break ``xarray.interp``. Standardising on ``ns`` keeps behaviour
+    identical on pandas 2.x while avoiding the pandas 3.x interp failure.
+
+    Datasets whose time coordinate is not datetime (e.g. a ``RangeIndex``
+    used in some tests) are returned unchanged.
+    """
+    if ds.time.dtype.kind != "M":
+        return ds
+    time_pd = ds.time.to_index()  # preserves freq attribute
+    if time_pd.dtype == "datetime64[ns]":
+        return ds
+    return ds.assign_coords(time=time_pd.as_unit("ns"))
+
+
 def _parse_color(name: str, color: str | None = None) -> str:
     from matplotlib.colors import is_color_like
 
@@ -62,14 +82,44 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
         ds.time.to_index().is_monotonic_increasing
     ), "time must be increasing (please check for duplicate times))"
 
-    # Validate coordinates
-    if "x" not in ds.coords:
-        raise ValueError("data must have an x-coordinate")
-    if "y" not in ds.coords:
-        raise ValueError("data must have a y-coordinate")
-    if "z" not in ds.coords:
+    if "gtype" not in ds.attrs:
+        raise ValueError("data must have a gtype attribute")
+
+    # Validate gtype
+    gtype = ds.attrs["gtype"]
+    valid_gtypes = {
+        str(GeometryType.POINT),
+        str(GeometryType.TRACK),
+        str(GeometryType.VERTICAL),
+        str(GeometryType.NODE),
+        str(GeometryType.REACH),
+    }
+    if gtype not in valid_gtypes:
+        raise ValueError(
+            f"data attribute 'gtype' must be one of {GeometryType.POINT}, {GeometryType.TRACK}, {GeometryType.VERTICAL}, {GeometryType.NODE}, or {GeometryType.REACH}"
+        )
+
+    # Validate coordinates: x,y spatial, node-based, or reach-based (with or without chainage)
+    has_spatial_coords = "x" in ds.coords and "y" in ds.coords
+    has_node_coord = "node" in ds.coords
+    has_breakpoint_coords = "reach" in ds.coords and "distance" in ds.coords
+    has_reach_coord = "reach" in ds.coords and "distance" not in ds.coords
+
+    if (
+        not has_spatial_coords
+        and not has_node_coord
+        and not has_breakpoint_coords
+        and not has_reach_coord
+    ):
+        raise ValueError(
+            "data must have either x,y coordinates, a node coordinate, "
+            "reach+distance coordinates, or a reach coordinate"
+        )
+
+    if has_spatial_coords and "z" not in ds.coords:
+        if gtype == str(GeometryType.VERTICAL):
+            raise ValueError("data with gtype 'vertical' must have a z-coordinate")
         ds.coords["z"] = np.nan
-    # assert "z" in ds.coords, "data must have a z-coordinate"
 
     # Validate data
     vars = [v for v in ds.data_vars]
@@ -103,15 +153,6 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     da = ds[name]
 
     # Validate attrs
-    if "gtype" not in ds.attrs:
-        raise ValueError("data must have a gtype attribute")
-    if ds.attrs["gtype"] not in [
-        str(GeometryType.POINT),
-        str(GeometryType.TRACK),
-    ]:
-        raise ValueError(
-            f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
-        )
     if "long_name" not in da.attrs:
         da.attrs["long_name"] = Quantity.undefined().name
     if "units" not in da.attrs:
@@ -222,7 +263,14 @@ class TimeSeries:
     def y(self, value: Any) -> None:
         self.data["y"] = value
 
-    def _coordinate_values(self, coord: str) -> float | np.ndarray:
+    @property
+    def node(self) -> Any:
+        """node-coordinate"""
+        return self._coordinate_values("node")
+
+    def _coordinate_values(self, coord: str) -> None | float | np.ndarray:
+        if coord not in self.data.coords:
+            return None  # Node-based data doesn't have y coordinate
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
@@ -248,7 +296,12 @@ class TimeSeries:
         res = []
         res.append(f"<{self.__class__.__name__}>: {self.name}")
         if self.gtype == str(GeometryType.POINT):
-            res.append(f"Location: {self.x}, {self.y}")
+            # Show location based on available coordinates
+            if "node" in self.data.coords:
+                node_id = self.data.coords["node"].item()
+                res.append(f"Node: {node_id}")
+            elif self.x is not None and self.y is not None:
+                res.append(f"Location: {self.x}, {self.y}")
         res.append(f"Time: {self.time[0]} - {self.time[-1]}")
         res.append(f"Quantity: {self.quantity}")
         if len(self._aux_vars) > 0:
@@ -298,23 +351,36 @@ class TimeSeries:
         if self.gtype == str(GeometryType.POINT):
             # we remove the scalar coordinate variables as they
             # will otherwise be columns in the dataframe
-            return self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+            # Only drop coordinates that exist
+            coords_to_drop = []
+            for coord in ["x", "y", "z"]:
+                if coord in self.data.coords:
+                    coords_to_drop.append(coord)
+            return self.data.drop_vars(coords_to_drop).to_dataframe()
         elif self.gtype == str(GeometryType.TRACK):
-            df = self.data.drop_vars(["z"]).to_dataframe()
-            # make sure that x, y cols are first
-            cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
+            coords_to_drop = ["z"] if "z" in self.data.coords else []
+            df = self.data.drop_vars(coords_to_drop).to_dataframe()
+            # makes sure that x comes first, then y, then other columns alphabetically
+            priority = {"x": 0, "y": 1}
+            cols = sorted(df.columns, key=lambda col: (priority.get(col, 999), col))
             return df[cols]
+        elif self.gtype == str(GeometryType.VERTICAL):
+            return self.data.drop_vars(["x", "y"]).to_dataframe()
+        elif self.gtype == str(GeometryType.NODE):
+            return self.data.drop_vars(["node"]).to_dataframe()
+        elif self.gtype == str(GeometryType.REACH):
+            return self.data.drop_vars(["reach"]).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def sel(self: T, **kwargs: Any) -> T:
         """Select data by label"""
-        return self.__class__(self.data.sel(**kwargs))
+        return self._create_new_instance(self.data.sel(**kwargs))
 
     def trim(
         self: T,
-        start_time: Optional[pd.Timestamp] = None,
-        end_time: Optional[pd.Timestamp] = None,
+        start_time: pd.Timestamp | None = None,
+        end_time: pd.Timestamp | None = None,
         buffer: str = "1s",
         no_overlap: Literal["ignore", "error", "warn"] = "error",
     ) -> T:
@@ -347,4 +413,11 @@ class TimeSeries:
                 case _:
                     pass
 
+        return self._create_new_instance(data)
+
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Create a new instance of this class with the given data.
+
+        Subclasses can override this to handle their specific constructor requirements.
+        """
         return self.__class__(data)

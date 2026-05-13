@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Union, List, Optional
+from typing import Union, List
 from dataclasses import dataclass
 import pandas as pd
 import xarray as xr
@@ -14,6 +14,9 @@ class GeometryType(Enum):
     TRACK = "track"
     UNSTRUCTURED = "unstructured"
     GRID = "grid"
+    VERTICAL = "vertical"
+    NODE = "node"
+    REACH = "reach"
 
     def __str__(self) -> str:
         return self.name.lower()
@@ -37,6 +40,10 @@ class GeometryType(Enum):
         <GeometryType.UNSTRUCTURED: 'unstructured'>
         >>> GeometryType.from_string("grid")
         <GeometryType.GRID: 'grid'>
+        >>> GeometryType.from_string("vertical")
+        <GeometryType.VERTICAL: 'vertical'>
+        >>> GeometryType.from_string("node")
+        <GeometryType.NODE: 'node'>
         """
 
         try:
@@ -87,11 +94,12 @@ PointType = Union[
     xr.DataArray,
 ]
 TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
+VerticalType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
 
 
 @dataclass(frozen=True)
 class Period:
     """Period of data, defined by start and end time, can be open ended"""
 
-    start: Optional[pd.Timestamp] = None
-    end: Optional[pd.Timestamp] = None
+    start: pd.Timestamp | None = None
+    end: pd.Timestamp | None = None

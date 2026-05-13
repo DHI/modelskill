@@ -10,7 +10,6 @@ from typing import (
     Iterator,
     List,
     Union,
-    Optional,
     Mapping,
     Iterable,
     overload,
@@ -286,13 +285,14 @@ class ComparerCollection(Mapping):
 
     def sel(
         self,
-        model: Optional[IdxOrNameTypes] = None,
-        observation: Optional[IdxOrNameTypes] = None,
-        quantity: Optional[IdxOrNameTypes] = None,
-        start: Optional[TimeTypes] = None,
-        end: Optional[TimeTypes] = None,
-        time: Optional[TimeTypes] = None,
-        area: Optional[List[float]] = None,
+        model: IdxOrNameTypes | None = None,
+        observation: IdxOrNameTypes | None = None,
+        quantity: IdxOrNameTypes | None = None,
+        start: TimeTypes | None = None,
+        end: TimeTypes | None = None,
+        time: TimeTypes | None = None,
+        area: List[float] | None = None,
+        z: float | slice | None = None,
         **kwargs: Any,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
@@ -313,6 +313,8 @@ class ComparerCollection(Mapping):
             Time. If None, all times are selected.
         area : list of float, optional
             bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
+        z: Optional[float | slice] = None,
+            Vertical level or slice. If None, all levels are selected.
         **kwargs
             Filtering by comparer attrs similar to xarray.Dataset.filter_by_attrs
             e.g. `sel(gtype='track')` or `sel(obs_provider='CMEMS')` if at least
@@ -352,11 +354,7 @@ class ComparerCollection(Mapping):
                 if (thismodel is not None) and (len(thismodel) == 0):
                     continue
                 cmpsel = cmp.sel(
-                    model=thismodel,
-                    start=start,
-                    end=end,
-                    time=time,
-                    area=area,
+                    model=thismodel, start=start, end=end, time=time, area=area, z=z
                 )
                 if cmpsel is not None:
                     # TODO: check if cmpsel is empty
@@ -572,7 +570,7 @@ class ComparerCollection(Mapping):
         binsize: float | None = None,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        n_min: Optional[int] = None,
+        n_min: int | None = None,
         **kwargs: Any,
     ) -> SkillGrid:
         """Skill assessment of model(s) on a regular spatial grid.

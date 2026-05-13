@@ -22,18 +22,24 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - uses: extractions/setup-just@v3
+
     - name: Set up uv
       uses: astral-sh/setup-uv@v6
       with:
-        python-version: "3.14"
+        python-version: "3.13"  # Need to use 3.13 for docs build due to pythonnet dependency not yet supporting 3.14
         enable-cache: true
 
+    - name: Set up Quarto
+      uses: quarto-dev/quarto-actions/setup@v2
+      with:
+        version: "1.8.27"
+
     - name: Install dependencies
-      run: uv sync --group dev --group docs
+      run: uv sync --group dev --group docs --group networks
 
     - name: Build documentation
-      run: |
-        make docs
+      run: just docs
 
     - name: Upload Pages artifact
       if: github.event_name == 'push'
