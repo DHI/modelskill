@@ -42,7 +42,7 @@ from ._utils import (
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 from ..settings import register_option
-from .._utils import get_name, RESERVED_COMPARER_VAR_NAMES
+from .._names import get_name, RESERVED_COMPARER_VAR_NAMES
 from .. import __version__
 from ._vertical_comparison import VerticalAccessor
 

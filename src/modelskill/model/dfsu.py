@@ -10,7 +10,7 @@ import pandas as pd
 from ._base import SpatialField, validate_overlap_in_time, SelectedItems
 from ..types import UnstructuredType
 from ..quantity import Quantity
-from .._utils import get_idx
+from .._names import get_idx
 from .point import PointModelResult
 from .track import TrackModelResult
 from .vertical import VerticalModelResult

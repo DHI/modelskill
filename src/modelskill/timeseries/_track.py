@@ -11,7 +11,7 @@ import mikeio
 
 from ..types import GeometryType, TrackType
 from ..quantity import Quantity
-from .._utils import get_name
+from .._names import get_name
 from ..utils import make_unique_index
 from ._timeseries import validate_data_var_name
 

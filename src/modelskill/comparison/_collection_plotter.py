@@ -25,7 +25,7 @@ from .. import metrics as mtr
 from ..plotting import TaylorPoint, scatter, taylor_diagram
 from ..plotting._misc import get_fig_ax, xtick_directional, ytick_directional
 from ..settings import options
-from .._utils import get_idx
+from .._names import get_idx
 from ._comparer_plotter import quantiles_xy
 
 

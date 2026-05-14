@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 import numpy as np  # type: ignore
 
 from .. import metrics as mtr
-from .._utils import get_idx
+from .._names import get_idx
 import matplotlib.colors as colors
 from ..plotting._misc import (
     get_fig_ax,

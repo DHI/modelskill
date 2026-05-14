@@ -28,7 +28,7 @@ from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 
-from .._utils import get_name
+from .._names import get_name
 from ._comparison import Comparer
 from ._utils import (
     add_spatial_grid_to_df,

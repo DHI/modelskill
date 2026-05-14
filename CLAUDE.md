@@ -63,8 +63,8 @@ authors may use them as a hint that a function is file-local, but this is
 not required and not enforced.
 
 - Public: `modelskill.matching.match`, `modelskill.utils.rename_coords_xr`
-- Private (module path): `modelskill._utils.get_name`, `modelskill.timeseries._timeseries.validate_data_var_name`
-- File-local hint: `_helper` inside any module, marking no cross-module use
+- Private (module path): `modelskill._names.get_name`, `modelskill.timeseries._timeseries.validate_data_var_name`
+- File-local hint: a leading `_` on a function name inside any module, marking no cross-module use
 
 See [ADR-012](adr/012-public-private-api-convention.md). Enforced in CI by
 Ruff rule `PLC2701` (zero violations in `src/`; tests have a per-file ignore).

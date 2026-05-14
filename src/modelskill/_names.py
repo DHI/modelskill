@@ -1,8 +1,8 @@
-"""Package-internal helpers shared across modelskill subpackages.
+"""Reserved coordinate/variable names and name-or-index resolution.
 
-The leading underscore on the module name signals that this is internal API:
-modelskill itself imports freely from here, but downstream consumers must not.
-See ADR-012 for the public/private convention.
+Centralises the names ModelSkill reserves on its xarray data structures and
+the small resolver used wherever a user supplies a name or positional index
+against a list of valid names. Private per ADR-012.
 """
 
 from __future__ import annotations

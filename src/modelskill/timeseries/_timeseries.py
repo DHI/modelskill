@@ -10,7 +10,7 @@ import xarray as xr
 
 from ..types import GeometryType
 from ..quantity import Quantity
-from .._utils import RESERVED_COORD_NAMES
+from .._names import RESERVED_COORD_NAMES
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
 from .. import __version__
 

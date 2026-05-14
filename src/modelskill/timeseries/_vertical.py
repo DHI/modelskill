@@ -13,7 +13,7 @@ import mikeio
 
 from ..types import GeometryType, VerticalType
 from ..quantity import Quantity
-from .._utils import get_name
+from .._names import get_name
 from ._timeseries import validate_data_var_name
 
 

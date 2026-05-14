@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from .track import TrackModelResult
     from .vertical import VerticalModelResult
 
-from .._utils import get_name
+from .._names import get_name
 from ..obs import Observation, PointObservation, TrackObservation, VerticalObservation
 
 

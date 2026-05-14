@@ -10,7 +10,7 @@ import mikeio
 
 from ..types import GeometryType, PointType
 from ..quantity import Quantity
-from .._utils import get_name
+from .._names import get_name
 from ._timeseries import normalize_time_to_ns, validate_data_var_name
 from ._coords import XYZCoords, NodeCoords, ReachCoords
 
