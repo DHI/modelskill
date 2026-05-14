@@ -7,10 +7,10 @@ import mikeio
 import numpy as np
 import pandas as pd
 
-from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
+from ._base import SpatialField, validate_overlap_in_time, SelectedItems
 from ..types import UnstructuredType
 from ..quantity import Quantity
-from ..utils import _get_idx
+from .._utils import get_idx
 from .point import PointModelResult
 from .track import TrackModelResult
 from .vertical import VerticalModelResult
@@ -78,7 +78,7 @@ class DfsuModelResult(SpatialField):
             data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D, mikeio.Dataset)
         ):
             item_names = [i.name for i in data.items]
-            idx = _get_idx(x=item, valid_names=item_names)
+            idx = get_idx(x=item, valid_names=item_names)
             item_info = data.items[idx]
 
             self.sel_items = SelectedItems.parse(
@@ -137,7 +137,7 @@ class DfsuModelResult(SpatialField):
         """
         method = self._parse_spatial_method(spatial_method)
 
-        _validate_overlap_in_time(self.time, observation)
+        validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
             return self._extract_point(observation, spatial_method=method)
         elif isinstance(observation, TrackObservation):

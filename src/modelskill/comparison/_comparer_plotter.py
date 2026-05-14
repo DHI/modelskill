@@ -18,12 +18,12 @@ if TYPE_CHECKING:
 import numpy as np  # type: ignore
 
 from .. import metrics as mtr
-from ..utils import _get_idx
+from .._utils import get_idx
 import matplotlib.colors as colors
 from ..plotting._misc import (
-    _get_fig_ax,
-    _xtick_directional,
-    _ytick_directional,
+    get_fig_ax,
+    xtick_directional,
+    ytick_directional,
     quantiles_xy,
 )
 from ..plotting import taylor_diagram, scatter, TaylorPoint
@@ -93,7 +93,7 @@ class ComparerPlotter:
             title = cmp.name
 
         if backend == "matplotlib":
-            fig, ax = _get_fig_ax(ax, figsize)
+            fig, ax = get_fig_ax(ax, figsize)
             for j in range(cmp.n_models):
                 key = cmp.mod_names[j]
                 mod = cmp.raw_mod_data[key]._values_as_series
@@ -109,7 +109,7 @@ class ComparerPlotter:
             ax.legend([*cmp.mod_names, cmp._obs_name])
             ax.set_ylim(ylim)
             if self.is_directional:
-                _ytick_directional(ax, ylim)
+                ytick_directional(ax, ylim)
             ax.set_title(title)
             return ax
 
@@ -226,11 +226,11 @@ class ComparerPlotter:
 
         cmp = self.comparer
         assert mod_name in cmp.mod_names, f"Model {mod_name} not found in comparer"
-        mod_idx = _get_idx(mod_name, cmp.mod_names)
+        mod_idx = get_idx(mod_name, cmp.mod_names)
 
         title = f"{mod_name} vs {cmp.name}" if title is None else title
 
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
 
         kwargs["alpha"] = alpha
         kwargs["density"] = density
@@ -254,7 +254,7 @@ class ComparerPlotter:
             ax.set_ylabel("count")
 
         if self.is_directional:
-            _xtick_directional(ax)
+            xtick_directional(ax)
 
         return ax
 
@@ -291,7 +291,7 @@ class ComparerPlotter:
         """
         cmp = self.comparer
 
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
 
         cmp.data.Observation.to_series().plot.kde(
             ax=ax, linestyle="dashed", label="Observation", **kwargs
@@ -317,7 +317,7 @@ class ComparerPlotter:
         ax.spines["left"].set_visible(False)
 
         if self.is_directional:
-            _xtick_directional(ax)
+            xtick_directional(ax)
 
         return ax
 
@@ -360,7 +360,7 @@ class ComparerPlotter:
         """
         cmp = self.comparer
 
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
 
         x = cmp.data.Observation.values
         xmin, xmax = x.min(), x.max()
@@ -404,8 +404,8 @@ class ComparerPlotter:
         ax.set_title(title or f"Q-Q plot for {cmp.name}")
 
         if self.is_directional:
-            _xtick_directional(ax)
-            _ytick_directional(ax)
+            xtick_directional(ax)
+            ytick_directional(ax)
 
         return ax
 
@@ -442,7 +442,7 @@ class ComparerPlotter:
         """
         cmp = self.comparer
 
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
 
         cols = ["Observation"] + cmp.mod_names
         df = cmp.data[cols].to_dataframe()[cols]
@@ -451,7 +451,7 @@ class ComparerPlotter:
         ax.set_title(title or cmp.name)
 
         if self.is_directional:
-            _ytick_directional(ax)
+            ytick_directional(ax)
 
         return ax
 
@@ -669,8 +669,8 @@ class ComparerPlotter:
         )
 
         if backend == "matplotlib" and self.is_directional:
-            _xtick_directional(ax, xlim)
-            _ytick_directional(ax, ylim)
+            xtick_directional(ax, xlim)
+            ytick_directional(ax, ylim)
 
         return ax
 
@@ -833,7 +833,7 @@ class ComparerPlotter:
         **kwargs,
     ) -> matplotlib.axes.Axes:
         """Residual histogram for one model only"""
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
 
         default_color = "#8B8D8E"
         color = default_color if color is None else color

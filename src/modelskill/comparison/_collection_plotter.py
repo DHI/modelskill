@@ -23,9 +23,9 @@ import pandas as pd
 
 from .. import metrics as mtr
 from ..plotting import TaylorPoint, scatter, taylor_diagram
-from ..plotting._misc import _get_fig_ax, _xtick_directional, _ytick_directional
+from ..plotting._misc import get_fig_ax, xtick_directional, ytick_directional
 from ..settings import options
-from ..utils import _get_idx
+from .._utils import get_idx
 from ._comparer_plotter import quantiles_xy
 
 
@@ -271,8 +271,8 @@ class ComparerCollectionPlotter:
         )
 
         if backend == "matplotlib" and self.is_directional:
-            _xtick_directional(ax, xlim)
-            _ytick_directional(ax, ylim)
+            xtick_directional(ax, xlim)
+            ytick_directional(ax, ylim)
 
         return ax
 
@@ -302,7 +302,7 @@ class ComparerCollectionPlotter:
         >>> cc.plot.kde(bw_method='silverman')
 
         """
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
 
         df = self.cc._to_long_dataframe()
         ax = df.obs_val.plot.kde(
@@ -334,7 +334,7 @@ class ComparerCollectionPlotter:
         ax.spines["left"].set_visible(False)
 
         if self.is_directional:
-            _xtick_directional(ax)
+            xtick_directional(ax)
 
         return ax
 
@@ -417,12 +417,12 @@ class ComparerCollectionPlotter:
     ):
         from ._comparison import MOD_COLORS
 
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
 
         assert (
             mod_name in self.cc.mod_names
         ), f"Model {mod_name} not found in collection"
-        mod_idx = _get_idx(mod_name, self.cc.mod_names)
+        mod_idx = get_idx(mod_name, self.cc.mod_names)
 
         title = (
             _default_univarate_title("Histogram", self.cc) if title is None else title
@@ -450,7 +450,7 @@ class ComparerCollectionPlotter:
             ax.set_ylabel("count")
 
         if self.is_directional:
-            _xtick_directional(ax)
+            xtick_directional(ax)
 
         return ax
 
@@ -566,7 +566,7 @@ class ComparerCollectionPlotter:
         >>> cc.plot.box(showmeans=True)
         >>> cc.plot.box(ax=ax, title="Box plot")
         """
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
 
         df = self.cc._to_long_dataframe()
 
@@ -595,7 +595,7 @@ class ComparerCollectionPlotter:
         ax.set_title(title)
 
         if self.is_directional:
-            _ytick_directional(ax)
+            ytick_directional(ax)
 
         return ax
 
@@ -638,7 +638,7 @@ class ComparerCollectionPlotter:
         """
         cc = self.cc
 
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
 
         df = cc._to_long_dataframe()
 
@@ -684,8 +684,8 @@ class ComparerCollectionPlotter:
         ax.set_title(title)
 
         if self.is_directional:
-            _xtick_directional(ax)
-            _ytick_directional(ax)
+            xtick_directional(ax)
+            ytick_directional(ax)
 
         return ax
 
@@ -756,7 +756,7 @@ class ComparerCollectionPlotter:
         **kwargs,
     ) -> Axes:
         """Residual histogram for one model only"""
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
 
         df = self.cc.sel(model=mod_name)._to_long_dataframe()
         residuals = df.mod_val.values - df.obs_val.values

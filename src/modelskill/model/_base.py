@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from .track import TrackModelResult
     from .vertical import VerticalModelResult
 
-from ..utils import _get_name
+from .._utils import get_name
 from ..obs import Observation, PointObservation, TrackObservation, VerticalObservation
 
 
@@ -48,10 +48,10 @@ def _parse_items(
                 f"Input has more than 1 item, but item was not given! Available items: {avail_items}"
             )
 
-    item = _get_name(item, valid_names=avail_items)
+    item = get_name(item, valid_names=avail_items)
     if isinstance(aux_items, (str, int)):
         aux_items = [aux_items]
-    aux_items_str = [_get_name(i, valid_names=avail_items) for i in aux_items or []]
+    aux_items_str = [get_name(i, valid_names=avail_items) for i in aux_items or []]
 
     # check that there are no duplicates
     res = SelectedItems(values=item, aux=aux_items_str)
@@ -63,7 +63,7 @@ def _parse_items(
     return res
 
 
-def _validate_overlap_in_time(time: pd.DatetimeIndex, observation: Observation) -> None:
+def validate_overlap_in_time(time: pd.DatetimeIndex, observation: Observation) -> None:
     overlap_in_time = (
         time[0] <= observation.time[-1] and time[-1] >= observation.time[0]
     )

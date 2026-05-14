@@ -5,13 +5,13 @@ import numpy as np
 from typing import TYPE_CHECKING, Callable, Iterable, Sequence, Tuple
 from ..types import GeometryType
 
-from ..plotting._misc import _get_fig_ax
+from ..plotting._misc import get_fig_ax
 import xarray as xr
 from matplotlib import dates as mdates
 from ..model import PointModelResult, TrackModelResult
 from ..model.network import NodeModelResult
 from ..model.vertical import VerticalModelResult
-from ..metrics import _parse_metric
+from ._utils import parse_metric
 from ..skill_profile import SkillProfile
 
 if TYPE_CHECKING:
@@ -52,7 +52,7 @@ class VerticalPlotter:
         from ._comparison import MOD_COLORS
 
         cmp = self.comparer
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
 
         title = title if title is not None else cmp.name
 
@@ -139,7 +139,7 @@ class VerticalPlotter:
         cmp = self.comparer
         mod_name = self._get_model_name(model)
 
-        _, ax = _get_fig_ax(ax, figsize)
+        _, ax = get_fig_ax(ax, figsize)
         if title is None:
             title = f"{mod_name} and Observations"
 
@@ -328,7 +328,7 @@ class VerticalAccessor:
         if cmp.n_points == 0:
             raise ValueError("No data selected for skill assessment")
 
-        metric_funcs = _parse_metric(metrics, directional=cmp.quantity.is_directional)
+        metric_funcs = parse_metric(metrics, directional=cmp.quantity.is_directional)
 
         def calculate_metric(g):
             obs = g[cmp._obs_name]

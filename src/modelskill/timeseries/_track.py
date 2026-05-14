@@ -11,8 +11,9 @@ import mikeio
 
 from ..types import GeometryType, TrackType
 from ..quantity import Quantity
-from ..utils import _get_name, make_unique_index
-from ._timeseries import _validate_data_var_name
+from .._utils import get_name
+from ..utils import make_unique_index
+from ._timeseries import validate_data_var_name
 
 
 @dataclass
@@ -47,12 +48,12 @@ def _parse_track_items(
                 f"Input has more than 3 items, but item was not given! Available items: {items}"
             )
 
-    item = _get_name(item, valid_names=items)
-    x_item = _get_name(x_item, valid_names=items)
-    y_item = _get_name(y_item, valid_names=items)
+    item = get_name(item, valid_names=items)
+    x_item = get_name(x_item, valid_names=items)
+    y_item = get_name(y_item, valid_names=items)
     if isinstance(aux_items, (str, int)):
         aux_items = [aux_items]
-    aux_items_str = [_get_name(i, valid_names=items) for i in aux_items or []]
+    aux_items_str = [get_name(i, valid_names=items) for i in aux_items or []]
 
     # check that there are no duplicates
     res = TrackItem(x=x_item, y=y_item, values=item, aux=aux_items_str)
@@ -62,7 +63,7 @@ def _parse_track_items(
     return res
 
 
-def _parse_track_input(
+def parse_track_input(
     data: TrackType,
     name: str | None,
     item: str | int | None,
@@ -100,7 +101,7 @@ def _parse_track_input(
         valid_items, x_item=x_item, y_item=y_item, item=item, aux_items=aux_items
     )
     name = name or sel_items.values
-    name = _validate_data_var_name(name)
+    name = validate_data_var_name(name)
 
     # parse quantity
     if isinstance(data, mikeio.Dataset):

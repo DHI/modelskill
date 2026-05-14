@@ -1,15 +1,55 @@
 from __future__ import annotations
+import inspect
 from typing import Callable, Iterable, List, Tuple, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
+
+from ..metrics import default_circular_metrics, get_metric
+from ..settings import options
 
 
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
 IdxOrNameTypes = Union[int, str, List[int], List[str]]
 
 
-def _add_spatial_grid_to_df(
+def parse_metric(
+    metric: str | Iterable[str] | Callable | Iterable[Callable] | None,
+    *,
+    directional: bool = False,
+) -> List[Callable]:
+    if metric is None:
+        if directional:
+            return default_circular_metrics
+        else:
+            # could be a list of str!
+            return [get_metric(m) for m in options.metrics.list]
+
+    if isinstance(metric, str):
+        metrics: list = [metric]
+    elif callable(metric):
+        metrics = [metric]
+    elif isinstance(metric, Iterable):
+        metrics = list(metric)
+
+    parsed_metrics = []
+
+    for m in metrics:
+        if isinstance(m, str):
+            parsed_metrics.append(get_metric(m))
+        elif callable(m):
+            if len(inspect.signature(m).parameters) < 2:
+                raise ValueError(
+                    "Metrics must have at least two arguments (obs, model)"
+                )
+            parsed_metrics.append(m)
+        else:
+            raise TypeError(f"metric {m} must be a string or callable")
+
+    return parsed_metrics
+
+
+def add_spatial_grid_to_df(
     df: pd.DataFrame, bins, binsize: float | None
 ) -> pd.DataFrame:
     if binsize is None:
@@ -53,7 +93,7 @@ def _add_spatial_grid_to_df(
     return df
 
 
-def _groupby_df(
+def groupby_df(
     df: pd.DataFrame,
     *,
     by: List[str | pd.Grouper],
@@ -71,8 +111,8 @@ def _groupby_df(
             row[metric.__name__] = metric(group.obs_val, group.mod_val)
         return pd.Series(row)
 
-    if _dt_in_by(by):
-        df, by = _add_dt_to_df(df, by)
+    if dt_in_by(by):
+        df, by = add_dt_to_df(df, by)
 
     # sort=False to avoid re-ordering compared to original cc (also for performance)
     res = df.groupby(by=by, observed=False, sort=False, group_keys=True)[
@@ -90,7 +130,7 @@ def _groupby_df(
     return res
 
 
-def _dt_in_by(by):
+def dt_in_by(by):
     by = [by] if isinstance(by, str) else by
     if any(str(by).startswith("dt:") for by in by):
         return True
@@ -114,7 +154,7 @@ ALLOWED_DT = [
 ]
 
 
-def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+def add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[str]]:
     ser = df["time"]
     assert isinstance(by, list)
     # by = [by] if isinstance(by, str) else by
@@ -138,7 +178,7 @@ def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[s
     return df, by
 
 
-def _parse_groupby(
+def parse_groupby(
     by: str | Iterable[str] | None, *, n_mod: int, n_qnt: int
 ) -> List[str | pd.Grouper]:
     if by is None:

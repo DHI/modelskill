@@ -8,7 +8,8 @@ import xarray as xr
 from ..types import TrackType
 from ..obs import TrackObservation
 from ..quantity import Quantity
-from ..timeseries import TimeSeries, _parse_track_input
+from ..timeseries import TimeSeries
+from ..timeseries._track import parse_track_input
 
 
 class TrackModelResult(TimeSeries):
@@ -55,7 +56,7 @@ class TrackModelResult(TimeSeries):
         aux_items: Sequence[int | str] | None = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_track_input(
+            data = parse_track_input(
                 data=data,
                 name=name,
                 item=item,

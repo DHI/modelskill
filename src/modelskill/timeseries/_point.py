@@ -10,8 +10,8 @@ import mikeio
 
 from ..types import GeometryType, PointType
 from ..quantity import Quantity
-from ..utils import _get_name
-from ._timeseries import _normalize_time_to_ns, _validate_data_var_name
+from .._utils import get_name
+from ._timeseries import normalize_time_to_ns, validate_data_var_name
 from ._coords import XYZCoords, NodeCoords, ReachCoords
 
 
@@ -39,10 +39,10 @@ def _parse_point_items(
                 f"Input has more than 1 item, but item was not given! Available items: {items}"
             )
 
-    item = _get_name(item, valid_names=items)
+    item = get_name(item, valid_names=items)
     if isinstance(aux_items, (str, int)):
         aux_items = [aux_items]
-    aux_items_str = [_get_name(i, valid_names=items) for i in aux_items or []]
+    aux_items_str = [get_name(i, valid_names=items) for i in aux_items or []]
 
     # check that there are no duplicates
     res = PointItem(values=item, aux=aux_items_str)
@@ -121,9 +121,9 @@ def _convert_to_dataset(
             data = data.rename({time_dim_name: "time"})
         ds = data
 
-    ds = _normalize_time_to_ns(ds)
+    ds = normalize_time_to_ns(ds)
 
-    name = _validate_data_var_name(varname)
+    name = validate_data_var_name(varname)
 
     n_unique_times = len(ds.time.to_index().unique())
     if n_unique_times < len(ds.time):
@@ -266,7 +266,7 @@ def _parse_point_input(
     return ds
 
 
-def _parse_xyz_point_input(
+def parse_xyz_point_input(
     data: PointType,
     name: str | None,
     item: str | int | None,
@@ -281,7 +281,7 @@ def _parse_xyz_point_input(
     return ds
 
 
-def _parse_network_node_input(
+def parse_network_node_input(
     data: PointType,
     name: str | None,
     item: str | int | None,
@@ -296,7 +296,7 @@ def _parse_network_node_input(
     return ds
 
 
-def _parse_network_breakpoint_input(
+def parse_network_breakpoint_input(
     data: PointType,
     name: str | None,
     item: str | int | None,
