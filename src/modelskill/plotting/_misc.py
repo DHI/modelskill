@@ -11,13 +11,13 @@ from ..metrics import metric_has_units, defined_metrics, get_display_name
 from ..obs import unit_display_name
 
 
-def _get_ax(ax=None, figsize=None):
+def get_ax(ax=None, figsize=None):
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
     return ax
 
 
-def _get_fig_ax(ax: Axes | None = None, figsize=None):
+def get_fig_ax(ax: Axes | None = None, figsize=None):
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
     else:
@@ -25,7 +25,7 @@ def _get_fig_ax(ax: Axes | None = None, figsize=None):
     return fig, ax
 
 
-def _xtick_directional(ax, xlim=None):
+def xtick_directional(ax, xlim=None):
     """Set x-ticks for directional data"""
     ticks = ticks = _xyticks(lim=xlim)
     if len(ticks) > 2:
@@ -34,7 +34,7 @@ def _xtick_directional(ax, xlim=None):
         ax.set_xlim(0, 360)
 
 
-def _ytick_directional(ax, ylim=None):
+def ytick_directional(ax, ylim=None):
     """Set y-ticks for directional data"""
     ticks = _xyticks(lim=ylim)
     if len(ticks) > 2:

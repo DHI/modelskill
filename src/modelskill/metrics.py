@@ -1,18 +1,15 @@
 """Metrics for evaluating the difference between a model and an observation."""
 
 from __future__ import annotations
-import inspect
 
 import sys
 import warnings
 from typing import (
     Any,
     Callable,
-    Iterable,
     List,
     Literal,
     Set,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -22,7 +19,7 @@ import pandas as pd
 from numpy.typing import ArrayLike
 from scipy import stats
 
-from .settings import options
+from ._regression import linear_regression
 
 defined_metrics: Set[str] = set()
 metrics_with_units: Set[str] = set()
@@ -722,36 +719,7 @@ def lin_slope(obs: ArrayLike, model: ArrayLike, reg_method="ols") -> Any:
     Range: $(-\infty, \infty )$; Best: 1
     """
     assert obs.size == model.size
-    return _linear_regression(obs, model, reg_method)[0]
-
-
-def _linear_regression(
-    obs: ArrayLike, model: ArrayLike, reg_method="ols"
-) -> Tuple[float, float]:
-    if len(obs) == 0:
-        return np.nan, np.nan  # TODO raise error?
-
-    if reg_method == "ols":
-        from scipy.stats import linregress as _linregress
-
-        reg = _linregress(obs, model)
-        intercept = reg.intercept
-        slope = reg.slope
-    elif reg_method == "odr":
-        from scipy import odr
-
-        data = odr.Data(obs, model)
-        odr_obj = odr.ODR(data, odr.unilinear)
-        output = odr_obj.run()
-
-        intercept = output.beta[1]
-        slope = output.beta[0]
-    else:
-        raise NotImplementedError(
-            f"Regression method: {reg_method} not implemented, select 'ols' or 'odr'"
-        )
-
-    return slope, intercept
+    return linear_regression(obs, model, reg_method)[0]
 
 
 def _std_obs(obs: ArrayLike, model: ArrayLike) -> Any:
@@ -1162,42 +1130,6 @@ def get_metric(metric: Union[str, Callable]) -> Callable:
         raise ValueError(
             f"Metric {metric} not defined. Choose from {defined_metrics} or use `add_metric` to add a custom metric."
         )
-
-
-def _parse_metric(
-    metric: str | Iterable[str] | Callable | Iterable[Callable] | None,
-    *,
-    directional: bool = False,
-) -> List[Callable]:
-    if metric is None:
-        if directional:
-            return default_circular_metrics
-        else:
-            # could be a list of str!
-            return [get_metric(m) for m in options.metrics.list]
-
-    if isinstance(metric, str):
-        metrics: list = [metric]
-    elif callable(metric):
-        metrics = [metric]
-    elif isinstance(metric, Iterable):
-        metrics = list(metric)
-
-    parsed_metrics = []
-
-    for m in metrics:
-        if isinstance(m, str):
-            parsed_metrics.append(get_metric(m))
-        elif callable(m):
-            if len(inspect.signature(m).parameters) < 2:
-                raise ValueError(
-                    "Metrics must have at least two arguments (obs, model)"
-                )
-            parsed_metrics.append(m)
-        else:
-            raise TypeError(f"metric {m} must be a string or callable")
-
-    return parsed_metrics
 
 
 def is_best(metric: str, expected: str | int) -> bool:

@@ -54,6 +54,21 @@ This updates `roadmap/README.md` from the feature frontmatter.
 
 ## Coding Conventions
 
+### Public vs. Internal API
+
+A name is **private** if any segment of its import path starts with `_`.
+Mechanically enforced by `PLC2701`: no module may import a `_foo` name from
+another module. Underscores on function names are otherwise a convention —
+authors may use them as a hint that a function is file-local, but this is
+not required and not enforced.
+
+- Public: `modelskill.matching.match`, `modelskill.utils.rename_coords_xr`
+- Private (module path): `modelskill._names.get_name`, `modelskill.timeseries._timeseries.validate_data_var_name`
+- File-local hint: a leading `_` on a function name inside any module, marking no cross-module use
+
+See [ADR-012](adr/012-public-private-api-convention.md). Enforced in CI by
+Ruff rule `PLC2701` (zero violations in `src/`; tests have a per-file ignore).
+
 ### Docstrings
 - All docstrings use **NumPy format** (not Google or reStructuredText style)
 - Include sections: Parameters, Returns, Raises, Examples, See Also, Notes as appropriate
@@ -169,7 +184,6 @@ Plots support both matplotlib (static) and plotly (interactive) backends.
 - Internal data storage uses xarray Datasets with standardized coordinate/variable names
 - Time coordinates use pandas datetime64
 - Spatial coordinates: `x`, `y` (and `z` when applicable)
-- Reserved names in `_RESERVED_NAMES` should not be used for model/observation names
 - The `Quantity` class handles physical quantities with units and validation
 
 ### Testing Structure (`tests/`)

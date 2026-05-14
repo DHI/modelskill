@@ -75,7 +75,13 @@ extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
 ignore = ["E501"]
-select = ["E4", "E7", "E9", "F", "D200", "D205"]
+select = ["E4", "E7", "E9", "F", "D200", "D205", "PLC2701"]
+preview = true
+explicit-preview-rules = true
+
+[tool.ruff.lint.per-file-ignores]
+# Tests legitimately exercise package internals.
+"tests/**/*.py" = ["PLC2701"]
 
 [tool.mypy]
 python_version = "3.10"
