@@ -42,7 +42,7 @@ from ._utils import (
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 from ..settings import register_option
-from .._utils import get_name, RESERVED_NAMES
+from .._utils import get_name, RESERVED_COMPARER_VAR_NAMES
 from .. import __version__
 from ._vertical_comparison import VerticalAccessor
 
@@ -575,9 +575,9 @@ class Comparer:
 
     @name.setter
     def name(self, name: str) -> None:
-        if name in RESERVED_NAMES:
+        if name in RESERVED_COMPARER_VAR_NAMES:
             raise ValueError(
-                f"Cannot rename to any of {RESERVED_NAMES}, these are reserved names!"
+                f"Cannot rename to any of {RESERVED_COMPARER_VAR_NAMES}, these are reserved names!"
             )
         self.data.attrs["name"] = name
 
@@ -748,10 +748,10 @@ class Comparer:
             # "ignore": silently remove keys that are not in allowed_keys
             mapping = {k: v for k, v in mapping.items() if k in allowed_keys}
 
-        if any([k in RESERVED_NAMES for k in mapping.values()]):
+        if any([k in RESERVED_COMPARER_VAR_NAMES for k in mapping.values()]):
             # TODO: also check for duplicates
             raise ValueError(
-                f"Cannot rename to any of {RESERVED_NAMES}, these are reserved names!"
+                f"Cannot rename to any of {RESERVED_COMPARER_VAR_NAMES}, these are reserved names!"
             )
 
         # rename observation

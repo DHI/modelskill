@@ -19,7 +19,7 @@ import pandas as pd
 from numpy.typing import ArrayLike
 from scipy import stats
 
-from ._utils import linear_regression
+from ._regression import linear_regression
 
 defined_metrics: Set[str] = set()
 metrics_with_units: Set[str] = set()

@@ -10,6 +10,7 @@ import xarray as xr
 
 from ..types import GeometryType
 from ..quantity import Quantity
+from .._utils import RESERVED_COORD_NAMES
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
 from .. import __version__
 
@@ -31,8 +32,7 @@ DEFAULT_COLORS = [
 def validate_data_var_name(name: str) -> str:
     if not isinstance(name, str):
         raise TypeError("name must be a string")
-    RESERVED_NAMES = ["x", "y", "z", "time"]
-    if name in RESERVED_NAMES:
+    if name in RESERVED_COORD_NAMES:
         raise ValueError(
             f"name '{name}' is reserved and cannot be used! Please choose another name."
         )

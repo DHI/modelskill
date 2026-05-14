@@ -6,14 +6,12 @@ See ADR-012 for the public/private convention.
 """
 
 from __future__ import annotations
-from typing import Sequence, Tuple, cast
+from typing import Sequence, cast
 from collections.abc import Hashable
 
-import numpy as np
-from numpy.typing import ArrayLike
 
-
-RESERVED_NAMES = ["Observation", "time", "x", "y", "z"]
+RESERVED_COORD_NAMES = ["x", "y", "z", "time"]
+RESERVED_COMPARER_VAR_NAMES = [*RESERVED_COORD_NAMES, "Observation"]
 
 
 def get_name(x: int | str | None, valid_names: Sequence[Hashable]) -> str:
@@ -50,33 +48,3 @@ def get_idx(x: int | str | None, valid_names: Sequence[Hashable]) -> int:
     else:
         raise TypeError(f"Input {x} invalid! Must be None, str or int, not {type(x)}")
     return idx
-
-
-def linear_regression(
-    obs: ArrayLike, model: ArrayLike, reg_method: str = "ols"
-) -> Tuple[float, float]:
-    """Fit a linear regression of ``model`` against ``obs`` and return (slope, intercept)."""
-    if len(obs) == 0:  # type: ignore[arg-type]
-        return np.nan, np.nan
-
-    if reg_method == "ols":
-        from scipy.stats import linregress
-
-        reg = linregress(obs, model)
-        intercept = reg.intercept
-        slope = reg.slope
-    elif reg_method == "odr":
-        from scipy import odr
-
-        data = odr.Data(obs, model)
-        odr_obj = odr.ODR(data, odr.unilinear)
-        output = odr_obj.run()
-
-        intercept = output.beta[1]
-        slope = output.beta[0]
-    else:
-        raise NotImplementedError(
-            f"Regression method: {reg_method} not implemented, select 'ols' or 'odr'"
-        )
-
-    return slope, intercept
