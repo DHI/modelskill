@@ -366,4 +366,4 @@ class VerticalAccessor:
             z_dist.reset_index().groupby("time", sort=False)["z"].idxmin().to_numpy()
         )
         sel_data = raw_mod.data.isel(time=np.sort(nearest_idx))
-        return type(raw_mod)(sel_data)
+        return raw_mod._create_new_instance(sel_data)
