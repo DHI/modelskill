@@ -374,20 +374,20 @@ class VerticalObservation(Observation):
 
     Parameters
     ----------
-    data : (str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset)
-        Input data with vertical profile observations.
-    item : int or str, optional
+    data : dfs0 path or in-memory profile data
+        Path to a dfs0 file, or a long-format DataFrame / mikeio.Dataset /
+        xr.Dataset with a time index, a vertical-coordinate column, and one
+        or more value columns.
+    item : int or str
         Index or name of the primary observation item.
-        If the input contains more than one candidate value item,
-        this argument must be provided.
+    z_item : int or str
+        Index or name of the vertical coordinate item.
     x : float, optional
         x-coordinate of the observation location. If not provided,
         it is inferred from data when possible.
     y : float, optional
         y-coordinate of the observation location. If not provided,
         it is inferred from data when possible.
-    z_item : int or str, optional
-        Index or name of the vertical coordinate item, by default 0.
     name : str, optional
         User-defined name for identification in plots and summaries.
     weight : float, optional
@@ -437,10 +437,10 @@ class VerticalObservation(Observation):
         self,
         data: VerticalType,
         *,
-        item: int | str | None = None,
+        item: int | str,
+        z_item: int | str,
         x: float | None = None,
         y: float | None = None,
-        z_item: int | str | None = 0,
         name: str | None = None,
         weight: float = 1.0,
         quantity: Quantity | None = None,
@@ -464,6 +464,10 @@ class VerticalObservation(Observation):
     @property
     def z(self):
         return self._coordinate_values("z")
+
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Reconstruct instance from a modelskill-built dataset."""
+        return self.__class__(data, item=self.name, z_item="z")
 
 
 class NodeObservation(Observation):

@@ -73,7 +73,11 @@ class TestVerticalObservation:
         )
 
         # out = obs.sel(z=-4.0)  # only works with xarray >= 2026.01.0
-        out = ms.VerticalObservation(obs.data.where(obs.data["z"] == -4.0, drop=True))
+        out = ms.VerticalObservation(
+            obs.data.where(obs.data["z"] == -4.0, drop=True),
+            item="value",
+            z_item="z",
+        )
 
         assert isinstance(out, ms.VerticalObservation)
         assert len(out.data) == 1
@@ -81,19 +85,10 @@ class TestVerticalObservation:
 
     def test_open_dfs0_equal(self):
         fn = Path("tests/testdata/vertical/VerticalProfile_obs2.dfs0")
-        obs = ms.observation(fn, z_item="z")
-        obs2 = ms.VerticalObservation(fn)
+        obs = ms.observation(fn, item="Salinity", z_item="z")
+        obs2 = ms.VerticalObservation(fn, item="Salinity", z_item="z")
         assert isinstance(obs, ms.VerticalObservation)
         assert obs.equals(obs2)
-
-    def test_with_and_without_item_arg(self):
-        fn = Path("tests/testdata/vertical/VerticalProfile_ST.dfs0")
-        # no item specified, but multiple items in file
-        with pytest.raises(ValueError):
-            ms.observation(fn, z_item="z")
-        # below should be fine...only one item
-        fn = Path("tests/testdata/vertical/VerticalProfile_obs1.dfs0")
-        assert isinstance(ms.observation(fn, z_item="z"), ms.VerticalObservation)
 
     def test_duplicate_time_z_pairs_raises(self):
         df = pd.DataFrame(
@@ -121,18 +116,21 @@ class TestVerticalObservation:
         with pytest.raises(ValueError, match="at least 2"):
             ms.VerticalObservation(df, item="value", z_item="z", x=12.0, y=55.0)
 
-    def test_more_than_two_items_without_item_raises(self):
+    def test_missing_item_kwarg_raises(self):
         df = pd.DataFrame(
-            {
-                "z": [-5.0, -4.0, -3.0],
-                "value1": [1.0, 1.1, 1.2],
-                "value2": [2.0, 2.1, 2.2],
-            },
+            {"z": [-5.0, -4.0, -3.0], "value": [1.0, 1.1, 1.2]},
             index=[pd.Timestamp("2019-01-01")] * 3,
         )
-
-        with pytest.raises(ValueError, match="item was not given"):
+        with pytest.raises(TypeError, match="item"):
             ms.VerticalObservation(df, z_item="z", x=12.0, y=55.0)
+
+    def test_missing_z_item_kwarg_raises(self):
+        df = pd.DataFrame(
+            {"z": [-5.0, -4.0, -3.0], "value": [1.0, 1.1, 1.2]},
+            index=[pd.Timestamp("2019-01-01")] * 3,
+        )
+        with pytest.raises(TypeError, match="z_item"):
+            ms.VerticalObservation(df, item="value", x=12.0, y=55.0)
 
     def test_duplicate_item_specification_raises(self, _vertical_df_aux):
         with pytest.raises(ValueError, match="Duplicate items"):
@@ -181,7 +179,7 @@ class TestVerticalObservation:
             y=55.0,
             attrs={"station": "A"},
         )
-        obs2 = ms.VerticalObservation(obs.data)
+        obs2 = ms.VerticalObservation(obs.data, item="value", z_item="z")
 
         assert obs.equals(obs2)
         assert obs2.attrs["gtype"] == obs.attrs["gtype"]

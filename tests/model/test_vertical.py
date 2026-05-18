@@ -102,20 +102,21 @@ class TestVerticalModelResult:
     # ================
     # Test failing and optional args
     # ================
-    # failing without z_item
-    def test_fail_with_3_items_no_item_arg(self, dfs0_ds):
-        ds_test = dfs0_ds.copy()
-        ds_test["extra_item"] = ds_test[1].copy()
-        with pytest.raises(ValueError, match="Input has more than 2 items, but"):
-            _ = ms.VerticalModelResult(ds_test)
+    def test_missing_item_kwarg_raises(self, dfs0_ds):
+        with pytest.raises(TypeError, match="item"):
+            ms.VerticalModelResult(dfs0_ds, z_item="z")
 
-    # failing z wronge location
+    def test_missing_z_item_kwarg_raises(self, dfs0_ds):
+        with pytest.raises(TypeError, match="z_item"):
+            ms.VerticalModelResult(dfs0_ds, item="Salinity")
+
+    # failing z wrong location
     def test_item_named_z(self, dfs0_ds):
         ds_test = mikeio.Dataset(
             [dfs0_ds[1], dfs0_ds[0]],
         )
         with pytest.raises(ValueError, match="name 'z' is reserved "):
-            _ = ms.VerticalModelResult(ds_test)
+            _ = ms.VerticalModelResult(ds_test, item="z", z_item="Salinity")
 
     def test_duplicate_time_z_pairs_raises(self):
         df = pd.DataFrame(
@@ -167,7 +168,7 @@ class TestVerticalModelResult:
             y=55.0,
             name="salt_model",
         )
-        mr2 = ms.VerticalModelResult(mr.data)
+        mr2 = ms.VerticalModelResult(mr.data, item="Salinity", z_item="z")
 
         assert mr.equals(mr2)
         assert mr2.gtype == mr.gtype

@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Any, Sequence
+from typing_extensions import Self
 
 import xarray as xr
 import pandas as pd
@@ -19,16 +20,17 @@ class VerticalModelResult(TimeSeries):
 
     Parameters
     ----------
-    data : str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dfs0, xr.Dataset
-        The input data or file path
+    data : dfs0 path or in-memory profile data
+        Path to a dfs0 file, or a long-format DataFrame / mikeio.Dataset /
+        xr.Dataset with a time index, a vertical-coordinate column, and one
+        or more value columns.
+    item : str | int
+        Index or name of the primary model item.
+    z_item : str | int
+        Index or name of the vertical coordinate item.
     name : str | None, optional
         The name of the model result,
         by default None (will be set to file name or item name)
-    item : str | int | None, optional
-        If multiple items/arrays are present in the input an item
-        must be given (as either an index or a string), by default None
-    z_item : str | int | None, optional
-        Item of the first coordinate of positions, by default None
     x : float, optional
         lateral coordinate of point position, inferred from data if not given, else None
     y : float, optional
@@ -43,10 +45,10 @@ class VerticalModelResult(TimeSeries):
         self,
         data: VerticalType,
         *,
+        item: str | int,
+        z_item: str | int,
         name: str | None = None,
-        item: str | int | None = None,
         quantity: Quantity | None = None,
-        z_item: str | int = 0,
         x: float | None = None,
         y: float | None = None,
         aux_items: Sequence[int | str] | None = None,
@@ -71,6 +73,10 @@ class VerticalModelResult(TimeSeries):
     def z(self) -> Any:
         """z-coordinate"""
         return self._coordinate_values("z")
+
+    def _create_new_instance(self, data: xr.Dataset) -> Self:
+        """Reconstruct instance from a modelskill-built dataset."""
+        return self.__class__(data, item=self.name, z_item="z")
 
     def _match_to_nearest_times(
         self, obs_df: pd.DataFrame, t_tol: pd.Timedelta | None = None
