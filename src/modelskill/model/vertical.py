@@ -80,7 +80,7 @@ class VerticalModelResult(TimeSeries):
         return self._coordinate_values("z")
 
     def _match_to_nearest_times(
-        self, obs_df: pd.DataFrame, t_tol: pd.Timedelta | None = None
+        self, obs_df: pd.DataFrame, t_tol: pd.Timedelta
     ) -> pd.DataFrame:
         """Match model times to nearest observation times within a specified tolerance."""
         mod_df = self.data[["z"]].to_dataframe()

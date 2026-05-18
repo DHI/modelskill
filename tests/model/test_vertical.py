@@ -118,6 +118,13 @@ class TestVerticalModelResult:
         assert mr.gtype == "vertical"
         assert mr.name == "test"
 
+    def test_match_to_nearest_times_requires_t_tol(self, vertical_model_df):
+        mr = ms.VerticalModelResult(vertical_model_df, z_item="z", item="Salinity")
+        obs_df = vertical_model_df[["z"]]
+
+        with pytest.raises(TypeError):
+            mr._match_to_nearest_times(obs_df)
+
     # ================
     # Test failing and optional args
     # ================
