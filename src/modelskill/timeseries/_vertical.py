@@ -132,8 +132,7 @@ def _parse_vertical_input(
     if isinstance(data, mikeio.Dataset):
         ds = data.to_xarray()
     elif isinstance(data, pd.DataFrame):
-        data.index.name = "time"
-        ds = data.to_xarray()
+        ds = data.rename_axis("time").to_xarray()
     else:
         assert len(data.dims) == 1, "Only 0-dimensional data are supported"
         if data.coords[list(data.coords)[0]].name != "time":

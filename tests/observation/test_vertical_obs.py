@@ -250,6 +250,17 @@ class TestVerticalObservation:
         assert obs2.attrs["station"] == "A"
         assert obs2.name == obs.name
 
+    def test_construction_does_not_mutate_input_dataframe(self, _vertical_df):
+        assert _vertical_df.index.name is None
+        original_columns = list(_vertical_df.columns)
+
+        ms.VerticalObservation(
+            _vertical_df, item="value", z_item="z", x=12.0, y=55.0
+        )
+
+        assert _vertical_df.index.name is None
+        assert list(_vertical_df.columns) == original_columns
+
     def test_to_dataframe(self, _vertical_df):
         obs = ms.VerticalObservation(
             _vertical_df,

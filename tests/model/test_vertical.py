@@ -211,6 +211,17 @@ class TestVerticalModelResult:
         mr.name = "changed_name"
         assert mr2.name == "salt_model"
 
+    def test_construction_does_not_mutate_input_dataframe(self, vertical_model_df):
+        assert vertical_model_df.index.name is None
+        original_columns = list(vertical_model_df.columns)
+
+        ms.VerticalModelResult(
+            vertical_model_df, item="Salinity", z_item="z", x=12.0, y=55.0
+        )
+
+        assert vertical_model_df.index.name is None
+        assert list(vertical_model_df.columns) == original_columns
+
     # ================
     # Test extract profile and align to obs profiles from dfsu
     # ===============
