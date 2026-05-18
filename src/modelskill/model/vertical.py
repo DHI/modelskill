@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Literal, Sequence
+from typing import Any, Sequence
 
 import xarray as xr
 import pandas as pd
@@ -35,11 +35,6 @@ class VerticalModelResult(TimeSeries):
         zonal coordinate of point position, inferred from data if not given, else None
     quantity : Quantity, optional
         Model quantity, for MIKE files this is inferred from the EUM information
-    keep_duplicates : (str, bool), optional
-        Strategy for handling duplicate timestamps (wraps xarray.Dataset.drop_duplicates)
-        "first" to keep first occurrence, "last" to keep last occurrence,
-        False to drop all duplicates, "offset" to add milliseconds to
-        consecutive duplicates, by default "first"
     aux_items : list[int | str] | None, optional
         Auxiliary items, by default None
     """
@@ -54,7 +49,6 @@ class VerticalModelResult(TimeSeries):
         z_item: str | int = 0,
         x: float | None = None,
         y: float | None = None,
-        keep_duplicates: Literal["first", "last", False] = "first",
         aux_items: Sequence[int | str] | None = None,
     ) -> None:
         if not self._is_input_validated(data):
@@ -66,7 +60,6 @@ class VerticalModelResult(TimeSeries):
                 z_item=z_item,
                 x=x,
                 y=y,
-                keep_duplicates=keep_duplicates,
                 aux_items=aux_items,
             )
         assert isinstance(data, xr.Dataset)
