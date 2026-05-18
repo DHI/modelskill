@@ -12,36 +12,72 @@ from ..obs import VerticalObservation
 
 
 class VerticalModelResult(TimeSeries):
-    """Model result for a vertical column.
+    """Model result for a vertical profile at a fixed (x, y) location.
 
-    Construct a VerticalColumnModelResult from a dfs0 file,
-    mikeio.Dataset, pandas.DataFrame or a xarray.Datasets
+    The input must be in long format: one row per (time, z) pair, with a
+    column/item for the vertical coordinate and a column/item for the
+    modelled value. At least two items are required (z + value); if more are
+    present, ``item`` must be given.
 
     Parameters
     ----------
-    data : str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dfs0, xr.Dataset
-        The input data or file path
-    name : str | None, optional
-        The name of the model result,
-        by default None (will be set to file name or item name)
-    item : str | int | None, optional
-        If multiple items/arrays are present in the input an item
-        must be given (as either an index or a string), by default None
-    z_item : str | int | None, optional
-        Item of the first coordinate of positions, by default None
+    data : str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset
+        Input data or path to a dfs0 file.
+    name : str, optional
+        Name of the model result, by default the file or item name.
+    item : str or int, optional
+        Index or name of the value item. Required if the input has more than
+        two items.
+    z_item : str or int, optional
+        Index or name of the item holding the vertical coordinate, by default 0.
     x : float, optional
-        lateral coordinate of point position, inferred from data if not given, else None
+        x-coordinate of the profile location, inferred from data when possible.
     y : float, optional
-        zonal coordinate of point position, inferred from data if not given, else None
+        y-coordinate of the profile location, inferred from data when possible.
     quantity : Quantity, optional
-        Model quantity, for MIKE files this is inferred from the EUM information
-    keep_duplicates : (str, bool), optional
-        Strategy for handling duplicate timestamps (wraps xarray.Dataset.drop_duplicates)
-        "first" to keep first occurrence, "last" to keep last occurrence,
-        False to drop all duplicates, "offset" to add milliseconds to
-        consecutive duplicates, by default "first"
-    aux_items : list[int | str] | None, optional
-        Auxiliary items, by default None
+        Model quantity. For MIKE files this is inferred from EUM information.
+    keep_duplicates : {"first", "last", False}, optional
+        Strategy for handling duplicate (time, z) pairs, by default "first".
+    aux_items : list[int | str], optional
+        Auxiliary items to keep alongside the value item.
+
+    Notes
+    -----
+    The input must be in long format: one row per (time, z) pair, with one
+    item/column holding the vertical coordinate and another holding the
+    modelled value. A dfs0 with N depth levels has its profile timestamps
+    repeated N times on a non-equidistant time axis.
+
+    Examples
+    --------
+    From a `pandas.DataFrame` in long format:
+
+    ```{python}
+    import modelskill as ms
+    import pandas as pd
+
+    times = pd.to_datetime(
+        ["2010-01-01 01:00"] * 3 + ["2010-01-01 02:00"] * 3
+    )
+    df = pd.DataFrame(
+        {"z": [0.0, -5.0, -10.0, 0.0, -5.0, -10.0],
+         "Salinity": [30.1, 30.3, 30.4, 30.5, 30.3, 30.3]},
+        index=times,
+    )
+    ms.VerticalModelResult(df, item="Salinity", z_item="z", x=12.0, y=55.0)
+    ```
+
+    From a dfs0 file (with z, Salinity and Temperature items):
+
+    ```{python}
+    ms.VerticalModelResult(
+        "../data/vertical/VerticalModel_at_obs.dfs0",
+        item="Salinity",
+        z_item="z",
+        x=12.0,
+        y=55.0,
+    )
+    ```
     """
 
     def __init__(
