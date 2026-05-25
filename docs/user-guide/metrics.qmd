@@ -1,0 +1,99 @@
+# Metrics
+
+Metrics are quantitative measures used to evaluate how well model results match observations. ModelSkill provides a comprehensive collection of metrics suitable for different types of model validation.
+
+```{python}
+#| code-fold: true
+#| code-summary: "Setup: Create comparer for examples"
+import modelskill as ms
+o1 = ms.observation("../data/SW/HKNA_Hm0.dfs0", item=0,
+                    x=4.2420, y=52.6887, name="HKNA")
+mr = ms.model_result("../data/SW/HKZN_local_2017_DutchCoast.dfsu",
+                      item="Sign. Wave Height", name="HKZN_local")
+cmp = ms.match(o1, mr)
+```
+
+## Basic Usage
+
+By default, the [`skill()`](`modelskill.Comparer.skill`) method calculates a standard set of metrics:
+
+```{python}
+cmp.skill()
+```
+
+You can specify which metrics to compute:
+
+```{python}
+cmp.skill(metrics=["bias", "rmse", "r2"])
+```
+
+## Common Metrics
+
+### Error Metrics
+Quantify the magnitude of errors (lower is better):
+
+- **`bias`** - Mean error, shows systematic over/under-prediction
+- **`mae`** - Mean Absolute Error, less sensitive to outliers
+- **`rmse`** - Root Mean Squared Error, penalizes large errors more
+
+```{python}
+cmp.skill(metrics=["bias", "mae", "rmse"])
+```
+
+### Correlation Metrics
+Measure the strength of the relationship (higher is better):
+
+- **`r2`** - Coefficient of determination, proportion of variance explained
+- **`cc`** - Pearson correlation coefficient
+
+### Skill Scores
+Dimensionless metrics comparing model to a baseline (closer to 1 is better):
+
+- **`nse`** - Nash-Sutcliffe Efficiency, commonly used in hydrology
+- **`kge`** - Kling-Gupta Efficiency, improved version of NSE
+
+```{python}
+cmp.skill(metrics=["nse", "kge"])
+```
+
+## Directional Data
+
+For directional data (e.g., wave direction, wind direction), use circular metrics that correctly handle the wraparound at 0°/360°:
+
+- **`c_bias`** - Circular bias
+- **`c_mae`** - Circular mean absolute error
+- **`c_rmse`** - Circular root mean squared error
+
+::: {.callout-note}
+Circular metrics correctly calculate that the difference between 359° and 1° is 2°, not 358°.
+:::
+
+## Metric Properties
+
+Metrics have two important properties:
+
+- **Units**: Some metrics have the same units as your data (bias, mae, rmse), others are dimensionless (r2, nse, si)
+- **Direction**: Some metrics are better when higher (r2, nse, kge), others when lower (rmse, mae), and some have an optimal value (bias should be 0)
+
+## Custom Metrics
+
+You can create custom metrics using the `@metric` decorator:
+
+```{python}
+from modelskill.metrics import metric
+
+@metric(best="-", has_units=True)
+def custom_error(obs, model):
+    """My custom error metric"""
+    return ((model - obs) ** 2).mean() ** 0.5
+
+cmp.skill(metrics=[custom_error, "bias"])
+```
+
+See the [Custom Metrics example](../examples/Metrics_custom_metric.qmd) for more advanced usage including metrics with parameters and custom display names.
+
+## Further Reading
+
+- Full list of available metrics: [API Reference](`modelskill.metrics`)
+- Using metrics for analysis: [Statistics](statistics.qmd)
+- Custom metric examples: [Custom Metrics example](../examples/Metrics_custom_metric.qmd)
