@@ -12,6 +12,8 @@ jobs:
 
   test:
     runs-on: ${{ matrix.os }}
+    env:
+      DOTNET_ROLL_FORWARD: LatestPatch
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]

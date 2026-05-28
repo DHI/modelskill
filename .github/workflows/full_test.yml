@@ -18,6 +18,8 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    env:
+      DOTNET_ROLL_FORWARD: LatestPatch
     strategy:
       matrix:
         python-version: ["3.11", "3.13"]
