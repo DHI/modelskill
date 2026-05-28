@@ -42,6 +42,9 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Remove newer .NET runtimes so mikeio1d doesn't roll forward off 8.0
+        run: sudo rm -rf /usr/share/dotnet/shared/Microsoft.NETCore.App/9.* /usr/share/dotnet/shared/Microsoft.NETCore.App/10.*
+
       - name: Install dependencies
         run: uv sync --group test --group networks --no-dev
 
