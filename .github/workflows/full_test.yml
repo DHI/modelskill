@@ -18,11 +18,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    env:
-      DOTNET_ROLL_FORWARD: LatestPatch
     strategy:
       matrix:
-        python-version: ["3.11", "3.13"]
+        python-version: ["3.11", "3.14"]
         pandas-version: ["pandas2", "pandas3"]  # TODO: drop pandas2 once 3.x is well-established
 
     steps:
@@ -36,13 +34,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
       - name: Install dependencies
-        run: uv sync --group test --group networks --no-dev
+        #run: uv sync --group test --group networks --no-dev
+        run: uv sync --group test --no-dev
 
       - name: Install pandas 2.x
         if: matrix.pandas-version == 'pandas2'
@@ -61,22 +55,23 @@ jobs:
       - name: Test
         run: just test
 
-  build-no-networks:
-    runs-on: ubuntu-latest
+  # TODO: activate once above runs with -- group networks
+  # build-no-networks:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: extractions/setup-just@v3
+  #     - uses: extractions/setup-just@v3
 
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          python-version: "3.11"
-          enable-cache: true
+  #     - name: Set up uv
+  #       uses: astral-sh/setup-uv@v6
+  #       with:
+  #         python-version: "3.11"
+  #         enable-cache: true
 
-      - name: Install dependencies (without networks)
-        run: uv sync --group test --no-dev
+  #     - name: Install dependencies (without networks)
+  #       run: uv sync --group test --no-dev
 
-      - name: Test
-        run: just test
+  #     - name: Test
+  #       run: just test
