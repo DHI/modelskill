@@ -37,6 +37,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
+      - name: Set up .NET (required by mikeio1d, see networks group)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
       - name: Install dependencies
         run: uv sync --group test --group networks --no-dev
 
