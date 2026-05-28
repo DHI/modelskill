@@ -20,7 +20,6 @@ from typing import (
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
-from scipy import stats
 
 from .settings import options
 
@@ -590,6 +589,9 @@ def peak_ratio(
     # Use total_seconds() to handle any datetime precision (ns, us, ms, s)
     dt = time[1:] - time[:-1]
     dt_seconds = dt.total_seconds().values
+    # Lazy import: scipy.stats is heavy and only used by a few metrics, not on package import
+    from scipy import stats
+
     dt_mode_seconds = float(stats.mode(dt_seconds, keepdims=False)[0])
     N_years = dt_mode_seconds / 24 / 3600 / 365.25 * len(time)
     peak_index, AAP_ = _partial_duration_series(
