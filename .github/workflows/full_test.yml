@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.14"]
+        python-version: ["3.11", "3.13"]
         pandas-version: ["pandas2", "pandas3"]  # TODO: drop pandas2 once 3.x is well-established
 
     steps:
@@ -33,6 +33,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
       - name: Install dependencies
         run: uv sync --group test --group networks --no-dev
