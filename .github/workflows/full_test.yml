@@ -35,9 +35,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        # (Reactivate once it works with mikeio1d)
-        #run: uv sync --group test --group networks --no-dev 
-        run: uv sync --group test --no-dev
+        run: uv sync --group test --group networks --no-dev 
 
       - name: Install pandas 2.x
         if: matrix.pandas-version == 'pandas2'
