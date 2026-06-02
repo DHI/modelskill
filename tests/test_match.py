@@ -1,5 +1,6 @@
 from datetime import timedelta
 from pathlib import Path
+import warnings
 import numpy as np
 import pandas as pd
 import pytest
@@ -7,6 +8,14 @@ import mikeio
 import modelskill as ms
 from modelskill.comparison._comparison import ItemSelection
 from modelskill.model.dfsu import DfsuModelResult
+
+
+def _assert_no_mikeio_rename_inplace_futurewarning() -> None:
+    warnings.filterwarnings(
+        "error",
+        message=".*rename.*inplace.*deprecated.*",
+        category=FutureWarning,
+    )
 
 
 @pytest.fixture
@@ -95,6 +104,24 @@ def test_properties_after_match_ts(o1):
     assert cmp.name == "HKNA"
     assert cmp.gtype == "point"
     assert cmp.mod_names == ["SW_1"]
+
+
+def test_match_dfs0_no_rename_inplace_futurewarning(o1):
+    fn = "tests/testdata/SW/HKNA_Hm0.dfs0"
+    with warnings.catch_warnings():
+        _assert_no_mikeio_rename_inplace_futurewarning()
+        mr = ms.PointModelResult(fn, item=0, name="SW_1")
+        cmp = ms.match(o1, mr)
+    assert cmp.n_points > 0
+
+
+def test_match_dfs2_no_rename_inplace_futurewarning(o2):
+    fn = "tests/testdata/SW/ERA5_DutchCoast.dfs2"
+    with warnings.catch_warnings():
+        _assert_no_mikeio_rename_inplace_futurewarning()
+        mr = ms.GridModelResult(fn, item="swh", name="ERA5")
+        cmp = ms.match(o2, mr)
+    assert cmp.n_points > 0
 
 
 def test_match_multi_obs_multi_model(o1, o2, o3, mr1, mr2):
