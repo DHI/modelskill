@@ -62,7 +62,7 @@ test = [
 
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
 
-networks = ["mikeio1d==1.2.1", "networkx"]
+networks = ["mikeio1d>=1.2.1", "networkx"]
 
 [project.urls]
 "Homepage" = "https://github.com/DHI/modelskill"
