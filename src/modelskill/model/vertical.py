@@ -126,7 +126,12 @@ class VerticalModelResult(TimeSeries):
             if m_z.size < 2:
                 continue
 
-            mod_interp = np.interp(obs_z, m_z, m_v, left=np.nan, right=np.nan)
+            # Fill shallow end with shallowest model value, deep end with NaN
+            shallow_is_left = abs(m_z[0]) < abs(m_z[-1])
+            left = m_v[0] if shallow_is_left else np.nan
+            right = m_v[-1] if not shallow_is_left else np.nan
+
+            mod_interp = np.interp(obs_z, m_z, m_v, left=left, right=right)
             for z, mod_v in zip(obs_z, mod_interp):
                 records.append({"time": obs_t, "z": z, self.name: mod_v})
 
