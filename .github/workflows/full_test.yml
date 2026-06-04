@@ -35,9 +35,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        # (Reactivate once it works with mikeio1d)
-        #run: uv sync --group test --group networks --no-dev 
-        run: uv sync --group test --no-dev
+        run: uv sync --group test --group networks --no-dev 
 
       - name: Install pandas 2.x
         if: matrix.pandas-version == 'pandas2'
@@ -56,23 +54,22 @@ jobs:
       - name: Test
         run: just test
 
-  # TODO: activate once above runs with -- group networks
-  # build-no-networks:
-  #   runs-on: ubuntu-latest
+  build-no-networks:
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v3
 
-  #     - name: Set up uv
-  #       uses: astral-sh/setup-uv@v6
-  #       with:
-  #         python-version: "3.11"
-  #         enable-cache: true
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+          enable-cache: true
 
-  #     - name: Install dependencies (without networks)
-  #       run: uv sync --group test --no-dev
+      - name: Install dependencies (without networks)
+        run: uv sync --group test --no-dev
 
-  #     - name: Test
-  #       run: just test
+      - name: Test
+        run: just test
