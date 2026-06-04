@@ -101,7 +101,7 @@ class VerticalPlotter:
         ylim: Tuple[float, float] | None = None,
         ax: matplotlib.axes.Axes | None = None,
         figsize: Tuple[float, float] | None = (12, 4),
-        obs_marker_size: float = 20.0,
+        obs_marker_size: float = 100.0,
         **kwargs,
     ) -> matplotlib.axes.Axes:
         """
@@ -143,15 +143,13 @@ class VerticalPlotter:
         if title is None:
             title = f"{mod_name} and Observations"
 
-        marker_size = 20 if obs_marker_size is None else obs_marker_size
+        raw = cmp.raw_mod_data[mod_name]
+        z = raw.z
+        t = raw.time
+        v = raw.values
 
-        mod_at_obs = cmp.raw_mod_data[mod_name].values
-        z = cmp.raw_mod_data[mod_name].z
-        t = cmp.raw_mod_data[mod_name].time
-        v = mod_at_obs
-
-        T = np.unique(t)
-        n_times = T.size
+        t_unique = np.unique(t)
+        n_times = t_unique.size
 
         if n_times == 0:
             raise ValueError(
@@ -165,47 +163,47 @@ class VerticalPlotter:
                 f"Got len(z)={len(z)} and len(unique time)={n_times}."
             )
 
-        Z = z.reshape(len(T), n_layers)
-        V = v.reshape(len(T), n_layers)
-        T_grid, _ = np.meshgrid(T, np.arange(n_layers), indexing="ij")
-        cf = ax.contourf(T_grid, Z, V, **kwargs)
+        z_grid = z.reshape(n_times, n_layers)
+        v_grid = v.reshape(n_times, n_layers)
+        t_grid, _ = np.meshgrid(t_unique, np.arange(n_layers), indexing="ij")
+
+        kwargs.setdefault("cmap", "RdYlBu_r")
+
+        cf = ax.contourf(t_grid, z_grid, v_grid, **kwargs)
+
         cbar = ax.figure.colorbar(cf, ax=ax)
         cbar.set_label(cmp._unit_text)
+
         if self._pos_z():
             ax.invert_yaxis()
 
-        # # Overlay observation points
+        # Overlay observation points
         obs = cmp.data["Observation"]
-        obs_t = set(sorted(obs.time.values))
+        obs_t = obs.time.values
+        obs_z = obs["z"].values
+        obs_v = obs.values
+        scatter_kw = dict(cmap=cf.cmap, vmin=cf.norm.vmin, vmax=cf.norm.vmax)
 
-        for date in obs_t:
-            obs_on_date = obs[obs.time == date]
-            ax.scatter(
-                [date] * len(obs_on_date),
-                obs_on_date["z"],
-                c=obs_on_date.values,
-                s=marker_size,
-                edgecolors="none",
-                linewidths=1,
-                vmin=V.min(),
-                vmax=V.max(),
-                marker="s",
-            )
+        ax.scatter(
+            obs_t,
+            obs_z,
+            c=obs_v,
+            s=obs_marker_size,
+            edgecolors="none",
+            marker="s",
+            **scatter_kw,
+        )
+        ax.scatter(
+            obs_t,
+            obs_z,
+            c="white",
+            s=10,
+            edgecolors="none",
+            marker="o",
+        )
 
-            ax.scatter(
-                [date] * len(obs_on_date),
-                obs_on_date["z"],
-                c=obs_on_date.values,
-                s=10,
-                edgecolors="white",
-                linewidths=1,
-                vmin=V.min(),
-                vmax=V.max(),
-                marker=".",
-            )
-
-        # Scale dates
-        ax.set_xlim(T.min(), T.max())
+        # Format time axis
+        ax.set_xlim(t_unique.min(), t_unique.max())
         ax.xaxis.set_major_locator(mdates.AutoDateLocator())
         ax.xaxis.set_major_formatter(
             mdates.ConciseDateFormatter(ax.xaxis.get_major_locator())
@@ -213,9 +211,11 @@ class VerticalPlotter:
 
         ax.set_title(title)
         ax.set_ylabel("z")
+
         if ylim is not None:
             ax.set_ylim(ylim)
 
+        ax.get_figure().tight_layout()
         return ax
 
     def _pos_z(self):
