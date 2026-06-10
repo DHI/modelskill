@@ -78,7 +78,6 @@ water level around a datum).
 |---|---|---|---|
 | [](`~modelskill.metrics.si`)<br>[](`~modelskill.metrics.scatter_index`) | [0, ∞) | 0 | Scatter index = `urmse / mean(obs)`. Random error as a fraction of the mean. |
 | [](`~modelskill.metrics.mape`)<br>[](`~modelskill.metrics.mean_absolute_percentage_error`) | [0, ∞) | 0 | Mean absolute % error, `mean(\|model−obs\| / \|obs\|)`. Intuitive %, but blows up near obs = 0. |
-| [](`~modelskill.metrics.scatter_index2`) | [0, ∞) | 0 | Alternative SI formulation (centred, normalised by `Σobs²`). Less common. |
 :::
 
 **Use when:** comparing error across stations of very different magnitude, **and** the

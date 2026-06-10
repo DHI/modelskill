@@ -304,7 +304,6 @@ quartodoc:
             - model_efficiency_factor
             - si
             - scatter_index
-            - scatter_index2
             - pr
             - peak_ratio
             - willmott
