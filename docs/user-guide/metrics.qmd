@@ -30,7 +30,7 @@ longer synonym that also works.
 
 When you pass no `metrics=` argument, [](`~modelskill.Comparer.skill`) reports the default
 set — the point count `n` plus `bias`, `rmse`, `urmse`, `mae`, `cc`, `si`, `r2`. You can
-change the default with [](`~modelskill.options`) (`ms.options.metrics.list = [...]`).
+change the default via `ms.options.metrics.list = [...]`.
 
 ---
 
