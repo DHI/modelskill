@@ -48,6 +48,7 @@ website:
         - user-guide/selecting-data.qmd
         - user-guide/plotting.qmd
         - user-guide/statistics.qmd
+        - user-guide/metrics.qmd
         - section: "Extensions"
           contents:
             - user-guide/network.qmd

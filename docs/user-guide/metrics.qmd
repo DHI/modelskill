@@ -1,0 +1,174 @@
+# Metrics
+
+ModelSkill comes with a comprehensive set of skill metrics. This page is a *when-to-use*
+guide: how the metrics differ, which one answers which question, and the common pitfalls.
+For the full mathematical definitions, see the [metrics API reference](../api/metrics.qmd).
+
+Metrics are passed to [](`~modelskill.Comparer.skill`) (and
+[](`~modelskill.ComparerCollection.mean_skill`), [](`~modelskill.Comparer.score`)) as
+lower-case strings, or as callables:
+
+```{python}
+#| code-fold: true
+#| code-summary: "Construct a comparer from observation and model data"
+import modelskill as ms
+o1 = ms.observation("../data/SW/HKNA_Hm0.dfs0", item=0,
+                    x=4.2420, y=52.6887, name="HKNA")
+o2 = ms.observation("../data/SW/eur_Hm0.dfs0", item=0,
+                    x=3.2760, y=51.9990, name="EPL")
+mr = ms.model_result("../data/SW/HKZN_local_2017_DutchCoast.dfsu",
+                     item="Sign. Wave Height", name="m1")
+cc = ms.match([o1, o2], mr)
+```
+
+```{python}
+cc.skill(metrics=["bias", "rmse", "kge"])
+```
+
+In the tables below, **name** is the exact string ModelSkill accepts and **alias** is a
+longer synonym that also works.
+
+When you pass no `metrics=` argument, [](`~modelskill.Comparer.skill`) reports the default
+set — the point count `n` plus `bias`, `rmse`, `urmse`, `mae`, `cc`, `si`, `r2`. You can
+change the default with [](`~modelskill.options`) (`ms.options.metrics.list = [...]`).
+
+---
+
+## Error magnitude — same units as the data (scale-dependent)
+
+These are in the data's units (m, m³/s, …), so they are **not** comparable across stations
+of different magnitude — a 5,000 m³/s river will always out-RMSE a 50 m³/s tributary.
+
+| Metric | Alias | Range | Best | What it is |
+|---|---|---|---|---|
+| `bias` | — | (−∞, ∞) | 0 | Mean error, `mean(model − obs)`. **Sign matters**: + = model runs high, − = runs low. |
+| `mae` | `mean_absolute_error` | [0, ∞) | 0 | Mean absolute error. Typical error magnitude, **robust to outliers**. |
+| `rmse` | `root_mean_squared_error` | [0, ∞) | 0 | Root-mean-square error. Like MAE but **penalises large misses** disproportionately. |
+| `urmse` | — | [0, ∞) | 0 | Unbiased RMSE — the **random/scatter** part after removing bias. `rmse² = bias² + urmse²`. |
+| `max_error` | — | [0, ∞) | 0 | Largest single absolute error — the **worst-case** miss. |
+
+**Use when:** you want the error in physical units. `bias` for systematic offset, `rmse` as
+the default, `mae` when a few outliers shouldn't dominate, `urmse` to isolate random error
+from bias, `max_error` for safety-/threshold-critical checks.
+
+---
+
+## Relative / normalised error — dimensionless
+
+Divide the error by a scale, so they *can* be compared across stations — but they divide by
+observed values, so they are **unstable when observations pass through zero** (watch out for
+water level around a datum).
+
+| Metric | Alias | Range | Best | What it is |
+|---|---|---|---|---|
+| `si` | `scatter_index` | [0, ∞) | 0 | Scatter index = `urmse / mean(obs)`. Random error as a fraction of the mean. |
+| `mape` | `mean_absolute_percentage_error` | [0, ∞) | 0 | Mean absolute % error, `mean(\|model−obs\| / \|obs\|)`. Intuitive %, but blows up near obs = 0. |
+| `scatter_index2` | — | [0, 100] | 0 | Alternative SI formulation (centred, normalised by `Σobs²`). Less common. |
+
+**Use when:** comparing error across stations of very different magnitude, **and** the
+observed values stay comfortably away from zero. For water level, prefer the efficiency
+scores below over `mape`/`si`.
+
+---
+
+## Efficiency / skill scores — dimensionless, comparable across stations
+
+The "one number for overall skill" family. All reference the observed mean or variance, so a
+score of 0 (for NSE/KGE) means "no better than predicting the mean."
+
+| Metric | Alias | Range | Best | What it is |
+|---|---|---|---|---|
+| `nse` | `nash_sutcliffe_efficiency` | (−∞, 1] | 1 | Nash–Sutcliffe efficiency. 0 = no better than the obs mean; < 0 = worse. |
+| `r2` | — | (−∞, 1] | 1 | Coefficient of determination. Identical to NSE (see gotcha below). |
+| `kge` | `kling_gupta_efficiency` | (−∞, 1] | 1 | Kling–Gupta — composite of **correlation + bias ratio + variability ratio**. |
+| `willmott` | — | [0, 1] | 1 | Willmott's Index of Agreement — bounded [0,1], less harsh on bias than NSE. |
+| `ev` | `explained_variance` | [0, 1] | 1 | Proportion of variance explained (differs from NSE when the model is biased). |
+| `mef` | `model_efficiency_factor` | [0, ∞) | 0 | `RMSE / std(obs) = √(1 − NSE)`. Same information as NSE, expressed as an **error** (lower is better). |
+
+**Use when:** you need a single dimensionless score to rank models or compare stations.
+Reach for **`kge`** when you want to *diagnose why* a model fails (it separates correlation,
+bias, and variance); **`nse`** is the hydrology standard for overall predictive power;
+`willmott` if you want a strictly bounded [0,1] score.
+
+::: {.callout-warning}
+## `r2` is the coefficient of determination, not squared correlation
+ModelSkill's `r2` equals **NSE**, *not* squared Pearson correlation. The two generally
+differ — `r2` accounts for bias, `cc²` does not. If you want squared correlation, compute
+`cc` and square it yourself.
+:::
+
+---
+
+## Correlation & amplitude — dimensionless
+
+These ignore systematic bias, so always read them **alongside** `bias`.
+
+| Metric | Alias | Range | Best | What it is |
+|---|---|---|---|---|
+| `cc` | `corrcoef` | [−1, 1] | 1 | Pearson correlation — **linear co-variation / timing**. Blind to bias and amplitude. |
+| `rho` | `spearmanr` | [−1, 1] | 1 | Spearman rank correlation — monotonic, **robust** to outliers and non-linearity. |
+| `lin_slope` | — | (−∞, ∞) | 1 | Slope of the model-vs-obs regression. < 1 = model **under-responds** in amplitude. |
+
+**Use when:** the question is about **phase/timing** (`cc`), a monotonic-but-non-linear
+relationship (`rho`), or **amplitude** of the response (`lin_slope`).
+
+---
+
+## Event & distribution
+
+| Metric | Alias | Range | Best | What it is |
+|---|---|---|---|---|
+| `peak_ratio` | `pr` | [0, ∞) | 1 | Ratio of modelled to observed **peaks** (mean over matched peak events). < 1 = peaks under-predicted. |
+| `hit_ratio` | — | [0, 1] | 1 | Fraction of points within an acceptable deviation `a` of the observation. Takes an `a=` argument. |
+
+**Use when:** `peak_ratio` for storm-surge / flood-peak capture. `hit_ratio` for
+acceptance-criterion reporting — "X % of points within ±0.1 m" (set the tolerance with `a=`).
+
+---
+
+## Directional / circular — for direction variables only
+
+For wind / wave / current **direction**, where 359° and 1° are 2° apart, not 358°. These
+require the quantity to be flagged directional
+(`Quantity(..., is_directional=True)`); they handle the 0–360° wrap-around. See the
+[directional data example](../examples/Directional_data_comparison.qmd).
+
+| Metric | Alias | Best | What it is |
+|---|---|---|---|
+| `c_bias` | — | 0 | Circular bias (mean angular error). |
+| `c_mae` | `c_mean_absolute_error` | 0 | Circular mean absolute error. |
+| `c_rmse` | `c_root_mean_squared_error` | 0 | Circular RMSE. |
+| `c_urmse` | `c_unbiased_root_mean_squared_error` | 0 | Circular unbiased RMSE. |
+| `c_max_error` | — | 0 | Largest circular (angular) error. |
+
+**Use when:** the variable is an angle. Don't use the scalar metrics above on direction data.
+
+---
+
+## Quick decision guide
+
+| Your question | Reach for |
+|---|---|
+| Is the model systematically high or low? | `bias` |
+| Does it under-/over-respond in amplitude? | `lin_slope` |
+| How big is a typical error, in my units? | `rmse` (penalise big misses) or `mae` (robust) |
+| Split random vs systematic error? | `urmse` vs `bias` (`rmse² = bias² + urmse²`) |
+| What's the worst single miss? | `max_error` |
+| One dimensionless score, comparable across stations? | `nse` or `kge` |
+| *Why* does the model fail (corr / bias / variance)? | `kge` |
+| Compare error across very different-sized stations? | `si` or `nse`/`kge` (avoid `rmse`) |
+| Timing / phase agreement? | `cc` |
+| Do we capture the storm peaks? | `peak_ratio` |
+| What fraction meets an acceptance tolerance? | `hit_ratio` (set `a=`) |
+| Working with direction (wind/wave/current)? | the `c_*` family |
+
+## Cross-cutting reminders
+
+- **Scale-dependent vs dimensionless.** The error-magnitude metrics are in data units — never
+  compare them across stations of different magnitude. The rest are dimensionless and comparable.
+- **Always pair correlation with bias.** `cc`/`rho` are blind to offset; a model can correlate
+  perfectly while sitting 1 m too high.
+- **Division-by-obs metrics** (`mape`, `si`) are fragile near zero observations.
+- **Custom metrics**: any `f(obs, model) -> float` callable drops straight into
+  `metrics=[...]`; the column takes the function name. See the
+  [custom metric example](../examples/Metrics_custom_metric.qmd).
