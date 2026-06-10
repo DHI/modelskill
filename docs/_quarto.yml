@@ -287,6 +287,7 @@ quartodoc:
             - c_mae
             - c_mean_absolute_error
             - mape
+            - mean_absolute_percentage_error
             - cc
             - corrcoef
             - rho
@@ -303,6 +304,7 @@ quartodoc:
             - model_efficiency_factor
             - si
             - scatter_index
+            - scatter_index2
             - pr
             - peak_ratio
             - willmott
