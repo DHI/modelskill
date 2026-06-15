@@ -570,7 +570,7 @@ def _add_legend_to_ax(
         frameon=True,
         title=label,
         bbox_to_anchor=bbox_to_anchor,
-        loc=loc,
+        loc=loc,  # type: ignore[arg-type]
     )
     box_width = 0.32
 
