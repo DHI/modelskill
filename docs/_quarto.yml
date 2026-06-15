@@ -48,6 +48,7 @@ website:
         - user-guide/selecting-data.qmd
         - user-guide/plotting.qmd
         - user-guide/statistics.qmd
+        - user-guide/metrics.qmd
         - section: "Extensions"
           contents:
             - user-guide/network.qmd
@@ -286,6 +287,7 @@ quartodoc:
             - c_mae
             - c_mean_absolute_error
             - mape
+            - mean_absolute_percentage_error
             - cc
             - corrcoef
             - rho
