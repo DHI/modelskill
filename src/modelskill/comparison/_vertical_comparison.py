@@ -169,7 +169,9 @@ class VerticalPlotter:
         V = v.reshape(len(T), n_layers)
         T_grid, _ = np.meshgrid(T, np.arange(n_layers), indexing="ij")
         cf = ax.contourf(T_grid, Z, V, **kwargs)
-        cbar = ax.figure.colorbar(cf, ax=ax)
+        fig = ax.figure
+        assert fig is not None
+        cbar = fig.colorbar(cf, ax=ax)
         cbar.set_label(cmp._unit_text)
         if self._pos_z():
             ax.invert_yaxis()

@@ -214,7 +214,7 @@ class ComparerCollection(Mapping):
         return ComparerCollection(cmps)
 
     @overload
-    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection: ...
+    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection: ...  # type: ignore[overload-overlap]
 
     @overload
     def __getitem__(self, x: int | Hashable) -> Comparer: ...
