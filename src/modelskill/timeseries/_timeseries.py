@@ -10,6 +10,7 @@ import xarray as xr
 
 from ..types import GeometryType
 from ..quantity import Quantity
+from .._names import RESERVED_COORD_NAMES
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
 from .. import __version__
 
@@ -28,18 +29,17 @@ DEFAULT_COLORS = [
 ]
 
 
-def _validate_data_var_name(name: str) -> str:
+def validate_data_var_name(name: str) -> str:
     if not isinstance(name, str):
         raise TypeError("name must be a string")
-    RESERVED_NAMES = ["x", "y", "z", "time"]
-    if name in RESERVED_NAMES:
+    if name in RESERVED_COORD_NAMES:
         raise ValueError(
             f"name '{name}' is reserved and cannot be used! Please choose another name."
         )
     return name
 
 
-def _normalize_time_to_ns(ds: xr.Dataset) -> xr.Dataset:
+def normalize_time_to_ns(ds: xr.Dataset) -> xr.Dataset:
     """Cast a dataset's time coordinate to ``datetime64[ns]``.
 
     Under pandas 3.0 the default datetime resolution is no longer nanoseconds,
@@ -128,7 +128,7 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     name = ""
     n_primary = 0
     for v in vars:
-        v = _validate_data_var_name(str(v))
+        v = validate_data_var_name(str(v))
         assert (
             len(ds[v].dims) == 1
         ), f"Only 0-dimensional data arrays are supported! {v} has {len(ds[v].dims)} dimensions"
@@ -204,7 +204,7 @@ class TimeSeries:
 
     @name.setter
     def name(self, name: str) -> None:
-        name = _validate_data_var_name(name)
+        name = validate_data_var_name(name)
         self.data = self.data.rename({self._val_item: name})
 
     @property

@@ -13,8 +13,8 @@ import mikeio
 
 from ..types import GeometryType, VerticalType
 from ..quantity import Quantity
-from ..utils import _get_name
-from ._timeseries import _validate_data_var_name
+from .._names import get_name
+from ._timeseries import validate_data_var_name
 
 
 @dataclass
@@ -47,11 +47,11 @@ def _parse_vertical_items(
                 f"Input has more than 2 items, but item was not given! Available items: {items}"
             )
 
-    item = _get_name(item, valid_names=items)
-    z_item = _get_name(z_item, valid_names=items)
+    item = get_name(item, valid_names=items)
+    z_item = get_name(z_item, valid_names=items)
     if isinstance(aux_items, (str, int)):
         aux_items = [aux_items]
-    aux_items_str = [_get_name(i, valid_names=items) for i in aux_items or []]
+    aux_items_str = [get_name(i, valid_names=items) for i in aux_items or []]
 
     # check that there are no duplicates
     res = VerticalItem(z=z_item, values=item, aux=aux_items_str)
@@ -80,7 +80,7 @@ def _include_location(
     return ds
 
 
-def _parse_vertical_input(
+def parse_vertical_input(
     data: VerticalType,
     name: Optional[str],
     item: str | int | None,
@@ -118,7 +118,7 @@ def _parse_vertical_input(
     )
 
     name = name or sel_items.values
-    name = _validate_data_var_name(name)
+    name = validate_data_var_name(name)
 
     # parse quantity
     if isinstance(data, mikeio.Dataset):

@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ._misc import _get_fig_ax
+from ._misc import get_fig_ax
 
 
 def temporal_coverage(
@@ -79,7 +79,7 @@ def temporal_coverage(
         ysize = max(2.0, 0.45 * n_lines)
         figsize = (7, ysize)
 
-    fig, ax = _get_fig_ax(ax=ax, figsize=figsize)
+    fig, ax = get_fig_ax(ax=ax, figsize=figsize)
     y = np.repeat(0.0, 2)
     labels = []
 

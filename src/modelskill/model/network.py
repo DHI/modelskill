@@ -7,7 +7,8 @@ import numpy.typing as npt
 import pandas as pd
 import xarray as xr
 
-from modelskill.timeseries import TimeSeries, _parse_network_node_input
+from modelskill.timeseries import TimeSeries
+from modelskill.timeseries._point import parse_network_node_input
 from ._base import SelectedItems
 from ..obs import NodeObservation, ReachObservation
 from ..quantity import Quantity
@@ -58,7 +59,7 @@ class NodeModelResult(TimeSeries):
         aux_items: Sequence[int | str] | None = None,
     ):
         if not self._is_input_validated(data):
-            data = _parse_network_node_input(
+            data = parse_network_node_input(
                 data,
                 name=name,
                 item=item,

@@ -17,8 +17,8 @@ import pandas as pd
 import modelskill.settings as settings
 from modelskill.settings import options
 
-from ..metrics import _linear_regression
-from ._misc import quantiles_xy, sample_points, format_skill_table, _get_fig_ax
+from .._regression import linear_regression
+from ._misc import quantiles_xy, sample_points, format_skill_table, get_fig_ax
 
 
 def scatter(
@@ -283,7 +283,7 @@ def _scatter_matplotlib(
     cmap=None,
     **kwargs,
 ) -> matplotlib.axes.Axes:
-    fig, ax = _get_fig_ax(ax, figsize)
+    fig, ax = get_fig_ax(ax, figsize)
 
     if len(x) < 2:
         raise ValueError("Not enough data to plot. At least 2 points are required.")
@@ -334,11 +334,11 @@ def _scatter_matplotlib(
 
     if reg_method:
         if fit_to_quantiles:
-            slope, intercept = _linear_regression(
+            slope, intercept = linear_regression(
                 obs=xq, model=yq, reg_method=reg_method
             )
         else:
-            slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
+            slope, intercept = linear_regression(obs=x, model=y, reg_method=reg_method)
 
         ax.plot(
             x_trend,
@@ -456,11 +456,11 @@ def _scatter_plotly(
 
     if reg_method:
         if fit_to_quantiles:
-            slope, intercept = _linear_regression(
+            slope, intercept = linear_regression(
                 obs=xq, model=yq, reg_method=reg_method
             )
         else:
-            slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
+            slope, intercept = linear_regression(obs=x, model=y, reg_method=reg_method)
 
         regression_line = go.Scatter(
             x=x_trend,

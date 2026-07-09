@@ -28,21 +28,21 @@ from .. import Quantity
 from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation, NodeObservation
 from ..model import PointModelResult, TrackModelResult, VerticalModelResult
-from ..timeseries._timeseries import _normalize_time_to_ns, _validate_data_var_name
+from ..timeseries._timeseries import normalize_time_to_ns, validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
-from ..metrics import _parse_metric
 
 from ._utils import (
-    _add_spatial_grid_to_df,
-    _groupby_df,
-    _parse_groupby,
+    add_spatial_grid_to_df,
+    groupby_df,
+    parse_groupby,
+    parse_metric,
     TimeTypes,
     IdxOrNameTypes,
 )
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 from ..settings import register_option
-from ..utils import _get_name, _RESERVED_NAMES
+from .._names import get_name, RESERVED_COMPARER_VAR_NAMES
 from .. import __version__
 from ._vertical_comparison import VerticalAccessor
 
@@ -64,7 +64,7 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
         # matched_data = self._matched_data_to_xarray(matched_data)
     assert "Observation" in data.data_vars
 
-    data = _normalize_time_to_ns(data)
+    data = normalize_time_to_ns(data)
 
     # no missing values allowed in Observation
     if data["Observation"].isnull().any():
@@ -86,7 +86,7 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
     assert len(vars) > 1, "dataset must have at least two data arrays"
 
     for v in data.data_vars:
-        v = _validate_data_var_name(str(v))
+        v = validate_data_var_name(str(v))
         assert (
             len(data[v].dims) == 1
         ), f"Only 0-dimensional data arrays are supported! {v} has {len(data[v].dims)} dimensions"
@@ -234,24 +234,24 @@ class ItemSelection:
         """
         if len(items) < 2:
             raise ValueError("data must contain at least two items")
-        obs_name = _get_name(obs_item, items) if obs_item else items[0]
+        obs_name = get_name(obs_item, items) if obs_item else items[0]
 
         # Check existence of items and convert to names
         if aux_items is not None:
             if isinstance(aux_items, (str, int)):
                 aux_items = [aux_items]
-            aux_names = [_get_name(a, items) for a in aux_items]
+            aux_names = [get_name(a, items) for a in aux_items]
         else:
             aux_names = []
 
-        x_name = _get_name(x_item, items) if x_item is not None else None
-        y_name = _get_name(y_item, items) if y_item is not None else None
-        z_name = _get_name(z_item, items) if z_item is not None else None
+        x_name = get_name(x_item, items) if x_item is not None else None
+        y_name = get_name(y_item, items) if y_item is not None else None
+        z_name = get_name(z_item, items) if z_item is not None else None
 
         if mod_items is not None:
             if isinstance(mod_items, (str, int)):
                 mod_items = [mod_items]
-            mod_names = [_get_name(m, items) for m in mod_items]
+            mod_names = [get_name(m, items) for m in mod_items]
         else:
             # Add remaining items as model items
             mod_names = [
@@ -575,9 +575,9 @@ class Comparer:
 
     @name.setter
     def name(self, name: str) -> None:
-        if name in _RESERVED_NAMES:
+        if name in RESERVED_COMPARER_VAR_NAMES:
             raise ValueError(
-                f"Cannot rename to any of {_RESERVED_NAMES}, these are reserved names!"
+                f"Cannot rename to any of {RESERVED_COMPARER_VAR_NAMES}, these are reserved names!"
             )
         self.data.attrs["name"] = name
 
@@ -748,10 +748,10 @@ class Comparer:
             # "ignore": silently remove keys that are not in allowed_keys
             mapping = {k: v for k, v in mapping.items() if k in allowed_keys}
 
-        if any([k in _RESERVED_NAMES for k in mapping.values()]):
+        if any([k in RESERVED_COMPARER_VAR_NAMES for k in mapping.values()]):
             # TODO: also check for duplicates
             raise ValueError(
-                f"Cannot rename to any of {_RESERVED_NAMES}, these are reserved names!"
+                f"Cannot rename to any of {RESERVED_COMPARER_VAR_NAMES}, these are reserved names!"
             )
 
         # rename observation
@@ -896,7 +896,7 @@ class Comparer:
                 models = [model]
             else:
                 models = list(model)
-            mod_names: List[str] = [_get_name(m, self.mod_names) for m in models]
+            mod_names: List[str] = [get_name(m, self.mod_names) for m in models]
             dropped_models = [m for m in self.mod_names if m not in mod_names]
             d = d.drop_vars(dropped_models)
             raw_mod_data = {m: raw_mod_data[m] for m in mod_names}
@@ -1089,16 +1089,16 @@ class Comparer:
         2017-10-28   0   NaN   NaN    NaN   NaN   NaN   NaN   NaN
         2017-10-29  41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
         """
-        metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
+        metrics = parse_metric(metrics, directional=self.quantity.is_directional)
 
         cmp = self
         if cmp.n_points == 0:
             raise ValueError("No data selected for skill assessment")
 
-        by = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=1)
+        by = parse_groupby(by, n_mod=cmp.n_models, n_qnt=1)
 
         df = cmp._to_long_dataframe()
-        res = _groupby_df(df, by=by, metrics=metrics)
+        res = groupby_df(df, by=by, metrics=metrics)
         res["x"] = np.nan if self.gtype == "track" or cmp.x is None else cmp.x
         res["y"] = np.nan if self.gtype == "track" or cmp.y is None else cmp.y
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
@@ -1150,7 +1150,7 @@ class Comparer:
         >>> cmp.score(metric="mape")
         {'mod': 11.567399646108198}
         """
-        metric = _parse_metric(metric)[0]
+        metric = parse_metric(metric)[0]
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
@@ -1231,21 +1231,21 @@ class Comparer:
 
         cmp = self
 
-        metrics = _parse_metric(metrics)
+        metrics = parse_metric(metrics)
         if cmp.n_points == 0:
             raise ValueError("No data to compare")
 
         df = cmp._to_long_dataframe()
-        df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
+        df = add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        agg_cols = _parse_groupby(by=by, n_mod=cmp.n_models, n_qnt=1)
+        agg_cols = parse_groupby(by=by, n_mod=cmp.n_models, n_qnt=1)
         if "x" not in agg_cols:
             agg_cols.insert(0, "x")
         if "y" not in agg_cols:
             agg_cols.insert(0, "y")
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
-        res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
+        res = groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
         ds = res.to_xarray().squeeze()
 
         # change categorial index to coordinates

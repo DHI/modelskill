@@ -10,7 +10,7 @@ from ..model.point import PointModelResult
 from ..model.track import TrackModelResult
 from ..model.vertical import VerticalModelResult
 from ..obs import Observation, PointObservation, TrackObservation, VerticalObservation
-from ._misc import _get_ax
+from ._misc import get_ax
 
 
 def spatial_overview(
@@ -66,7 +66,7 @@ def spatial_overview(
     obs = [] if obs is None else list(obs) if isinstance(obs, Iterable) else [obs]  # type: ignore
     mods = [] if mod is None else list(mod) if isinstance(mod, Iterable) else [mod]  # type: ignore
 
-    ax = _get_ax(ax=ax, figsize=figsize)
+    ax = get_ax(ax=ax, figsize=figsize)
 
     # TODO: support Gridded ModelResults
     for m in mods:

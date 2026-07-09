@@ -21,14 +21,14 @@ import xarray as xr
 
 from .types import PointType, TrackType, VerticalType, GeometryType, DataInputType
 from . import Quantity
-from .timeseries import (
-    TimeSeries,
-    _parse_xyz_point_input,
-    _parse_track_input,
-    _parse_vertical_input,
-    _parse_network_node_input,
-    _parse_network_breakpoint_input,
+from .timeseries import TimeSeries
+from .timeseries._point import (
+    parse_xyz_point_input,
+    parse_network_node_input,
+    parse_network_breakpoint_input,
 )
+from .timeseries._track import parse_track_input
+from .timeseries._vertical import parse_vertical_input
 
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
@@ -233,7 +233,7 @@ class PointObservation(Observation):
         attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_xyz_point_input(
+            data = parse_xyz_point_input(
                 data,
                 name=name,
                 item=item,
@@ -352,7 +352,7 @@ class TrackObservation(Observation):
         attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_track_input(
+            data = parse_track_input(
                 data=data,
                 name=name,
                 item=item,
@@ -451,7 +451,7 @@ class VerticalObservation(Observation):
         attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_vertical_input(
+            data = parse_vertical_input(
                 data,
                 name=name,
                 item=item,
@@ -549,7 +549,7 @@ class NodeObservation(Observation):
         if isinstance(at, tuple):
             reach, distance = str(at[0]), float(at[1])
             if not self._is_input_validated(data):
-                data = _parse_network_breakpoint_input(
+                data = parse_network_breakpoint_input(
                     data,
                     name=name,
                     item=item,
@@ -560,7 +560,7 @@ class NodeObservation(Observation):
                 )
         else:
             if not self._is_input_validated(data):
-                data = _parse_network_node_input(
+                data = parse_network_node_input(
                     data,
                     name=name,
                     item=item,
@@ -747,7 +747,7 @@ class ReachObservation(Observation):
         attrs: dict | None = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_network_breakpoint_input(
+            data = parse_network_breakpoint_input(
                 data,
                 name=name,
                 item=item,

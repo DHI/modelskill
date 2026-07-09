@@ -6,7 +6,8 @@ import xarray as xr
 from ..obs import Observation
 from ..types import PointType
 from ..quantity import Quantity
-from ..timeseries import TimeSeries, _parse_xyz_point_input
+from ..timeseries import TimeSeries
+from ..timeseries._point import parse_xyz_point_input
 from ..timeseries._align import align_data
 
 
@@ -52,7 +53,7 @@ class PointModelResult(TimeSeries):
         aux_items: Sequence[int | str] | None = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_xyz_point_input(
+            data = parse_xyz_point_input(
                 data,
                 name=name,
                 item=item,

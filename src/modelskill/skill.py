@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.colors import Colormap
 
-from .plotting._misc import _get_fig_ax
+from .plotting._misc import get_fig_ax
 from .metrics import small_is_best, large_is_best, zero_is_best, one_is_best
 
 
@@ -249,7 +249,7 @@ class SkillArrayPlotter:
 
         if figsize is None:
             figsize = (nx, ny)
-        fig, ax = _get_fig_ax(ax, figsize)
+        fig, ax = get_fig_ax(ax, figsize)
         assert ax is not None
         pcm = ax.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
         ax.set_xticks(np.arange(nx) + 0.5)

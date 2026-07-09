@@ -6,7 +6,7 @@ import mikeio
 import pandas as pd
 import xarray as xr
 
-from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
+from ._base import SpatialField, validate_overlap_in_time, SelectedItems
 from ..utils import rename_coords_xr, rename_coords_pd
 from ..types import GridType
 from ..quantity import Quantity
@@ -148,7 +148,7 @@ class GridModelResult(SpatialField):
             raise NotImplementedError(
                 "Extraction of VerticalObservation from GridModelResult is not implemented yet."
             )
-        _validate_overlap_in_time(self.time, observation)
+        validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
             return self._extract_point(observation, spatial_method)
         elif isinstance(observation, TrackObservation):

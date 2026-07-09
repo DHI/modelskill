@@ -28,13 +28,13 @@ from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 
-from ..utils import _get_name
+from .._names import get_name
 from ._comparison import Comparer
-from ..metrics import _parse_metric
 from ._utils import (
-    _add_spatial_grid_to_df,
-    _groupby_df,
-    _parse_groupby,
+    add_spatial_grid_to_df,
+    groupby_df,
+    parse_groupby,
+    parse_metric,
     IdxOrNameTypes,
     TimeTypes,
 )
@@ -230,7 +230,7 @@ class ComparerCollection(Mapping):
             return ComparerCollection([self[i] for i in idxs])
 
         if isinstance(x, int):
-            name = _get_name(x, self.obs_names)
+            name = get_name(x, self.obs_names)
             return self._comparers[name]
 
         if isinstance(x, Iterable):
@@ -332,16 +332,16 @@ class ComparerCollection(Mapping):
                 models = [model]
             else:
                 models = list(model)
-            mod_names: List[str] = [_get_name(m, self.mod_names) for m in models]
+            mod_names: List[str] = [get_name(m, self.mod_names) for m in models]
         if observation is None:
             observation = self.obs_names
         else:
             observation = [observation] if np.isscalar(observation) else observation  # type: ignore
-            observation = [_get_name(o, self.obs_names) for o in observation]  # type: ignore
+            observation = [get_name(o, self.obs_names) for o in observation]  # type: ignore
 
         if (quantity is not None) and (self.n_quantities > 1):
             quantity = [quantity] if np.isscalar(quantity) else quantity  # type: ignore
-            quantity = [_get_name(v, self.quantity_names) for v in quantity]  # type: ignore
+            quantity = [get_name(v, self.quantity_names) for v in quantity]  # type: ignore
         else:
             quantity = self.quantity_names
 
@@ -482,14 +482,14 @@ class ComparerCollection(Mapping):
         """
         cc = self
 
-        pmetrics = _parse_metric(metrics)
+        pmetrics = parse_metric(metrics)
 
-        agg_cols = _parse_groupby(by, n_mod=cc.n_models, n_qnt=cc.n_quantities)
+        agg_cols = parse_groupby(by, n_mod=cc.n_models, n_qnt=cc.n_quantities)
         agg_cols, attrs_keys = self._attrs_keys_in_by(agg_cols)
 
         df = cc._to_long_dataframe(attrs_keys=attrs_keys, observed=observed)
 
-        res = _groupby_df(df, by=agg_cols, metrics=pmetrics)
+        res = groupby_df(df, by=agg_cols, metrics=pmetrics)
         mtr_cols = [m.__name__ for m in pmetrics]  # type: ignore
         res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
         res = self._append_xy_to_res(res, cc)
@@ -634,19 +634,19 @@ class ComparerCollection(Mapping):
         """
         cmp = self
 
-        metrics = _parse_metric(metrics)
+        metrics = parse_metric(metrics)
 
         df = cmp._to_long_dataframe()
-        df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
+        df = add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        agg_cols = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=cmp.n_quantities)
+        agg_cols = parse_groupby(by, n_mod=cmp.n_models, n_qnt=cmp.n_quantities)
         if "x" not in agg_cols:
             agg_cols.insert(0, "x")
         if "y" not in agg_cols:
             agg_cols.insert(0, "y")
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
-        res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
+        res = groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
         ds = res.to_xarray().squeeze()
 
         # change categorial index to coordinates
@@ -724,7 +724,7 @@ class ComparerCollection(Mapping):
             case _:
                 raise ValueError("Invalid weights specification")
 
-        pmetrics = _parse_metric(metrics)
+        pmetrics = parse_metric(metrics)
         skilldf = (
             self.skill(metrics=pmetrics)
             .to_dataframe()
@@ -809,7 +809,7 @@ class ComparerCollection(Mapping):
         {'mod': 8.414442957854142}
         """
 
-        metric = _parse_metric(metric)[0]
+        metric = parse_metric(metric)[0]
 
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")

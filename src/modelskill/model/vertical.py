@@ -7,7 +7,8 @@ import numpy as np
 
 from ..types import VerticalType
 from ..quantity import Quantity
-from ..timeseries import TimeSeries, _parse_vertical_input
+from ..timeseries import TimeSeries
+from ..timeseries._vertical import parse_vertical_input
 from ..obs import VerticalObservation
 
 
@@ -58,7 +59,7 @@ class VerticalModelResult(TimeSeries):
         aux_items: Sequence[int | str] | None = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_vertical_input(
+            data = parse_vertical_input(
                 data=data,
                 name=name,
                 item=item,

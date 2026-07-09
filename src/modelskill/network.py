@@ -445,6 +445,7 @@ class Network:
 
         list_of_reaches = cls._load_res1d_network(res, nodes_list, reaches_list)
         return cls(list_of_reaches)
+
     @staticmethod
     def _load_res1d_network(
         res: Res1D,
@@ -491,7 +492,9 @@ class Network:
         return {g.nodes[id]["alias"]: id for id in g.nodes()}
 
     @staticmethod
-    def _generate_reaches_dict(reaches: Sequence[NetworkReach]) -> dict[str, NetworkReach]:
+    def _generate_reaches_dict(
+        reaches: Sequence[NetworkReach],
+    ) -> dict[str, NetworkReach]:
         return {r.id: r for r in reaches}
 
     @staticmethod
