@@ -29,25 +29,6 @@ def vertical_model_df() -> pd.DataFrame:
 
 
 @pytest.fixture
-def vertical_model_df_duplicates() -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "z": [-5.0, -5.0, -4.0, -4.0, -3.0],
-            "Salinity": [30.0, 300.0, 31.0, 310.0, 32.0],
-        },
-        index=pd.to_datetime(
-            [
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 01:00:00",
-            ]
-        ),
-    )
-
-
-@pytest.fixture
 def vertical_model_df_aux() -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -121,52 +102,38 @@ class TestVerticalModelResult:
     # ================
     # Test failing and optional args
     # ================
-    # failing without z_item
-    def test_fail_with_3_items_no_item_arg(self, dfs0_ds):
-        ds_test = dfs0_ds.copy()
-        ds_test["extra_item"] = ds_test[1].copy()
-        with pytest.raises(ValueError, match="Input has more than 2 items, but"):
-            _ = ms.VerticalModelResult(ds_test)
+    def test_missing_item_kwarg_raises(self, dfs0_ds):
+        with pytest.raises(TypeError, match="item"):
+            ms.VerticalModelResult(dfs0_ds, z_item="z")
 
-    # failing z wronge location
+    def test_missing_z_item_kwarg_raises(self, dfs0_ds):
+        with pytest.raises(TypeError, match="z_item"):
+            ms.VerticalModelResult(dfs0_ds, item="Salinity")
+
+    # failing z wrong location
     def test_item_named_z(self, dfs0_ds):
         ds_test = mikeio.Dataset(
             [dfs0_ds[1], dfs0_ds[0]],
         )
         with pytest.raises(ValueError, match="name 'z' is reserved "):
-            _ = ms.VerticalModelResult(ds_test)
+            _ = ms.VerticalModelResult(ds_test, item="z", z_item="Salinity")
 
-    # ===============
-    # test arguments options for handling duplicates
-    # ===============
-    @pytest.mark.parametrize(
-        "keep_duplicates,expected_removed,expected_z,expected_values",
-        [
-            ("first", 2, [-5.0, -4.0, -3.0], [30.0, 31.0, 32.0]),
-            ("last", 2, [-5.0, -4.0, -3.0], [300.0, 310.0, 32.0]),
-            (False, 4, [-3.0], [32.0]),
-        ],
-    )
-    def test_vertical_model_keep_duplicates_modes(
-        self,
-        vertical_model_df_duplicates,
-        keep_duplicates,
-        expected_removed,
-        expected_z,
-        expected_values,
-    ):
-        with pytest.warns(UserWarning, match=f"Removed {expected_removed} duplicate"):
-            mr = ms.VerticalModelResult(
-                vertical_model_df_duplicates,
+    def test_duplicate_time_z_pairs_raises(self):
+        df = pd.DataFrame(
+            {
+                "z": [-5.0, -4.0, -4.0],
+                "Salinity": [30.0, 31.0, 31.5],
+            },
+            index=[pd.Timestamp("2019-01-01")] * 3,
+        )
+        with pytest.raises(ValueError, match="duplicate \\(time, z\\) entries"):
+            ms.VerticalModelResult(
+                df,
                 item="Salinity",
                 z_item="z",
                 x=12.0,
                 y=55.0,
-                keep_duplicates=keep_duplicates,
             )
-
-        assert list(mr.data["z"].values) == expected_z
-        assert list(mr.data[mr.name].values) == expected_values
 
     # aux items
     def test_vertical_model_aux_items_preserved_and_tagged(self, vertical_model_df_aux):
@@ -201,7 +168,7 @@ class TestVerticalModelResult:
             y=55.0,
             name="salt_model",
         )
-        mr2 = ms.VerticalModelResult(mr.data)
+        mr2 = ms.VerticalModelResult(mr.data, item="Salinity", z_item="z")
 
         assert mr.equals(mr2)
         assert mr2.gtype == mr.gtype

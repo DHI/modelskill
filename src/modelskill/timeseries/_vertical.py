@@ -2,8 +2,7 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, get_args, Optional, List, Sequence
-import warnings
+from typing import get_args, Optional, List, Sequence
 import pandas as pd
 import xarray as xr
 from ._coords import XYZCoords
@@ -30,22 +29,15 @@ class VerticalItem:
 
 def _parse_vertical_items(
     items: Sequence[Hashable],
-    z_item: int | str | None,
-    item: int | str | None,
+    z_item: int | str,
+    item: int | str,
     aux_items: Optional[Sequence[int | str]] = None,
 ) -> VerticalItem:
-    """If input has exactly 2 items we accept item=None"""
+    """Resolve and validate item selection from available column names."""
     if len(items) < 2:
         raise ValueError(
             f"Input has only {len(items)} items. It should have at least 2."
         )
-    if item is None:
-        if len(items) == 2:
-            item = 1
-        elif len(items) > 2:
-            raise ValueError(
-                f"Input has more than 2 items, but item was not given! Available items: {items}"
-            )
 
     item = _get_name(item, valid_names=items)
     z_item = _get_name(z_item, valid_names=items)
@@ -83,12 +75,11 @@ def _include_location(
 def _parse_vertical_input(
     data: VerticalType,
     name: Optional[str],
-    item: str | int | None,
+    item: str | int,
     quantity: Optional[Quantity],
-    z_item: str | int | None,
+    z_item: str | int,
     x: float | None = None,
     y: float | None = None,
-    keep_duplicates: Literal["first", "last", False] = "first",
     aux_items: Optional[Sequence[int | str]] = None,
 ) -> xr.Dataset:
     assert isinstance(
@@ -142,16 +133,13 @@ def _parse_vertical_input(
 
     ds = ds.rename({sel_items.z: "z"})
 
-    # keep first, last or none of duplicate (time, z) pairs
     idx_df = pd.DataFrame({"time": ds["time"].to_index(), "z": ds["z"].values})
-
-    keep_mask = ~idx_df.duplicated(subset=["time", "z"], keep=keep_duplicates)
-
-    n_removed = int((~keep_mask).sum())
-    ds = ds.isel(time=keep_mask.values)
-    if n_removed > 0:
-        warnings.warn(
-            f"Removed {n_removed} duplicate (time, z) entries with keep={keep_duplicates}"
+    n_duplicates = int(idx_df.duplicated(subset=["time", "z"]).sum())
+    if n_duplicates > 0:
+        raise ValueError(
+            f"Input contains {n_duplicates} duplicate (time, z) entries. "
+            "Vertical profiles must have a unique depth per timestamp; "
+            "deduplicate the input before constructing the object."
         )
 
     ds = ds.dropna(dim="time", subset=["z"])  # remove times with z as nan

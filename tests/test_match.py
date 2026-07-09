@@ -7,6 +7,7 @@ import mikeio
 import modelskill as ms
 from modelskill.comparison._comparison import ItemSelection
 from modelskill.model.dfsu import DfsuModelResult
+
 try:
     from modelskill.network import _make_basic_network
 except ImportError:
@@ -82,12 +83,16 @@ class TestVerticalObservation:
     @pytest.fixture(scope="class")
     def o4(self):
         fn = "tests/testdata/vertical/VerticalProfile_obs1.dfs0"
-        return ms.VerticalObservation(fn, z_item="z", name="vobs", x=657500, y=6553600)
+        return ms.VerticalObservation(
+            fn, item="Salinity", z_item="z", name="vobs", x=657500, y=6553600
+        )
 
     @pytest.fixture(scope="class")
     def mr4(self):
         fn = "tests/testdata/vertical/VerticalModel_at_obs.dfs0"
-        return ms.model_result(fn, item="Salinity", name="vmod", gtype="vertical")
+        return ms.model_result(
+            fn, item="Salinity", z_item="z", name="vmod", gtype="vertical"
+        )
 
     @pytest.fixture(scope="class")
     def mr5(self):
@@ -262,7 +267,7 @@ class TestVerticalObservation:
         # drop the last point and modify last obs depth to -4 and create new VerticalObservation
         df_o = simple_vo.to_dataframe().iloc[0:-1, :]
         df_o.iloc[-1, 0] = -4
-        vo = ms.VerticalObservation(df_o)
+        vo = ms.VerticalObservation(df_o, item=simple_vo.name, z_item="z")
         cmp = ms.match(vo, simple_vm)
         expected_mod_values = [1.1, 2.1, 4.2]
         expected_depths = simple_vo.data["z"].to_numpy().copy()[0:-1]
@@ -273,7 +278,9 @@ class TestVerticalObservation:
 
     def test_align_vertical_intepolation(self, simple_vm):
         # Create observations from model df
-        vo = ms.VerticalObservation(simple_vm.to_dataframe())
+        vo = ms.VerticalObservation(
+            simple_vm.to_dataframe(), item=simple_vm.name, z_item="z"
+        )
         # Modify model to be inbetween the obs depths and create new VerticalModelResult
         df = simple_vm.to_dataframe()
         df["z"] = df["z"] - 0.5
@@ -281,7 +288,7 @@ class TestVerticalObservation:
         # mod_z = [-1.5, -2.5, -3.5, -4.5, -1.5, -2.5, -3.5, -4.5],
         # mod_v = [1.1, 2.1, 3.1, 4.1, 1.2, 2.2, 3.2, 4.2]
         # obs_z = [-1, -2, -3, -4, -1, -2, -3, -4]
-        vm = ms.VerticalModelResult(df)
+        vm = ms.VerticalModelResult(df, item=simple_vm.name, z_item="z")
         cmp = ms.match(vo, vm)
 
         # first depth is nan in models becasuse obs outside model domain
@@ -292,7 +299,9 @@ class TestVerticalObservation:
         assert cmp.data["mod"].to_numpy() == pytest.approx(expected_mod_values)
 
     def test_same_results(self, simple_vm):
-        vo = ms.VerticalObservation(simple_vm.to_dataframe())
+        vo = ms.VerticalObservation(
+            simple_vm.to_dataframe(), item=simple_vm.name, z_item="z"
+        )
         cmp = ms.match(vo, simple_vm)
         assert cmp.n_points == 8
         assert cmp.data["mod"].to_numpy() == pytest.approx(
@@ -323,7 +332,7 @@ class TestVerticalObservation:
         # shift model to be outside obs range
         df = simple_vm.to_dataframe()
         df["z"] = df["z"] - 2
-        vm = ms.VerticalModelResult(df)
+        vm = ms.VerticalModelResult(df, item=simple_vm.name, z_item="z")
         cmp = ms.match(simple_vo, vm)
         assert cmp.n_points == 0
 
@@ -331,7 +340,7 @@ class TestVerticalObservation:
         # shift model to be outside obs range except for one point
         df = simple_vm.to_dataframe()
         df["z"] = df["z"] - 1  # only match with models at z=-2 exact
-        vm = ms.VerticalModelResult(df)
+        vm = ms.VerticalModelResult(df, item=simple_vm.name, z_item="z")
         cmp = ms.match(simple_vo, vm)
         assert cmp.n_points == 2
 
@@ -1044,7 +1053,8 @@ def test_network_match_multi_obs_multi_model_comprehensive(
 def test_network_match_error_non_node_observation(network_mr, point_obs_error):
     """Test that non-NodeObservation raises appropriate error"""
     with pytest.raises(
-        TypeError, match="NetworkModelResult supports NodeObservation and ReachObservation"
+        TypeError,
+        match="NetworkModelResult supports NodeObservation and ReachObservation",
     ):
         ms.match(point_obs_error, network_mr)
 
