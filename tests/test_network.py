@@ -23,6 +23,9 @@ from modelskill.network import (
     Network,
     BasicNode,
     BasicReach,
+    _EPANET_EXTENSIONS,
+    _MIKE_EXTENSIONS,
+    _UNSUPPORTED_EXTENSIONS,
 )
 from modelskill.obs import NodeObservation
 from modelskill.quantity import Quantity
@@ -623,13 +626,11 @@ def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
         ".res1d",  # MIKE 1D
         ".res11",  # MIKE 11
         ".res",  # EPANET
-        ".prf",  # MOUSE
-        ".out",  # SWMM
         ".RES1D",  # extension check is case-insensitive
     ],
 )
-def test_from_res1d_accepts_every_extension_mikeio1d_supports(tmp_path, suffix):
-    """Every extension mikeio1d can read gets past the extension guard.
+def test_from_res1d_accepts_readable_extensions(tmp_path, suffix):
+    """A readable extension gets past the extension guard.
 
     The file does not exist, so mikeio1d - not the guard - is what complains.
     """
@@ -650,15 +651,49 @@ def test_from_res1d_rejects_unsupported_extension():
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
-def test_from_res1d_error_lists_supported_extensions():
-    from mikeio1d import Res1D
-
+def test_from_res1d_error_lists_only_readable_extensions():
     with pytest.raises(NotImplementedError) as excinfo:
         Network.from_res1d("network.nc")
 
     message = str(excinfo.value)
-    for extension in Res1D.get_supported_file_extensions():
+    for extension in _MIKE_EXTENSIONS | _EPANET_EXTENSIONS:
         assert extension in message
+    for extension in _UNSUPPORTED_EXTENSIONS:
+        assert extension not in message
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+@pytest.mark.parametrize(
+    "filename",
+    ["./tests/testdata/epanet.resx", "./tests/testdata/swmm.out"],
+)
+def test_formats_without_reach_connectivity_are_rejected(filename):
+    """Real files, so these fail if mikeio1d ever starts exposing connectivity."""
+    with pytest.raises(NotImplementedError, match="reach start/end nodes"):
+        Network.from_res1d(filename)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+@pytest.mark.parametrize("suffix", [".prf", ".crf", ".xrf", ".whr"])
+def test_formats_without_a_fixture_are_rejected(tmp_path, suffix):
+    with pytest.raises(NotImplementedError, match="no test fixture"):
+        Network.from_res1d(tmp_path / f"network{suffix}")
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_every_mikeio1d_extension_is_accounted_for():
+    """A new mikeio1d format must be read or explicitly refused, never ignored."""
+    from mikeio1d import Res1D
+
+    accounted_for = _MIKE_EXTENSIONS | _EPANET_EXTENSIONS | set(_UNSUPPORTED_EXTENSIONS)
+
+    assert accounted_for == Res1D.get_supported_file_extensions()
 
 
 @pytest.mark.skipif(
