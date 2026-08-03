@@ -497,16 +497,32 @@ class Network:
         cls,
         res: str | Path | Res1D,
         *,
+        resx: str | Path | Res1D | None = None,
+        inp: str | Path | None = None,
         nodes: str | list[str] | None = None,
         reaches: str | list[str] | None = None,
     ) -> Network:
-        """Create a Network from an EPANET result file.
+        """Create a Network from an EPANET result file and its companions.
+
+        An EPANET run writes up to three files that modelskill can use. The
+        ``.res`` holds the network and its main timeseries; the optional
+        ``.resx`` holds extra results; and the optional ``.inp`` is the input
+        file, which is the only one of the three carrying reach lengths.
 
         Parameters
         ----------
         res : str, Path or Res1D
             Path to a ``.res`` file, or an already-opened
             :class:`mikeio1d.Res1D` object.
+        resx : str, Path, Res1D or None, optional
+            Companion ``.resx`` file from the same run. Its extra node
+            quantities (tank ``Volume`` and ``Volume Percentage``) are merged
+            onto the matching nodes. By default None, and those quantities are
+            simply absent.
+        inp : str, Path or None, optional
+            EPANET ``.inp`` input file for the same model, read for its
+            ``[PIPES]`` lengths. By default None, and reach lengths are
+            undefined.
         nodes : str, list of str, or None, optional
             Which nodes get their timeseries loaded. See :meth:`from_mike`.
         reaches : str, list of str, or None, optional
@@ -523,25 +539,41 @@ class Network:
         NotImplementedError
             If the file extension is not one modelskill can read.
         ValueError
-            If the extension belongs to another constructor, such as MIKE.
+            If the extension belongs to another constructor, such as MIKE, if a
+            companion file has the wrong extension, or if ``resx`` does not come
+            from the same run as ``res``.
 
         Examples
         --------
         >>> from modelskill.network import Network
         >>> network = Network.from_epanet("model.res")
 
+        With both companions, for real edge lengths and the extra quantities:
+
+        >>> network = Network.from_epanet(
+        ...     "model.res",
+        ...     resx="model.resx",
+        ...     inp="model.inp",
+        ... )
+
         Notes
         -----
         EPANET is a link-node model, and mikeio1d reports no length and a
         single synthetic gridpoint for each of its reaches. As a result:
 
-        * every edge of :attr:`graph` has ``length=None``, so a length-weighted
-          graph algorithm fails rather than returning a meaningless number
+        * without ``inp``, every edge of :attr:`graph` has ``length=None``, so a
+          length-weighted graph algorithm fails rather than returning a
+          meaningless number. Pumps and valves keep ``length=None`` even with
+          ``inp``, since ``[PIPES]`` is the only section carrying lengths
         * reaches have no breakpoints, so
           :class:`~modelskill.obs.ReachObservation` cannot be matched against
           an EPANET network — use :class:`~modelskill.obs.NodeObservation`
         * ``find(reach=..., distance=<number>)`` never resolves; only
           ``distance="start"`` and ``distance="end"`` work
+
+        For the same reason, ``resx`` merges node quantities only. Its
+        reach-level quantities (pump energy, efficiency and costs) have no
+        breakpoint to live on, which is tracked in issue #680.
 
         Node timeseries, :meth:`to_dataframe`, :meth:`to_dataset`,
         ``find(node=...)`` and :meth:`recall` are unaffected.
@@ -556,6 +588,8 @@ class Network:
             reaches=reaches,
             allowed=_EPANET_EXTENSIONS,
             caller="from_epanet",
+            resx=resx,
+            inp=inp,
         )
 
     @classmethod
@@ -567,6 +601,8 @@ class Network:
         reaches: str | list[str] | None,
         allowed: frozenset[str],
         caller: str,
+        resx: str | Path | Res1D | None = None,
+        inp: str | Path | None = None,
     ) -> Network:
         """Shared implementation behind the public ``from_*`` constructors.
 
@@ -576,6 +612,10 @@ class Network:
             Extensions this constructor accepts.
         caller : str
             Name of the public method, used in error messages.
+        resx : str, Path, Res1D or None, optional
+            Companion result file whose node quantities are merged in.
+        inp : str, Path or None, optional
+            Companion input file read for reach lengths.
         """
         if sys.version_info >= (3, 14):
             raise NotImplementedError(
@@ -611,8 +651,79 @@ class Network:
         else:
             reaches_list = list(reaches)
 
-        list_of_reaches = cls._load_res1d_network(res, nodes_list, reaches_list)
+        extra = None if resx is None else cls._open_companion_result(res, resx)
+        lengths = None if inp is None else cls._read_companion_lengths(inp)
+
+        list_of_reaches = cls._load_res1d_network(
+            res, nodes_list, reaches_list, extra=extra, lengths=lengths
+        )
         return cls(list_of_reaches)
+
+    @staticmethod
+    def _read_companion_lengths(inp: str | Path) -> dict[str, float]:
+        """Read reach lengths from a companion ``.inp`` input file."""
+        from modelskill.model.adapters._inp import read_pipe_lengths
+
+        path = Path(inp)
+        if path.suffix.lower() != ".inp":
+            raise ValueError(
+                f"Expected an EPANET '.inp' input file, got '{path.suffix}'. "
+                "This argument reads reach lengths from the model input, not "
+                "from a result file."
+            )
+        return read_pipe_lengths(path)
+
+    @staticmethod
+    def _open_companion_result(res: Res1D, resx: str | Path | Res1D) -> Res1D:
+        """Open and validate a companion ``.resx`` result file.
+
+        Raises
+        ------
+        ValueError
+            If the extension is not ``.resx``, or if the file does not come from
+            the same run as ``res``.
+        """
+        from mikeio1d import Res1D as _Res1D
+
+        if isinstance(resx, (str, Path)):
+            path = Path(resx)
+            if path.suffix.lower() != ".resx":
+                raise ValueError(
+                    f"Expected an EPANET '.resx' companion file, got '{path.suffix}'."
+                )
+            extra = _Res1D(str(path))
+        elif isinstance(resx, _Res1D):
+            _check_file_path_is_str(resx)
+            if Path(resx.file_path).suffix.lower() != ".resx":
+                raise ValueError(
+                    "Expected an EPANET '.resx' companion file, got "
+                    f"'{Path(resx.file_path).suffix}'."
+                )
+            extra = resx
+        else:
+            raise TypeError(
+                f"Expected a str, Path or Res1D object, got {type(resx).__name__!r}"
+            )
+
+        # Merging two different runs would line up silently and produce a network
+        # that is wrong in a way no later error would reveal.
+        if not res.time_index.equals(extra.time_index):
+            raise ValueError(
+                "The '.resx' companion does not share a time axis with the "
+                "'.res' file, so the two are not from the same run. Got "
+                f"{len(extra.time_index)} steps ending {extra.end_time} against "
+                f"{len(res.time_index)} ending {res.end_time}."
+            )
+
+        unknown = set(extra.nodes) - set(res.nodes)
+        if unknown:
+            raise ValueError(
+                f"The '.resx' companion holds nodes {sorted(unknown)} that are "
+                "absent from the '.res' network, so the two files do not describe "
+                "the same model."
+            )
+
+        return extra
 
     @staticmethod
     def _validate_extension(
@@ -664,15 +775,20 @@ class Network:
         res: Res1D,
         nodes: list[str],
         reaches: list[str],
+        *,
+        extra: Res1D | None = None,
+        lengths: dict[str, float] | None = None,
     ) -> list[Res1DReach]:
         from modelskill.model.adapters._res1d import (
             Res1DReach,
             Res1DNode,
+            _merge_extra_quantities,
             _simplify_colnames,
         )
 
         nodes_set = set(nodes)
         reaches_set = set(reaches)
+        lengths = lengths or {}
 
         # In order to work with bigger files, we might want to select a subset of nodes and avoid
         # potential memory issues. For this reason, we create this intermediate step that populates
@@ -684,6 +800,12 @@ class Network:
             if id in nodes_set:
                 node = res.nodes[id]
                 df = _simplify_colnames(node)
+                # Merged here rather than up front so selective loading still
+                # decides what is held in memory.
+                if extra is not None and id in extra.nodes:
+                    df = _merge_extra_quantities(
+                        df, _simplify_colnames(extra.nodes[id]), node_id=id
+                    )
                 overlapping_gridpoint = reach.gridpoints[gpt_idx]
                 boundary = _simplify_colnames(overlapping_gridpoint)
                 return Res1DNode(id, data=df, boundary={reach.name: boundary})
@@ -696,6 +818,7 @@ class Network:
                 _init_node(reach, False),
                 _init_node(reach, True),
                 populate_gridpoints=reach.name in reaches_set,
+                length=lengths.get(reach.name),
             )
             for reach in res.reaches.values()
         ]
