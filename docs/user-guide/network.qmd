@@ -139,13 +139,14 @@ There is one constructor per product that writes the file:
 | Constructor | Extensions | Product |
 |---|---|---|
 | `Network.from_mike` | `.res1d`, `.res11` | MIKE 1D, MIKE 11 |
-| `Network.from_epanet` | `.res` | EPANET |
+| `Network.from_epanet` | `.res`, plus optional `.resx` and `.inp` | EPANET |
 
 The remaining formats mikeio1d can open cannot be turned into a `Network`, and say so when you try:
 
 | Extension | Why not |
 |---|---|
-| `.out` (SWMM), `.resx` | mikeio1d does not report reach start/end nodes for these, so there is no topology to rebuild. |
+| `.out` (SWMM) | The reach connectivity is not in the `.out` at all — it lives in the companion `.inp` input file, which modelskill does not read yet ([#689](https://github.com/DHI/modelskill/issues/689)). |
+| `.resx` | Not a network on its own. It holds extra results for the network defined in the sibling `.res`, so pass it as `from_epanet(res, resx=...)` instead. |
 | `.prf`, `.crf`, `.xrf` (MOUSE), `.whr` (Water Hammer) | No test fixture exists for these formats, so support cannot be verified. [Open an issue](https://github.com/DHI/modelskill/issues) if you need one. |
 
 ### From a network result file
@@ -190,14 +191,53 @@ EPANET results use `from_epanet`:
 Network.from_epanet(path_to_epanet)
 ```
 
+#### EPANET companion files
+
+An EPANET run writes more than one file, and the `.res` is not the whole picture:
+
+| File | What it adds |
+|---|---|
+| `.res` | The network and its main timeseries. Required. |
+| `.resx` | Extra results — tank volume and pump energy. Merged onto matching nodes. |
+| `.inp` | The model input. The only one of the three carrying reach lengths. |
+
+Pass the companions alongside the result file to get a fuller network:
+
+```{python}
+# | echo: false
+path_to_epanet_resx = "../../tests/testdata/epanet.resx"
+path_to_epanet_inp = "../../tests/testdata/epanet.inp"
+```
+
+```{python}
+network_epanet = Network.from_epanet(
+    path_to_epanet,
+    resx=path_to_epanet_resx,
+    inp=path_to_epanet_inp,
+)
+network_epanet
+```
+
+`Volume` and `Volume Percentage` come from the `.resx`, and the reach lengths from the `.inp`:
+
+```{python}
+sorted(
+    d["length"]
+    for *_, d in network_epanet.graph.edges(data=True)
+    if d["length"] is not None
+)
+```
+
 ::: {.callout-warning}
-## EPANET networks have no reach geometry
+## EPANET reach geometry is limited
 
 EPANET is a link-node model, and mikeio1d reports no length and a single synthetic gridpoint for each reach. So for an EPANET network:
 
-* every edge of `network.graph` has `length=None`. A length-weighted `networkx` call then fails rather than returning a meaningless number — shortest-path treats the edge as unreachable, and anything that sums the weights raises `TypeError`
+* without `inp=`, every edge of `network.graph` has `length=None`. A length-weighted `networkx` call then fails rather than returning a meaningless number — shortest-path treats the edge as unreachable, and anything that sums the weights raises `TypeError`. With `inp=`, only pumps and valves stay `None`, since `[PIPES]` is the one section carrying lengths
 * reaches have no breakpoints, so a `ReachObservation` cannot be matched — use `NodeObservation` instead
 * `find(reach=..., distance=<number>)` never resolves; only `distance="start"` and `distance="end"` work
+
+For the same reason, `resx=` merges node quantities only. Its reach-level quantities — pump energy, efficiency and costs — have no breakpoint to live on, which is tracked in [#680](https://github.com/DHI/modelskill/issues/680).
 
 Node timeseries, `to_dataframe()`, `to_dataset()`, `find(node=...)` and `recall()` are unaffected.
 :::
