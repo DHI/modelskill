@@ -636,7 +636,13 @@ class Network:
             )
 
         if extension not in allowed:
-            constructor = _EXTENSION_CONSTRUCTORS[extension]
+            constructor = _EXTENSION_CONSTRUCTORS.get(extension)
+            if constructor is None:
+                raise NotImplementedError(
+                    f"File extension '{suffix}' is supported by mikeio1d but is not mapped "
+                    "to a Network constructor in this version of modelskill. "
+                    "Please upgrade modelskill or open an issue."
+                )
             raise ValueError(
                 f"Network.{caller}() reads {sorted(allowed)} files, got '{suffix}'. "
                 f"Use Network.{constructor}() instead."
