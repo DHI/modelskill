@@ -395,6 +395,159 @@ class Network:
         return "\n".join(out)
 
     @classmethod
+    def from_mike(
+        cls,
+        res: str | Path | Res1D,
+        *,
+        nodes: str | list[str] | None = None,
+        reaches: str | list[str] | None = None,
+    ) -> Network:
+        """Create a Network from a MIKE 1D or MIKE 11 result file.
+
+        Parameters
+        ----------
+        res : str, Path or Res1D
+            Path to a ``.res1d`` or ``.res11`` file, or an already-opened
+            :class:`mikeio1d.Res1D` object.
+        nodes : str, list of str, or None, optional
+            Controls which nodes have their timeseries data loaded into memory.
+
+            * ``None`` *(default)* — data is loaded for every node.
+            * A single node ID or a list of node IDs — only those nodes get
+              data; others are topology-only.
+            * ``[]`` (empty list) — no node data is loaded at all.
+
+            The full network topology is always constructed regardless of this
+            setting, so ``find()`` and ``recall()`` still work on all nodes.
+        reaches : str, list of str, or None, optional
+            Controls which reaches have their intermediate gridpoint data
+            populated.
+
+            * ``None`` *(default)* — gridpoints are populated for every reach.
+            * A single reach name or a list of reach names — only those reaches
+              get gridpoint data; others are topology-only.
+            * ``[]`` (empty list) — no gridpoint data is loaded at all.
+
+        Returns
+        -------
+        Network
+
+        Raises
+        ------
+        NotImplementedError
+            If the file extension is not one modelskill can read.
+        ValueError
+            If the extension belongs to another constructor, such as EPANET.
+
+        Examples
+        --------
+        Load everything (default behaviour):
+
+        >>> from modelskill.network import Network
+        >>> network = Network.from_mike("model.res1d")
+
+        Load data only for the two nodes where observations exist, and skip
+        all intermediate gridpoint data to keep memory usage low:
+
+        >>> network = Network.from_mike(
+        ...     "model.res1d",
+        ...     nodes=["node_a", "node_b"],
+        ...     reaches=[],
+        ... )
+
+        Load data for selected nodes and gridpoints for one specific reach:
+
+        >>> network = Network.from_mike(
+        ...     "model.res1d",
+        ...     nodes=["node_a", "node_b"],
+        ...     reaches=["reach_1"],
+        ... )
+
+        Notes
+        -----
+        MIKE 11 keeps its timeseries on reach gridpoints rather than on nodes,
+        so the nodes of a ``.res11`` network carry no data of their own. Pass
+        ``reaches`` rather than ``nodes`` to control what gets loaded.
+
+        See Also
+        --------
+        from_epanet : Read an EPANET result file.
+        """
+        return cls._from_mikeio1d(
+            res,
+            nodes=nodes,
+            reaches=reaches,
+            allowed=_MIKE_EXTENSIONS,
+            caller="from_mike",
+        )
+
+    @classmethod
+    def from_epanet(
+        cls,
+        res: str | Path | Res1D,
+        *,
+        nodes: str | list[str] | None = None,
+        reaches: str | list[str] | None = None,
+    ) -> Network:
+        """Create a Network from an EPANET result file.
+
+        Parameters
+        ----------
+        res : str, Path or Res1D
+            Path to a ``.res`` file, or an already-opened
+            :class:`mikeio1d.Res1D` object.
+        nodes : str, list of str, or None, optional
+            Which nodes get their timeseries loaded. See :meth:`from_mike`.
+        reaches : str, list of str, or None, optional
+            Which reaches get their gridpoint data loaded. See
+            :meth:`from_mike`. EPANET results have no intermediate gridpoints,
+            so this argument has no effect.
+
+        Returns
+        -------
+        Network
+
+        Raises
+        ------
+        NotImplementedError
+            If the file extension is not one modelskill can read.
+        ValueError
+            If the extension belongs to another constructor, such as MIKE.
+
+        Examples
+        --------
+        >>> from modelskill.network import Network
+        >>> network = Network.from_epanet("model.res")
+
+        Notes
+        -----
+        EPANET is a link-node model, and mikeio1d reports no length and a
+        single synthetic gridpoint for each of its reaches. As a result:
+
+        * every edge of :attr:`graph` has ``length=0``, so graph algorithms
+          weighted by length are meaningless
+        * reaches have no breakpoints, so
+          :class:`~modelskill.obs.ReachObservation` cannot be matched against
+          an EPANET network — use :class:`~modelskill.obs.NodeObservation`
+        * ``find(reach=..., distance=<number>)`` never resolves; only
+          ``distance="start"`` and ``distance="end"`` work
+
+        Node timeseries, :meth:`to_dataframe`, :meth:`to_dataset`,
+        ``find(node=...)`` and :meth:`recall` are unaffected.
+
+        See Also
+        --------
+        from_mike : Read a MIKE 1D or MIKE 11 result file.
+        """
+        return cls._from_mikeio1d(
+            res,
+            nodes=nodes,
+            reaches=reaches,
+            allowed=_EPANET_EXTENSIONS,
+            caller="from_epanet",
+        )
+
+    @classmethod
     def from_res1d(
         cls,
         res: str | Path | Res1D,
