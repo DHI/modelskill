@@ -2,6 +2,7 @@
 
 # ruff: noqa: E402
 import sys
+from pathlib import Path
 import pytest
 
 pytest.importorskip("networkx")
@@ -707,6 +708,19 @@ def test_from_res1d_accepts_open_res1d_object():
     network = Network.from_res1d(res, nodes=[], reaches=[])
 
     assert network.graph.number_of_nodes() == 259
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_rejects_res1d_opened_with_a_path():
+    """mikeio1d calls str.endswith on file_path, so a Path breaks it later on."""
+    from mikeio1d import Res1D
+
+    res = Res1D(Path("./tests/testdata/network.res1d"))
+
+    with pytest.raises(TypeError, match="file_path"):
+        Network.from_res1d(res)
 
 
 @pytest.mark.skipif(
