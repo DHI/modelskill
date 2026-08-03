@@ -175,7 +175,7 @@ class ReachBreakPoint(ABC):
 
     @property
     def distance(self) -> float:
-        """Along-reach distance of this break point (same units as :attr:`NetworkReach.length`)."""
+        """Along-reach distance of this break point, measured from the start node."""
         return self.id[1]
 
     @property
@@ -192,30 +192,31 @@ class NetworkReach(ABC):
     a list of :class:`ReachBreakPoint` objects for intermediate chainage
     locations.
 
-    Subclass this to integrate your own network topology.  Five properties
+    Subclass this to integrate your own network topology.  Four properties
     must be implemented:
 
     * :attr:`id` - a unique string identifier for the reach.
     * :attr:`start` - the upstream/start :class:`NetworkNode`.
     * :attr:`end` - the downstream/end :class:`NetworkNode`.
-    * :attr:`length` - total reach length (in the units of your coordinate
-      system).
     * :attr:`breakpoints` - list of :class:`ReachBreakPoint` instances ordered
       by increasing distance from the start node (empty list if none).
+
+    :attr:`length` is optional and defaults to ``None``. Reach length matters
+    in some domains (rivers, sewer networks) and not in others (link-node water
+    distribution models), so override it only where a length exists.
 
     The concrete helper :class:`BasicReach` is provided for the common case
     where all data is already available in memory.
 
     Examples
     --------
-    Minimal subclass:
+    Minimal subclass, without a length:
 
     >>> class MyReach(NetworkReach):
-    ...     def __init__(self, rid, start_node, end_node, length):
+    ...     def __init__(self, rid, start_node, end_node):
     ...         self._id = rid
     ...         self._start = start_node
     ...         self._end = end_node
-    ...         self._length = length
     ...     @property
     ...     def id(self): return self._id
     ...     @property
@@ -223,9 +224,16 @@ class NetworkReach(ABC):
     ...     @property
     ...     def end(self): return self._end
     ...     @property
-    ...     def length(self): return self._length
-    ...     @property
     ...     def breakpoints(self): return []
+
+    Add a :attr:`length` property on top of that when the domain has one:
+
+    >>> class MyMeasuredReach(MyReach):
+    ...     def __init__(self, rid, start_node, end_node, length):
+    ...         super().__init__(rid, start_node, end_node)
+    ...         self._length = length
+    ...     @property
+    ...     def length(self): return self._length
 
     See Also
     --------
@@ -254,10 +262,9 @@ class NetworkReach(ABC):
         pass
 
     @property
-    @abstractmethod
-    def length(self) -> float:
-        """Total length of this reach in network units."""
-        pass
+    def length(self) -> float | None:
+        """Total length of this reach in network units, or ``None`` if undefined."""
+        return None
 
     @property
     @abstractmethod
@@ -324,14 +331,18 @@ class BasicReach(NetworkReach):
         Start node.
     end : NetworkNode
         End node.
-    length : float
-        Reach length.
+    length : float, optional
+        Reach length, by default None (undefined).
     breakpoints : list[ReachBreakPoint], optional
         Intermediate break points, by default empty.
 
     Examples
     --------
     >>> reach = BasicReach("reach_1", node_a, node_b, length=250.0)
+
+    Where the domain has no reach length, leave it out:
+
+    >>> reach = BasicReach("pipe_1", node_a, node_b)
     """
 
     def __init__(
@@ -339,7 +350,7 @@ class BasicReach(NetworkReach):
         id: str,
         start: NetworkNode,
         end: NetworkNode,
-        length: float,
+        length: float | None = None,
         breakpoints: list[ReachBreakPoint] | None = None,
     ) -> None:
         self._id = id
@@ -361,7 +372,7 @@ class BasicReach(NetworkReach):
         return self._end
 
     @property
-    def length(self) -> float:
+    def length(self) -> float | None:
         return self._length
 
     @property
@@ -790,11 +801,17 @@ class Network:
                     g0.add_node(bp_key, data=bp.data)
 
                 g0.add_edge(start_key, bp_keys[0], length=reach.breakpoints[0].distance)
-                g0.add_edge(
-                    bp_keys[-1],
-                    end_key,
-                    length=reach.length - reach.breakpoints[-1].distance,
+
+                # Only the final segment needs the total length. Break point
+                # distances are known even when the total is not, so a reach
+                # without a length still gets real lengths on every edge but
+                # this one.
+                tail_length = (
+                    None
+                    if reach.length is None
+                    else reach.length - reach.breakpoints[-1].distance
                 )
+                g0.add_edge(bp_keys[-1], end_key, length=tail_length)
 
             # 3) Connect consecutive intermediate breakpoints
             for i in range(reach.n_breakpoints - 1):
