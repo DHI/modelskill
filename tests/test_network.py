@@ -606,6 +606,79 @@ def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
 
 
 # ---------------------------------------------------------------------------
+# from_res1d — input validation
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        ".res1d",  # MIKE 1D
+        ".res11",  # MIKE 11
+        ".res",  # EPANET
+        ".prf",  # MOUSE
+        ".out",  # SWMM
+        ".RES1D",  # extension check is case-insensitive
+    ],
+)
+def test_from_res1d_accepts_every_extension_mikeio1d_supports(tmp_path, suffix):
+    """Every extension mikeio1d can read gets past the extension guard.
+
+    The file does not exist, so mikeio1d - not the guard - is what complains.
+    """
+    missing_file = tmp_path / f"network{suffix}"
+
+    with pytest.raises((FileExistsError, FileNotFoundError)):
+        Network.from_res1d(missing_file)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_rejects_unsupported_extension():
+    with pytest.raises(NotImplementedError, match="Unsupported file extension"):
+        Network.from_res1d("./tests/testdata/obs.dfs0")
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_error_lists_supported_extensions():
+    from mikeio1d import Res1D
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        Network.from_res1d("network.nc")
+
+    message = str(excinfo.value)
+    for extension in Res1D.get_supported_file_extensions():
+        assert extension in message
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_accepts_open_res1d_object():
+    from mikeio1d import Res1D
+
+    res = Res1D("./tests/testdata/network.res1d")
+
+    network = Network.from_res1d(res, nodes=[], reaches=[])
+
+    assert network.graph.number_of_nodes() == 259
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_rejects_unsupported_type():
+    with pytest.raises(TypeError, match="Expected a str, Path or Res1D object"):
+        Network.from_res1d(42)  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
 # NodeObservation — alias / breakpoint node forms
 # ---------------------------------------------------------------------------
 
