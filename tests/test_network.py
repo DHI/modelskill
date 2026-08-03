@@ -979,3 +979,106 @@ class TestRes1DReachConnectivity:
     def test_mismatched_start_node_still_raises(self):
         with pytest.raises(ValueError, match="Incorrect starting node"):
             Res1DReach(_StubReach(), Res1DNode("wrong"), Res1DNode("b"))
+
+
+# ---------------------------------------------------------------------------
+# from_mike / from_epanet
+# ---------------------------------------------------------------------------
+
+requires_mikeio1d = pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+
+
+@requires_mikeio1d
+class TestFromMike:
+    def test_res1d(self):
+        network = Network.from_mike("./tests/testdata/network.res1d")
+
+        assert network.graph.number_of_nodes() == 259
+
+    def test_res11(self):
+        """MIKE 11 keeps its data on gridpoints, so its nodes are empty."""
+        network = Network.from_mike("./tests/testdata/network_cali.res11")
+
+        assert len(network._reaches) == 3
+        assert network.graph.number_of_nodes() == 71
+        assert set(network.quantities) == {"Discharge", "Water Level"}
+        assert [r.n_breakpoints for r in network._reaches.values()] == [23, 21, 23]
+
+    def test_res11_reaches_have_real_lengths(self):
+        network = Network.from_mike("./tests/testdata/network_cali.res11")
+
+        lengths = [d["length"] for *_, d in network.graph.edges(data=True)]
+        assert all(length > 0 for length in lengths)
+
+    def test_open_res1d_object(self):
+        from mikeio1d import Res1D
+
+        res = Res1D("./tests/testdata/network.res1d")
+
+        network = Network.from_mike(res, nodes=[], reaches=[])
+
+        assert network.graph.number_of_nodes() == 259
+
+    def test_epanet_file_is_redirected(self):
+        with pytest.raises(ValueError, match=r"Use Network\.from_epanet\(\)"):
+            Network.from_mike("./tests/testdata/epanet.res")
+
+    def test_unknown_extension(self):
+        with pytest.raises(NotImplementedError, match="Unsupported file extension"):
+            Network.from_mike("./tests/testdata/obs.dfs0")
+
+    def test_unsupported_type(self):
+        with pytest.raises(TypeError, match="Expected a str, Path or Res1D object"):
+            Network.from_mike(42)  # type: ignore[arg-type]
+
+
+@requires_mikeio1d
+class TestFromEpanet:
+    def test_epanet(self):
+        network = Network.from_epanet("./tests/testdata/epanet.res")
+
+        assert network.graph.number_of_nodes() == 11
+        assert len(network._reaches) == 13
+        assert set(network.quantities) == {
+            "Demand",
+            "Head",
+            "Pressure",
+            "WaterQuality",
+        }
+        assert not network.to_dataframe().empty
+
+    def test_link_node_reaches_have_no_length_or_breakpoints(self):
+        """mikeio1d reports neither for a link-node model - documented in the docstring."""
+        network = Network.from_epanet("./tests/testdata/epanet.res")
+
+        lengths = [d["length"] for *_, d in network.graph.edges(data=True)]
+        assert lengths and all(length == 0 for length in lengths)
+        assert all(r.n_breakpoints == 0 for r in network._reaches.values())
+
+    def test_reach_observation_cannot_be_matched(self, sample_node_data):
+        """Follows from having no breakpoints; also documented in the docstring."""
+        network = Network.from_epanet("./tests/testdata/epanet.res")
+        nmr = NetworkModelResult(network, item="Pressure")
+        obs = ms.ReachObservation(sample_node_data, reach="10", item="WaterLevel")
+
+        with pytest.raises(ValueError, match="breakpoints"):
+            nmr.extract(obs)
+
+    def test_mike_file_is_redirected(self):
+        with pytest.raises(ValueError, match=r"Use Network\.from_mike\(\)"):
+            Network.from_epanet("./tests/testdata/network.res1d")
+
+    def test_open_res1d_object_is_validated(self):
+        from mikeio1d import Res1D
+
+        res = Res1D("./tests/testdata/network.res1d")
+
+        with pytest.raises(ValueError, match=r"Use Network\.from_mike\(\)"):
+            Network.from_epanet(res)
+
+    @pytest.mark.parametrize("suffix", [".res", ".RES"])
+    def test_extension_is_case_insensitive(self, tmp_path, suffix):
+        with pytest.raises((FileExistsError, FileNotFoundError)):
+            Network.from_epanet(tmp_path / f"network{suffix}")
