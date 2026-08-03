@@ -132,18 +132,32 @@ Network  →  NetworkModelResult  →  match()  →  Comparer
 
 ## Building a Network
 
-You can build a `Network` object by loading it from a supported network format.
+You can build a `Network` object by loading it from a supported network result file. Reading these files relies on [mikeio1d](https://github.com/DHI/mikeio1d), so install the `networks` dependency group first.
 
-Currently, the only supported format is `mikeio.Res1D`.
+There is one constructor per product that writes the file:
 
-### Res1D file
+| Constructor | Extensions | Product |
+|---|---|---|
+| `Network.from_mike` | `.res1d`, `.res11` | MIKE 1D, MIKE 11 |
+| `Network.from_epanet` | `.res` | EPANET |
 
-The quickest way to get a `Network` is from the path to a MIKE 1D result file:
+The remaining formats mikeio1d can open cannot be turned into a `Network`, and say so when you try:
+
+| Extension | Why not |
+|---|---|
+| `.out` (SWMM), `.resx` | mikeio1d does not report reach start/end nodes for these, so there is no topology to rebuild. |
+| `.prf`, `.crf`, `.xrf` (MOUSE), `.whr` (Water Hammer) | No test fixture exists for these formats, so support cannot be verified. [Open an issue](https://github.com/DHI/modelskill/issues) if you need one. |
+
+### From a network result file
+
+The quickest way to get a `Network` is from the path to a result file:
 
 ```{python}
 # | echo: false
 
 path_to_res1d = "../../tests/testdata/network.res1d"
+path_to_res11 = "../../tests/testdata/network_cali.res11"
+path_to_epanet = "../../tests/testdata/epanet.res"
 path_to_sensor_data_1 = "../../tests/testdata/network_sensor_1.csv"
 path_to_sensor_data_2 = "../../tests/testdata/network_sensor_2.csv"
 ```
@@ -151,7 +165,7 @@ path_to_sensor_data_2 = "../../tests/testdata/network_sensor_2.csv"
 ```{python}
 from modelskill.network import Network
 
-network = Network.from_res1d(path_to_res1d)
+network = Network.from_mike(path_to_res1d)
 network
 ```
 
@@ -161,18 +175,42 @@ or a `mikeio1d.Res1D` that has already been opened:
 from mikeio1d import Res1D
 
 res = Res1D(path_to_res1d)
-network = Network.from_res1d(res)
+network = Network.from_mike(res)
 ```
 
-A `Res1D` network contains multiple levels that are unified into a generic network structure as depicted in the image below. The image introduces concepts like _find_, _recall_ and _boundary_ which are explained in the following sections.
+MIKE 11 files work the same way. Note that MIKE 11 keeps its timeseries on reach gridpoints rather than on nodes, so the nodes of such a network carry no data of their own:
+
+```{python}
+Network.from_mike(path_to_res11)
+```
+
+EPANET results use `from_epanet`:
+
+```{python}
+Network.from_epanet(path_to_epanet)
+```
+
+::: {.callout-warning}
+## EPANET networks have no reach geometry
+
+EPANET is a link-node model, and mikeio1d reports no length and a single synthetic gridpoint for each reach. So for an EPANET network:
+
+* every edge of `network.graph` has `length=0`, which makes graph algorithms weighted by length meaningless
+* reaches have no breakpoints, so a `ReachObservation` cannot be matched — use `NodeObservation` instead
+* `find(reach=..., distance=<number>)` never resolves; only `distance="start"` and `distance="end"` work
+
+Node timeseries, `to_dataframe()`, `to_dataset()`, `find(node=...)` and `recall()` are unaffected.
+:::
+
+A MIKE 1D network contains multiple levels that are unified into a generic network structure as depicted in the image below. The image introduces concepts like _find_, _recall_ and _boundary_ which are explained in the following sections.
 
 ![How a Res1D file maps to a Network object. Reaches and nodes are re-indexed as integers; boundary nodes expose `find()`/`recall()` round-trip lookups.](../images/res1d_network_mapping.png)
 
 #### Selective loading
 
-Large Res1D files can contain thousands of nodes and gridpoints. Loading all of that data into memory is slow and may cause memory issues — especially when you only need the timeseries at a handful of nodes where observations exist.
+Large result files can contain thousands of nodes and gridpoints. Loading all of that data into memory is slow and may cause memory issues — especially when you only need the timeseries at a handful of nodes where observations exist.
 
-`from_res1d` accepts two optional arguments to restrict what gets loaded:
+Both constructors accept the same two optional arguments to restrict what gets loaded:
 
 | Argument | Type | Effect |
 |---|---|---|
@@ -186,7 +224,7 @@ Selective loading only controls **which timeseries are held in memory**. The ful
 The most memory-efficient setup — useful when you only care about specific junction nodes — is to pass the node IDs you need and skip all intermediate gridpoints with `reaches=[]`:
 
 ```{python}
-network_subset = Network.from_res1d(
+network_subset = Network.from_mike(
     path_to_res1d,
     nodes=["78", "46"],
     reaches=[],
@@ -197,7 +235,7 @@ network_subset
 If you also need gridpoint data along a particular reach, pass its name (or a list of names):
 
 ```{python}
-network_subset = Network.from_res1d(
+network_subset = Network.from_mike(
     path_to_res1d,
     nodes=["78", "46"],
     reaches=["94l1"],
