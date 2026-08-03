@@ -24,6 +24,8 @@ from modelskill.network import (
     Network,
     BasicNode,
     BasicReach,
+    NetworkReach,
+    ReachBreakPoint,
     _EPANET_EXTENSIONS,
     _MIKE_EXTENSIONS,
     _UNSUPPORTED_EXTENSIONS,
@@ -614,6 +616,119 @@ def test_from_mike_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
 
 
 # ---------------------------------------------------------------------------
+# Optional reach length
+# ---------------------------------------------------------------------------
+
+
+class _StubBreakPoint(ReachBreakPoint):
+    """Minimal concrete ReachBreakPoint for building reaches by hand."""
+
+    def __init__(self, reach_id, distance, data=None):
+        self._id = (reach_id, distance)
+        self._data = pd.DataFrame() if data is None else data
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def data(self):
+        return self._data
+
+
+def _two_node_pair():
+    time = pd.date_range("2020", periods=3, freq="h")
+    df = pd.DataFrame({"WaterLevel": [1.0, 1.1, 1.2]}, index=time)
+    return BasicNode("a", df), BasicNode("b", df.copy())
+
+
+class TestOptionalReachLength:
+    """Reach length is undefined in some domains, so it must be omittable."""
+
+    def test_subclass_may_omit_length(self):
+        class LengthlessReach(NetworkReach):
+            def __init__(self, id, start, end):
+                self._id, self._start, self._end = id, start, end
+
+            @property
+            def id(self):
+                return self._id
+
+            @property
+            def start(self):
+                return self._start
+
+            @property
+            def end(self):
+                return self._end
+
+            @property
+            def breakpoints(self):
+                return []
+
+        a, b = _two_node_pair()
+        reach = LengthlessReach("r1", a, b)
+
+        assert reach.length is None
+        assert Network([reach]).graph.number_of_nodes() == 2
+
+    def test_basic_reach_length_defaults_to_none(self):
+        a, b = _two_node_pair()
+
+        assert BasicReach("r1", a, b).length is None
+
+    def test_edge_length_is_none_when_undefined(self):
+        a, b = _two_node_pair()
+
+        network = Network([BasicReach("r1", a, b)])
+
+        assert [d["length"] for *_, d in network.graph.edges(data=True)] == [None]
+
+    def test_breakpoint_distances_survive_an_undefined_length(self):
+        """Only the final segment needs the total, so the rest keep real lengths."""
+        a, b = _two_node_pair()
+        breakpoints = [_StubBreakPoint("r1", d) for d in (30.0, 70.0)]
+
+        network = Network([BasicReach("r1", a, b, breakpoints=breakpoints)])
+
+        lengths = sorted(
+            (d["length"] for *_, d in network.graph.edges(data=True)),
+            key=lambda v: (v is None, v),
+        )
+        assert lengths == [30.0, 40.0, None]
+
+    def test_length_weighted_algorithms_fail_loudly(self):
+        """Storing None keeps networkx honest.
+
+        Omitting the attribute instead would let networkx default the weight to
+        1, so every call below would return a plausible but meaningless number.
+        With None, shortest-path treats the edge as hidden and the arithmetic
+        consumers raise.
+        """
+        import networkx as nx
+
+        a, b = _two_node_pair()
+        g = Network([BasicReach("r1", a, b)]).graph
+
+        with pytest.raises(nx.NetworkXNoPath):
+            nx.shortest_path_length(g, 0, 1, weight="length")
+
+        with pytest.raises(TypeError):
+            g.size(weight="length")
+
+    def test_known_length_is_unchanged(self):
+        a, b = _two_node_pair()
+        breakpoints = [_StubBreakPoint("r1", 40.0)]
+
+        network = Network([BasicReach("r1", a, b, 100.0, breakpoints)])
+
+        assert sorted(d["length"] for *_, d in network.graph.edges(data=True)) == [
+            40.0,
+            60.0,
+        ]
+
+
+# ---------------------------------------------------------------------------
 # Which extensions each constructor accepts, and why the rest are refused
 # ---------------------------------------------------------------------------
 
@@ -919,6 +1034,21 @@ class TestRes1DReachConnectivity:
     def test_mismatched_start_node_still_raises(self):
         with pytest.raises(ValueError, match="Incorrect starting node"):
             Res1DReach(_StubReach(), Res1DNode("wrong"), Res1DNode("b"))
+
+
+class TestRes1DReachLength:
+    """mikeio1d returns 0 when it cannot read a length; that is not a real zero."""
+
+    @pytest.mark.parametrize("reported", [0, 0.0])
+    def test_zero_becomes_undefined(self, reported):
+        reach = Res1DReach(_StubReach(length=reported), Res1DNode("a"), Res1DNode("b"))
+
+        assert reach.length is None
+
+    def test_real_length_passes_through(self):
+        reach = Res1DReach(_StubReach(length=47.5), Res1DNode("a"), Res1DNode("b"))
+
+        assert reach.length == 47.5
 
 
 # ---------------------------------------------------------------------------
