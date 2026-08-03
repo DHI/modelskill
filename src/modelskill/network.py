@@ -59,6 +59,23 @@ _EXTENSION_CONSTRUCTORS: dict[str, str] = {
 }
 
 
+def _check_file_path_is_str(res: Res1D) -> None:
+    """Reject a Res1D opened with a path object rather than a string.
+
+    mikeio1d resolves reach topology with ``str.endswith`` on
+    ``Res1D.file_path``, which raises ``AttributeError`` from deep inside the
+    load when that attribute is a ``Path``. Fail here instead, where the cause
+    can be named.
+    """
+    file_path = getattr(res, "file_path", None)
+    if file_path is not None and not isinstance(file_path, str):
+        raise TypeError(
+            f"This Res1D was opened with a {type(file_path).__name__} file_path, "
+            "which mikeio1d cannot resolve reach topology from. Re-open it as "
+            "Res1D(str(path)), or pass the path to the constructor directly."
+        )
+
+
 class NetworkNode(ABC):
     """Abstract base class for a node in a network.
 
@@ -478,7 +495,8 @@ class Network:
             cls._validate_extension(path.suffix, allowed=allowed, caller=caller)
             res = _Res1D(str(path))
         elif isinstance(res, _Res1D):
-            suffix = Path(str(res.file_path)).suffix
+            _check_file_path_is_str(res)
+            suffix = Path(res.file_path).suffix
             cls._validate_extension(suffix, allowed=allowed, caller=caller)
         else:
             raise TypeError(
