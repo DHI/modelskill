@@ -753,13 +753,17 @@ class TestExtensionPolicy:
         for extension in _UNSUPPORTED_EXTENSIONS:
             assert extension not in message
 
-    @pytest.mark.parametrize(
-        "filename", ["./tests/testdata/epanet.resx", "./tests/testdata/swmm.out"]
-    )
-    def test_formats_without_reach_connectivity_are_refused(self, filename):
-        """Real files, so these fail if mikeio1d ever starts exposing connectivity."""
-        with pytest.raises(NotImplementedError, match="reach start/end nodes"):
-            Network.from_mike(filename)
+    def test_swmm_refusal_names_the_companion_inp(self):
+        """A real file, so this fails the day SWMM support lands."""
+        with pytest.raises(NotImplementedError, match=r"companion '\.inp'"):
+            Network.from_mike("./tests/testdata/swmm.out")
+
+    def test_resx_refusal_points_at_the_resx_argument(self):
+        """'.resx' is a companion, so the message must name what to do instead."""
+        with pytest.raises(
+            NotImplementedError, match=r"from_epanet\(res, resx=\.\.\.\)"
+        ):
+            Network.from_mike("./tests/testdata/epanet.resx")
 
     @pytest.mark.parametrize("suffix", [".prf", ".crf", ".xrf", ".whr"])
     def test_formats_without_a_fixture_are_refused(self, tmp_path, suffix):

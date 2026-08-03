@@ -33,19 +33,29 @@ if TYPE_CHECKING:
 _MIKE_EXTENSIONS = frozenset({".res1d", ".res11"})
 _EPANET_EXTENSIONS = frozenset({".res"})
 
-_NO_CONNECTIVITY = (
-    "mikeio1d does not expose reach start/end nodes for {product} results, "
-    "so the network topology cannot be reconstructed."
-)
 _NO_FIXTURE = (
     "{product} results are not supported yet: modelskill has no test fixture for "
     "this format, so support cannot be verified. Please open an issue if you need it."
 )
+# A result file that holds timeseries but no topology of its own. The connectivity
+# is in a companion file we do not parse yet.
+_TOPOLOGY_IN_COMPANION_FILE = (
+    "SWMM '.out' files carry no reach connectivity of their own - it lives in the "
+    "companion '.inp' input file, which modelskill does not read yet. Tracked in "
+    "https://github.com/DHI/modelskill/issues/689."
+)
+# A companion result file: readable, but it describes a network defined elsewhere.
+_COMPANION_RESULT_FILE = (
+    "'.resx' holds extra EPANET results (tank volume, pump energy) for a network "
+    "defined in the sibling '.res' file, so it has no topology of its own. Read the "
+    "'.res' file and pass this one alongside it: "
+    "Network.from_epanet(res, resx=...)."
+)
 
 # extension -> why modelskill will not read it, even though mikeio1d can
 _UNSUPPORTED_EXTENSIONS: dict[str, str] = {
-    ".out": _NO_CONNECTIVITY.format(product="SWMM"),
-    ".resx": _NO_CONNECTIVITY.format(product=".resx"),
+    ".out": _TOPOLOGY_IN_COMPANION_FILE,
+    ".resx": _COMPANION_RESULT_FILE,
     ".prf": _NO_FIXTURE.format(product="MOUSE"),
     ".crf": _NO_FIXTURE.format(product="MOUSE"),
     ".xrf": _NO_FIXTURE.format(product="MOUSE"),
