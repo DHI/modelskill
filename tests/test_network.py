@@ -14,6 +14,7 @@ from modelskill.model.network import (
     NetworkModelResult,
     NodeModelResult,
 )
+from modelskill.model.adapters._res1d import _simplify_colnames
 from modelskill.network import (
     Network,
     BasicNode,
@@ -200,7 +201,8 @@ class TestNetworkModelResult:
         obs = ms.PointObservation(df, x=0.0, y=0.0)
 
         with pytest.raises(
-            TypeError, match="NetworkModelResult supports NodeObservation and ReachObservation"
+            TypeError,
+            match="NetworkModelResult supports NodeObservation and ReachObservation",
         ):
             nmr.extract(obs)
 
@@ -473,9 +475,7 @@ def test_extract_reach_observation_non_equivalent_breakpoints_raises(sample_node
     obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
     obs = ms.ReachObservation(obs_data, reach="113l1", item="Discharge")
 
-    with pytest.raises(
-        ValueError, match="Not all data in breakpoints are equivalent"
-    ):
+    with pytest.raises(ValueError, match="Not all data in breakpoints are equivalent"):
         nmr.extract(obs)
 
 
@@ -858,3 +858,38 @@ class TestNetworkModelResultAliasResolution:
         comparer = ms.match(obs, nmr)
         assert comparer.n_points > 0
         assert "Network_Model" in comparer.mod_names
+
+
+# ---------------------------------------------------------------------------
+# Res1D adapter — no mikeio1d required, the adapter is duck-typed
+# ---------------------------------------------------------------------------
+
+
+class _StubLocation:
+    """Stands in for a mikeio1d ResultNode / ResultGridPoint."""
+
+    def __init__(self, quantities, df=None):
+        self.quantities = quantities
+        self._df = df
+
+    def to_dataframe(self):
+        if self._df is None:
+            raise AssertionError("to_dataframe() should not be called")
+        return self._df
+
+
+class TestSimplifyColnames:
+    def test_location_without_quantities_gives_empty_frame(self):
+        """MIKE 11 keeps its data on gridpoints, leaving nodes with no quantities."""
+        df = _simplify_colnames(_StubLocation(quantities=[]))
+
+        assert df.empty
+        assert list(df.columns) == []
+
+    def test_quantity_columns_are_stripped_of_location_suffix(self):
+        time = pd.date_range("2020", periods=2, freq="h")
+        raw = pd.DataFrame({"WaterLevel:node_1": [1.0, 2.0]}, index=time)
+
+        df = _simplify_colnames(_StubLocation(quantities=["WaterLevel"], df=raw))
+
+        assert list(df.columns) == ["WaterLevel"]

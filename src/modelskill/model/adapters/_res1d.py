@@ -13,6 +13,12 @@ from modelskill.network import NetworkNode, ReachBreakPoint, NetworkReach
 def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
     # We remove suffixes and indexes so the columns contain only the quantity names
 
+    # Some formats keep no timeseries at all on some locations - MIKE 11, for instance,
+    # stores everything on reach gridpoints, leaving the nodes empty. Asking mikeio1d
+    # for a dataframe there raises, so return an empty one instead.
+    if not node.quantities:
+        return pd.DataFrame()
+
     # The columns in a Res1D dataframe follow the convention "Quantity:Location:Sublocation"
     # where Location refers to the node id or the reach id followed by the chainage.
     RES1D_NAME_SEP = ":"
