@@ -535,8 +535,8 @@ class Network:
         EPANET is a link-node model, and mikeio1d reports no length and a
         single synthetic gridpoint for each of its reaches. As a result:
 
-        * every edge of :attr:`graph` has ``length=0``, so graph algorithms
-          weighted by length are meaningless
+        * every edge of :attr:`graph` has ``length=None``, so a length-weighted
+          graph algorithm fails rather than returning a meaningless number
         * reaches have no breakpoints, so
           :class:`~modelskill.obs.ReachObservation` cannot be matched against
           an EPANET network — use :class:`~modelskill.obs.NodeObservation`

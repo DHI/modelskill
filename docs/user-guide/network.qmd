@@ -195,7 +195,7 @@ Network.from_epanet(path_to_epanet)
 
 EPANET is a link-node model, and mikeio1d reports no length and a single synthetic gridpoint for each reach. So for an EPANET network:
 
-* every edge of `network.graph` has `length=0`, which makes graph algorithms weighted by length meaningless
+* every edge of `network.graph` has `length=None`. A length-weighted `networkx` call then fails rather than returning a meaningless number — shortest-path treats the edge as unreachable, and anything that sums the weights raises `TypeError`
 * reaches have no breakpoints, so a `ReachObservation` cannot be matched — use `NodeObservation` instead
 * `find(reach=..., distance=<number>)` never resolves; only `distance="start"` and `distance="end"` work
 
@@ -423,7 +423,9 @@ Use `ReachObservation` when your measured quantity is representative of the whol
 In case you have your network data in a format that is not included in [Building a Network](#building-a-network), you can assemble a `Network` object by subclassing the abstract base classes `NetworkNode` and `NetworkReach`.
 
 `NetworkNode` requires three properties: `id`, `data`, and `boundary`.
-`NetworkReach` requires five: `id`, `start`, `end`, `length`, and `breakpoints`.
+`NetworkReach` requires four: `id`, `start`, `end`, and `breakpoints`.
+
+`NetworkReach.length` is optional and defaults to `None`. Reach length matters in some domains (rivers, sewer networks) and not in others (link-node water distribution models), so override it only where a length exists. Where it is left undefined, the reach contributes an edge with `length=None` to `network.graph`, which keeps length-weighted graph algorithms from quietly treating the reach as free. Nothing else in modelskill reads the length — matching and extraction work from break point distances alone.
 
 
 The following is a simple implementation example:
@@ -490,7 +492,7 @@ class ExampleReach(NetworkReach):
 ```
 
 ::: {.callout-tip}
-The three abstract properties that **every** `NetworkNode` subclass must implement are `id`, `data` and `boundary`. If `boundary` is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a `NetworkReach` with no intermediate points can return an empty `breakpoints` list.
+The three abstract properties that **every** `NetworkNode` subclass must implement are `id`, `data` and `boundary`. If `boundary` is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a `NetworkReach` with no intermediate points can return an empty `breakpoints` list, and one with no meaningful length can leave the `length` property out altogether.
 :::
 
 
