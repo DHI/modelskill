@@ -452,7 +452,7 @@ class TestNetworkIntegration:
 )
 def test_open_res1d():
     path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
+    network = Network.from_mike(path_to_file)
     assert network.graph.number_of_nodes() == 259
 
 
@@ -461,7 +461,7 @@ def test_open_res1d():
 )
 def test_extract_reach_observation_happy_path(sample_node_data):
     path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
+    network = Network.from_mike(path_to_file)
     nmr = NetworkModelResult(network, item="Discharge", name="network_model")
     obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
     obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
@@ -478,7 +478,7 @@ def test_extract_reach_observation_happy_path(sample_node_data):
 )
 def test_extract_reach_observation_non_equivalent_breakpoints_raises(sample_node_data):
     path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
+    network = Network.from_mike(path_to_file)
     nmr = NetworkModelResult(network, item="Discharge")
     obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
     obs = ms.ReachObservation(obs_data, reach="113l1", item="Discharge")
@@ -494,7 +494,7 @@ def test_extract_reach_observation_with_reaches_not_populated_raises_valueerror(
     sample_node_data,
 ):
     path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file, reaches=[])
+    network = Network.from_mike(path_to_file, reaches=[])
     nmr = NetworkModelResult(network, item="WaterLevel")
     obs = ms.ReachObservation(sample_node_data, reach="100l1", item="WaterLevel")
 
@@ -509,7 +509,7 @@ def test_extract_reach_observation_breakpoint_node_missing_raises_valueerror(
     sample_node_data,
 ):
     path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
+    network = Network.from_mike(path_to_file)
     nmr = NetworkModelResult(network, item="Discharge")
     obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
     baseline_obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
@@ -530,13 +530,13 @@ def test_extract_reach_observation_breakpoint_node_missing_raises_valueerror(
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
-def test_from_res1d_nodes_filter_creates_full_network():
+def test_from_mike_nodes_filter_creates_full_network():
     """When nodes is specified, the full network topology is created."""
     path_to_file = "./tests/testdata/network.res1d"
-    full_network = Network.from_res1d(path_to_file)
+    full_network = Network.from_mike(path_to_file)
 
     selected_nodes = ["1", "108"]
-    partial_network = Network.from_res1d(path_to_file, nodes=selected_nodes)
+    partial_network = Network.from_mike(path_to_file, nodes=selected_nodes)
 
     # Full topology is preserved
     assert (
@@ -547,12 +547,12 @@ def test_from_res1d_nodes_filter_creates_full_network():
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
-def test_from_res1d_nodes_filter_only_selected_have_data():
+def test_from_mike_nodes_filter_only_selected_have_data():
     """When nodes is specified, only selected nodes contain non-empty data."""
     path_to_file = "./tests/testdata/network.res1d"
 
     selected_nodes = ["1", "108"]
-    network = Network.from_res1d(path_to_file, nodes=selected_nodes, reaches=[])
+    network = Network.from_mike(path_to_file, nodes=selected_nodes, reaches=[])
     g = network.graph.copy()
 
     n_nodes = network.graph.number_of_nodes()
@@ -564,12 +564,12 @@ def test_from_res1d_nodes_filter_only_selected_have_data():
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
-def test_from_res1d_nodes_single_string():
+def test_from_mike_nodes_single_string():
     """nodes argument accepts a single string (not just a list)."""
     path_to_file = "./tests/testdata/network.res1d"
-    full_network = Network.from_res1d(path_to_file)
+    full_network = Network.from_mike(path_to_file)
 
-    network = Network.from_res1d(path_to_file, nodes="108", reaches=[])
+    network = Network.from_mike(path_to_file, nodes="108", reaches=[])
     g = network.graph.copy()
 
     assert g.number_of_nodes() == full_network.graph.number_of_nodes()
@@ -586,7 +586,7 @@ def test_dataframe_from_partial_network():
     """nodes argument accepts a single string (not just a list)."""
     path_to_file = "./tests/testdata/network.res1d"
     selected_nodes = ["108", "101"]
-    network = Network.from_res1d(path_to_file, nodes=selected_nodes, reaches=[])
+    network = Network.from_mike(path_to_file, nodes=selected_nodes, reaches=[])
     nodes_in_df = network.to_dataframe().droplevel(axis=1, level=1).columns
 
     assert set(nodes_in_df) == set([network.find(n) for n in selected_nodes])
@@ -595,10 +595,10 @@ def test_dataframe_from_partial_network():
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
-def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
+def test_from_mike_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
     path_to_file = "./tests/testdata/network.res1d"
-    full_network = Network.from_res1d(path_to_file)
-    network = Network.from_res1d(path_to_file, nodes=[], reaches=[])
+    full_network = Network.from_mike(path_to_file)
+    network = Network.from_mike(path_to_file, nodes=[], reaches=[])
 
     assert network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
 
@@ -614,121 +614,61 @@ def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
 
 
 # ---------------------------------------------------------------------------
-# from_res1d — input validation
+# Which extensions each constructor accepts, and why the rest are refused
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
-@pytest.mark.parametrize(
-    "suffix",
-    [
-        ".res1d",  # MIKE 1D
-        ".res11",  # MIKE 11
-        ".res",  # EPANET
-        ".RES1D",  # extension check is case-insensitive
-    ],
-)
-def test_from_res1d_accepts_readable_extensions(tmp_path, suffix):
-    """A readable extension gets past the extension guard.
+class TestExtensionPolicy:
+    @pytest.mark.parametrize("suffix", [".res1d", ".res11", ".RES1D"])
+    def test_from_mike_accepts_mike_extensions(self, tmp_path, suffix):
+        """The file does not exist, so mikeio1d - not the guard - is what complains."""
+        with pytest.raises((FileExistsError, FileNotFoundError)):
+            Network.from_mike(tmp_path / f"network{suffix}")
 
-    The file does not exist, so mikeio1d - not the guard - is what complains.
-    """
-    missing_file = tmp_path / f"network{suffix}"
+    def test_error_lists_only_readable_extensions(self):
+        with pytest.raises(NotImplementedError) as excinfo:
+            Network.from_mike("network.nc")
 
-    with pytest.raises((FileExistsError, FileNotFoundError)):
-        Network.from_res1d(missing_file)
+        message = str(excinfo.value)
+        for extension in _MIKE_EXTENSIONS | _EPANET_EXTENSIONS:
+            assert extension in message
+        for extension in _UNSUPPORTED_EXTENSIONS:
+            assert extension not in message
 
+    @pytest.mark.parametrize(
+        "filename", ["./tests/testdata/epanet.resx", "./tests/testdata/swmm.out"]
+    )
+    def test_formats_without_reach_connectivity_are_refused(self, filename):
+        """Real files, so these fail if mikeio1d ever starts exposing connectivity."""
+        with pytest.raises(NotImplementedError, match="reach start/end nodes"):
+            Network.from_mike(filename)
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_from_res1d_rejects_unsupported_extension():
-    with pytest.raises(NotImplementedError, match="Unsupported file extension"):
-        Network.from_res1d("./tests/testdata/obs.dfs0")
+    @pytest.mark.parametrize("suffix", [".prf", ".crf", ".xrf", ".whr"])
+    def test_formats_without_a_fixture_are_refused(self, tmp_path, suffix):
+        with pytest.raises(NotImplementedError, match="no test fixture"):
+            Network.from_mike(tmp_path / f"network{suffix}")
 
+    def test_every_mikeio1d_extension_is_accounted_for(self):
+        """A new mikeio1d format must be read or explicitly refused, never ignored."""
+        from mikeio1d import Res1D
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_from_res1d_error_lists_only_readable_extensions():
-    with pytest.raises(NotImplementedError) as excinfo:
-        Network.from_res1d("network.nc")
+        accounted_for = (
+            _MIKE_EXTENSIONS | _EPANET_EXTENSIONS | set(_UNSUPPORTED_EXTENSIONS)
+        )
 
-    message = str(excinfo.value)
-    for extension in _MIKE_EXTENSIONS | _EPANET_EXTENSIONS:
-        assert extension in message
-    for extension in _UNSUPPORTED_EXTENSIONS:
-        assert extension not in message
+        assert accounted_for == Res1D.get_supported_file_extensions()
 
+    def test_res1d_opened_with_a_path_is_refused(self):
+        """mikeio1d calls str.endswith on file_path, so a Path breaks it later on."""
+        from mikeio1d import Res1D
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-@pytest.mark.parametrize(
-    "filename",
-    ["./tests/testdata/epanet.resx", "./tests/testdata/swmm.out"],
-)
-def test_formats_without_reach_connectivity_are_rejected(filename):
-    """Real files, so these fail if mikeio1d ever starts exposing connectivity."""
-    with pytest.raises(NotImplementedError, match="reach start/end nodes"):
-        Network.from_res1d(filename)
+        res = Res1D(Path("./tests/testdata/network.res1d"))
 
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-@pytest.mark.parametrize("suffix", [".prf", ".crf", ".xrf", ".whr"])
-def test_formats_without_a_fixture_are_rejected(tmp_path, suffix):
-    with pytest.raises(NotImplementedError, match="no test fixture"):
-        Network.from_res1d(tmp_path / f"network{suffix}")
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_every_mikeio1d_extension_is_accounted_for():
-    """A new mikeio1d format must be read or explicitly refused, never ignored."""
-    from mikeio1d import Res1D
-
-    accounted_for = _MIKE_EXTENSIONS | _EPANET_EXTENSIONS | set(_UNSUPPORTED_EXTENSIONS)
-
-    assert accounted_for == Res1D.get_supported_file_extensions()
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_from_res1d_accepts_open_res1d_object():
-    from mikeio1d import Res1D
-
-    res = Res1D("./tests/testdata/network.res1d")
-
-    network = Network.from_res1d(res, nodes=[], reaches=[])
-
-    assert network.graph.number_of_nodes() == 259
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_from_res1d_rejects_res1d_opened_with_a_path():
-    """mikeio1d calls str.endswith on file_path, so a Path breaks it later on."""
-    from mikeio1d import Res1D
-
-    res = Res1D(Path("./tests/testdata/network.res1d"))
-
-    with pytest.raises(TypeError, match="file_path"):
-        Network.from_res1d(res)
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_from_res1d_rejects_unsupported_type():
-    with pytest.raises(TypeError, match="Expected a str, Path or Res1D object"):
-        Network.from_res1d(42)  # type: ignore[arg-type]
+        with pytest.raises(TypeError, match="file_path"):
+            Network.from_mike(res)
 
 
 # ---------------------------------------------------------------------------
