@@ -15,6 +15,7 @@ from modelskill.model.network import (
     NetworkModelResult,
     NodeModelResult,
 )
+from modelskill.model.adapters._inp import read_pipe_lengths, read_sections
 from modelskill.model.adapters._res1d import (
     Res1DNode,
     Res1DReach,
@@ -1124,7 +1125,7 @@ class TestFromEpanet:
         assert not network.to_dataframe().empty
 
     def test_link_node_reaches_have_no_length_or_breakpoints(self):
-        """mikeio1d reports neither for a link-node model - documented in the docstring."""
+        """Without inp=, mikeio1d reports neither - documented in the docstring."""
         network = Network.from_epanet("./tests/testdata/epanet.res")
 
         lengths = [d["length"] for *_, d in network.graph.edges(data=True)]
@@ -1156,3 +1157,227 @@ class TestFromEpanet:
     def test_extension_is_case_insensitive(self, tmp_path, suffix):
         with pytest.raises((FileExistsError, FileNotFoundError)):
             Network.from_epanet(tmp_path / f"network{suffix}")
+
+
+# ---------------------------------------------------------------------------
+# EPANET companion files: .inp for reach lengths, .resx for extra quantities
+# ---------------------------------------------------------------------------
+
+_EPANET_RES = "./tests/testdata/epanet.res"
+_EPANET_RESX = "./tests/testdata/epanet.resx"
+_EPANET_INP = "./tests/testdata/epanet.inp"
+
+# The 12 [PIPES] entries; reach "9" is the pump, which carries no length.
+_PUMP_REACH = "9"
+
+
+@requires_mikeio1d
+class TestEpanetCompanionInp:
+    """`.inp` is the only one of the three files carrying reach lengths."""
+
+    def test_pipe_reaches_get_real_lengths(self):
+        network = Network.from_epanet(_EPANET_RES, inp=_EPANET_INP)
+
+        lengths = {r.id: r.length for r in network._reaches.values()}
+        assert lengths["10"] == pytest.approx(3209.544)
+        assert lengths["110"] == pytest.approx(60.96)
+
+    def test_pump_reach_stays_undefined(self):
+        """[PIPES] is the only section with lengths, so pumps keep None."""
+        network = Network.from_epanet(_EPANET_RES, inp=_EPANET_INP)
+
+        lengths = {r.id: r.length for r in network._reaches.values()}
+        assert lengths[_PUMP_REACH] is None
+        assert sum(v is None for v in lengths.values()) == 1
+
+    def test_graph_edges_carry_the_lengths(self):
+        network = Network.from_epanet(_EPANET_RES, inp=_EPANET_INP)
+
+        lengths = [d["length"] for *_, d in network.graph.edges(data=True)]
+        assert sum(v is not None for v in lengths) == 12
+
+    def test_node_ids_overlapping_reach_ids_are_not_confused(self):
+        """Most IDs here name both a node and a reach, e.g. '9', '10', '21'."""
+        network = Network.from_epanet(_EPANET_RES, inp=_EPANET_INP)
+
+        assert set(network._reaches) & set(network._alias_map)  # they do overlap
+        # Reach "10" is 3209.544 long; node "10" is untouched by the length map.
+        assert network._reaches["10"].length == pytest.approx(3209.544)
+        node_10 = network.find(node="10")
+        assert "Head" in network.to_dataframe()[node_10].columns
+
+    def test_wrong_suffix_is_refused(self):
+        with pytest.raises(ValueError, match=r"Expected an EPANET '\.inp'"):
+            Network.from_epanet(_EPANET_RES, inp=_EPANET_RESX)
+
+    def test_file_without_a_pipes_section_is_refused(self, tmp_path):
+        other = tmp_path / "not-epanet.inp"
+        other.write_text("[JUNCTIONS]\n;;Name\n9   1000\n")
+
+        with pytest.raises(ValueError, match=r"no \[PIPES\] section"):
+            Network.from_epanet(_EPANET_RES, inp=other)
+
+
+@requires_mikeio1d
+class TestEpanetCompanionResx:
+    """`.resx` holds extra results for the network defined in the sibling `.res`."""
+
+    def test_extra_node_quantities_are_merged(self):
+        network = Network.from_epanet(_EPANET_RES, resx=_EPANET_RESX)
+
+        assert set(network.quantities) == {
+            "Demand",
+            "Head",
+            "Pressure",
+            "WaterQuality",
+            "Volume",
+            "Volume Percentage",
+        }
+
+    def test_only_the_nodes_present_in_the_resx_gain_them(self):
+        """The .resx covers the tank and the reservoir, not all eleven nodes."""
+        network = Network.from_epanet(_EPANET_RES, resx=_EPANET_RESX)
+        df = network.to_dataframe()
+
+        with_volume = {
+            node
+            for node in df.columns.get_level_values("node").unique()
+            if "Volume" in df[node].columns
+        }
+        # Node IDs are re-indexed to integers, so recall the original labels.
+        assert {network.recall(node)["node"] for node in with_volume} == {"2", "9"}
+
+    def test_values_come_through(self):
+        network = Network.from_epanet(_EPANET_RES, resx=_EPANET_RESX)
+
+        reservoir = network.find(node="9")
+        volume = network.to_dataframe()[(reservoir, "Volume Percentage")]
+        assert len(volume) == 25
+        assert volume.notna().all()
+
+    def test_selective_loading_still_governs_what_is_read(self):
+        network = Network.from_epanet(_EPANET_RES, resx=_EPANET_RESX, nodes=["2"])
+
+        df = network.to_dataframe()
+        tank = network.find(node="2")
+        assert set(df.columns.get_level_values("node").unique()) == {tank}
+        assert "Volume" in df[tank].columns
+
+    def test_both_companions_together(self):
+        network = Network.from_epanet(_EPANET_RES, resx=_EPANET_RESX, inp=_EPANET_INP)
+
+        assert "Volume" in network.quantities
+        assert network._reaches["10"].length == pytest.approx(3209.544)
+
+    def test_an_open_res1d_object_is_accepted(self):
+        from mikeio1d import Res1D
+
+        network = Network.from_epanet(_EPANET_RES, resx=Res1D(_EPANET_RESX))
+
+        assert "Volume" in network.quantities
+
+    def test_wrong_suffix_is_refused(self):
+        with pytest.raises(ValueError, match=r"Expected an EPANET '\.resx'"):
+            Network.from_epanet(_EPANET_RES, resx=_EPANET_RES)
+
+    def test_a_result_file_of_another_format_is_refused(self):
+        from mikeio1d import Res1D
+
+        other = Res1D("./tests/testdata/network.res1d")
+
+        with pytest.raises(ValueError, match=r"Expected an EPANET '\.resx'"):
+            Network.from_epanet(_EPANET_RES, resx=other)
+
+    def test_a_companion_from_another_run_is_refused(self, monkeypatch):
+        """Merging two runs would line up silently and give a wrong network."""
+        from mikeio1d import Res1D
+
+        res = Res1D(_EPANET_RES)
+        resx = Res1D(_EPANET_RESX)
+        shifted = resx.time_index + pd.Timedelta("1D")
+
+        # Both objects share the Res1D class, so shift only this one instance.
+        original = type(resx).time_index.fget
+        monkeypatch.setattr(
+            type(resx),
+            "time_index",
+            property(lambda self: shifted if self is resx else original(self)),
+        )
+
+        with pytest.raises(ValueError, match="does not share a time axis"):
+            Network.from_epanet(res, resx=resx)
+
+    def test_a_companion_naming_an_unknown_node_is_refused(self, monkeypatch):
+        """A node the .res has never heard of means these are different models."""
+        from mikeio1d import Res1D
+
+        res = Res1D(_EPANET_RES)
+        resx = Res1D(_EPANET_RESX)
+        strangers = dict(resx.nodes) | {"not_in_the_res": None}
+
+        original = type(resx).nodes.fget
+        monkeypatch.setattr(
+            type(resx),
+            "nodes",
+            property(lambda self: strangers if self is resx else original(self)),
+        )
+
+        with pytest.raises(ValueError, match="not_in_the_res"):
+            Network.from_epanet(res, resx=resx)
+
+    def test_unsupported_type_is_refused(self):
+        with pytest.raises(TypeError, match="Expected a str, Path or Res1D object"):
+            Network.from_epanet(_EPANET_RES, resx=42)  # type: ignore[arg-type]
+
+
+class TestReadInp:
+    """Minimal .inp reader - see modelskill/model/adapters/_inp.py."""
+
+    def _write(self, tmp_path, text):
+        path = tmp_path / "model.inp"
+        path.write_text(text)
+        return path
+
+    def test_sections_are_keyed_without_brackets_and_upper_cased(self, tmp_path):
+        path = self._write(tmp_path, "[Pipes]\n1  a  b  10\n[TANKS]\n2  5\n")
+
+        assert set(read_sections(path)) == {"PIPES", "TANKS"}
+
+    def test_comment_and_blank_lines_are_dropped(self, tmp_path):
+        path = self._write(
+            tmp_path,
+            ";a leading banner\n\n[PIPES]\n"
+            ";;ID  Node1  Node2  Length\n"
+            ";;--  -----  -----  ------\n"
+            "1  a  b  10\n\n",
+        )
+
+        assert read_sections(path) == {"PIPES": [["1", "a", "b", "10"]]}
+
+    def test_trailing_comment_is_stripped_from_a_data_row(self, tmp_path):
+        path = self._write(tmp_path, "[PIPES]\n1  a  b  10  ; the short one\n")
+
+        assert read_sections(path)["PIPES"] == [["1", "a", "b", "10"]]
+
+    def test_rows_before_any_section_are_ignored(self, tmp_path):
+        path = self._write(tmp_path, "stray  row\n[PIPES]\n1  a  b  10\n")
+
+        assert read_sections(path) == {"PIPES": [["1", "a", "b", "10"]]}
+
+    def test_lengths_are_read_from_the_fourth_field(self, tmp_path):
+        path = self._write(tmp_path, "[PIPES]\n1  a  b  10.5  300  100\n")
+
+        assert read_pipe_lengths(path) == {"1": 10.5}
+
+    def test_a_short_row_raises_rather_than_dropping_a_length(self, tmp_path):
+        path = self._write(tmp_path, "[PIPES]\n1  a  b\n")
+
+        with pytest.raises(ValueError, match="Cannot read a pipe length"):
+            read_pipe_lengths(path)
+
+    def test_a_repeated_section_header_accumulates(self, tmp_path):
+        path = self._write(
+            tmp_path, "[PIPES]\n1  a  b  10\n[TANKS]\n2  5\n[PIPES]\n3  c  d  20\n"
+        )
+
+        assert read_pipe_lengths(path) == {"1": 10.0, "3": 20.0}
