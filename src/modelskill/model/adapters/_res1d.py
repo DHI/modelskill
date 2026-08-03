@@ -93,6 +93,14 @@ class Res1DReach(NetworkReach):
     ):
         self._id = reach.name
 
+        # Must be checked separately: some formats (.resx) report None for both the
+        # reach and the node, which the identity checks below would let through.
+        if reach.start_node is None or reach.end_node is None:
+            raise ValueError(
+                f"mikeio1d reported no start/end node for reach {reach.name!r}; "
+                "this result format's topology cannot be represented as a Network."
+            )
+
         if start_node.id != reach.start_node:
             raise ValueError("Incorrect starting node.")
         if end_node.id != reach.end_node:

@@ -14,7 +14,11 @@ from modelskill.model.network import (
     NetworkModelResult,
     NodeModelResult,
 )
-from modelskill.model.adapters._res1d import _simplify_colnames
+from modelskill.model.adapters._res1d import (
+    Res1DNode,
+    Res1DReach,
+    _simplify_colnames,
+)
 from modelskill.network import (
     Network,
     BasicNode,
@@ -893,3 +897,36 @@ class TestSimplifyColnames:
         df = _simplify_colnames(_StubLocation(quantities=["WaterLevel"], df=raw))
 
         assert list(df.columns) == ["WaterLevel"]
+
+
+class _StubReach:
+    """Stands in for a mikeio1d ResultReach."""
+
+    def __init__(self, name="r1", start_node="a", end_node="b", length=100.0):
+        self.name = name
+        self.start_node = start_node
+        self.end_node = end_node
+        self.length = length
+        self.gridpoints = []
+
+
+class TestRes1DReachConnectivity:
+    """Formats that expose no reach connectivity must fail with a clear message."""
+
+    @pytest.mark.parametrize("missing", ["start_node", "end_node"])
+    def test_missing_node_raises(self, missing):
+        reach = _StubReach(**{missing: None})
+
+        with pytest.raises(ValueError, match="no start/end node for reach 'r1'"):
+            Res1DReach(reach, Res1DNode("a"), Res1DNode("b"))
+
+    def test_both_nodes_missing_raises(self):
+        """.resx reports None for both, which the identity checks alone would allow."""
+        reach = _StubReach(start_node=None, end_node=None)
+
+        with pytest.raises(ValueError, match="no start/end node"):
+            Res1DReach(reach, Res1DNode(None), Res1DNode(None))  # type: ignore[arg-type]
+
+    def test_mismatched_start_node_still_raises(self):
+        with pytest.raises(ValueError, match="Incorrect starting node"):
+            Res1DReach(_StubReach(), Res1DNode("wrong"), Res1DNode("b"))
