@@ -30,6 +30,35 @@ if TYPE_CHECKING:
     from .model.adapters._res1d import Res1DReach
 
 
+_MIKE_EXTENSIONS = frozenset({".res1d", ".res11"})
+_EPANET_EXTENSIONS = frozenset({".res"})
+
+_NO_CONNECTIVITY = (
+    "mikeio1d does not expose reach start/end nodes for {product} results, "
+    "so the network topology cannot be reconstructed."
+)
+_NO_FIXTURE = (
+    "{product} results are not supported yet: modelskill has no test fixture for "
+    "this format, so support cannot be verified. Please open an issue if you need it."
+)
+
+# extension -> why modelskill will not read it, even though mikeio1d can
+_UNSUPPORTED_EXTENSIONS: dict[str, str] = {
+    ".out": _NO_CONNECTIVITY.format(product="SWMM"),
+    ".resx": _NO_CONNECTIVITY.format(product=".resx"),
+    ".prf": _NO_FIXTURE.format(product="MOUSE"),
+    ".crf": _NO_FIXTURE.format(product="MOUSE"),
+    ".xrf": _NO_FIXTURE.format(product="MOUSE"),
+    ".whr": _NO_FIXTURE.format(product="Water Hammer"),
+}
+
+# extension -> the constructor that reads it, for "use X instead" errors
+_EXTENSION_CONSTRUCTORS: dict[str, str] = {
+    **{extension: "from_mike" for extension in _MIKE_EXTENSIONS},
+    **{extension: "from_epanet" for extension in _EPANET_EXTENSIONS},
+}
+
+
 class NetworkNode(ABC):
     """Abstract base class for a node in a network.
 
@@ -482,24 +511,34 @@ class Network:
         Raises
         ------
         NotImplementedError
-            If mikeio1d cannot read the extension at all.
+            If modelskill cannot read the extension, either because mikeio1d
+            does not support it or because modelskill does not.
         ValueError
-            If mikeio1d can read it but this constructor does not accept it.
+            If another constructor is the one that reads this extension.
         """
         from mikeio1d import Res1D as _Res1D
 
         extension = suffix.lower()
 
+        # Checked before the supported set below, since these all *are* readable
+        # by mikeio1d - it is modelskill that cannot use the result.
+        reason = _UNSUPPORTED_EXTENSIONS.get(extension)
+        if reason is not None:
+            raise NotImplementedError(f"Cannot read '{suffix}' files. {reason}")
+
         supported = _Res1D.get_supported_file_extensions()
         if extension not in supported:
+            readable = sorted(supported - set(_UNSUPPORTED_EXTENSIONS))
             raise NotImplementedError(
                 f"Unsupported file extension '{suffix}'. "
-                f"Supported extensions are {sorted(supported)}."
+                f"Supported extensions are {readable}."
             )
 
         if allowed is not None and extension not in allowed:
+            constructor = _EXTENSION_CONSTRUCTORS[extension]
             raise ValueError(
-                f"Network.{caller}() reads {sorted(allowed)} files, got '{suffix}'."
+                f"Network.{caller}() reads {sorted(allowed)} files, got '{suffix}'. "
+                f"Use Network.{constructor}() instead."
             )
 
     @staticmethod
