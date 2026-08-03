@@ -413,6 +413,30 @@ class Network:
         ... )
         """
 
+        return cls._from_mikeio1d(
+            res, nodes=nodes, reaches=reaches, allowed=None, caller="from_res1d"
+        )
+
+    @classmethod
+    def _from_mikeio1d(
+        cls,
+        res: str | Path | Res1D,
+        *,
+        nodes: str | list[str] | None,
+        reaches: str | list[str] | None,
+        allowed: frozenset[str] | None,
+        caller: str,
+    ) -> Network:
+        """Shared implementation behind the public ``from_*`` constructors.
+
+        Parameters
+        ----------
+        allowed : frozenset of str or None
+            Extensions this constructor accepts, or None to accept everything
+            mikeio1d can read.
+        caller : str
+            Name of the public method, used in error messages.
+        """
         if sys.version_info >= (3, 14):
             raise NotImplementedError(
                 f"Current version of 'mikeio1d' requires python < 3.14 and {sys.version} is being used."
@@ -422,14 +446,12 @@ class Network:
 
         if isinstance(res, (str, Path)):
             path = Path(res)
-            supported = _Res1D.get_supported_file_extensions()
-            if path.suffix.lower() not in supported:
-                raise NotImplementedError(
-                    f"Unsupported file extension '{path.suffix}'. "
-                    f"Supported extensions are {sorted(supported)}."
-                )
+            cls._validate_extension(path.suffix, allowed=allowed, caller=caller)
             res = _Res1D(str(path))
-        elif not isinstance(res, _Res1D):
+        elif isinstance(res, _Res1D):
+            suffix = Path(str(res.file_path)).suffix
+            cls._validate_extension(suffix, allowed=allowed, caller=caller)
+        else:
             raise TypeError(
                 f"Expected a str, Path or Res1D object, got {type(res).__name__!r}"
             )
@@ -450,6 +472,35 @@ class Network:
 
         list_of_reaches = cls._load_res1d_network(res, nodes_list, reaches_list)
         return cls(list_of_reaches)
+
+    @staticmethod
+    def _validate_extension(
+        suffix: str, *, allowed: frozenset[str] | None, caller: str
+    ) -> None:
+        """Check a file extension against mikeio1d and against one constructor.
+
+        Raises
+        ------
+        NotImplementedError
+            If mikeio1d cannot read the extension at all.
+        ValueError
+            If mikeio1d can read it but this constructor does not accept it.
+        """
+        from mikeio1d import Res1D as _Res1D
+
+        extension = suffix.lower()
+
+        supported = _Res1D.get_supported_file_extensions()
+        if extension not in supported:
+            raise NotImplementedError(
+                f"Unsupported file extension '{suffix}'. "
+                f"Supported extensions are {sorted(supported)}."
+            )
+
+        if allowed is not None and extension not in allowed:
+            raise ValueError(
+                f"Network.{caller}() reads {sorted(allowed)} files, got '{suffix}'."
+            )
 
     @staticmethod
     def _load_res1d_network(
