@@ -392,8 +392,6 @@ class VerticalObservation(Observation):
         User-defined name for identification in plots and summaries.
     weight : float, optional
         Weighting factor for skill scores, by default 1.0.
-    keep_duplicates : {"first", "last", False}, optional
-        Strategy for handling duplicate timestamps/z pairs.
     quantity : Quantity, optional
         Physical quantity metadata used for validation against model results.
     aux_items : list[int | str], optional
@@ -445,7 +443,6 @@ class VerticalObservation(Observation):
         z_item: int | str | None = 0,
         name: str | None = None,
         weight: float = 1.0,
-        keep_duplicates: Literal["first", "last", False] = "first",
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
@@ -460,7 +457,6 @@ class VerticalObservation(Observation):
                 z_item=z_item,
                 x=x,
                 y=y,
-                keep_duplicates=keep_duplicates,
             )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)

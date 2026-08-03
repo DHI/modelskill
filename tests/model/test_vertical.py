@@ -29,25 +29,6 @@ def vertical_model_df() -> pd.DataFrame:
 
 
 @pytest.fixture
-def vertical_model_df_duplicates() -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "z": [-5.0, -5.0, -4.0, -4.0, -3.0],
-            "Salinity": [30.0, 300.0, 31.0, 310.0, 32.0],
-        },
-        index=pd.to_datetime(
-            [
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 01:00:00",
-            ]
-        ),
-    )
-
-
-@pytest.fixture
 def vertical_model_df_aux() -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -136,37 +117,22 @@ class TestVerticalModelResult:
         with pytest.raises(ValueError, match="name 'z' is reserved "):
             _ = ms.VerticalModelResult(ds_test)
 
-    # ===============
-    # test arguments options for handling duplicates
-    # ===============
-    @pytest.mark.parametrize(
-        "keep_duplicates,expected_removed,expected_z,expected_values",
-        [
-            ("first", 2, [-5.0, -4.0, -3.0], [30.0, 31.0, 32.0]),
-            ("last", 2, [-5.0, -4.0, -3.0], [300.0, 310.0, 32.0]),
-            (False, 4, [-3.0], [32.0]),
-        ],
-    )
-    def test_vertical_model_keep_duplicates_modes(
-        self,
-        vertical_model_df_duplicates,
-        keep_duplicates,
-        expected_removed,
-        expected_z,
-        expected_values,
-    ):
-        with pytest.warns(UserWarning, match=f"Removed {expected_removed} duplicate"):
-            mr = ms.VerticalModelResult(
-                vertical_model_df_duplicates,
+    def test_duplicate_time_z_pairs_raises(self):
+        df = pd.DataFrame(
+            {
+                "z": [-5.0, -4.0, -4.0],
+                "Salinity": [30.0, 31.0, 31.5],
+            },
+            index=[pd.Timestamp("2019-01-01")] * 3,
+        )
+        with pytest.raises(ValueError, match="duplicate \\(time, z\\) entries"):
+            ms.VerticalModelResult(
+                df,
                 item="Salinity",
                 z_item="z",
                 x=12.0,
                 y=55.0,
-                keep_duplicates=keep_duplicates,
             )
-
-        assert list(mr.data["z"].values) == expected_z
-        assert list(mr.data[mr.name].values) == expected_values
 
     # aux items
     def test_vertical_model_aux_items_preserved_and_tagged(self, vertical_model_df_aux):
