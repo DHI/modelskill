@@ -13,7 +13,7 @@ modelskill's constructor was named `from_res1d`, and its extension guard was bri
 Loading each of mikeio1d's own fixtures showed the nine are not interchangeable:
 
 - `.res1d` and `.res11` produce a full network with real reach lengths and gridpoints. `.res11` initially failed because MIKE 11 keeps its timeseries on reach gridpoints, leaving nodes with no quantities at all — a bug in modelskill's adapter, now fixed.
-- `.res` (EPANET) loads, but as a link-node model it reports no reach length and one synthetic gridpoint per reach.
+- `.res` (EPANET) loads, but as a link-node model it reports no reach length and one synthetic gridpoint per reach. mikeio1d signals the missing length by returning `0`, which is indistinguishable from a genuine zero.
 - `.out` (SWMM) and `.resx` expose no reach start/end nodes. There is no topology to rebuild. mikeio1d's own SWMM tests never touch reach connectivity.
 - MOUSE and `.whr` have no test fixture anywhere, including in mikeio1d's testdata, so nothing about them can be verified.
 
@@ -33,7 +33,8 @@ Every extension mikeio1d can read is accounted for in one of three module-level 
 Two supporting rules:
 
 - **A constructor requires a fixture.** Naming a product in the API is a support claim; it should be backed by a test that builds a `Network` from a real file of that product. MOUSE and Water Hammer are refused today for exactly this reason, and each becomes a six-line addition once a redistributable fixture exists.
-- **Degenerate results are documented, not warned about.** EPANET's zero-length reaches and absent breakpoints are stated in the `from_epanet` docstring and the user guide, and asserted in tests. A runtime warning would fire on correct usage and teach users to filter our warnings, and both consequences already raise where they bite.
+- **Degenerate results are documented, not warned about.** EPANET's undefined reach lengths and absent breakpoints are stated in the `from_epanet` docstring and the user guide, and asserted in tests. A runtime warning would fire on correct usage and teach users to filter our warnings, and both consequences already raise where they bite.
+- **An unreadable reach length is undefined, not zero.** `NetworkReach.length` is optional and defaults to `None`, and the adapter maps mikeio1d's `0` sentinel onto it. Reporting `0` would assert that an EPANET pipe has no extent, which is false — the length exists, mikeio1d just cannot read it — and it makes a length-weighted graph algorithm treat the reach as free to traverse. With `None`, `networkx` fails instead: shortest-path treats the edge as unreachable and weight-summing calls raise `TypeError`. Omitting the edge attribute altogether was rejected for the opposite reason, since `networkx` then defaults the weight to `1`. Nothing inside modelskill reads the length, so this only affects `Network.graph`; matching and extraction work from break point distances.
 
 ## Alternatives Considered
 
