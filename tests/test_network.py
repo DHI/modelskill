@@ -994,7 +994,7 @@ class TestFromEpanet:
         network = Network.from_epanet("./tests/testdata/epanet.res")
 
         lengths = [d["length"] for *_, d in network.graph.edges(data=True)]
-        assert lengths and all(length == 0 for length in lengths)
+        assert lengths and all(length is None for length in lengths)
         assert all(r.n_breakpoints == 0 for r in network._reaches.values())
 
     def test_reach_observation_cannot_be_matched(self, sample_node_data):

@@ -112,7 +112,13 @@ class Res1DReach(NetworkReach):
 
         self._start = start_node
         self._end = end_node
-        self._length = reach.length
+
+        # mikeio1d returns 0 when it cannot read a reach length - link-node models
+        # such as EPANET report this for every reach. Report it as undefined rather
+        # than as a zero-length reach, which would make length-weighted graph
+        # algorithms treat the reach as free. The two cases cannot be told apart
+        # upstream.
+        self._length = reach.length if reach.length else None
         self._breakpoints: list[ReachBreakPoint] = [
             GridPoint(
                 gridpoint.reach_name,
@@ -135,7 +141,7 @@ class Res1DReach(NetworkReach):
         return self._end
 
     @property
-    def length(self) -> float:
+    def length(self) -> float | None:
         return self._length
 
     @property
