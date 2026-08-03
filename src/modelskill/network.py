@@ -548,91 +548,21 @@ class Network:
         )
 
     @classmethod
-    def from_res1d(
-        cls,
-        res: str | Path | Res1D,
-        *,
-        nodes: str | list[str] | None = None,
-        reaches: str | list[str] | None = None,
-    ) -> Network:
-        """Create a Network from a Res1D file or object.
-
-        Parameters
-        ----------
-        res : str, Path or Res1D
-            Path to a network result file, or an already-opened
-            :class:`mikeio1d.Res1D` object. Any file extension that mikeio1d
-            can read is accepted (.res1d, .res11, .res, .prf, .crf, .xrf,
-            .out, .whr, .resx).
-        nodes : str, list of str, or None, optional
-            Controls which nodes have their timeseries data loaded into memory.
-
-            * ``None`` *(default)* — data is loaded for every node.
-            * A single node ID or a list of node IDs — only those nodes get
-              data; others are topology-only.
-            * ``[]`` (empty list) — no node data is loaded at all.
-
-            The full network topology is always constructed regardless of this
-            setting, so ``find()`` and ``recall()`` still work on all nodes.
-        reaches : str, list of str, or None, optional
-            Controls which reaches have their intermediate gridpoint data
-            populated.
-
-            * ``None`` *(default)* — gridpoints are populated for every reach.
-            * A single reach name or a list of reach names — only those reaches
-              get gridpoint data; others are topology-only.
-            * ``[]`` (empty list) — no gridpoint data is loaded at all.
-
-        Returns
-        -------
-        Network
-
-        Examples
-        --------
-        Load everything (default behaviour):
-
-        >>> from modelskill.network import Network
-        >>> network = Network.from_res1d("model.res1d")
-
-        Load data only for the two nodes where observations exist, and skip
-        all intermediate gridpoint data to keep memory usage low:
-
-        >>> network = Network.from_res1d(
-        ...     "model.res1d",
-        ...     nodes=["node_a", "node_b"],
-        ...     reaches=[],
-        ... )
-
-        Load data for selected nodes and gridpoints for one specific reach:
-
-        >>> network = Network.from_res1d(
-        ...     "model.res1d",
-        ...     nodes=["node_a", "node_b"],
-        ...     reaches=["reach_1"],
-        ... )
-        """
-
-        return cls._from_mikeio1d(
-            res, nodes=nodes, reaches=reaches, allowed=None, caller="from_res1d"
-        )
-
-    @classmethod
     def _from_mikeio1d(
         cls,
         res: str | Path | Res1D,
         *,
         nodes: str | list[str] | None,
         reaches: str | list[str] | None,
-        allowed: frozenset[str] | None,
+        allowed: frozenset[str],
         caller: str,
     ) -> Network:
         """Shared implementation behind the public ``from_*`` constructors.
 
         Parameters
         ----------
-        allowed : frozenset of str or None
-            Extensions this constructor accepts, or None to accept everything
-            mikeio1d can read.
+        allowed : frozenset of str
+            Extensions this constructor accepts.
         caller : str
             Name of the public method, used in error messages.
         """
@@ -675,7 +605,7 @@ class Network:
 
     @staticmethod
     def _validate_extension(
-        suffix: str, *, allowed: frozenset[str] | None, caller: str
+        suffix: str, *, allowed: frozenset[str], caller: str
     ) -> None:
         """Check a file extension against mikeio1d and against one constructor.
 
@@ -705,7 +635,7 @@ class Network:
                 f"Supported extensions are {readable}."
             )
 
-        if allowed is not None and extension not in allowed:
+        if extension not in allowed:
             constructor = _EXTENSION_CONSTRUCTORS[extension]
             raise ValueError(
                 f"Network.{caller}() reads {sorted(allowed)} files, got '{suffix}'. "
