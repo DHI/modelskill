@@ -361,7 +361,10 @@ class Network:
         Parameters
         ----------
         res : str, Path or Res1D
-            Path to a .res1d file, or an already-opened :class:`mikeio1d.Res1D` object.
+            Path to a network result file, or an already-opened
+            :class:`mikeio1d.Res1D` object. Any file extension that mikeio1d
+            can read is accepted (.res1d, .res11, .res, .prf, .crf, .xrf,
+            .out, .whr, .resx).
         nodes : str, list of str, or None, optional
             Controls which nodes have their timeseries data loaded into memory.
 
@@ -419,9 +422,11 @@ class Network:
 
         if isinstance(res, (str, Path)):
             path = Path(res)
-            if path.suffix.lower() != ".res1d":
+            supported = _Res1D.get_supported_file_extensions()
+            if path.suffix.lower() not in supported:
                 raise NotImplementedError(
-                    f"Unsupported file extension '{path.suffix}'. Only .res1d files are supported."
+                    f"Unsupported file extension '{path.suffix}'. "
+                    f"Supported extensions are {sorted(supported)}."
                 )
             res = _Res1D(str(path))
         elif not isinstance(res, _Res1D):
@@ -445,6 +450,7 @@ class Network:
 
         list_of_reaches = cls._load_res1d_network(res, nodes_list, reaches_list)
         return cls(list_of_reaches)
+
     @staticmethod
     def _load_res1d_network(
         res: Res1D,
@@ -491,7 +497,9 @@ class Network:
         return {g.nodes[id]["alias"]: id for id in g.nodes()}
 
     @staticmethod
-    def _generate_reaches_dict(reaches: Sequence[NetworkReach]) -> dict[str, NetworkReach]:
+    def _generate_reaches_dict(
+        reaches: Sequence[NetworkReach],
+    ) -> dict[str, NetworkReach]:
         return {r.id: r for r in reaches}
 
     @staticmethod
