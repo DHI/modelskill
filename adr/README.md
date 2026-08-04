@@ -30,7 +30,6 @@ Each ADR follows this structure:
 - [ADR-009](009-factory-pattern.md) - Factory pattern for type detection
 - [ADR-010](010-optional-domain-dependencies.md) - Optional dependencies for domain-specific model types (Draft)
 - [ADR-011](011-vertical-pre-extracted-columns.md) - VerticalModelResult ingests pre-extracted columns
-- [ADR-012](012-network-format-constructors.md) - One Network constructor per modelling product (Draft)
 
 ## Contributing
 
