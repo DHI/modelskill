@@ -132,33 +132,18 @@ Network  →  NetworkModelResult  →  match()  →  Comparer
 
 ## Building a Network
 
-You can build a `Network` object by loading it from a supported network result file. Reading these files relies on [mikeio1d](https://github.com/DHI/mikeio1d), so install the `networks` dependency group first.
+You can build a `Network` object by loading it from a supported network format.
 
-There is one constructor per product that writes the file:
+Currently, the only supported format is `mikeio.Res1D`.
 
-| Constructor | Extensions | Product |
-|---|---|---|
-| `Network.from_mike` | `.res1d`, `.res11` | MIKE 1D, MIKE 11 |
-| `Network.from_epanet` | `.res`, plus optional `.resx` and `.inp` | EPANET |
+### Res1D file
 
-The remaining formats mikeio1d can open cannot be turned into a `Network`, and say so when you try:
-
-| Extension | Why not |
-|---|---|
-| `.out` (SWMM) | The reach connectivity is not in the `.out` at all — it lives in the companion `.inp` input file, which modelskill does not read yet ([#689](https://github.com/DHI/modelskill/issues/689)). |
-| `.resx` | Not a network on its own. It holds extra results for the network defined in the sibling `.res`, so pass it as `from_epanet(res, resx=...)` instead. |
-| `.prf`, `.crf`, `.xrf` (MOUSE), `.whr` (Water Hammer) | No test fixture exists for these formats, so support cannot be verified. [Open an issue](https://github.com/DHI/modelskill/issues) if you need one. |
-
-### From a network result file
-
-The quickest way to get a `Network` is from the path to a result file:
+The quickest way to get a `Network` is from the path to a MIKE 1D result file:
 
 ```{python}
 # | echo: false
 
 path_to_res1d = "../../tests/testdata/network.res1d"
-path_to_res11 = "../../tests/testdata/network_cali.res11"
-path_to_epanet = "../../tests/testdata/epanet.res"
 path_to_sensor_data_1 = "../../tests/testdata/network_sensor_1.csv"
 path_to_sensor_data_2 = "../../tests/testdata/network_sensor_2.csv"
 ```
@@ -166,7 +151,7 @@ path_to_sensor_data_2 = "../../tests/testdata/network_sensor_2.csv"
 ```{python}
 from modelskill.network import Network
 
-network = Network.from_mike(path_to_res1d)
+network = Network.from_res1d(path_to_res1d)
 network
 ```
 
@@ -176,81 +161,18 @@ or a `mikeio1d.Res1D` that has already been opened:
 from mikeio1d import Res1D
 
 res = Res1D(path_to_res1d)
-network = Network.from_mike(res)
+network = Network.from_res1d(res)
 ```
 
-MIKE 11 files work the same way. Note that MIKE 11 keeps its timeseries on reach gridpoints rather than on nodes, so the nodes of such a network carry no data of their own:
-
-```{python}
-Network.from_mike(path_to_res11)
-```
-
-EPANET results use `from_epanet`:
-
-```{python}
-Network.from_epanet(path_to_epanet)
-```
-
-#### EPANET companion files
-
-An EPANET run writes more than one file, and the `.res` is not the whole picture:
-
-| File | What it adds |
-|---|---|
-| `.res` | The network and its main timeseries. Required. |
-| `.resx` | Extra results — tank volume and pump energy. Merged onto matching nodes. |
-| `.inp` | The model input. The only one of the three carrying reach lengths. |
-
-Pass the companions alongside the result file to get a fuller network:
-
-```{python}
-# | echo: false
-path_to_epanet_resx = "../../tests/testdata/epanet.resx"
-path_to_epanet_inp = "../../tests/testdata/epanet.inp"
-```
-
-```{python}
-network_epanet = Network.from_epanet(
-    path_to_epanet,
-    resx=path_to_epanet_resx,
-    inp=path_to_epanet_inp,
-)
-network_epanet
-```
-
-`Volume` and `Volume Percentage` come from the `.resx`, and the reach lengths from the `.inp`:
-
-```{python}
-sorted(
-    d["length"]
-    for *_, d in network_epanet.graph.edges(data=True)
-    if d["length"] is not None
-)
-```
-
-::: {.callout-warning}
-## EPANET reach geometry is limited
-
-EPANET is a link-node model, and mikeio1d reports no length and a single synthetic gridpoint for each reach. So for an EPANET network:
-
-* without `inp=`, every edge of `network.graph` has `length=None`. A length-weighted `networkx` call then fails rather than returning a meaningless number — shortest-path treats the edge as unreachable, and anything that sums the weights raises `TypeError`. With `inp=`, only pumps and valves stay `None`, since `[PIPES]` is the one section carrying lengths
-* reaches have no breakpoints, so a `ReachObservation` cannot be matched — use `NodeObservation` instead
-* `find(reach=..., distance=<number>)` never resolves; only `distance="start"` and `distance="end"` work
-
-For the same reason, `resx=` merges node quantities only. Its reach-level quantities — pump energy, efficiency and costs — have no breakpoint to live on, which is tracked in [#680](https://github.com/DHI/modelskill/issues/680).
-
-Node timeseries, `to_dataframe()`, `to_dataset()`, `find(node=...)` and `recall()` are unaffected.
-:::
-
-A MIKE 1D network contains multiple levels that are unified into a generic network structure as depicted in the image below. The image introduces concepts like _find_, _recall_ and _boundary_ which are explained in the following sections.
+A `Res1D` network contains multiple levels that are unified into a generic network structure as depicted in the image below. The image introduces concepts like _find_, _recall_ and _boundary_ which are explained in the following sections.
 
 ![How a Res1D file maps to a Network object. Reaches and nodes are re-indexed as integers; boundary nodes expose `find()`/`recall()` round-trip lookups.](../images/res1d_network_mapping.png)
 
 #### Selective loading
 
-Large result files can contain thousands of nodes and gridpoints. Loading all of that data into memory is slow and may cause memory issues — especially when you only need the timeseries at a handful of nodes where observations exist.
+Large Res1D files can contain thousands of nodes and gridpoints. Loading all of that data into memory is slow and may cause memory issues — especially when you only need the timeseries at a handful of nodes where observations exist.
 
-Both constructors accept the same two optional arguments to restrict what gets loaded:
+`from_res1d` accepts two optional arguments to restrict what gets loaded:
 
 | Argument | Type | Effect |
 |---|---|---|
@@ -264,7 +186,7 @@ Selective loading only controls **which timeseries are held in memory**. The ful
 The most memory-efficient setup — useful when you only care about specific junction nodes — is to pass the node IDs you need and skip all intermediate gridpoints with `reaches=[]`:
 
 ```{python}
-network_subset = Network.from_mike(
+network_subset = Network.from_res1d(
     path_to_res1d,
     nodes=["78", "46"],
     reaches=[],
@@ -275,7 +197,7 @@ network_subset
 If you also need gridpoint data along a particular reach, pass its name (or a list of names):
 
 ```{python}
-network_subset = Network.from_mike(
+network_subset = Network.from_res1d(
     path_to_res1d,
     nodes=["78", "46"],
     reaches=["94l1"],
@@ -463,9 +385,7 @@ Use `ReachObservation` when your measured quantity is representative of the whol
 In case you have your network data in a format that is not included in [Building a Network](#building-a-network), you can assemble a `Network` object by subclassing the abstract base classes `NetworkNode` and `NetworkReach`.
 
 `NetworkNode` requires three properties: `id`, `data`, and `boundary`.
-`NetworkReach` requires four: `id`, `start`, `end`, and `breakpoints`.
-
-`NetworkReach.length` is optional and defaults to `None`. Reach length matters in some domains (rivers, sewer networks) and not in others (link-node water distribution models), so override it only where a length exists. Where it is left undefined, the reach contributes an edge with `length=None` to `network.graph`, which keeps length-weighted graph algorithms from quietly treating the reach as free. Nothing else in modelskill reads the length — matching and extraction work from break point distances alone.
+`NetworkReach` requires five: `id`, `start`, `end`, `length`, and `breakpoints`.
 
 
 The following is a simple implementation example:
@@ -532,7 +452,7 @@ class ExampleReach(NetworkReach):
 ```
 
 ::: {.callout-tip}
-The three abstract properties that **every** `NetworkNode` subclass must implement are `id`, `data` and `boundary`. If `boundary` is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a `NetworkReach` with no intermediate points can return an empty `breakpoints` list, and one with no meaningful length can leave the `length` property out altogether.
+The three abstract properties that **every** `NetworkNode` subclass must implement are `id`, `data` and `boundary`. If `boundary` is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a `NetworkReach` with no intermediate points can return an empty `breakpoints` list.
 :::
 
 

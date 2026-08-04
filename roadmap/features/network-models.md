@@ -13,7 +13,7 @@ This reduces the effort required to produce quality-assured model deliverables a
 
 ## What This Enables
 
-- Load MIKE 1D, MIKE 11 and EPANET simulation results as model results
+- Load MIKE 1D simulation results (Res1D files) as model results
 - Match network model outputs against point observations at specific nodes, reaches, or catchments
 - Apply the full suite of ModelSkill metrics and visualisations to network model validation
 - Compare multiple network model scenarios side by side
@@ -21,6 +21,4 @@ This reduces the effort required to produce quality-assured model deliverables a
 
 ## Current Status
 
-In active development. MIKE 1D, MIKE 11 and EPANET result files can be read today. Integration with ModelSkill's validation workflow is underway.
-
-MOUSE and Water Hammer results are not read yet: no shareable result file exists for either format, so support cannot be verified. SWMM results cannot be supported until mikeio1d exposes reach connectivity for them.
+In active development. Reading of MIKE 1D result files is already supported. Integration with ModelSkill's validation workflow is underway.
