@@ -41,9 +41,11 @@ acknowledge them rather than paper over them.
   `lon_rho`/`lat_rho`, with no station identifiers. Station index 5 was selected as the nearest
   to the Lewes gauge, about 1.4 km away. This has not been verified against a published DBOFS
   station list.
-- **Datums are not reconciled.** Model `zeta` is free-surface relative to the model's own
-  reference level; observations are relative to the station MSL datum. Part of the roughly
-  -0.05 m bias at lead time 0 is likely a datum offset rather than forecast error.
+- **Datums are not reconciled in the data.** Model `zeta` is free-surface relative to the model's
+  own reference level; observations are relative to the station MSL datum. Both model columns
+  carry a large constant bias as a result — about -0.08 m for `dbofs` and -0.26 m for `tide`. The
+  example corrects this with `remove_bias()`, which matters: with the offsets left in, the
+  tide-only prediction looks worse than the forecast, and with them removed it is clearly better.
 - **No storm event.** Observed water level spans -0.48 to 1.12 m over this week — ordinary
   tidal conditions. A surge event would show the value of the forecast over the tide-only
   reference far more clearly.
