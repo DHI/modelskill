@@ -21,4 +21,6 @@ Supporting vertical profiles natively will allow modellers to validate 3D model 
 
 ## Current Status
 
-Planned for a future release. The underlying architecture supports this type of data. Design work is needed to define how profile observations are loaded and compared.
+In active development, currently at an alpha stage. `VerticalObservation` and
+`VerticalModelResult` exist, along with depth-resolved skill (`SkillProfile`) and profile
+plotting. The surface is not yet stable and is subject to change before release.
