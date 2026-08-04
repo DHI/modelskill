@@ -1,0 +1,124 @@
+---
+title: Forecast skill by lead time
+jupyter: python3
+---
+
+A forecast issued 6 hours ahead is usually better than one issued 48 hours ahead. This example
+shows how to quantify that degradation, using real water level forecasts from the NOAA Delaware
+Bay Operational Forecast System (DBOFS) compared against observations at Lewes, Delaware.
+
+The key idea is that a forecast dataset needs **two** time dimensions: the time the forecast is
+*for* (the valid time) and how far ahead it was issued (the lead time). ModelSkill handles this
+by carrying the lead time as an auxiliary variable, which can then be used to group the skill
+assessment.
+
+```{python}
+import pandas as pd
+import modelskill as ms
+```
+
+## The data
+
+Each row is one forecast: issued at `reference_time`, valid at `valid_time`, at a horizon of
+`lead_time` hours. The forecast model runs four times a day out to 48 hours, so successive runs
+overlap — the same valid time is forecast repeatedly, at a shorter lead time each run.
+
+```{python}
+df = pd.read_csv(
+    "../data/forecast_lewes/lewes_dbofs_forecast.csv",
+    parse_dates=["reference_time", "valid_time"],
+)
+df.head()
+```
+
+Alongside the model there is a `tide` column: the harmonic tide prediction for the same station.
+It is a useful reference because it is *not* initialised from recent conditions, so unlike the
+forecast its error should not grow with lead time.
+
+## Matching
+
+The data is already matched, so `from_matched()` takes it directly. The index is the valid time,
+and `lead_time` is passed as an auxiliary item so it can be used for grouping.
+
+```{python}
+cmp = ms.from_matched(
+    df.set_index("valid_time").drop(columns="reference_time"),
+    obs_item="observed",
+    mod_items=["dbofs", "tide"],
+    aux_items=["lead_time"],
+    quantity=ms.Quantity("Water Level", "m"),
+)
+cmp
+```
+
+## Skill as a function of lead time
+
+Grouping by both model and lead time gives one skill score per horizon.
+
+```{python}
+sk = cmp.skill(by=["model", "lead_time"], metrics=["bias", "rmse"])
+sk.to_dataframe().head()
+```
+
+Plotting the RMSE against lead time shows the degradation directly.
+
+```{python}
+import matplotlib.pyplot as plt
+
+_, ax = plt.subplots()
+sk.rmse.plot.line(ax=ax)
+ax.set_xlabel("Lead time [hours]")
+ax.set_ylabel("RMSE [m]")
+ax.set_title("Water level forecast skill by lead time, Lewes DE");
+```
+
+Two things are visible. The forecast error grows with the horizon, as expected — the further
+ahead you predict, the less the recent observations constrain the model. The tide-only prediction
+is flat, since it depends only on astronomy and not on how long ago the forecast was made. The
+forecast beats the tide-only reference at every lead time here, but its margin narrows as the
+horizon extends.
+
+## Aggregating into horizon bins
+
+Per-hour scores are noisy, particularly at the longest lead times where fewer forecasts are
+available. Grouping into coarser bins is often more readable for reporting.
+
+```{python}
+binned = df.assign(
+    horizon=pd.cut(
+        df.lead_time, [-1, 12, 24, 36, 48], labels=["0-12h", "12-24h", "24-36h", "36-48h"]
+    )
+)
+cmp_binned = ms.from_matched(
+    binned.set_index("valid_time").drop(columns=["reference_time", "lead_time"]),
+    obs_item="observed",
+    mod_items=["dbofs", "tide"],
+    aux_items=["horizon"],
+    quantity=ms.Quantity("Water Level", "m"),
+)
+cmp_binned.skill(by=["model", "horizon"], metrics=["bias", "rmse"]).round(3)
+```
+
+## Selecting a single horizon
+
+Because the lead time is an ordinary auxiliary variable, `where()` can isolate one horizon, and
+the rest of ModelSkill behaves normally on the result.
+
+```{python}
+day2 = cmp.where(cmp.data["lead_time"] == 48)
+day2.plot.scatter();
+```
+
+## Interpreting these numbers
+
+The bias is around -0.05 m even at lead time 0, where the forecast has barely diverged from its
+initial state. Part of that is likely a datum offset rather than forecast error: the model's free
+surface and the observed water level are referenced to different levels. This is worth resolving
+before quoting bias figures in a report, and illustrates why bias and RMSE should be read
+together.
+
+The dataset also covers a week of ordinary tidal conditions with no storm surge, which is exactly
+when an operational forecast earns its keep relative to a tide table — so the margin over the
+tide-only reference shown here is a conservative one.
+
+See `data/forecast_lewes/README.md` for full provenance and known limitations of this dataset.
