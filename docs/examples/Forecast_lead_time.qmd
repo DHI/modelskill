@@ -67,6 +67,7 @@ import matplotlib.pyplot as plt
 
 _, ax = plt.subplots()
 sk.rmse.plot.line(ax=ax)
+ax.set_xticks(range(0, 49, 6))  # lead time is plotted as a category, so thin the ticks
 ax.set_xlabel("Lead time [hours]")
 ax.set_ylabel("RMSE [m]")
 ax.set_title("Water level forecast skill by lead time, Lewes DE");
