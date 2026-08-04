@@ -14,11 +14,13 @@ This reduces the effort required to produce quality-assured model deliverables a
 ## What This Enables
 
 - Load MIKE 1D simulation results (Res1D files) as model results
-- Match network model outputs against point observations at specific nodes, reaches, or catchments
+- Match network model outputs against point observations at specific nodes or reaches
 - Apply the full suite of ModelSkill metrics and visualisations to network model validation
 - Compare multiple network model scenarios side by side
 - Produce standardised skill assessments for urban drainage, water supply, and river modelling projects
 
 ## Current Status
 
-In active development. Reading of MIKE 1D result files is already supported. Integration with ModelSkill's validation workflow is underway.
+In active development. Reading of MIKE 1D result files is already supported via
+`Network.from_res1d`, which requires the optional `networks` dependency group
+(`pip install modelskill[networks]`). Integration with ModelSkill's validation workflow is underway.
