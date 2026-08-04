@@ -197,7 +197,7 @@ class NetworkModelResult:
             raise ValueError(
                 f"Node {node_id} exists in the network topology but its timeseries was not loaded. "
                 f"Re-create the NetworkModelResult with the relevant nodes populated, "
-                f"e.g. Network.from_res1d(nodes=[...])."
+                f"e.g. Network.from_mike(path, nodes=[...])."
             )
 
         return NodeModelResult(

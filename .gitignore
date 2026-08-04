@@ -154,3 +154,5 @@ docs/_extensions/
 docs/api/*.qmd
 
 uv.lock
+
+tests/testdata/confidential/*
