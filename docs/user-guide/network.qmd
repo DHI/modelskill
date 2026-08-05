@@ -233,7 +233,7 @@ sorted(
 
 EPANET is a link-node model, and mikeio1d reports no length and a single synthetic gridpoint for each reach. So for an EPANET network:
 
-* without `inp=`, every edge of `network.graph` has `length=None`. A length-weighted `networkx` call then fails rather than returning a meaningless number — shortest-path treats the edge as unreachable, and anything that sums the weights raises `TypeError`. With `inp=`, only pumps and valves stay `None`, since `[PIPES]` is the one section carrying lengths
+* without `inp=`, every edge of `network.graph` has `length=None`. A length-weighted `networkx` call then fails rather than returning a meaningless number — shortest-path treats the edge as unreachable, and anything that sums the weights raises `TypeError`. The attribute is always present, since `networkx` defaults a missing weight to `1`. With `inp=`, only pumps and valves stay `None`, since `[PIPES]` is the one section carrying lengths
 * reaches have no breakpoints, so a `ReachObservation` cannot be matched — use `NodeObservation` instead
 * `find(reach=..., distance=<number>)` never resolves; only `distance="start"` and `distance="end"` work
 
