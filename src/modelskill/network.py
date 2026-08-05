@@ -725,10 +725,18 @@ class Network:
                 f"{len(res.time_index)} ending {res.end_time}."
             )
 
-        unknown = set(extra.nodes) - set(res.nodes)
-        if unknown:
+        unknown_nodes = set(extra.nodes) - set(res.nodes)
+        if unknown_nodes:
             raise ValueError(
-                f"The '.resx' companion holds nodes {sorted(unknown)} that are "
+                f"The '.resx' companion holds nodes {sorted(unknown_nodes)} that are "
+                "absent from the '.res' network, so the two files do not describe "
+                "the same model."
+            )
+
+        unknown_reaches = set(extra.reaches) - set(res.reaches)
+        if unknown_reaches:
+            raise ValueError(
+                f"The '.resx' companion holds reaches {sorted(unknown_reaches)} that are "
                 "absent from the '.res' network, so the two files do not describe "
                 "the same model."
             )
