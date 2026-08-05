@@ -23,4 +23,4 @@ This reduces the effort required to produce quality-assured model deliverables a
 
 In active development. MIKE 1D, MIKE 11 and EPANET result files can be read today. Integration with ModelSkill's validation workflow is underway.
 
-MOUSE and Water Hammer results are not read yet: no shareable result file exists for either format, so support cannot be verified. SWMM results cannot be supported until mikeio1d exposes reach connectivity for them.
+MOUSE and Water Hammer results are not read yet: no shareable result file exists for either format, so support cannot be verified. SWMM results are not read yet: the reach connectivity lives in the companion '.inp' input file, which modelskill does not read yet.
