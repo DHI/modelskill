@@ -11,7 +11,6 @@ from matplotlib.cm import ScalarMappable
 from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.ticker import MaxNLocator
-from scipy import interpolate
 import pandas as pd
 
 import modelskill.settings as settings
@@ -766,6 +765,9 @@ def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     yg = yg.ravel()
 
     ## Interpolate histogram density data to scatter data
+    # Lazy import: scipy.interpolate is heavy and only needed here, not on package import
+    from scipy import interpolate
+
     Z_grid = interpolate.griddata((xg, yg), hist, (x, y), method=method)
 
     # Replace negative values (should there be some) in case of 'cubic' interpolation
