@@ -104,7 +104,8 @@ ms.plotting.spatial_overview([HKNA, EPL, c2], mr, figsize=(7,7))
 Timeseries plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/)) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
 
 ```python
-cc["HKNA"].plot.timeseries(width=1000, backend="plotly")
+fig = cc["HKNA"].plot.timeseries(backend="plotly")
+fig.update_layout(width=1000)
 ```
 
 ![timeseries](https://raw.githubusercontent.com/DHI/modelskill/main/images/plotly_timeseries.png)
