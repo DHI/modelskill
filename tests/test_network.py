@@ -647,6 +647,60 @@ def test_from_mike_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
     assert len(ds.data_vars) == 0
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_topology_only_locations_share_one_empty_frame():
+    """Topology-only locations must not each allocate their own empty frame.
+
+    That is two DataFrame allocations per reach, which profiling showed to be
+    the single largest cost of a filtered load (gh #679).
+    """
+    path_to_file = "./tests/testdata/network.res1d"
+
+    network = Network.from_mike(path_to_file, nodes=[], reaches=[])
+    g = network.graph
+
+    frames = [g.nodes[n]["data"] for n in g.nodes]
+    assert all(frame.empty for frame in frames)
+    assert len({id(frame) for frame in frames}) == 1
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_reads_each_selected_node_once(monkeypatch):
+    """A node shared by several reaches is read once, not once per reach.
+
+    _generate_graph keeps only the first copy of a node's data, so the repeat
+    reads were discarded work (gh #679). The per-reach boundary reads are
+    genuinely distinct and must not be collapsed.
+    """
+    from modelskill.model.adapters import _res1d
+
+    reads: dict[str, int] = {}
+    unpatched = _res1d._simplify_colnames
+
+    def counting_simplify_colnames(location, *args, **kwargs):
+        name = type(location).__name__
+        reads[name] = reads.get(name, 0) + 1
+        return unpatched(location, *args, **kwargs)
+
+    monkeypatch.setattr(_res1d, "_simplify_colnames", counting_simplify_colnames)
+
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_mike(path_to_file, reaches=[])
+
+    n_unique_nodes = len(
+        {reach.start.id for reach in network._reaches.values()}
+        | {reach.end.id for reach in network._reaches.values()}
+    )
+    n_reach_endpoints = 2 * len(network._reaches)
+
+    assert reads["ResultNode"] == n_unique_nodes
+    assert reads["ResultGridPoint"] == n_reach_endpoints
+
+
 # ---------------------------------------------------------------------------
 # Optional reach length
 # ---------------------------------------------------------------------------

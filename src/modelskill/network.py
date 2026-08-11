@@ -812,21 +812,29 @@ class Network:
         # potential memory issues. For this reason, we create this intermediate step that populates
         # only the data in the passed nodes
 
+        # A node shared by several reaches is visited once per reach endpoint, but
+        # _generate_graph keeps only the first copy of its data, so read it once.
+        # The boundary is per-reach and must stay outside the cache.
+        node_data: dict[str, pd.DataFrame] = {}
+
         def _init_node(reach: ResultReach, is_end: bool) -> Res1DNode:
             id = reach.end_node if is_end else reach.start_node
             gpt_idx = -1 if is_end else 0
             if id in nodes_set:
-                node = res.nodes[id]
-                df = _simplify_colnames(node)
-                # Merged here rather than up front so selective loading still
-                # decides what is held in memory.
-                if extra is not None and id in extra.nodes:
-                    df = _merge_extra_quantities(
-                        df, _simplify_colnames(extra.nodes[id]), node_id=id
-                    )
+                if id not in node_data:
+                    df = _simplify_colnames(res.nodes[id])
+                    # Merged here rather than up front so selective loading still
+                    # decides what is held in memory.
+                    if extra is not None and id in extra.nodes:
+                        df = _merge_extra_quantities(
+                            df, _simplify_colnames(extra.nodes[id]), node_id=id
+                        )
+                    node_data[id] = df
                 overlapping_gridpoint = reach.gridpoints[gpt_idx]
                 boundary = _simplify_colnames(overlapping_gridpoint)
-                return Res1DNode(id, data=df, boundary={reach.name: boundary})
+                return Res1DNode(
+                    id, data=node_data[id], boundary={reach.name: boundary}
+                )
             else:
                 return Res1DNode(id)
 

@@ -10,6 +10,12 @@ if TYPE_CHECKING:
 from modelskill.network import NetworkNode, ReachBreakPoint, NetworkReach
 
 
+# Topology-only nodes and gridpoints all share this frame instead of each
+# allocating its own. A large network has two per reach, which profiling showed
+# to be the biggest single cost of a filtered load. Never mutate it in place.
+_EMPTY_DATA = pd.DataFrame()
+
+
 def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
     # We remove suffixes and indexes so the columns contain only the quantity names
 
@@ -86,7 +92,7 @@ class Res1DNode(NetworkNode):
         boundary: dict[str, pd.DataFrame] | None = None,
     ):
         self._id = id
-        self._data = pd.DataFrame() if data is None else data
+        self._data = _EMPTY_DATA if data is None else data
         self._boundary = {} if boundary is None else boundary
 
     @property
@@ -107,7 +113,7 @@ class GridPoint(ReachBreakPoint):
         self, reach_id: str, chainage: float, data: pd.DataFrame | None = None
     ):
         self._id = (reach_id, chainage)
-        self._data = pd.DataFrame() if data is None else data
+        self._data = _EMPTY_DATA if data is None else data
 
     @property
     def id(self) -> tuple[str, float]:
