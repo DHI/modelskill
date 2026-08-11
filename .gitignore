@@ -156,3 +156,5 @@ docs/api/*.qmd
 uv.lock
 
 tests/testdata/confidential/*
+
+tests/profiling/output/

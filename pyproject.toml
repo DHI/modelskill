@@ -46,7 +46,14 @@ classifiers = [
 networks = ["mikeio1d", "networkx"]
 
 [dependency-groups]
-dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2", "netCDF4", "dask"]
+dev = [
+    "pytest",
+    "plotly >= 4.5",
+    "ruff==0.6.2",
+    "netCDF4",
+    "dask",
+    "snakeviz>=2.2.2",
+]
 
 docs = ["quartodoc==0.11.1", "nbformat", "nbconvert", "ipykernel", "griffe<2"]
 
