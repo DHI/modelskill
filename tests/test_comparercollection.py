@@ -451,6 +451,47 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
     assert cc2["fake point obs"].raw_mod_data["m1"].name == "m1"
 
 
+@pytest.fixture
+def node_comparer() -> modelskill.comparison.Comparer:
+    """A comparer built by matching a NodeObservation against a NetworkModelResult (node gtype)."""
+    pytest.importorskip("networkx")
+    from modelskill.model.network import NetworkModelResult
+    from modelskill.network import Network, BasicNode, BasicReach
+    from modelskill.obs import NodeObservation
+
+    time = pd.date_range("2019-01-01", periods=6, freq="D")
+    node_a_data = pd.DataFrame(
+        {"WaterLevel": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]}, index=time
+    )
+    node_b_data = pd.DataFrame(
+        {"WaterLevel": [1.1, 2.2, 3.3, 4.4, 5.5, 6.6]}, index=time
+    )
+    reach = BasicReach(
+        "r1", BasicNode("123", node_a_data), BasicNode("456", node_b_data), length=100.0
+    )
+    network = Network([reach])
+
+    nmr = NetworkModelResult(network, name="Network_Model")
+    node_id = network.find(node="123")
+    obs = NodeObservation(node_a_data, at=node_id, name="Node_123_Obs")
+
+    return ms.match(obs, nmr)
+
+
+def test_save_and_load_round_trips_node_gtype_raw_data(node_comparer, tmp_path):
+    """Node-gtype comparers must survive a save()/load() round trip like point comparers do."""
+    cc = ms.ComparerCollection([node_comparer])
+    fn = tmp_path / "test_cc_node.msk"
+    cc.save(fn)
+
+    cc2 = ms.load(fn)
+
+    assert cc2[0].gtype == "node"
+    assert len(cc2[0].raw_mod_data["Network_Model"]) == len(
+        node_comparer.raw_mod_data["Network_Model"]
+    )
+
+
 # ======================== plotting ========================
 
 
