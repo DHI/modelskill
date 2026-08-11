@@ -226,13 +226,12 @@ sorted(
 ::: {.callout-warning}
 ## EPANET reach geometry is limited
 
-EPANET is a link-node model, and mikeio1d reports no length and a single synthetic gridpoint for each reach. So for an EPANET network:
+EPANET is a link-node model, and mikeio1d reports a single synthetic gridpoint for each reach, not tied to either end. That gridpoint is duplicated into two breakpoints, one at each end of the reach, so its own quantities (`Flow`, `Velocity`, ...) reach `find()`/`recall()`/`ReachObservation` the same way a MIKE reach's end data already does. So for an EPANET network:
 
-* without `inp=`, every edge of `network.graph` has `length=None`. A length-weighted `networkx` call then fails rather than returning a meaningless number — shortest-path treats the edge as unreachable, and anything that sums the weights raises `TypeError`. The attribute is always present, since `networkx` defaults a missing weight to `1`. With `inp=`, only pumps and valves stay `None`, since `[PIPES]` is the one section carrying lengths
-* reaches have no breakpoints, so a `ReachObservation` cannot be matched — use `NodeObservation` instead
-* `find(reach=..., distance=<number>)` never resolves; only `distance="start"` and `distance="end"` work
+* without `inp=`, a reach's length is unknown, so only its first breakpoint (`distance=0.0`) is real; the second isn't addressable by a number at all — `find(reach=..., distance=<number>)` only resolves it via `distance="start"`/`"end"` (which return the node, not the breakpoint). The corresponding edges of `network.graph` are `length=None` — a length-weighted `networkx` call then fails rather than returning a meaningless number, since shortest-path treats a `None`-weight edge as unreachable and anything that sums the weights raises `TypeError`
+* with `inp=`, a pipe's second breakpoint sits at its full length, and the edge between the two breakpoints carries that real length. Pumps and valves keep an unaddressable second breakpoint even with `inp=`, since `[PIPES]` is the only section carrying lengths
 
-For the same reason, `resx=` merges node quantities only. Its reach-level quantities — pump energy, efficiency and costs — have no breakpoint to live on, which is tracked in [#680](https://github.com/DHI/modelskill/issues/680).
+`resx=`'s reach-level quantities — pump energy, efficiency and costs — merge onto the matching reach's breakpoints the same way its node quantities merge onto nodes.
 
 Node timeseries, `to_dataframe()`, `to_dataset()`, `find(node=...)` and `recall()` are unaffected.
 :::

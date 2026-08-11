@@ -19,6 +19,7 @@ from modelskill.model.adapters._inp import read_pipe_lengths, read_sections
 from modelskill.model.adapters._res1d import (
     Res1DNode,
     Res1DReach,
+    _merge_extra_quantities,
     _simplify_colnames,
 )
 from modelskill.network import (
@@ -1352,6 +1353,28 @@ class TestRes1DReachLength:
         assert reach.length == 47.5
 
 
+class TestMergeExtraQuantities:
+    """_merge_extra_quantities serves both node and reach loading.
+
+    Its error message is format-neutral ("Location", not "Node") since it
+    no longer knows whether location_id names a node or a reach.
+    """
+
+    def test_collision_error_names_the_location(self):
+        base = pd.DataFrame({"Flow": [1.0]})
+        extra = pd.DataFrame({"Flow": [2.0]})
+
+        with pytest.raises(ValueError, match=r"Location '42'"):
+            _merge_extra_quantities(base, extra, location_id="42")
+
+    def test_collision_error_reports_the_overlapping_columns(self):
+        base = pd.DataFrame({"Flow": [1.0], "Velocity": [1.0]})
+        extra = pd.DataFrame({"Flow": [2.0]})
+
+        with pytest.raises(ValueError, match=r"\['Flow'\]"):
+            _merge_extra_quantities(base, extra, location_id="9")
+
+
 # ---------------------------------------------------------------------------
 # from_mike / from_epanet
 # ---------------------------------------------------------------------------
@@ -1452,32 +1475,74 @@ class TestFromEpanet:
     def test_epanet(self):
         network = Network.from_epanet("./tests/testdata/epanet.res")
 
-        assert network.graph.number_of_nodes() == 11
+        # 11 topology nodes, plus 2 duplicated breakpoints per reach (13 reaches).
+        assert network.graph.number_of_nodes() == 11 + 2 * 13
         assert len(network._reaches) == 13
         assert set(network.quantities) == {
             "Demand",
             "Head",
             "Pressure",
             "WaterQuality",
+            "Flow",
+            "Velocity",
+            "HeadlossPer1000Unit",
+            "AvgWaterQuality",
+            "StatusCode",
+            "Setting",
+            "ReactorRate",
+            "FrictionFactor",
         }
         assert not network.to_dataframe().empty
 
-    def test_link_node_reaches_have_no_length_or_breakpoints(self):
-        """Without inp=, mikeio1d reports neither - documented in the docstring."""
+    def test_link_node_reaches_get_two_breakpoints(self):
+        """The single synthetic gridpoint is duplicated to both ends of the reach.
+
+        Without inp=, reach.length is unknown, so only the leading edge (at
+        the reach's start, distance 0.0) is real; the connecting edge and the
+        trailing edge are both undefined - documented in the docstring.
+        """
         network = Network.from_epanet("./tests/testdata/epanet.res")
+
+        assert all(r.n_breakpoints == 2 for r in network._reaches.values())
+
+        for reach in network._reaches.values():
+            assert reach.breakpoints[0].distance == 0.0
+            assert reach.breakpoints[1].distance is None
 
         lengths = [d["length"] for *_, d in network.graph.edges(data=True)]
-        assert lengths and all(length is None for length in lengths)
-        assert all(r.n_breakpoints == 0 for r in network._reaches.values())
+        boundary_lengths = [
+            d["length"] for *_, d in network.graph.edges(data=True) if d["boundary"]
+        ]
+        assert len(lengths) == 3 * 13
+        assert boundary_lengths == [0.0] * 13
+        assert sum(length is None for length in lengths) == 2 * 13
 
-    def test_reach_observation_cannot_be_matched(self, sample_node_data):
-        """Follows from having no breakpoints; also documented in the docstring."""
+    def test_reach_observation_matches_via_the_duplicated_breakpoint(
+        self, sample_node_data
+    ):
+        """A reach's Flow quantity is now reachable through its breakpoints."""
         network = Network.from_epanet("./tests/testdata/epanet.res")
-        nmr = NetworkModelResult(network, item="Pressure")
-        obs = ms.ReachObservation(sample_node_data, reach="10", item="WaterLevel")
+        nmr = NetworkModelResult(network, item="Flow", name="epanet_model")
+        obs_data = sample_node_data.rename(columns={"WaterLevel": "Flow"})
+        obs = ms.ReachObservation(obs_data, reach="10", item="Flow")
 
-        with pytest.raises(ValueError, match="breakpoints"):
-            nmr.extract(obs)
+        extracted = nmr.extract(obs)
+
+        assert isinstance(extracted, NodeModelResult)
+        assert extracted.name == "epanet_model"
+
+    def test_find_reach_end_breakpoint_with_unknown_length_is_not_addressable(self):
+        """A None-distance breakpoint can't be found by a numeric distance.
+
+        This must raise the normal KeyError, not crash inside find()'s
+        tolerance-matching loop just because some breakpoint's distance is
+        unknown.
+        """
+        network = Network.from_epanet("./tests/testdata/epanet.res")
+        assert network._reaches["10"].breakpoints  # guard against a vacuous check
+
+        with pytest.raises(KeyError):
+            network.find(reach="10", distance=100.0)
 
     def test_mike_file_is_redirected(self):
         with pytest.raises(ValueError, match=r"Use Network\.from_mike\(\)"):
@@ -1531,8 +1596,38 @@ class TestEpanetCompanionInp:
     def test_graph_edges_carry_the_lengths(self):
         network = Network.from_epanet(_EPANET_RES, inp=_EPANET_INP)
 
+        # 12 pipes x 3 real edges (leading 0.0, the pipe's full length, trailing
+        # 0.0) + the pump's 1 real edge (leading 0.0; its trailing/connecting
+        # edges stay None since its own length is unknown).
         lengths = [d["length"] for *_, d in network.graph.edges(data=True)]
-        assert sum(v is not None for v in lengths) == 12
+        assert len(lengths) == 13 * 3
+        assert sum(v is not None for v in lengths) == 12 * 3 + 1
+
+    def test_pipe_breakpoints_sit_at_both_ends(self):
+        """A known-length reach's duplicate sits at the far end, not the middle.
+
+        Its two edges (start->end breakpoint, end breakpoint->end node) are
+        both tagged boundary=True (0.0), and the connecting edge in between
+        carries the pipe's full real length.
+        """
+        network = Network.from_epanet(_EPANET_RES, inp=_EPANET_INP)
+        pipe = network._reaches["10"]
+
+        assert pipe.breakpoints[0].distance == 0.0
+        assert pipe.breakpoints[1].distance == pytest.approx(3209.544)
+
+        start_alias = network.find(reach="10", distance="start")
+        far_alias = network.find(reach="10", distance=3209.544)
+        end_alias = network.find(reach="10", distance="end")
+        assert len({start_alias, far_alias, end_alias}) == 3
+
+    def test_pump_breakpoint_stays_at_start_only(self):
+        """The pump's unknown length means only its leading breakpoint is real."""
+        network = Network.from_epanet(_EPANET_RES, inp=_EPANET_INP)
+        pump = network._reaches[_PUMP_REACH]
+
+        assert pump.breakpoints[0].distance == 0.0
+        assert pump.breakpoints[1].distance is None
 
     def test_node_ids_overlapping_reach_ids_are_not_confused(self):
         """Most IDs here name both a node and a reach, e.g. '9', '10', '21'."""
@@ -1570,7 +1665,44 @@ class TestEpanetCompanionResx:
             "WaterQuality",
             "Volume",
             "Volume Percentage",
+            "Flow",
+            "Velocity",
+            "HeadlossPer1000Unit",
+            "AvgWaterQuality",
+            "StatusCode",
+            "Setting",
+            "ReactorRate",
+            "FrictionFactor",
+            "Pump efficiency",
+            "Pump energy costs",
+            "Pump energy",
         }
+
+    def test_extra_reach_quantities_are_merged_onto_the_pump(self):
+        """resx's reach-level quantities merge onto the reach's breakpoints.
+
+        Pump energy, efficiency, and cost, alongside its own Flow/Velocity/etc.
+        """
+        network = Network.from_epanet(_EPANET_RES, resx=_EPANET_RESX)
+        pump = network._reaches[_PUMP_REACH]
+
+        assert pump.breakpoints
+        for breakpoint in pump.breakpoints:
+            assert "Pump energy" in breakpoint.data.columns
+            assert "Flow" in breakpoint.data.columns
+
+    def test_only_the_pump_reach_gains_resx_reach_quantities(self):
+        """The .resx covers only the pump reach, not the other twelve."""
+        network = Network.from_epanet(_EPANET_RES, resx=_EPANET_RESX)
+
+        non_pump_reaches = {
+            k: v for k, v in network._reaches.items() if k != _PUMP_REACH
+        }
+        assert non_pump_reaches
+        assert all(reach.breakpoints for reach in non_pump_reaches.values())
+        for reach in non_pump_reaches.values():
+            for breakpoint in reach.breakpoints:
+                assert "Pump energy" not in breakpoint.data.columns
 
     def test_only_the_nodes_present_in_the_resx_gain_them(self):
         """The .resx covers the tank and the reservoir, not all eleven nodes."""
@@ -1594,7 +1726,12 @@ class TestEpanetCompanionResx:
         assert volume.notna().all()
 
     def test_selective_loading_still_governs_what_is_read(self):
-        network = Network.from_epanet(_EPANET_RES, resx=_EPANET_RESX, nodes=["2"])
+        # reaches=[] isolates this to node selection: without it, every
+        # reach's breakpoints would also get real data now (reaches=None
+        # loads all of them), adding unexpected columns.
+        network = Network.from_epanet(
+            _EPANET_RES, resx=_EPANET_RESX, nodes=["2"], reaches=[]
+        )
 
         df = network.to_dataframe()
         tank = network.find(node="2")

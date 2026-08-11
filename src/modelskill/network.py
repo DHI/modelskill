@@ -142,12 +142,17 @@ class ReachBreakPoint(ABC):
     Two properties must be implemented:
 
     * :attr:`id` - a ``(reach_id, distance)`` tuple that uniquely locates the
-      break point within the network.
+      break point within the network. ``distance`` may be ``None`` when the
+      break point's position along the reach is genuinely unknown (e.g. a
+      link-node reach with no known length).
     * :attr:`data` - a time-indexed :class:`pandas.DataFrame` whose columns
       are quantity names.
 
     The :attr:`distance` convenience property returns ``id[1]`` (the
-    along-reach distance in the units used by the parent network).
+    along-reach distance in the units used by the parent network, or
+    ``None`` if unknown). A break point with an unknown distance cannot be
+    looked up via ``find(reach=..., distance=<number>)``, but is still
+    reachable through ``ReachObservation`` and ``recall()``.
 
     Examples
     --------
@@ -171,7 +176,7 @@ class ReachBreakPoint(ABC):
 
     @property
     @abstractmethod
-    def id(self) -> tuple[str, float]:
+    def id(self) -> tuple[str, float | None]:
         """``(reach_id, distance)`` tuple uniquely identifying this break point."""
         pass
 
@@ -182,8 +187,8 @@ class ReachBreakPoint(ABC):
         pass
 
     @property
-    def distance(self) -> float:
-        """Along-reach distance of this break point, measured from the start node."""
+    def distance(self) -> float | None:
+        """Along-reach distance from the start node, or None if unknown."""
         return self.id[1]
 
     @property
@@ -536,8 +541,10 @@ class Network:
         resx : str, Path, Res1D or None, optional
             Companion ``.resx`` file from the same run. Its extra node
             quantities (tank ``Volume`` and ``Volume Percentage``) are merged
-            onto the matching nodes. By default None, and those quantities are
-            simply absent.
+            onto the matching nodes, and its extra reach quantities (e.g. pump
+            ``efficiency``, ``energy`` and ``energy costs``) are merged onto
+            the matching reach's breakpoints. By default None, and those
+            quantities are simply absent.
         inp : str, Path or None, optional
             EPANET ``.inp`` input file for the same model, read for its
             ``[PIPES]`` lengths. By default None, and reach lengths are
@@ -545,9 +552,10 @@ class Network:
         nodes : str, list of str, or None, optional
             Which nodes get their timeseries loaded. See :meth:`from_mike`.
         reaches : str, list of str, or None, optional
-            Which reaches get their gridpoint data loaded. See
-            :meth:`from_mike`. EPANET results have no intermediate gridpoints,
-            so this argument has no effect.
+            Which reaches get their breakpoint data loaded. See
+            :meth:`from_mike`. EPANET reaches have at most one gridpoint (see
+            Notes), but this argument still governs whether its data - and
+            any matching ``resx`` reach quantities - are populated.
         quantities : str, list of str, or None, optional
             Which quantities are read at each selected location. See
             :meth:`from_mike`.
@@ -580,22 +588,29 @@ class Network:
 
         Notes
         -----
-        EPANET is a link-node model, and mikeio1d reports no length and a
-        single synthetic gridpoint for each of its reaches. As a result:
+        EPANET is a link-node model, and mikeio1d reports a single synthetic
+        gridpoint for each reach, not tied to either end. That gridpoint is
+        duplicated into two breakpoints, one at each end of the reach, so its
+        own quantities (``Flow``, ``Velocity``, ...) are reachable through
+        :meth:`find`, :meth:`recall` and
+        :class:`~modelskill.obs.ReachObservation` the same way a MIKE reach's
+        end data already is. As a result:
 
-        * without ``inp``, every edge of :attr:`graph` has ``length=None``, so a
-          length-weighted graph algorithm fails rather than returning a
-          meaningless number. Pumps and valves keep ``length=None`` even with
-          ``inp``, since ``[PIPES]`` is the only section carrying lengths
-        * reaches have no breakpoints, so
-          :class:`~modelskill.obs.ReachObservation` cannot be matched against
-          an EPANET network — use :class:`~modelskill.obs.NodeObservation`
-        * ``find(reach=..., distance=<number>)`` never resolves; only
-          ``distance="start"`` and ``distance="end"`` work
+        * without ``inp``, a reach's length is unknown, so only its first
+          breakpoint (``distance=0.0``) is real; the second is not
+          addressable by distance at all — ``find(reach=..., distance=...)``
+          resolves it only via ``distance="start"``/``"end"`` (which return
+          the node, not the breakpoint), or not at all by a number. The
+          corresponding edges of :attr:`graph` are ``length=None``
+        * with ``inp``, a pipe's second breakpoint sits at its full length —
+          both breakpoints are then addressable by distance, and the edge
+          between them carries the pipe's real length. Pumps and valves keep
+          an unaddressable second breakpoint even with ``inp``, since
+          ``[PIPES]`` is the only section carrying lengths
 
-        For the same reason, ``resx`` merges node quantities only. Its
-        reach-level quantities (pump energy, efficiency and costs) have no
-        breakpoint to live on, which is tracked in issue #680.
+        ``resx``'s reach-level quantities (pump ``efficiency``, ``energy`` and
+        ``energy costs``) merge onto the matching reach's breakpoints the same
+        way its node quantities merge onto nodes.
 
         Node timeseries, :meth:`to_dataframe`, :meth:`to_dataset`,
         ``find(node=...)`` and :meth:`recall` are unaffected.
@@ -829,7 +844,9 @@ class Network:
         from modelskill.model.adapters._res1d import (
             Res1DReach,
             Res1DNode,
+            _build_reach_breakpoints,
             _merge_extra_quantities,
+            _resolve_reach_length,
             _simplify_colnames,
         )
 
@@ -856,24 +873,31 @@ class Network:
                         df = _merge_extra_quantities(
                             df,
                             _simplify_colnames(extra.nodes[id], quantities),
-                            node_id=id,
+                            location_id=id,
                         )
                     node_data[id] = df
                 return Res1DNode(id, data=node_data[id])
             else:
                 return Res1DNode(id)
 
-        return [
-            Res1DReach(
+        def _build_reach(reach: ResultReach) -> Res1DReach:
+            reach_length = lengths.get(reach.name)
+            breakpoints = _build_reach_breakpoints(
+                reach,
+                length=_resolve_reach_length(reach_length, reach),
+                quantities=quantities,
+                populate_gridpoints=reach.name in reaches_set,
+                extra=extra,
+            )
+            return Res1DReach(
                 reach,
                 _init_node(reach, False),
                 _init_node(reach, True),
-                populate_gridpoints=reach.name in reaches_set,
-                length=lengths.get(reach.name),
-                quantities=quantities,
+                length=reach_length,
+                breakpoints=breakpoints,
             )
-            for reach in res.reaches.values()
-        ]
+
+        return [_build_reach(reach) for reach in res.reaches.values()]
 
     @staticmethod
     def _generate_alias_map(g: nx.Graph) -> dict[str | tuple[str, float], int]:
@@ -983,10 +1007,17 @@ class Network:
                 # each derived from a different upstream source than the other
                 # endpoint's coordinate, so floating-point noise could otherwise
                 # leave a spurious tiny positive or negative edge weight where
-                # the true value is analytically zero.
+                # the true value is analytically zero. A breakpoint's distance
+                # can also be genuinely unknown (unrelated to whether the
+                # reach's own length is known - a NetworkReach subclass makes
+                # no promise the two are coupled), so both ends guard for None.
                 leading_distance = reach.breakpoints[0].distance
-                leading_is_boundary = abs(leading_distance) <= _CHAINAGE_TOLERANCE
-                leading_length = 0.0 if leading_is_boundary else leading_distance
+                if leading_distance is None:
+                    leading_length = None
+                    leading_is_boundary = False
+                else:
+                    leading_is_boundary = abs(leading_distance) <= _CHAINAGE_TOLERANCE
+                    leading_length = 0.0 if leading_is_boundary else leading_distance
                 g0.add_edge(
                     start_key,
                     bp_keys[0],
@@ -998,11 +1029,12 @@ class Network:
                 # distances are known even when the total is not, so a reach
                 # without a length still gets real lengths on every edge but
                 # this one.
-                if reach.length is None:
+                trailing_distance = reach.breakpoints[-1].distance
+                if reach.length is None or trailing_distance is None:
                     tail_length = None
                     tail_is_boundary = False
                 else:
-                    tail_diff = reach.length - reach.breakpoints[-1].distance
+                    tail_diff = reach.length - trailing_distance
                     tail_is_boundary = abs(tail_diff) <= _CHAINAGE_TOLERANCE
                     tail_length = 0.0 if tail_is_boundary else tail_diff
                 g0.add_edge(
@@ -1016,7 +1048,10 @@ class Network:
             for i in range(reach.n_breakpoints - 1):
                 current_ = reach.breakpoints[i]
                 next_ = reach.breakpoints[i + 1]
-                length = next_.distance - current_.distance
+                if current_.distance is None or next_.distance is None:
+                    length = None
+                else:
+                    length = next_.distance - current_.distance
                 g0.add_edge(
                     current_.id,
                     next_.id,
@@ -1165,6 +1200,7 @@ class Network:
                     if (
                         isinstance(key, tuple)
                         and key[0] == reach_id
+                        and key[1] is not None
                         and abs(key[1] - distance) <= _CHAINAGE_TOLERANCE
                     ):
                         return val
