@@ -237,6 +237,13 @@ class NetworkModelResult:
                 continue
             if item not in breakpoint.data.columns:
                 continue
+            # A breakpoint with an unknown position can't be looked up by
+            # distance - find() treats distance=None the same as "not
+            # provided" and would raise. Such a breakpoint is unreachable
+            # this way, not missing; skip it rather than error, since
+            # another breakpoint on the same reach may still resolve.
+            if breakpoint.distance is None:
+                continue
 
             int_id = self.network.find(
                 reach=breakpoint.id[0], distance=breakpoint.distance
@@ -304,7 +311,11 @@ class NetworkModelResult:
                 reach_id, distance = alias
                 candidates: list[tuple[float, int]] = []
                 for key, node_id in self.network._alias_map.items():
-                    if isinstance(key, tuple) and key[0] == reach_id:
+                    if (
+                        isinstance(key, tuple)
+                        and key[0] == reach_id
+                        and key[1] is not None
+                    ):
                         diff = abs(key[1] - distance)
                         if diff <= self._CHAINAGE_TOLERANCE:
                             candidates.append((diff, node_id))

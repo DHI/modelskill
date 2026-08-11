@@ -1544,6 +1544,22 @@ class TestFromEpanet:
         with pytest.raises(KeyError):
             network.find(reach="10", distance=100.0)
 
+    def test_resolve_alias_tolerance_match_skips_unknown_distance_breakpoint(self):
+        """NetworkModelResult._resolve_alias must not crash on a None-distance sibling.
+
+        Reach "10" has two breakpoints: one at distance 0.0, one at an
+        unknown distance (None). Resolving a nearby-but-not-exact numeric
+        distance walks the alias map's tolerance-matching loop, which must
+        skip the None-distance key rather than compute abs(None - distance).
+        """
+        network = Network.from_epanet("./tests/testdata/epanet.res")
+        nmr = NetworkModelResult(network, item="Flow", name="epanet_model")
+
+        exact_id = nmr._resolve_alias(("10", 0.0))
+        nearby_id = nmr._resolve_alias(("10", 0.0005))
+
+        assert nearby_id == exact_id
+
     def test_mike_file_is_redirected(self):
         with pytest.raises(ValueError, match=r"Use Network\.from_mike\(\)"):
             Network.from_epanet("./tests/testdata/network.res1d")
