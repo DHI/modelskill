@@ -250,12 +250,13 @@ A MIKE 1D network contains multiple levels that are unified into a generic netwo
 
 Large result files can contain thousands of nodes and gridpoints. Loading all of that data into memory is slow and may cause memory issues — especially when you only need the timeseries at a handful of nodes where observations exist.
 
-Both constructors accept the same two optional arguments to restrict what gets loaded:
+Both constructors accept the same three optional arguments to restrict what gets loaded:
 
 | Argument | Type | Effect |
 |---|---|---|
 | `nodes` | `None` \| `str` \| `list[str]` | Control which nodes have timeseries data loaded. `None` (default) loads all nodes; `[]` skips all node data; a name or list loads only those nodes. |
 | `reaches` | `None` \| `str` \| `list[str]` | Control which reaches have intermediate gridpoint data populated. `None` (default) loads everything; `[]` skips all gridpoints; a name or list of names loads only those reaches. |
+| `quantities` | `None` \| `str` \| `list[str]` | Control which quantities are read at each selected location. `None` (default) reads everything; `[]` reads nothing; a name or list reads only those quantities. |
 
 ::: {.callout-note}
 Selective loading only controls **which timeseries are held in memory**. The full network topology (nodes, reaches, lengths) is always constructed so that `find()`, `recall()`, and graph algorithms still work on the complete network.
@@ -281,6 +282,13 @@ network_subset = Network.from_mike(
     reaches=["94l1"],
 )
 network_subset
+```
+
+`quantities` cuts the read down a third way, which helps when a calibration loop rebuilds the network for every trial but only scores one quantity. A location that does not carry a requested quantity simply stays topology-only:
+
+```{python}
+network_discharge = Network.from_mike(path_to_res1d, quantities="Discharge")
+network_discharge.quantities
 ```
 
 When only some nodes are loaded, `to_dataframe()` and `to_dataset()` only contain columns for those nodes — the rest are graph-connected but data-free:

@@ -16,7 +16,9 @@ from modelskill.network import NetworkNode, ReachBreakPoint, NetworkReach
 _EMPTY_DATA = pd.DataFrame()
 
 
-def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
+def _simplify_colnames(
+    node: ResultNode | ResultGridPoint, quantities: set[str] | None = None
+) -> pd.DataFrame:
     # We remove suffixes and indexes so the columns contain only the quantity names
 
     # Some formats keep no timeseries at all on some locations - MIKE 11, for instance,
@@ -28,9 +30,24 @@ def _simplify_colnames(node: ResultNode | ResultGridPoint) -> pd.DataFrame:
     # The columns in a Res1D dataframe follow the convention "Quantity:Location:Sublocation"
     # where Location refers to the node id or the reach id followed by the chainage.
     RES1D_NAME_SEP = ":"
-    df = node.to_dataframe()
+
+    available = list(node.quantities)
+    wanted = (
+        available if quantities is None else [q for q in available if q in quantities]
+    )
+
+    if not wanted:
+        # A location need not carry every requested quantity; it stays topology-only.
+        return _EMPTY_DATA
+
+    if len(wanted) == len(available):
+        # Reading the whole location is one interop call rather than one per quantity.
+        df = node.to_dataframe()
+    else:
+        df = pd.concat([getattr(node, q).to_dataframe() for q in wanted], axis=1)
+
     renamer_dict = {}
-    for quantity in node.quantities:
+    for quantity in wanted:
         column_pairs = [
             (col, quantity)
             for col in df.columns
@@ -135,6 +152,7 @@ class Res1DReach(NetworkReach):
         *,
         populate_gridpoints: bool = True,
         length: float | None = None,
+        quantities: set[str] | None = None,
     ):
         self._id = reach.name
 
@@ -169,7 +187,9 @@ class Res1DReach(NetworkReach):
             GridPoint(
                 gridpoint.reach_name,
                 gridpoint.chainage,
-                _simplify_colnames(gridpoint) if populate_gridpoints else None,
+                _simplify_colnames(gridpoint, quantities)
+                if populate_gridpoints
+                else None,
             )
             for gridpoint in intermediate_gridpoints
         ]

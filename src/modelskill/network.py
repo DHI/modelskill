@@ -422,6 +422,7 @@ class Network:
         *,
         nodes: str | list[str] | None = None,
         reaches: str | list[str] | None = None,
+        quantities: str | list[str] | None = None,
     ) -> Network:
         """Create a Network from a MIKE 1D or MIKE 11 result file.
 
@@ -448,6 +449,17 @@ class Network:
             * A single reach name or a list of reach names — only those reaches
               get gridpoint data; others are topology-only.
             * ``[]`` (empty list) — no gridpoint data is loaded at all.
+        quantities : str, list of str, or None, optional
+            Controls which quantities are read at each selected location.
+
+            * ``None`` *(default)* — every quantity is read.
+            * A single quantity name or a list of names — only those are read.
+            * ``[]`` (empty list) — no data is read at all.
+
+            A location that does not carry a requested quantity becomes
+            topology-only rather than an error, so this composes with ``nodes``
+            and ``reaches`` on files where nodes and reaches hold different
+            quantities.
 
         Returns
         -------
@@ -484,6 +496,11 @@ class Network:
         ...     reaches=["reach_1"],
         ... )
 
+        Read a single quantity, for a calibration loop that only scores
+        discharge:
+
+        >>> network = Network.from_mike("model.res1d", quantities="Discharge")
+
         Notes
         -----
         MIKE 11 keeps its timeseries on reach gridpoints rather than on nodes,
@@ -498,6 +515,7 @@ class Network:
             res,
             nodes=nodes,
             reaches=reaches,
+            quantities=quantities,
             allowed=_MIKE_EXTENSIONS,
             caller="from_mike",
         )
@@ -511,6 +529,7 @@ class Network:
         inp: str | Path | None = None,
         nodes: str | list[str] | None = None,
         reaches: str | list[str] | None = None,
+        quantities: str | list[str] | None = None,
     ) -> Network:
         """Create a Network from an EPANET result file and its companions.
 
@@ -539,6 +558,9 @@ class Network:
             Which reaches get their gridpoint data loaded. See
             :meth:`from_mike`. EPANET results have no intermediate gridpoints,
             so this argument has no effect.
+        quantities : str, list of str, or None, optional
+            Which quantities are read at each selected location. See
+            :meth:`from_mike`.
 
         Returns
         -------
@@ -596,6 +618,7 @@ class Network:
             res,
             nodes=nodes,
             reaches=reaches,
+            quantities=quantities,
             allowed=_EPANET_EXTENSIONS,
             caller="from_epanet",
             resx=resx,
@@ -611,6 +634,7 @@ class Network:
         reaches: str | list[str] | None,
         allowed: frozenset[str],
         caller: str,
+        quantities: str | list[str] | None = None,
         resx: str | Path | Res1D | None = None,
         inp: str | Path | None = None,
     ) -> Network:
@@ -664,8 +688,22 @@ class Network:
         extra = None if resx is None else cls._open_companion_result(res, resx)
         lengths = None if inp is None else cls._read_companion_lengths(inp)
 
+        # None is threaded through as "read everything" rather than expanded to
+        # res.quantities, which would only cost a lookup for the same result.
+        if quantities is None:
+            quantities_set: set[str] | None = None
+        elif isinstance(quantities, str):
+            quantities_set = {quantities}
+        else:
+            quantities_set = set(quantities)
+
         list_of_reaches = cls._load_res1d_network(
-            res, nodes_list, reaches_list, extra=extra, lengths=lengths
+            res,
+            nodes_list,
+            reaches_list,
+            extra=extra,
+            lengths=lengths,
+            quantities=quantities_set,
         )
         return cls(list_of_reaches)
 
@@ -796,6 +834,7 @@ class Network:
         *,
         extra: Res1D | None = None,
         lengths: dict[str, float] | None = None,
+        quantities: set[str] | None = None,
     ) -> list[Res1DReach]:
         from modelskill.model.adapters._res1d import (
             Res1DReach,
@@ -822,16 +861,18 @@ class Network:
             gpt_idx = -1 if is_end else 0
             if id in nodes_set:
                 if id not in node_data:
-                    df = _simplify_colnames(res.nodes[id])
+                    df = _simplify_colnames(res.nodes[id], quantities)
                     # Merged here rather than up front so selective loading still
                     # decides what is held in memory.
                     if extra is not None and id in extra.nodes:
                         df = _merge_extra_quantities(
-                            df, _simplify_colnames(extra.nodes[id]), node_id=id
+                            df,
+                            _simplify_colnames(extra.nodes[id], quantities),
+                            node_id=id,
                         )
                     node_data[id] = df
                 overlapping_gridpoint = reach.gridpoints[gpt_idx]
-                boundary = _simplify_colnames(overlapping_gridpoint)
+                boundary = _simplify_colnames(overlapping_gridpoint, quantities)
                 return Res1DNode(
                     id, data=node_data[id], boundary={reach.name: boundary}
                 )
@@ -845,6 +886,7 @@ class Network:
                 _init_node(reach, True),
                 populate_gridpoints=reach.name in reaches_set,
                 length=lengths.get(reach.name),
+                quantities=quantities,
             )
             for reach in res.reaches.values()
         ]
