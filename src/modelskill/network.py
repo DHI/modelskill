@@ -33,6 +33,11 @@ if TYPE_CHECKING:
 _MIKE_EXTENSIONS = frozenset({".res1d", ".res11"})
 _EPANET_EXTENSIONS = frozenset({".res"})
 
+# Tolerance for comparing along-reach chainage/distance values, in whatever
+# distance unit the network uses. Shared between find()'s breakpoint lookup
+# and _generate_graph's boundary-edge detection.
+_CHAINAGE_TOLERANCE = 1e-3
+
 _NO_FIXTURE = (
     "{product} results are not supported yet: modelskill has no test fixture for "
     "this format, so support cannot be verified. Please open an issue if you need it."
@@ -89,16 +94,15 @@ def _check_file_path_is_str(res: Res1D) -> None:
 class NetworkNode(ABC):
     """Abstract base class for a node in a network.
 
-    A node represents a discrete location in the network (e.g. a junction,
-    reservoir, or boundary point) that carries time-series data for one or
-    more physical quantities.
+    A node represents a discrete location in the network (e.g. a junction
+    or reservoir) that carries time-series data for one or more physical
+    quantities.
 
-    Three properties must be implemented:
+    Two properties must be implemented:
 
     * :attr:`id` - a unique string identifier for the node.
     * :attr:`data` - a time-indexed :class:`pandas.DataFrame` whose columns
       are quantity names.
-    * :attr:`boundary` - a dict of boundary-condition metadata (may be empty).
 
     The concrete helper :class:`BasicNode` is provided for the common case
     where the data is already available as a DataFrame.
@@ -120,12 +124,6 @@ class NetworkNode(ABC):
     @abstractmethod
     def data(self) -> pd.DataFrame:
         """Time-indexed DataFrame with one column per quantity."""
-        pass
-
-    @property
-    @abstractmethod
-    def boundary(self) -> dict[str, Any]:
-        """Boundary-condition metadata dict (may be empty)."""
         pass
 
     @property
@@ -297,8 +295,6 @@ class BasicNode(NetworkNode):
         Unique node identifier.
     data : pd.DataFrame
         Time-indexed DataFrame with one column per quantity.
-    boundary : dict, optional
-        Boundary condition metadata, by default empty.
 
     Examples
     --------
@@ -311,11 +307,9 @@ class BasicNode(NetworkNode):
         self,
         id: str,
         data: pd.DataFrame,
-        boundary: dict[str, Any] | None = None,
     ) -> None:
         self._id = id
         self._data = data
-        self._boundary: dict[str, Any] = boundary or {}
 
     @property
     def id(self) -> str:
@@ -324,10 +318,6 @@ class BasicNode(NetworkNode):
     @property
     def data(self) -> pd.DataFrame:
         return self._data
-
-    @property
-    def boundary(self) -> dict[str, Any]:
-        return self._boundary
 
 
 class BasicReach(NetworkReach):
@@ -853,12 +843,10 @@ class Network:
 
         # A node shared by several reaches is visited once per reach endpoint, but
         # _generate_graph keeps only the first copy of its data, so read it once.
-        # The boundary is per-reach and must stay outside the cache.
         node_data: dict[str, pd.DataFrame] = {}
 
         def _init_node(reach: ResultReach, is_end: bool) -> Res1DNode:
             id = reach.end_node if is_end else reach.start_node
-            gpt_idx = -1 if is_end else 0
             if id in nodes_set:
                 if id not in node_data:
                     df = _simplify_colnames(res.nodes[id], quantities)
@@ -871,11 +859,7 @@ class Network:
                             node_id=id,
                         )
                     node_data[id] = df
-                overlapping_gridpoint = reach.gridpoints[gpt_idx]
-                boundary = _simplify_colnames(overlapping_gridpoint, quantities)
-                return Res1DNode(
-                    id, data=node_data[id], boundary={reach.name: boundary}
-                )
+                return Res1DNode(id, data=node_data[id])
             else:
                 return Res1DNode(id)
 
@@ -978,33 +962,55 @@ class Network:
             # 1) Add start and end nodes
             for node in [reach.start, reach.end]:
                 node_key = node.id
-                if node_key in g0.nodes:
-                    g0.nodes[node_key]["boundary"].update(node.boundary)
-                else:
-                    g0.add_node(node_key, data=node.data, boundary=node.boundary)
+                if node_key not in g0.nodes:
+                    g0.add_node(node_key, data=node.data)
 
             # 2) Add edges connecting start/end nodes to their adjacent breakpoints
             start_key = reach.start.id
             end_key = reach.end.id
             if reach.n_breakpoints == 0:
-                g0.add_edge(start_key, end_key, length=reach.length)
+                g0.add_edge(start_key, end_key, length=reach.length, boundary=False)
             else:
                 bp_keys = [bp.id for bp in reach.breakpoints]
                 for bp, bp_key in zip(reach.breakpoints, bp_keys):
                     g0.add_node(bp_key, data=bp.data)
 
-                g0.add_edge(start_key, bp_keys[0], length=reach.breakpoints[0].distance)
+                # A breakpoint sitting at distance 0 (or, on the other end, at
+                # the reach's full length) is not an intermediate point - it is
+                # geometrically the same location as start_key/end_key, one of
+                # the reach's own gridpoints promoted to a breakpoint. Tag that
+                # edge and clamp it to an exact 0.0: leading_distance/diff are
+                # each derived from a different upstream source than the other
+                # endpoint's coordinate, so floating-point noise could otherwise
+                # leave a spurious tiny positive or negative edge weight where
+                # the true value is analytically zero.
+                leading_distance = reach.breakpoints[0].distance
+                leading_is_boundary = abs(leading_distance) <= _CHAINAGE_TOLERANCE
+                leading_length = 0.0 if leading_is_boundary else leading_distance
+                g0.add_edge(
+                    start_key,
+                    bp_keys[0],
+                    length=leading_length,
+                    boundary=leading_is_boundary,
+                )
 
                 # Only the final segment needs the total length. Break point
                 # distances are known even when the total is not, so a reach
                 # without a length still gets real lengths on every edge but
                 # this one.
-                tail_length = (
-                    None
-                    if reach.length is None
-                    else reach.length - reach.breakpoints[-1].distance
+                if reach.length is None:
+                    tail_length = None
+                    tail_is_boundary = False
+                else:
+                    tail_diff = reach.length - reach.breakpoints[-1].distance
+                    tail_is_boundary = abs(tail_diff) <= _CHAINAGE_TOLERANCE
+                    tail_length = 0.0 if tail_is_boundary else tail_diff
+                g0.add_edge(
+                    bp_keys[-1],
+                    end_key,
+                    length=tail_length,
+                    boundary=tail_is_boundary,
                 )
-                g0.add_edge(bp_keys[-1], end_key, length=tail_length)
 
             # 3) Connect consecutive intermediate breakpoints
             for i in range(reach.n_breakpoints - 1):
@@ -1015,6 +1021,7 @@ class Network:
                     current_.id,
                     next_.id,
                     length=length,
+                    boundary=False,
                 )
 
         return nx.convert_node_labels_to_integers(g0, label_attribute="alias")
@@ -1148,8 +1155,6 @@ class Network:
                             f"{distance_i!r}. Expected a numeric value or 'start'/'end'."
                         )
                     ids.append((reach_i, distance_i))
-
-        _CHAINAGE_TOLERANCE = 1e-3
 
         def _resolve_id(id):
             if id in self._alias_map:

@@ -106,11 +106,9 @@ class Res1DNode(NetworkNode):
         id: str,
         *,
         data: pd.DataFrame | None = None,
-        boundary: dict[str, pd.DataFrame] | None = None,
     ):
         self._id = id
         self._data = _EMPTY_DATA if data is None else data
-        self._boundary = {} if boundary is None else boundary
 
     @property
     def id(self) -> str:
@@ -119,10 +117,6 @@ class Res1DNode(NetworkNode):
     @property
     def data(self) -> pd.DataFrame:
         return self._data
-
-    @property
-    def boundary(self) -> dict[str, pd.DataFrame]:
-        return self._boundary
 
 
 class GridPoint(ReachBreakPoint):
@@ -169,9 +163,14 @@ class Res1DReach(NetworkReach):
         if end_node.id != reach.end_node:
             raise ValueError("Incorrect ending node.")
 
-        intermediate_gridpoints = (
-            reach.gridpoints[1:-1] if len(reach.gridpoints) > 2 else []
-        )
+        # Reaches with more than 2 gridpoints have real, independently-measured
+        # start/end points, so the first and last gridpoint become breakpoints
+        # too (coincident with start_node/end_node - Network._generate_graph
+        # connects them with a zero-length edge). Reaches with 2 or fewer
+        # gridpoints are link-node models (e.g. EPANET), whose single synthetic
+        # gridpoint belongs to neither end; that case is not handled here, see
+        # https://github.com/DHI/modelskill/issues/680.
+        breakpoint_gridpoints = reach.gridpoints if len(reach.gridpoints) > 2 else []
 
         self._start = start_node
         self._end = end_node
@@ -191,7 +190,7 @@ class Res1DReach(NetworkReach):
                 if populate_gridpoints
                 else None,
             )
-            for gridpoint in intermediate_gridpoints
+            for gridpoint in breakpoint_gridpoints
         ]
 
     @property

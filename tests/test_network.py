@@ -456,7 +456,9 @@ class TestNetworkIntegration:
 def test_open_res1d():
     path_to_file = "./tests/testdata/network.res1d"
     network = Network.from_mike(path_to_file)
-    assert network.graph.number_of_nodes() == 259
+    # 259 topology nodes, plus 2 reach-end breakpoints per reach (118 reaches)
+    # now that they are promoted from boundary metadata to real breakpoints.
+    assert network.graph.number_of_nodes() == 259 + 2 * 118
 
 
 @pytest.mark.skipif(
@@ -673,8 +675,10 @@ def test_from_mike_reads_each_selected_node_once(monkeypatch):
     """A node shared by several reaches is read once, not once per reach.
 
     _generate_graph keeps only the first copy of a node's data, so the repeat
-    reads were discarded work (gh #679). The per-reach boundary reads are
-    genuinely distinct and must not be collapsed.
+    reads were discarded work (gh #679). Reach-end gridpoints are now ordinary
+    breakpoints, so - like every other breakpoint - reaches=[] skips reading
+    them entirely; there is one loading rule, not a special case for the ones
+    that used to be boundary metadata.
     """
     from modelskill.model.adapters import _res1d
 
@@ -695,10 +699,34 @@ def test_from_mike_reads_each_selected_node_once(monkeypatch):
         {reach.start.id for reach in network._reaches.values()}
         | {reach.end.id for reach in network._reaches.values()}
     )
-    n_reach_endpoints = 2 * len(network._reaches)
 
     assert reads["ResultNode"] == n_unique_nodes
-    assert reads["ResultGridPoint"] == n_reach_endpoints
+    assert "ResultGridPoint" not in reads
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_reads_each_reach_endpoint_gridpoint_when_loaded(monkeypatch):
+    """The default (reaches=None) loads every reach's endpoint gridpoints too."""
+    from modelskill.model.adapters import _res1d
+
+    reads: dict[str, int] = {}
+    unpatched = _res1d._simplify_colnames
+
+    def counting_simplify_colnames(location, *args, **kwargs):
+        name = type(location).__name__
+        reads[name] = reads.get(name, 0) + 1
+        return unpatched(location, *args, **kwargs)
+
+    monkeypatch.setattr(_res1d, "_simplify_colnames", counting_simplify_colnames)
+
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_mike(path_to_file, nodes=[])
+
+    n_breakpoints = sum(r.n_breakpoints for r in network._reaches.values())
+
+    assert reads["ResultGridPoint"] == n_breakpoints
 
 
 # ---------------------------------------------------------------------------
@@ -812,6 +840,91 @@ class TestOptionalReachLength:
             40.0,
             60.0,
         ]
+
+
+class TestBoundaryEdges:
+    """A breakpoint coincident with a reach's own start/end node is tagged.
+
+    This is the mechanism that replaced the removed `boundary` attribute:
+    reach-end data lives on an ordinary breakpoint, connected to its node by
+    an edge tagged boundary=True and clamped to an exact 0.0.
+    """
+
+    def test_edge_with_no_breakpoints_is_tagged_non_boundary(self):
+        a, b = _two_node_pair()
+
+        network = Network([BasicReach("r1", a, b, length=100.0)])
+
+        (_, _, data), = network.graph.edges(data=True)
+        assert data["boundary"] is False
+
+    def test_breakpoint_at_reach_start_is_tagged_boundary(self):
+        a, b = _two_node_pair()
+        breakpoints = [_StubBreakPoint("r1", 0.0), _StubBreakPoint("r1", 40.0)]
+
+        network = Network([BasicReach("r1", a, b, 100.0, breakpoints)])
+
+        edges = {frozenset((u, v)): d for u, v, d in network.graph.edges(data=True)}
+        start_bp_key = frozenset((network.find(node="a"), network.find(reach="r1", distance=0.0)))
+        interior_key = frozenset(
+            (
+                network.find(reach="r1", distance=0.0),
+                network.find(reach="r1", distance=40.0),
+            )
+        )
+
+        assert edges[start_bp_key] == {"length": 0.0, "boundary": True}
+        assert edges[interior_key] == {"length": 40.0, "boundary": False}
+
+    def test_breakpoint_at_reach_end_is_tagged_boundary(self):
+        a, b = _two_node_pair()
+        breakpoints = [_StubBreakPoint("r1", 60.0), _StubBreakPoint("r1", 100.0)]
+
+        network = Network([BasicReach("r1", a, b, 100.0, breakpoints)])
+
+        end_bp_key = frozenset((network.find(node="b"), network.find(reach="r1", distance=100.0)))
+
+        assert network.graph.edges[tuple(end_bp_key)]["boundary"] is True
+        assert network.graph.edges[tuple(end_bp_key)]["length"] == 0.0
+
+    def test_end_breakpoint_length_is_clamped_despite_floating_point_noise(self):
+        """Clamp near-zero noise between two independently-sourced values.
+
+        reach.length and the breakpoint's own distance come from independent
+        sources and are not guaranteed to be bit-identical; the near-zero
+        difference must be clamped to an exact 0.0, not left as tiny noise
+        that could turn negative and break weighted graph algorithms.
+        """
+        a, b = _two_node_pair()
+        noisy_length = 100.0 + 1e-9
+        breakpoints = [_StubBreakPoint("r1", 100.0)]
+
+        network = Network([BasicReach("r1", a, b, noisy_length, breakpoints)])
+
+        end_bp_key = frozenset((network.find(node="b"), network.find(reach="r1", distance=100.0)))
+        data = network.graph.edges[tuple(end_bp_key)]
+
+        assert data["boundary"] is True
+        assert data["length"] == 0.0
+
+    def test_interior_breakpoint_is_never_tagged_boundary_even_near_zero_length(self):
+        """Only edges to a reach's own endpoints are ever boundary edges.
+
+        A genuinely tiny reach still tags interior segments correctly.
+        """
+        a, b = _two_node_pair()
+        breakpoints = [_StubBreakPoint("r1", 0.0005)]
+
+        network = Network([BasicReach("r1", a, b, 0.001, breakpoints)])
+
+        bp_alias = network.find(reach="r1", distance=0.0005)
+        start_key = frozenset((network.find(node="a"), bp_alias))
+        end_key = frozenset((network.find(node="b"), bp_alias))
+
+        # Both are boundary edges here since the reach itself is shorter than
+        # the chainage tolerance - not a contradiction, just a degenerate case.
+        assert network.graph.edges[tuple(start_key)]["boundary"] is True
+        assert network.graph.edges[tuple(end_key)]["boundary"] is True
 
 
 # ---------------------------------------------------------------------------
@@ -1253,22 +1366,63 @@ class TestFromMike:
     def test_res1d(self):
         network = Network.from_mike("./tests/testdata/network.res1d")
 
-        assert network.graph.number_of_nodes() == 259
+        # 259 topology nodes, plus 2 reach-end breakpoints per reach (118
+        # reaches), now that they are promoted from boundary metadata to
+        # real breakpoints.
+        assert network.graph.number_of_nodes() == 259 + 2 * 118
 
     def test_res11(self):
         """MIKE 11 keeps its data on gridpoints, so its nodes are empty."""
         network = Network.from_mike("./tests/testdata/network_cali.res11")
 
         assert len(network._reaches) == 3
-        assert network.graph.number_of_nodes() == 71
+        # 71 topology nodes, plus 2 reach-end breakpoints per reach (3 reaches).
+        assert network.graph.number_of_nodes() == 71 + 2 * 3
         assert set(network.quantities) == {"Discharge", "Water Level"}
-        assert [r.n_breakpoints for r in network._reaches.values()] == [23, 21, 23]
+        # +2 per reach: the first/last gridpoint is now a breakpoint too.
+        assert [r.n_breakpoints for r in network._reaches.values()] == [25, 23, 25]
 
-    def test_res11_reaches_have_real_lengths(self):
+    def test_reach_end_waterlevel_differs_from_node_waterlevel(self):
+        """The reach-end gridpoint is a distinct h-point, not the node's own value.
+
+        This is the data #599/#680 asked to make reachable: it was previously
+        discarded (never read) or hidden in the now-removed `boundary` dict.
+        """
+        network = Network.from_mike("./tests/testdata/network.res1d")
+        reach = network._reaches["100l1"]
+
+        node_waterlevel = reach.start.data["WaterLevel"]
+        breakpoint_waterlevel = reach.breakpoints[0].data["WaterLevel"]
+
+        assert not np.allclose(node_waterlevel.values, breakpoint_waterlevel.values)
+
+    def test_find_reach_end_breakpoint_distinct_from_node(self):
+        """distance="start" resolves to the node; a number resolves elsewhere.
+
+        distance="start"/"end" still resolve to the node; a numeric distance
+        resolves to the new, distinct reach-end breakpoint at the same location.
+        """
+        network = Network.from_mike("./tests/testdata/network.res1d")
+        reach = network._reaches["100l1"]
+
+        node_alias = network.find(node=reach.start.id)
+        start_by_keyword = network.find(reach=reach.id, distance="start")
+        start_by_distance = network.find(reach=reach.id, distance=0.0)
+
+        assert start_by_keyword == node_alias
+        assert start_by_distance != node_alias
+        assert network.recall(start_by_distance) == {"reach": reach.id, "distance": 0.0}
+
+    def test_res11_boundary_edges_are_exactly_zero(self):
+        """Reach-end breakpoints are coincident with their node, tagged and clamped."""
         network = Network.from_mike("./tests/testdata/network_cali.res11")
 
-        lengths = [d["length"] for *_, d in network.graph.edges(data=True)]
-        assert all(length > 0 for length in lengths)
+        edges = list(network.graph.edges(data=True))
+        boundary_lengths = {d["length"] for *_, d in edges if d["boundary"]}
+        non_boundary_lengths = [d["length"] for *_, d in edges if not d["boundary"]]
+
+        assert boundary_lengths == {0.0}
+        assert all(length > 0 for length in non_boundary_lengths)
 
     def test_open_res1d_object(self):
         from mikeio1d import Res1D
@@ -1277,7 +1431,8 @@ class TestFromMike:
 
         network = Network.from_mike(res, nodes=[], reaches=[])
 
-        assert network.graph.number_of_nodes() == 259
+        # Topology is always fully constructed regardless of nodes=[]/reaches=[].
+        assert network.graph.number_of_nodes() == 259 + 2 * 118
 
     def test_epanet_file_is_redirected(self):
         with pytest.raises(ValueError, match=r"Use Network\.from_epanet\(\)"):
