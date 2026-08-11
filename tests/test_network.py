@@ -1,8 +1,10 @@
 """Test network models and observations"""
 
 # ruff: noqa: E402
+import shutil
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 import pytest
 
 pytest.importorskip("networkx")
@@ -31,6 +33,11 @@ from modelskill.network import (
     _EPANET_EXTENSIONS,
     _MIKE_EXTENSIONS,
     _UNSUPPORTED_EXTENSIONS,
+    _Companion,
+    _find_epanet_companions,
+    _network_from_path,
+    _repair_mis_decoded,
+    _rekey_by_main_file,
 )
 from modelskill.obs import NodeObservation, ReachObservation
 from modelskill.quantity import Quantity
@@ -1922,6 +1929,51 @@ class TestEpanetCompanionResx:
             Network.from_epanet(_EPANET_RES, resx=42)  # type: ignore[arg-type]
 
 
+class TestCompanionNameEncoding:
+    """mikeio1d reads '.res' names as UTF-8 and '.resx' names as CP1252.
+
+    A node called 'ØST' in one file is 'Ã˜ST' in the other, so the same model
+    looks like two - and the four Danish tank names in a real MIKE+ EPANET
+    model were the ones that surfaced it.
+    """
+
+    def test_a_mis_decoded_name_is_recovered(self):
+        assert _repair_mis_decoded("Ã˜ST") == ["ØST"]
+        assert _repair_mis_decoded("VandvÃ¦rk_Vest") == ["Vandværk_Vest"]
+
+    def test_an_ascii_name_has_nothing_to_recover(self):
+        assert _repair_mis_decoded("Junction_1") == []
+
+    def test_a_name_that_no_encoding_explains_is_left_alone(self):
+        """'ØST' is already correct: its bytes are not valid UTF-8 on their own."""
+        assert _repair_mis_decoded("ØST") == []
+
+    def test_a_companion_location_is_keyed_by_the_main_files_name(self):
+        rekeyed = _rekey_by_main_file({"Ã˜ST": "data"}, {"ØST", "Junction_1"})
+
+        assert rekeyed == {"ØST": "data"}
+
+    def test_a_matching_name_is_untouched(self):
+        rekeyed = _rekey_by_main_file({"Junction_1": "data"}, {"Junction_1"})
+
+        assert rekeyed == {"Junction_1": "data"}
+
+    def test_a_name_from_another_model_keeps_its_own_spelling(self):
+        """Otherwise a genuinely different companion would slip past validation."""
+        rekeyed = _rekey_by_main_file({"Ã˜ST": "data"}, {"Junction_1"})
+
+        assert rekeyed == {"Ã˜ST": "data"}
+
+    def test_a_companion_rekeys_both_nodes_and_reaches(self):
+        res = SimpleNamespace(nodes={"ØST": 1}, reaches={"Vandværk_Vest": 2})
+        extra = SimpleNamespace(nodes={"Ã˜ST": 3}, reaches={"VandvÃ¦rk_Vest": 4})
+
+        companion = _Companion(res, extra)
+
+        assert companion.nodes == {"ØST": 3}
+        assert companion.reaches == {"Vandværk_Vest": 4}
+
+
 class TestReadInp:
     """Minimal .inp reader - see modelskill/model/adapters/_inp.py."""
 
@@ -1973,3 +2025,123 @@ class TestReadInp:
         )
 
         assert read_pipe_lengths(path) == {"1": 10.0, "3": 20.0}
+
+
+# ---------------------------------------------------------------------------
+# Building a Network from a bare path
+# ---------------------------------------------------------------------------
+
+
+def _copy_epanet(tmp_path, *suffixes):
+    """Copy the EPANET fixture set into tmp_path, keeping only some companions."""
+    tmp_path = Path(tmp_path)
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    for suffix in (".res", *suffixes):
+        shutil.copy(f"./tests/testdata/epanet{suffix}", tmp_path / f"model{suffix}")
+    return tmp_path / "model.res"
+
+
+class TestFindEpanetCompanions:
+    """A companion is the file sharing the result file's folder and stem."""
+
+    def test_both_companions_are_found(self, tmp_path):
+        res = _copy_epanet(tmp_path, ".resx", ".inp")
+
+        assert _find_epanet_companions(res) == (
+            tmp_path / "model.resx",
+            tmp_path / "model.inp",
+        )
+
+    def test_a_missing_companion_is_none(self, tmp_path):
+        res = _copy_epanet(tmp_path, ".inp")
+
+        assert _find_epanet_companions(res) == (None, tmp_path / "model.inp")
+
+    def test_a_lone_result_file_has_neither(self, tmp_path):
+        res = _copy_epanet(tmp_path)
+
+        assert _find_epanet_companions(res) == (None, None)
+
+    def test_a_differently_named_sibling_is_not_a_companion(self, tmp_path):
+        res = _copy_epanet(tmp_path)
+        shutil.copy("./tests/testdata/epanet.inp", tmp_path / "other.inp")
+
+        assert _find_epanet_companions(res) == (None, None)
+
+
+@requires_mikeio1d
+class TestNetworkFromPath:
+    """The extension names the product, so it picks the constructor."""
+
+    def test_res1d_goes_to_from_mike(self):
+        network = _network_from_path("./tests/testdata/network.res1d")
+
+        assert network.graph.number_of_nodes() == 259 + 2 * 118
+
+    def test_res11_goes_to_from_mike(self):
+        network = _network_from_path(Path("./tests/testdata/network_cali.res11"))
+
+        assert set(network.quantities) == {"Discharge", "Water Level"}
+
+    def test_res_goes_to_from_epanet_with_both_companions(self, tmp_path):
+        res = _copy_epanet(tmp_path, ".resx", ".inp")
+
+        network = _network_from_path(res)
+
+        # Lengths come from the .inp; Volume comes from the .resx.
+        assert network._reaches["10"].length == pytest.approx(3209.544)
+        assert "Volume" in network.quantities
+
+    def test_res_without_companions_still_loads(self, tmp_path):
+        res = _copy_epanet(tmp_path)
+
+        network = _network_from_path(res)
+
+        assert network._reaches["10"].length is None
+        assert "Volume" not in network.quantities
+
+    def test_each_companion_is_found_on_its_own(self, tmp_path):
+        with_inp = _network_from_path(_copy_epanet(tmp_path / "a", ".inp"))
+        with_resx = _network_from_path(_copy_epanet(tmp_path / "b", ".resx"))
+
+        assert with_inp._reaches["10"].length == pytest.approx(3209.544)
+        assert "Volume" not in with_inp.quantities
+        assert with_resx._reaches["10"].length is None
+        assert "Volume" in with_resx.quantities
+
+    def test_an_unreadable_format_keeps_its_reason(self):
+        with pytest.raises(NotImplementedError, match="companion '.inp' input file"):
+            _network_from_path("./tests/testdata/swmm.out")
+
+    def test_an_unknown_extension_is_refused(self):
+        with pytest.raises(NotImplementedError, match="Unsupported file extension"):
+            _network_from_path("./tests/testdata/obs.dfs0")
+
+    def test_a_failing_companion_names_the_file_it_picked_up(
+        self, tmp_path, monkeypatch
+    ):
+        """A companion the caller never asked for must be named when it fails."""
+        res = _copy_epanet(tmp_path, ".resx")
+        monkeypatch.setattr(
+            Network,
+            "_open_companion_result",
+            staticmethod(lambda *a, **kw: (_ for _ in ()).throw(ValueError("boom"))),
+        )
+
+        with pytest.raises(ValueError, match="model.resx") as excinfo:
+            _network_from_path(res)
+
+        assert "boom" in str(excinfo.value)
+        assert "Network.from_epanet" in str(excinfo.value)
+
+    def test_a_failure_without_companions_is_left_alone(self, tmp_path, monkeypatch):
+        res = _copy_epanet(tmp_path)
+        monkeypatch.setattr(
+            Network,
+            "_load_res1d_network",
+            staticmethod(lambda *a, **kw: (_ for _ in ()).throw(ValueError("boom"))),
+        )
+
+        with pytest.raises(ValueError, match="^boom$"):
+            _network_from_path(res)
+

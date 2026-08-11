@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 if TYPE_CHECKING:
-    from mikeio1d import Res1D
     from mikeio1d.result_network import ResultNode, ResultGridPoint, ResultReach
+
+    from modelskill.network import _Companion
 
 from modelskill.network import NetworkNode, ReachBreakPoint, NetworkReach
 
@@ -155,7 +156,7 @@ def _build_reach_breakpoints(
     length: float | None,
     quantities: set[str] | None,
     populate_gridpoints: bool,
-    extra: Res1D | None = None,
+    extra: _Companion | None = None,
 ) -> list[ReachBreakPoint]:
     """Build a reach's break points from its mikeio1d gridpoints.
 
@@ -189,7 +190,9 @@ def _build_reach_breakpoints(
         extra_gridpoints = extra.reaches[reach.name].gridpoints
 
     breakpoints: list[ReachBreakPoint] = []
-    for i, (gp, distances) in enumerate(zip(unique_gridpoints, distances_per_gridpoint)):
+    for i, (gp, distances) in enumerate(
+        zip(unique_gridpoints, distances_per_gridpoint)
+    ):
         data = _simplify_colnames(gp, quantities) if populate_gridpoints else None
         if data is not None and i < len(extra_gridpoints):
             data = _merge_extra_quantities(
