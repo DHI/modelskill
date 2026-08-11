@@ -2145,3 +2145,54 @@ class TestNetworkFromPath:
         with pytest.raises(ValueError, match="^boom$"):
             _network_from_path(res)
 
+
+@requires_mikeio1d
+class TestNetworkModelResultFromPath:
+    """A path spares the caller a separate Network import and load."""
+
+    _RES1D = "./tests/testdata/network.res1d"
+
+    def test_a_path_gives_the_same_result_as_a_loaded_network(self):
+        from_path = NetworkModelResult(self._RES1D, item="WaterLevel")
+        from_network = NetworkModelResult(
+            Network.from_mike(self._RES1D), item="WaterLevel"
+        )
+
+        assert from_path.name == from_network.name
+        assert from_path.quantity == from_network.quantity
+        assert np.array_equal(from_path.nodes, from_network.nodes)
+        assert from_path.time.equals(from_network.time)
+
+    def test_a_str_and_a_path_are_interchangeable(self):
+        as_str = NetworkModelResult(self._RES1D, item="WaterLevel")
+        as_path = NetworkModelResult(Path(self._RES1D), item="WaterLevel")
+
+        assert np.array_equal(as_str.nodes, as_path.nodes)
+
+    def test_the_network_is_reachable_afterwards(self):
+        mr = NetworkModelResult(self._RES1D, item="WaterLevel")
+
+        assert isinstance(mr.network, Network)
+        assert mr.network.find(node="100") in mr.nodes
+
+    def test_extract_works_from_a_path_loaded_model(self):
+        mr = NetworkModelResult(self._RES1D, item="WaterLevel")
+        node = mr.network.find(node="100")
+        obs_data = pd.DataFrame({"sensor": np.zeros(len(mr.time))}, index=mr.time)
+
+        extracted = mr.extract(NodeObservation(obs_data, at=node))
+
+        assert isinstance(extracted, NodeModelResult)
+        assert extracted.node == node
+
+    def test_an_epanet_path_reads_its_companions(self, tmp_path):
+        res = _copy_epanet(tmp_path, ".resx", ".inp")
+
+        mr = NetworkModelResult(res, item="Head")
+
+        assert "Volume" in mr.network.quantities
+        assert mr.network._reaches["10"].length == pytest.approx(3209.544)
+
+    def test_an_unreadable_format_is_refused(self):
+        with pytest.raises(NotImplementedError, match="Unsupported file extension"):
+            NetworkModelResult("./tests/testdata/obs.dfs0")

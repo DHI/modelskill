@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Sequence
 
 import numpy as np
@@ -90,15 +91,17 @@ class NodeModelResult(TimeSeries):
 class NetworkModelResult:
     """Model result for network data with time and node dimensions.
 
-    Construct a NetworkModelResult from a Network object containing
-    timeseries data for each node. Users must provide exact node IDs
-    (integers obtained via ``Network.find()``) when creating observations —
-    no spatial interpolation is performed.
+    Construct a NetworkModelResult from a result file or from an already-loaded
+    Network containing timeseries data for each node. Users must provide exact
+    node IDs (integers obtained via ``Network.find()``) when creating
+    observations — no spatial interpolation is performed.
 
     Parameters
     ----------
-    data : Network
-        Network-like object with a ``to_dataset()`` method (e.g. :class:`modelskill.network.Network`).
+    data : Network, str or Path
+        Path to a ``.res1d``, ``.res11`` or ``.res`` result file, or a
+        network-like object with a ``to_dataset()`` method (e.g.
+        :class:`modelskill.network.Network`).
     name : str, optional
         The name of the model result,
         by default None (will be set to first data variable name)
@@ -113,23 +116,54 @@ class NetworkModelResult:
     Examples
     --------
     >>> import modelskill as ms
+    >>> mr = ms.NetworkModelResult("model.res1d", item="WaterLevel")
+
+    From a network built by hand, or loaded with arguments of its own:
+
     >>> from modelskill.network import Network
     >>> network = Network(reaches)  # reaches is a list[NetworkReach]
     >>> mr = ms.NetworkModelResult(network, name="MyModel")
-    >>> obs = ms.NodeObservation(data, node=network.find(node="node_A"))
+    >>> obs = ms.NodeObservation(data, at=network.find(node="node_A"))
     >>> extracted = mr.extract(obs)
+
+    Notes
+    -----
+    A path is read by the constructor its extension belongs to: ``.res1d`` and
+    ``.res11`` by :meth:`Network.from_mike
+    <modelskill.network.Network.from_mike>`, ``.res`` by
+    :meth:`Network.from_epanet <modelskill.network.Network.from_epanet>`. An
+    EPANET file also picks up the ``.resx`` and ``.inp`` companions that share
+    its folder and stem, since the ``.inp`` is the only one of the three
+    carrying reach lengths.
+
+    Load the network yourself when you need to name the companions, or to keep
+    memory down on a large file by reading only the nodes, reaches or
+    quantities you will score.
+
+    See Also
+    --------
+    modelskill.network.Network.from_mike : Read a MIKE 1D or MIKE 11 result file.
+    modelskill.network.Network.from_epanet : Read an EPANET result file.
     """
 
     def __init__(
         self,
-        data: Network,
+        data: Network | str | Path,
         *,
         name: str | None = None,
         item: str | int | None = None,
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
     ):
-        self.network = data.copy()
+        if isinstance(data, (str, Path)):
+            # Imported here, not at module scope, to keep this module importable
+            # without the optional network dependencies (ADR-010).
+            from modelskill.network import _network_from_path
+
+            # Freshly built, so nothing else holds a reference to copy away from.
+            self.network = _network_from_path(data)
+        else:
+            self.network = data.copy()
 
         ds = self.network.to_dataset()
         sel_items = SelectedItems.parse(
