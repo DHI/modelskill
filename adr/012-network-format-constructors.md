@@ -19,6 +19,8 @@ Name constructors after the product that writes the file, and ship one only wher
 | `Network.from_mike` | `.res1d`, `.res11` |
 | `Network.from_epanet` | `.res`, plus optional `.resx` and `.inp` companions |
 
+`NetworkModelResult` is exempt: it accepts a path and reads it with the constructor its extension is mapped to, since every other model result class already takes a path.
+
 A product's companion files are arguments rather than constructors of their own. A companion describes a network defined elsewhere and cannot stand alone, so `from_epanet(res, resx=..., inp=...)` and not a `from_resx()`. Each companion is validated against the main file — same time axis, no unknown IDs — because two unrelated runs would otherwise merge silently.
 
 Every extension mikeio1d reads is accounted for in one of three module-level tables in `network.py`: readable by `from_mike`, readable by `from_epanet`, or refused with a reason that names the file or method which would lift it. A test asserts the tables cover exactly `Res1D.get_supported_file_extensions()`, so a mikeio1d release adding a tenth format fails CI instead of leaving that format silently unreachable. `from_res1d` is removed without a deprecation shim: it shipped only in the 1.4.0a3 alpha, and the network module is opt-in and absent from the API reference.
@@ -37,5 +39,6 @@ Every extension mikeio1d reads is accounted for in one of three module-level tab
 
 - The method list is the format list: `Network.from_<TAB>` answers "which formats does this read", and passing a file the other constructor handles raises a `ValueError` naming that constructor.
 - EPANET's degenerate geometry is stated in the `from_epanet` docstring and the user guide and asserted in tests, rather than warned about at runtime. A warning would fire on correct usage, and both consequences already raise where they bite.
+- `NetworkModelResult(path)` reads the extension table rather than asking the caller, which is the one place the guessing objection above does not bite: the tables map each extension to exactly one product, and the answer is reported in `mr.network`. It picks up an EPANET file's `.resx` and `.inp` siblings for the same reason, since a network built without the `.inp` has no reach lengths at all. Anything needing named companions or selective loading still goes through `Network.from_*`.
 - MOUSE and Water Hammer are refused even though mikeio1d may well read them correctly. Refusing with a reason is recoverable; a method that silently builds a wrong graph is not. Each becomes a six-line addition once a redistributable fixture exists.
 - The `.inp` reader (`model/adapters/_inp.py`) is ours to maintain, since mikeio1d does not read `.inp` and pulling in `wntr` or `swmmio` for two sections would weigh more than the parser does (ADR-010). SWMM support will reuse it, as the two products share the layout.

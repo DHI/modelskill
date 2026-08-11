@@ -391,13 +391,23 @@ print(ids)
 
 ## Skill assessment workflow
 
-### 1. Wrap the Network in a NetworkModelResult
+### 1. Wrap the network in a NetworkModelResult
+
+`NetworkModelResult` takes the path to a result file, so an assessment can start from one without loading the `Network` yourself:
 
 ```{python}
 import modelskill as ms
-from modelskill.model.network import NetworkModelResult
 
-mr = NetworkModelResult(network, name="MyModel", item="WaterLevel")
+mr = ms.NetworkModelResult(path_to_res1d, name="MyModel", item="WaterLevel")
+mr
+```
+
+The extension picks the constructor, following the same table as [Building a Network](#building-a-network) above, and an EPANET `.res` also reads the `.resx` and `.inp` that share its folder and stem.
+
+Pass a `Network` when you need to name the companions yourself, or to keep memory down with [selective loading](#selective-loading):
+
+```{python}
+mr = ms.NetworkModelResult(network, name="MyModel", item="WaterLevel")
 mr
 ```
 
@@ -461,7 +471,7 @@ obs_q
 Pass the observation to `ms.match()` exactly as you would a `NodeObservation`. modelskill resolves which breakpoint to use automatically:
 
 ```{python}
-mr_q = NetworkModelResult(network, name="MyModel", item="Discharge")
+mr_q = ms.NetworkModelResult(network, name="MyModel", item="Discharge")
 cc_q = ms.match(obs=obs_q, mod=mr_q)
 cc_q.skill()
 ```
@@ -479,8 +489,7 @@ Pass that database as `db` and modelskill does the lookup for you:
 ```python
 quantity = "Pressure"
 
-network = Network.from_epanet("model.res", quantities=quantity)
-network_model = ms.NetworkModelResult(network, item=quantity)
+network_model = ms.NetworkModelResult("model.res", item=quantity)
 
 obs = ms.NodeObservation.from_multiple(
     data="calibration.dfs0",
