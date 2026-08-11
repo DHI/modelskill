@@ -389,6 +389,24 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
     return Period(start=min(starts), end=max(ends))
 
 
+def _check_timezone_compatibility(
+    observation: Observation,
+    raw_mod_data: Mapping[
+        str,
+        PointModelResult | TrackModelResult | VerticalModelResult | NodeModelResult,
+    ],
+) -> None:
+    obs_tz = observation.data.time.to_index().tz
+    for name, mr in raw_mod_data.items():
+        mr_tz = mr.data.time.to_index().tz
+        if (obs_tz is None) != (mr_tz is None):
+            raise ValueError(
+                f"Timezone mismatch between observation '{observation.name}' "
+                f"(tz={obs_tz}) and model result '{name}' (tz={mr_tz}). "
+                "Both must be either timezone-aware or timezone-naive."
+            )
+
+
 def _match_space_time(
     observation: Observation,
     raw_mod_data: Mapping[
@@ -399,6 +417,8 @@ def _match_space_time(
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
 ) -> xr.Dataset | None:
+    _check_timezone_compatibility(observation, raw_mod_data)
+
     idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
 

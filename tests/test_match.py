@@ -936,6 +936,26 @@ def test_match_obs_model_pos_args_wrong_order_helpful_error_message():
         ms.match(mr, obs)
 
 
+def test_match_raises_clear_error_on_tz_aware_vs_naive_mismatch():
+    """Mismatched tz-awareness must raise a clear ModelSkill error, not a bare pandas TypeError."""
+    mr = ms.PointModelResult(
+        data=pd.Series(
+            [1.0, 2.0, 3.0], index=pd.date_range("2020-01-01", periods=3, freq="h")
+        ),
+        name="Model",
+    )
+    obs = ms.PointObservation(
+        data=pd.Series(
+            [1.0, 2.0, 3.0],
+            index=pd.date_range("2020-01-01", periods=3, freq="h", tz="UTC"),
+        ),
+        name="Station",
+    )
+
+    with pytest.raises(ValueError, match="[Tt]imezone"):
+        ms.match(obs, mr)
+
+
 def test_multiple_models_same_name(tmp_path: Path) -> None:
     obs = ms.PointObservation(
         "tests/testdata/SW/HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA"
