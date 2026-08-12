@@ -598,6 +598,37 @@ def test_dataframe_from_partial_network():
 @pytest.mark.skipif(
     sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
 )
+def test_nodes_filtered_network_keeps_datetime_index():
+    """Topology-only nodes must not degrade the time index to object dtype.
+
+    A nodes-filtered network keeps the full topology, storing empty data for
+    the unselected nodes. Concatenating those empty (RangeIndex) frames must
+    not corrupt the DatetimeIndex, otherwise ms.match() later fails with
+    "time must be datetime".
+    """
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_mike(path_to_file, nodes=["108", "101"], reaches=[])
+
+    assert isinstance(network._df.index, pd.DatetimeIndex)
+    assert network._df.index.dtype == "datetime64[ns]"
+    assert network.to_dataset()["time"].dtype == np.dtype("datetime64[ns]")
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_mike(path_to_file, nodes=["108", "101"], reaches=[])
+
+    assert isinstance(network._df.index, pd.DatetimeIndex)
+    assert network._df.index.dtype == "datetime64[ns]"
+    assert network.to_dataset()["time"].dtype == np.dtype("datetime64[ns]")
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
 def test_from_mike_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
     path_to_file = "./tests/testdata/network.res1d"
     full_network = Network.from_mike(path_to_file)

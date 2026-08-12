@@ -854,7 +854,9 @@ class Network:
     @staticmethod
     def _build_dataframe(g: nx.Graph) -> pd.DataFrame:
         data_in_nodes = {
-            k: v["data"] for k, v in g.nodes.items() if v["data"] is not None
+            k: v["data"]
+            for k, v in g.nodes.items()
+            if v["data"] is not None and not v["data"].empty
         }
         if len(data_in_nodes) == 0:
             columns = pd.MultiIndex.from_arrays([[], []], names=["node", "quantity"])

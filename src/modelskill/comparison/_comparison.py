@@ -1361,7 +1361,7 @@ class Comparer:
         # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
 
         # There is no need to save raw data for track data, since it is identical to the matched data
-        if self.gtype == "point":
+        if self.gtype in ("point", "node"):
             ds = self.data.copy()  # copy needed to avoid modifying self.data
 
             for key, ts_mod in self.raw_mod_data.items():
@@ -1396,7 +1396,7 @@ class Comparer:
             # FIXME: consider during Phase3
             return Comparer(matched_data=data)
 
-        if data.gtype == "point":
+        if data.gtype in ("point", "node"):
             raw_mod_data: Dict[
                 str,
                 PointModelResult
@@ -1412,7 +1412,13 @@ class Comparer:
                     ds = data[[var_name]].rename(
                         {"_time_raw_" + new_key: "time", var_name: new_key}
                     )
-                    ts = PointModelResult(data=ds, name=new_key)
+                    ts: PointModelResult | NodeModelResult
+                    if data.gtype == "node":
+                        ts = NodeModelResult(
+                            data=ds, node=int(ds.coords["node"].item()), name=new_key
+                        )
+                    else:
+                        ts = PointModelResult(data=ds, name=new_key)
 
                     raw_mod_data[new_key] = ts
 
