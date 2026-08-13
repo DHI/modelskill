@@ -31,6 +31,7 @@ Each ADR follows this structure:
 - [ADR-010](010-optional-domain-dependencies.md) - Optional dependencies for domain-specific model types (Draft)
 - [ADR-011](011-vertical-pre-extracted-columns.md) - VerticalModelResult ingests pre-extracted columns
 - [ADR-012](012-network-format-constructors.md) - One Network constructor per modelling product (Draft)
+- [ADR-013](013-network-topology-in-mikeio1d.md) - The network topology layer belongs to mikeio1d (Draft)
 
 ## Contributing
 
