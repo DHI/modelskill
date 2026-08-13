@@ -26,3 +26,5 @@ In active development. MIKE 1D, MIKE 11 and EPANET result files can be read toda
 
 MOUSE and Water Hammer results are not read yet: no shareable result file exists for either format, so support cannot be verified. SWMM results are not read yet: the reach connectivity lives in the companion '.inp' input file, which modelskill does not read yet.
 
+The layer that reads those files and builds the network is proposed for mikeio1d rather than modelskill, where the formats, the fixtures and a first graph conversion already live (ADR-013). ModelSkill would keep the model result, the observations and the matching, and require the upstream module. The release is coordinated with it: this feature ships once both projects can ship, so that nothing is published here which then moves.
+
