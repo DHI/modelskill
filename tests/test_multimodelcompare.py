@@ -304,9 +304,18 @@ def test_mm_scatter(cc):
     cc.sel(model="SW_2").plot.scatter(show_points=0.75, show_density=True)
     cc.sel(model="SW_2", observation="HKNA").plot.scatter(skill_table=True)
     cc.sel(model="SW_2").plot.scatter(fit_to_quantiles=True)
-    # cc.sel(model="SW_2").plot.scatter(binsize=0.5, backend="plotly")
     assert True
     plt.close("all")
+
+
+def test_mm_scatter_plotly_backend(cc):
+    import plotly.graph_objects as go
+
+    fig = cc.sel(model="SW_2").plot.scatter(bins=0.5, backend="plotly")
+    assert isinstance(fig, go.Figure)
+
+    with pytest.raises(ValueError, match="plotLY"):
+        cc.sel(model="SW_2").plot.scatter(backend="plotLY")
 
 
 def cm_1(obs, model):
@@ -378,14 +387,23 @@ def test_mm_plot_timeseries(cc):
     cc["EPL"].plot.timeseries()
     cc["EPL"].plot.timeseries(title="t", figsize=(3, 3))
 
-    # cc["EPL"].plot_timeseries(backend="plotly")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="mpl"):
         cc["EPL"].plot.timeseries(backend="mpl")
 
     ax = cc["EPL"].plot.timeseries()
     assert "EPL" in ax.get_title()
 
     plt.close("all")
+
+
+def test_mm_plot_timeseries_plotly_backend(cc):
+    import plotly.graph_objects as go
+
+    fig = cc["EPL"].plot.timeseries(backend="plotly")
+    assert isinstance(fig, go.Figure)
+
+    with pytest.raises(ValueError, match="plotLY"):
+        cc["EPL"].plot.timeseries(backend="plotLY")
 
 
 def test_match_including_dummy(mr1, mr2, o1, o2, o3):

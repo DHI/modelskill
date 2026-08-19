@@ -29,6 +29,12 @@ Or the development version:
 pip install https://github.com/DHI/modelskill/archive/main.zip
 ```
 
+Interactive plots (`backend="plotly"`) require an extra dependency:
+
+```bash
+pip install "modelskill[plotly]"
+```
+
 ## Getting started
 
 Define model results and observations:
@@ -68,6 +74,7 @@ See the [user guide](https://dhi.github.io/modelskill/user-guide/getting-started
 * General help, new ideas and feature requests - [GitHub Discussions](https://github.com/DHI/modelskill/discussions)
 * Bugs - [GitHub Issues](https://github.com/DHI/modelskill/issues)
 
+<<<<<<< HEAD
 ## Testing
 
 ModelSkill is tested extensively, with an overall statement coverage of ~90%. The test suite runs on every pull request against Python 3.12 and 3.14, and on a schedule on both Linux and Windows.
@@ -83,3 +90,21 @@ Contributions are welcome — see [CONTRIBUTING.md](https://github.com/DHI/model
 ## License
 
 [MIT](https://github.com/DHI/modelskill/blob/main/LICENSE)
+=======
+Plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/), the default) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
+
+```python
+cc["HKNA"].plot.timeseries(figsize=(10, 4), backend="plotly")
+```
+
+![timeseries](https://raw.githubusercontent.com/DHI/modelskill/main/images/plotly_timeseries.png)
+
+The `backend` argument is accepted by `scatter`, `hist`, `kde`, `qq`, `box` and
+`residual_hist` on both `Comparer` and `ComparerCollection`, by `Comparer.plot.timeseries`,
+and by the `timeseries` and `hist` plots on observations and model results. The same arguments (`title`, `figsize` in inches, `xlim`, `ylim`, ...)
+work with both backends; the matplotlib backend returns a `matplotlib.axes.Axes` and the
+plotly backend a `plotly.graph_objects.Figure`. Extra `**kwargs` go to the underlying
+matplotlib call or to [`Figure.update_layout`](https://plotly.com/python/reference/layout/)
+respectively. `taylor`, `spatial_overview`, `temporal_coverage` and `wind_rose` are
+matplotlib-only.
+>>>>>>> b4ecd5f9 (Make plotly a first-class plotting backend)

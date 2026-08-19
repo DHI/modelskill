@@ -11,6 +11,31 @@ from ..metrics import metric_has_units, defined_metrics, get_display_name
 from ..obs import unit_display_name
 
 
+def reglabel(slope: float, intercept: float, fit_to_quantiles: bool) -> str:
+    """Legend label for a regression line.
+
+    Parameters
+    ----------
+    slope : float
+        slope of the fitted line
+    intercept : float
+        intercept of the fitted line
+    fit_to_quantiles : bool
+        whether the line was fitted to the quantiles rather than to all data
+
+    Returns
+    -------
+    str
+        label text
+    """
+    sign = "" if intercept < 0 else "+"
+    if fit_to_quantiles:
+        fit = "QQ fit"
+    else:
+        fit = "Fit"
+    return f"{fit}: y={slope:.2f}x{sign}{intercept:.2f}"
+
+
 def _get_ax(ax=None, figsize=None):
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
