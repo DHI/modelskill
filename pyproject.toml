@@ -44,6 +44,7 @@ classifiers = [
 
 [project.optional-dependencies]
 networks = ["mikeio1d", "networkx"]
+plotly = ["plotly >= 4.5"]
 
 [dependency-groups]
 dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2", "netCDF4", "dask"]
@@ -58,6 +59,7 @@ test = [
     "mypy==1.19.1",
     "types-PyYAML",
     "geopandas",
+    "plotly >= 4.5",
 ]
 
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
