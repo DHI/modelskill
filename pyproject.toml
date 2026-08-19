@@ -49,7 +49,7 @@ plotly = ["plotly >= 4.5"]
 [dependency-groups]
 dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2", "netCDF4", "dask"]
 
-docs = ["quartodoc==0.11.1", "nbformat", "nbconvert", "ipykernel", "griffe<2"]
+docs = ["quartodoc==0.11.1", "nbformat", "nbconvert", "ipykernel", "griffe<2", "plotly >= 4.5"]
 
 test = [
     "pytest",
