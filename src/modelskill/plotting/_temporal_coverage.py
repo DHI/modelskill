@@ -4,7 +4,12 @@ from typing import Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ._backend import Backend, reject_matplotlib_axes, validate_backend
+from ._backend import (
+    Backend,
+    PlotResult,
+    reject_matplotlib_axes,
+    validate_backend,
+)
 from ._misc import _get_fig_ax
 
 
@@ -18,7 +23,7 @@ def temporal_coverage(
     figsize=None,
     title=None,
     backend: Backend = "matplotlib",
-):
+) -> PlotResult:
     """Plot graph showing temporal coverage for all observations and models
 
     Parameters

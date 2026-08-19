@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Tuple
 # modelskill.plotting depends on obs/model, which in turn depend on this
 # module, so plotting is imported inside the methods to avoid a circular import
 if TYPE_CHECKING:
-    from ..plotting._backend import Backend
+    from ..plotting._backend import Backend, PlotResult
 
 
 class TimeSeriesPlotter:
@@ -23,7 +23,7 @@ class TimeSeriesPlotter:
     def __init__(self, ts) -> None:
         self._ts = ts
 
-    def __call__(self, **kwargs):
+    def __call__(self, **kwargs) -> PlotResult:
         # default to timeseries plot
         return self.timeseries(**kwargs)
 
@@ -37,7 +37,7 @@ class TimeSeriesPlotter:
         figsize: Tuple[float, float] | None = None,
         backend: Backend = "matplotlib",
         **kwargs: Any,
-    ):
+    ) -> PlotResult:
         """Plot timeseries
 
         Parameters
@@ -107,7 +107,7 @@ class TimeSeriesPlotter:
         ax=None,
         backend: Backend = "matplotlib",
         **kwargs: Any,
-    ):
+    ) -> PlotResult:
         """Plot histogram of timeseries values
 
         Parameters

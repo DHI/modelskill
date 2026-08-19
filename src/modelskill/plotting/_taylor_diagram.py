@@ -6,7 +6,12 @@ from typing import Collection
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 
-from ._backend import Backend, reject_matplotlib_axes, validate_backend
+from ._backend import (
+    Backend,
+    FigureResult,
+    reject_matplotlib_axes,
+    validate_backend,
+)
 from ._taylor_diagram_external import TaylorDiagram
 
 
@@ -29,7 +34,7 @@ def taylor_diagram(
     ax: Axes | None = None,
     title: str = "Taylor diagram",
     backend: Backend = "matplotlib",
-):
+) -> FigureResult:
     """
     Plot a Taylor diagram using the given observations and points.
 

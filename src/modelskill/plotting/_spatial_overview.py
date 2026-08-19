@@ -9,7 +9,12 @@ from ..model.point import PointModelResult
 from ..model.track import TrackModelResult
 from ..model.vertical import VerticalModelResult
 from ..obs import Observation, PointObservation, TrackObservation, VerticalObservation
-from ._backend import Backend, reject_matplotlib_axes, validate_backend
+from ._backend import (
+    Backend,
+    PlotResult,
+    reject_matplotlib_axes,
+    validate_backend,
+)
 from ._misc import _get_ax
 
 
@@ -26,7 +31,7 @@ def spatial_overview(
     figsize: Tuple | None = None,
     title: str | None = None,
     backend: Backend = "matplotlib",
-):
+) -> PlotResult:
     """Plot observation points on a map showing the model domain
 
     Parameters

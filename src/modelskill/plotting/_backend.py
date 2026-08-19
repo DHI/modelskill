@@ -19,11 +19,22 @@ plotly is an optional dependency, install it with
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Literal, Sequence, Tuple
 
 import numpy as np
+from typing_extensions import TypeAlias
+
+if TYPE_CHECKING:
+    import matplotlib.axes
+    import matplotlib.figure
+    import plotly.graph_objects as go
 
 Backend = Literal["matplotlib", "plotly"]
+
+# What a plot returns depends on the backend: axes for matplotlib, a figure for
+# plotly. A few plots (taylor) return a matplotlib figure rather than axes.
+PlotResult: TypeAlias = "matplotlib.axes.Axes | go.Figure"
+FigureResult: TypeAlias = "matplotlib.figure.Figure | go.Figure"
 
 BACKENDS: Tuple[Backend, ...] = ("matplotlib", "plotly")
 

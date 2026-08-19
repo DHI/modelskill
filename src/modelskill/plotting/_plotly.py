@@ -8,10 +8,13 @@ by the ``backend="plotly"`` argument on the plot methods.
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Mapping, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
+
+if TYPE_CHECKING:
+    import plotly.graph_objects as go
 
 from ..metrics import _linear_regression
 from ..settings import options
@@ -39,7 +42,7 @@ def timeseries(
     figsize: Tuple[float, float] | None = None,
     directional: bool = False,
     **kwargs: Any,
-):
+) -> go.Figure:
     """Timeseries of observation and model data."""
     go = import_plotly_go()
 
@@ -79,7 +82,7 @@ def line(
     ylabel: str | None = None,
     figsize: Tuple[float, float] | None = None,
     **kwargs: Any,
-):
+) -> go.Figure:
     """Line plot of a single time series."""
     go = import_plotly_go()
 
@@ -107,7 +110,7 @@ def histogram(
     figsize: Tuple[float, float] | None = None,
     directional: bool = False,
     **kwargs: Any,
-):
+) -> go.Figure:
     """Overlaid histograms of the given named data series."""
     go = import_plotly_go()
 
@@ -162,7 +165,7 @@ def kde(
     bw_method: Any = None,
     n_points: int = 200,
     **kwargs: Any,
-):
+) -> go.Figure:
     """Kernel density estimates of the given named data series.
 
     The first series is drawn dashed, matching the matplotlib backend where
@@ -206,7 +209,7 @@ def qq(
     figsize: Tuple[float, float] | None = None,
     directional: bool = False,
     **kwargs: Any,
-):
+) -> go.Figure:
     """Quantile-quantile plot with a 1:1 line, one trace per model."""
     go = import_plotly_go()
 
@@ -254,7 +257,7 @@ def box(
     figsize: Tuple[float, float] | None = None,
     directional: bool = False,
     **kwargs: Any,
-):
+) -> go.Figure:
     """Box plot with one box per named data series."""
     go = import_plotly_go()
 
@@ -287,7 +290,7 @@ def residual_hist(
     figsize: Tuple[float, float] | None = None,
     directional: bool = False,
     **kwargs: Any,
-):
+) -> go.Figure:
     """Histogram of model residuals."""
     go = import_plotly_go()
 
@@ -343,7 +346,7 @@ def scatter(
     skill_score_unit,
     fit_to_quantiles,
     **kwargs,
-):
+) -> go.Figure:
     """Scatter plot of observation vs model, with 1:1 line and regression."""
     go = import_plotly_go()
 
@@ -469,7 +472,7 @@ def taylor(
     figsize: Tuple[float, float] | None = None,
     n_rms_contours: int = 5,
     **kwargs: Any,
-):
+) -> go.Figure:
     """Taylor diagram in a single-quadrant polar plot, r=std and theta=arccos(cc).
 
     Parameters
@@ -582,7 +585,7 @@ def temporal_coverage(
     title: str | None = None,
     figsize: Tuple[float, float] | None = None,
     **kwargs: Any,
-):
+) -> go.Figure:
     """Temporal coverage of observations and models, one row per data source.
 
     Parameters
@@ -639,7 +642,7 @@ def spatial_overview(
     title: str | None = None,
     figsize: Tuple[float, float] | None = None,
     **kwargs: Any,
-):
+) -> go.Figure:
     """Map of observation positions on the model domain outline.
 
     Parameters
@@ -717,7 +720,7 @@ def wind_rose(
     secondary_dir_step_factor: float = 2.0,
     legend: bool = True,
     **kwargs: Any,
-):
+) -> go.Figure:
     """Dual wind rose as stacked polar bars, with a calm hole in the centre.
 
     Parameters

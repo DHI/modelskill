@@ -10,7 +10,12 @@ from matplotlib.collections import PatchCollection
 from matplotlib.legend import Legend
 from matplotlib.patches import Polygon, Rectangle
 
-from ._backend import Backend, reject_matplotlib_axes, validate_backend
+from ._backend import (
+    Backend,
+    PlotResult,
+    reject_matplotlib_axes,
+    validate_backend,
+)
 
 
 @dataclass
@@ -148,7 +153,7 @@ def wind_rose(
     ax=None,
     title=None,
     backend: Backend = "matplotlib",
-):
+) -> PlotResult:
     """Plots a (dual) wind (wave or current) roses with calms.
 
     The size of the calm is determined by the primary (measurement) data.
