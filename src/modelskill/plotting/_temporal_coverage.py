@@ -36,7 +36,7 @@ def temporal_coverage(
         Show temporal coverage only for period covered
         by the model, by default True
     marker : str, optional
-        plot marker for observations, by default "_"
+        plot marker for observations (matplotlib backend only), by default "_"
     ax: matplotlib.axes, optional
         Adding to existing axis, instead of creating new fig
     figsize : Tuple(float, float), optional
@@ -84,6 +84,8 @@ def temporal_coverage(
     mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
 
     n_lines = len(obs) + len(mod)
+    if figsize is None:
+        figsize = (7, max(2.0, 0.45 * n_lines))
 
     if backend == "plotly":
         from . import _plotly
@@ -99,10 +101,6 @@ def temporal_coverage(
         return _plotly.temporal_coverage(
             lines=lines, xlim=xlim, title=title, figsize=figsize
         )
-
-    if figsize is None:
-        ysize = max(2.0, 0.45 * n_lines)
-        figsize = (7, ysize)
 
     fig, ax = _get_fig_ax(ax=ax, figsize=figsize)
     y = np.repeat(0.0, 2)

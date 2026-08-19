@@ -28,7 +28,12 @@ from ..plotting._backend import (
     reject_matplotlib_axes,
     validate_backend,
 )
-from ..plotting._misc import _get_fig_ax, _xtick_directional, _ytick_directional
+from ..plotting._misc import (
+    RESIDUAL_COLOR,
+    _get_fig_ax,
+    _xtick_directional,
+    _ytick_directional,
+)
 from ..settings import options
 from ..utils import _get_idx
 from ._comparer_plotter import quantiles_xy
@@ -275,12 +280,9 @@ class ComparerCollectionPlotter:
             skill_scores=skill_scores,
             skill_score_unit=skill_score_unit,
             ax=ax,
+            directional=self.is_directional,
             **kwargs,
         )
-
-        if backend == "matplotlib" and self.is_directional:
-            _xtick_directional(ax, xlim)
-            _ytick_directional(ax, ylim)
 
         return ax
 
@@ -910,7 +912,7 @@ class ComparerCollectionPlotter:
 
         _, ax = _get_fig_ax(ax, figsize)
 
-        color = _plotly.RESIDUAL_COLOR if color is None else color
+        color = RESIDUAL_COLOR if color is None else color
         ax.hist(residuals, bins=bins, color=color, **kwargs)
         ax.set_title(title)
         ax.set_xlabel(xlabel)

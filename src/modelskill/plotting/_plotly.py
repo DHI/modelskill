@@ -8,7 +8,8 @@ by the ``backend="plotly"`` argument on the plot methods.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Mapping, Sequence, Tuple
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -18,16 +19,139 @@ if TYPE_CHECKING:
 
 from ..metrics import _linear_regression
 from ..settings import options
-from ._backend import (
-    apply_layout,
-    directional_axis,
-    import_plotly_go,
-    series_range,
-)
-from ._misc import format_skill_table, reglabel
+from ._backend import directional_ticks
+from ._misc import RESIDUAL_COLOR, format_skill_table, reglabel, series_range
 
-# grey used for residual histograms, shared with the matplotlib backend
-RESIDUAL_COLOR = "#8B8D8E"
+# plotly sizes are in pixels, matplotlib figsize is in inches
+PIXELS_PER_INCH = 100
+
+_PLOTLY_INSTALL_HINT = (
+    "The 'plotly' backend requires the optional plotly package. "
+    'Install it with `pip install "modelskill[plotly]"`.'
+)
+
+
+def import_plotly_go() -> ModuleType:
+    """Import plotly.graph_objects with an actionable error if it is missing.
+
+    Returns
+    -------
+    module
+        the ``plotly.graph_objects`` module
+
+    Raises
+    ------
+    ImportError
+        if plotly is not installed
+    """
+    try:
+        import plotly.graph_objects as go  # type: ignore
+    except ImportError as e:
+        raise ImportError(_PLOTLY_INSTALL_HINT) from e
+    return go
+
+
+def figsize_to_layout(figsize: Tuple[float, float] | None) -> Dict[str, float]:
+    """Translate a matplotlib figsize (inches) to plotly width/height (pixels).
+
+    Parameters
+    ----------
+    figsize : (float, float), optional
+        width and height in inches, by default None
+
+    Returns
+    -------
+    dict
+        ``{"width": ..., "height": ...}``, empty if figsize is None
+    """
+    if figsize is None:
+        return {}
+    width, height = figsize
+    return {"width": width * PIXELS_PER_INCH, "height": height * PIXELS_PER_INCH}
+
+
+def apply_layout(
+    fig: Any,
+    *,
+    figsize: Tuple[float, float] | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Apply modelskill and user layout arguments to a plotly figure.
+
+    ``figsize`` is translated to plotly's ``width``/``height``; an explicit
+    ``width``/``height`` in ``kwargs`` wins. Remaining ``kwargs`` are passed
+    to ``fig.update_layout``.
+
+    Parameters
+    ----------
+    fig : plotly.graph_objects.Figure
+        figure to update
+    figsize : (float, float), optional
+        width and height in inches, by default None
+    **kwargs
+        keyword arguments for ``plotly.graph_objects.Figure.update_layout``
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        the updated figure
+
+    Raises
+    ------
+    ValueError
+        if a keyword argument is not a valid plotly layout property
+    """
+    layout = {**figsize_to_layout(figsize), **kwargs}
+    layout = {k: v for k, v in layout.items() if v is not None}
+    try:
+        fig.update_layout(**layout)
+    except ValueError as e:
+        raise ValueError(_layout_error_message(layout, e)) from e
+    return fig
+
+
+def _layout_error_message(layout: Dict[str, Any], error: ValueError) -> str:
+    invalid = _invalid_layout_keys(layout)
+    named = ", ".join(f"'{k}'" for k in invalid) if invalid else "argument"
+    return (
+        f"Invalid plotly layout argument: {named}. The plotly backend passes "
+        "keyword arguments to plotly.graph_objects.Figure.update_layout, so "
+        "matplotlib-only arguments are not accepted. Valid layout properties "
+        "are documented at https://plotly.com/python/reference/layout/.\n"
+        f"Original plotly error: {error}"
+    )
+
+
+def _invalid_layout_keys(layout: Dict[str, Any]) -> List[str]:
+    go = import_plotly_go()
+    invalid = []
+    for key in layout:
+        try:
+            go.Layout(**{key: layout[key]})
+        except ValueError:
+            invalid.append(key)
+    return invalid
+
+
+def directional_axis(
+    fig: Any, axis: str, lim: Tuple[float, float] | None = None
+) -> None:
+    """Make a plotly axis directional (0-360 degrees with sector ticks).
+
+    Parameters
+    ----------
+    fig : plotly.graph_objects.Figure
+        figure to update
+    axis : str
+        "x" or "y"
+    lim : (float, float), optional
+        axis range, by default None which means (0, 360)
+    """
+    ticks = directional_ticks(lim)
+    update = fig.update_xaxes if axis == "x" else fig.update_yaxes
+    if len(ticks) > 2:
+        update(tickmode="array", tickvals=ticks)
+    update(range=lim if lim is not None else (0, 360))
 
 
 def timeseries(
@@ -114,7 +238,7 @@ def histogram(
     """Overlaid histograms of the given named data series."""
     go = import_plotly_go()
 
-    nbins, bin_edges = _hist_bins(bins, series.values())
+    nbins, bin_edges = _hist_bins(bins)
 
     traces = []
     for i, (name, values) in enumerate(series.items()):
@@ -145,14 +269,25 @@ def histogram(
     return fig
 
 
-def _hist_bins(bins: int | Sequence, series: Any) -> Tuple[int | None, Any]:
-    """Translate a matplotlib `bins` argument to plotly nbinsx/xbins."""
+def _hist_bins(bins: int | Sequence) -> Tuple[int | None, Any]:
+    """Translate a matplotlib `bins` argument to plotly nbinsx/xbins.
+
+    An int becomes plotly's `nbinsx`, which is an upper bound rather than an
+    exact bin count. A sequence of edges becomes `xbins`, which can only
+    express uniformly spaced bins.
+    """
     if isinstance(bins, (int, np.integer)):
         return int(bins), None
     edges = np.asarray(bins, dtype=float)
     if edges.size < 2:
         raise ValueError("`bins` must be an int or a sequence of at least two edges")
-    return None, dict(start=edges[0], end=edges[-1], size=edges[1] - edges[0])
+    widths = np.diff(edges)
+    if not np.allclose(widths, widths[0]):
+        raise ValueError(
+            "the plotly backend supports only uniformly spaced bin edges, "
+            f"got widths {widths}"
+        )
+    return None, dict(start=edges[0], end=edges[-1], size=widths[0])
 
 
 def kde(
@@ -294,7 +429,7 @@ def residual_hist(
     """Histogram of model residuals."""
     go = import_plotly_go()
 
-    nbins, bin_edges = _hist_bins(bins, [residuals])
+    nbins, bin_edges = _hist_bins(bins)
 
     fig = go.Figure(
         go.Histogram(
@@ -345,6 +480,7 @@ def scatter(
     skill_scores,
     skill_score_unit,
     fit_to_quantiles,
+    directional=False,
     **kwargs,
 ) -> go.Figure:
     """Scatter plot of observation vs model, with 1:1 line and regression."""
@@ -431,8 +567,12 @@ def scatter(
         xaxis_title=xlabel,
         **kwargs,
     )
-    fig.update_xaxes(range=xlim, nticks=10)
-    fig.update_yaxes(range=ylim, nticks=10)
+    if directional:
+        directional_axis(fig, "x", xlim)
+        directional_axis(fig, "y", ylim)
+    else:
+        fig.update_xaxes(range=xlim, nticks=10)
+        fig.update_yaxes(range=ylim, nticks=10)
 
     if skill_scores is not None:
         _add_skill_table(fig, skill_scores=skill_scores, unit=skill_score_unit)
@@ -709,8 +849,11 @@ def wind_rose(
     dir_step: float,
     densities: Sequence[np.ndarray],
     mag_bins: np.ndarray,
+    mag_max: float,
     labels: Sequence[str],
     colorscales: Sequence[str],
+    dir_labels: Sequence[str],
+    dir_label_positions: np.ndarray,
     calm: float,
     calm_text: str = "Calm",
     rmax: float,
@@ -734,10 +877,16 @@ def wind_rose(
     mag_bins : np.ndarray
         magnitude bin edges, used for the legend labels; the last edge is an
         open-ended catch-all
+    mag_max : float
+        magnitude the colorscale is normalized to, as in the matplotlib backend
     labels : Sequence[str]
         dataset names
     colorscales : Sequence[str]
         one plotly/matplotlib colorscale name per dataset
+    dir_labels : Sequence[str]
+        compass labels for the angular axis
+    dir_label_positions : np.ndarray
+        angles of the compass labels, in degrees
     calm : float
         radius of the calm hole
     calm_text : str, optional
@@ -762,9 +911,11 @@ def wind_rose(
 
     traces = []
     n_mag = len(densities[0])
+    # a bin is colored by its upper magnitude edge, as in the matplotlib backend
+    color_positions = np.asarray(mag_bins[1 : n_mag + 1], dtype=float) / mag_max
     for i, density in enumerate(densities):
         width = dir_step if i == 0 else dir_step / secondary_dir_step_factor
-        colors = _sample_colorscale(colorscales[i], n_mag)
+        colors = _sample_colorscale(colorscales[i], color_positions)
         for j in range(n_mag):
             # the last bin edge is an open-ended catch-all
             is_last = j == n_mag - 1
@@ -801,7 +952,13 @@ def wind_rose(
                 ticktext=[f"{t * 100:.0f}%" for t in r_ticks],
                 angle=5,
             ),
-            angularaxis=dict(direction="clockwise", rotation=90),
+            angularaxis=dict(
+                direction="clockwise",
+                rotation=90,
+                tickmode="array",
+                tickvals=dir_label_positions,
+                ticktext=list(dir_labels),
+            ),
         ),
     )
     if calm > 0:
@@ -812,12 +969,11 @@ def wind_rose(
     return fig
 
 
-def _sample_colorscale(cmap: str, n: int) -> list[str]:
-    """n colors sampled from a matplotlib colormap, as plotly rgb strings"""
+def _sample_colorscale(cmap: str, values: np.ndarray) -> list[str]:
+    """Colors at the given positions of a matplotlib colormap, as plotly rgb strings"""
     import matplotlib as mpl
 
     colormap = mpl.colormaps[cmap] if isinstance(cmap, str) else cmap
-    values = np.linspace(0.0, 1.0, n) if n > 1 else np.array([0.5])
     return [
         "rgb({:.0f},{:.0f},{:.0f})".format(*(np.array(colormap(v)[:3]) * 255))
         for v in values
