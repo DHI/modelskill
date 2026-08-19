@@ -26,16 +26,16 @@ import numpy as np
 from typing_extensions import TypeAlias
 
 if TYPE_CHECKING:
-    import matplotlib.axes
-    import matplotlib.figure
+    from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
     import plotly.graph_objects as go
 
 Backend = Literal["matplotlib", "plotly"]
 
 # What a plot returns depends on the backend: axes for matplotlib, a figure for
 # plotly. A few plots (taylor) return a matplotlib figure rather than axes.
-PlotResult: TypeAlias = "matplotlib.axes.Axes | go.Figure"
-FigureResult: TypeAlias = "matplotlib.figure.Figure | go.Figure"
+PlotResult: TypeAlias = "Axes | go.Figure"
+FigureResult: TypeAlias = "Figure | go.Figure"
 
 BACKENDS: Tuple[Backend, ...] = ("matplotlib", "plotly")
 
