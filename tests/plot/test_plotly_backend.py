@@ -13,7 +13,6 @@ import pytest
 from matplotlib.axes import Axes
 
 import modelskill as ms
-from modelskill.plotting import _plotly
 
 # every plot method that takes a `backend` argument
 PLOT_KINDS = ["timeseries", "scatter", "hist", "kde", "qq", "box", "residual_hist"]
@@ -237,10 +236,13 @@ def test_taylor_returns_a_polar_plotly_figure(cc, normalize_std):
     assert all(t.type == "scatterpolar" for t in fig.data)
 
 
-def test_taylor_places_the_models_at_arccos_of_the_correlation(cmp):
-    from modelskill import metrics as mtr
+def std_mod(obs, model):
+    """Standard deviation of the model, as a custom metric"""
+    return model.std()
 
-    sk = cmp.skill(metrics=[mtr.cc, mtr._std_mod]).to_dataframe()
+
+def test_taylor_places_the_models_at_arccos_of_the_correlation(cmp):
+    sk = cmp.skill(metrics=[ms.metrics.cc, std_mod]).to_dataframe()
     fig = cmp.plot.taylor(backend="plotly")
 
     # a single-model Comparer labels its taylor point "model", not the model name
@@ -248,7 +250,7 @@ def test_taylor_places_the_models_at_arccos_of_the_correlation(cmp):
     assert model.theta[0] == pytest.approx(
         np.degrees(np.arccos(sk["cc"].iloc[0])), abs=1e-6
     )
-    assert model.r[0] == pytest.approx(sk["_std_mod"].iloc[0], rel=1e-6)
+    assert model.r[0] == pytest.approx(sk["std_mod"].iloc[0], rel=1e-6)
 
 
 def test_taylor_matplotlib_still_returns_a_matplotlib_figure(cc):
@@ -352,40 +354,16 @@ def test_wind_rose_matplotlib_is_unchanged(wave_dir_dataframe):
 # --- plotly layout interop ---
 
 
-def test_import_plotly_go_missing_dependency_gives_actionable_error(monkeypatch):
-    # setting a sys.modules entry to None makes the import raise ImportError
-    monkeypatch.setitem(sys.modules, "plotly.graph_objects", None)
-
-    with pytest.raises(ImportError, match=r'pip install "modelskill\[plotly\]"'):
-        _plotly.import_plotly_go()
-
-
-def test_figsize_is_translated_to_plotly_pixels():
-    assert _plotly.figsize_to_layout(None) == {}
-    assert _plotly.figsize_to_layout((8, 6)) == {"width": 800, "height": 600}
-
-
-def test_apply_layout_uses_figsize_for_width_and_height():
-    fig = _plotly.apply_layout(go.Figure(), figsize=(3, 4))
-
-    assert fig.layout.width == 300
-    assert fig.layout.height == 400
-
-
-def test_apply_layout_lets_explicit_width_win_over_figsize():
-    fig = _plotly.apply_layout(go.Figure(), figsize=(3, 4), width=1000)
+def test_explicit_width_wins_over_figsize(cmp):
+    fig = cmp.plot.scatter(backend="plotly", figsize=(3, 4), width=1000)
 
     assert fig.layout.width == 1000
     assert fig.layout.height == 400
 
 
-def test_apply_layout_ignores_none_values():
-    fig = _plotly.apply_layout(go.Figure(), figsize=None, title=None)
+def test_missing_plotly_gives_an_actionable_error(cmp, monkeypatch):
+    # setting a sys.modules entry to None makes the import raise ImportError
+    monkeypatch.setitem(sys.modules, "plotly.graph_objects", None)
 
-    assert fig.layout.width is None
-    assert fig.layout.title.text is None
-
-
-def test_apply_layout_names_the_offending_matplotlib_argument():
-    with pytest.raises(ValueError, match="Invalid plotly layout argument: 'cmap'"):
-        _plotly.apply_layout(go.Figure(), cmap="OrRd")
+    with pytest.raises(ImportError, match=r'pip install "modelskill\[plotly\]"'):
+        cmp.plot.hist(backend="plotly")
