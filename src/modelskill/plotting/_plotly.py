@@ -551,7 +551,7 @@ def taylor(
     return fig
 
 
-def _rms_contour_radii(obs_std: float, rmax: float, n: int):
+def _rms_contour_radii(obs_std: float, rmax: float, n: int) -> list[float]:
     """Radii of the centered-RMS-difference contours to draw"""
     step = rmax / (n + 1)
     return [step * (i + 1) for i in range(n)]
@@ -559,7 +559,7 @@ def _rms_contour_radii(obs_std: float, rmax: float, n: int):
 
 def _rms_contour(
     go: Any, *, obs_std: float, radius: float, name: str, showlegend: bool
-):
+) -> Any:
     """A circle of constant centered RMS difference, in Taylor diagram polar coordinates"""
     t = np.linspace(0, 2 * np.pi, 180)
     x = obs_std + radius * np.cos(t)

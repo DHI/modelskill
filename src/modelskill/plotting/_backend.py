@@ -19,7 +19,8 @@ plotly is an optional dependency, install it with
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Literal, Sequence, Tuple
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Sequence, Tuple
 
 import numpy as np
 from typing_extensions import TypeAlias
@@ -72,7 +73,7 @@ def validate_backend(backend: str) -> Backend:
     return backend  # type: ignore[return-value]
 
 
-def import_plotly_go():
+def import_plotly_go() -> ModuleType:
     """Import plotly.graph_objects with an actionable error if it is missing.
 
     Returns
@@ -163,7 +164,7 @@ def _layout_error_message(layout: Dict[str, Any], error: ValueError) -> str:
     )
 
 
-def _invalid_layout_keys(layout: Dict[str, Any]) -> list[str]:
+def _invalid_layout_keys(layout: Dict[str, Any]) -> List[str]:
     go = import_plotly_go()
     invalid = []
     for key in layout:
@@ -196,7 +197,9 @@ def reject_matplotlib_axes(ax: Any, backend: str) -> None:
         )
 
 
-def directional_ticks(lim: Tuple[float, float] | None = None, n_sectors: int = 8):
+def directional_ticks(
+    lim: Tuple[float, float] | None = None, n_sectors: int = 8
+) -> np.ndarray:
     """Tick values for a directional (0-360 degrees) axis.
 
     Parameters
