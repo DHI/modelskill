@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Iterable, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import matplotlib.axes
     from ..model import DfsuModelResult
     from mikeio import GeometryFM2D
 
@@ -10,6 +9,7 @@ from ..model.point import PointModelResult
 from ..model.track import TrackModelResult
 from ..model.vertical import VerticalModelResult
 from ..obs import Observation, PointObservation, TrackObservation, VerticalObservation
+from ._backend import Backend, reject_matplotlib_axes, validate_backend
 from ._misc import _get_ax
 
 
@@ -25,7 +25,8 @@ def spatial_overview(
     ax=None,
     figsize: Tuple | None = None,
     title: str | None = None,
-) -> matplotlib.axes.Axes:
+    backend: Backend = "matplotlib",
+):
     """Plot observation points on a map showing the model domain
 
     Parameters
@@ -40,6 +41,8 @@ def spatial_overview(
         figure size, by default None
     title: str, optional
         plot title, default empty
+    backend : str, optional
+        "matplotlib" (static) or "plotly" (interactive), by default "matplotlib"
 
     See Also
     --------
@@ -47,8 +50,8 @@ def spatial_overview(
 
     Returns
     -------
-    matplotlib.axes.Axes
-        The matplotlib axes object
+    matplotlib.axes.Axes or plotly.graph_objects.Figure
+        The axes (matplotlib backend) or figure (plotly backend)
 
     Examples
     --------
@@ -63,28 +66,40 @@ def spatial_overview(
     ms.plotting.spatial_overview([o1, o2], mr)
     ```
     """
+    validate_backend(backend)
+    reject_matplotlib_axes(ax, backend)
+
     obs = [] if obs is None else list(obs) if isinstance(obs, Iterable) else [obs]  # type: ignore
     mods = [] if mod is None else list(mod) if isinstance(mod, Iterable) else [mod]  # type: ignore
 
+    geometries = [_model_geometry(m) for m in mods]
+
+    if backend == "plotly":
+        from . import _plotly
+
+        return _plotly.spatial_overview(
+            outlines=[
+                polygon.xy
+                for g in geometries
+                for polygon in g.boundary_polygons.exteriors
+            ],
+            points=[
+                (o.name, o.x, o.y)
+                for o in obs
+                if isinstance(o, (PointObservation, VerticalObservation))
+            ],
+            tracks=[
+                (o.name, o.x, o.y)
+                for o in obs
+                if isinstance(o, TrackObservation) and o.n_points < 10000
+            ],
+            title=title,
+            figsize=figsize,
+        )
+
     ax = _get_ax(ax=ax, figsize=figsize)
 
-    # TODO: support Gridded ModelResults
-    for m in mods:
-        if isinstance(m, (PointModelResult, TrackModelResult, VerticalModelResult)):
-            raise ValueError(
-                f"Model type {type(m)} not supported. Only DfsuModelResult and mikeio.GeometryFM supported!"
-            )
-        if hasattr(m, "data") and hasattr(m.data, "geometry"):
-            # mod_name = m.name  # TODO: better support for multiple models
-            g = m.data.geometry
-        else:
-            g = m
-
-        # mikeio's 3D geometries (GeometryFM3D) cannot be plotted directly
-        if hasattr(g, "to_2d_geometry"):
-            g = g.to_2d_geometry()
-
-            # TODO this is not supported for all model types
+    for g in geometries:
         g.plot.outline(ax=ax)  # type: ignore
 
     for o in obs:
@@ -114,3 +129,22 @@ def spatial_overview(
     ax.set_title(title)
 
     return ax
+
+
+def _model_geometry(m):
+    """The 2D flexible mesh geometry of a model result or geometry"""
+    # TODO: support Gridded ModelResults
+    if isinstance(m, (PointModelResult, TrackModelResult, VerticalModelResult)):
+        raise ValueError(
+            f"Model type {type(m)} not supported. Only DfsuModelResult and mikeio.GeometryFM supported!"
+        )
+    if hasattr(m, "data") and hasattr(m.data, "geometry"):
+        # TODO: better support for multiple models
+        g = m.data.geometry
+    else:
+        g = m
+
+    # mikeio's 3D geometries (GeometryFM3D) cannot be plotted directly
+    if hasattr(g, "to_2d_geometry"):
+        g = g.to_2d_geometry()
+    return g

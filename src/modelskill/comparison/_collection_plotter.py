@@ -16,7 +16,6 @@ from matplotlib.axes import Axes
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
 
-from matplotlib.figure import Figure
 import numpy as np
 import pandas as pd
 
@@ -521,7 +520,8 @@ class ComparerCollectionPlotter:
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
-    ) -> Figure | None:
+        backend: Backend = "matplotlib",
+    ):
         """Taylor diagram for model skill comparison.
 
         Taylor diagram showing model std and correlation to observation
@@ -542,10 +542,13 @@ class ComparerCollectionPlotter:
             size of the marker, by default 6
         title : str, optional
             title of the plot, by default "Taylor diagram"
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
 
         Returns
         -------
-        matplotlib.figure.Figure
+        matplotlib.figure.Figure or plotly.graph_objects.Figure
 
         Examples
         ------
@@ -597,6 +600,7 @@ class ComparerCollectionPlotter:
             figsize=figsize,
             normalize_std=normalize_std,
             title=title,
+            backend=backend,
         )
 
     def box(
@@ -921,7 +925,8 @@ class ComparerCollectionPlotter:
         ax=None,
         figsize: Tuple | None = None,
         title: str | None = None,
-    ) -> Axes:
+        backend: Backend = "matplotlib",
+    ):
         """Plot observation points on a map showing the model domain
 
         Parameters
@@ -932,18 +937,23 @@ class ComparerCollectionPlotter:
             figure size, by default None
         title: str, optional
             plot title, default empty
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
 
         Returns
         -------
-        matplotlib.axes.Axes
-            The matplotlib axes object
+        matplotlib.axes.Axes or plotly.graph_objects.Figure
+            The axes (matplotlib backend) or figure (plotly backend)
         """
         from ..plotting import spatial_overview
 
         obs = [cmp._to_observation() for cmp in self.cc]
         # TODO how to add model domain(s)
 
-        return spatial_overview(obs, ax=ax, figsize=figsize, title=title)
+        return spatial_overview(
+            obs, ax=ax, figsize=figsize, title=title, backend=backend
+        )
 
     def temporal_coverage(
         self,
@@ -952,7 +962,8 @@ class ComparerCollectionPlotter:
         ax: Any | None = None,
         figsize: Any | None = None,
         title: Any | None = None,
-    ) -> Axes:
+        backend: Backend = "matplotlib",
+    ):
         """Plot graph showing temporal coverage for all observations and models
 
         Parameters
@@ -968,6 +979,14 @@ class ComparerCollectionPlotter:
             size of figure, by default (7, 0.45*n_lines)
         title: str, optional
             plot title, default empty
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
+
+        Returns
+        -------
+        matplotlib.axes.Axes or plotly.graph_objects.Figure
+            The axes (matplotlib backend) or figure (plotly backend)
         """
         from ..plotting import temporal_coverage
 
@@ -982,4 +1001,5 @@ class ComparerCollectionPlotter:
             ax=ax,
             figsize=figsize,
             title=title,
+            backend=backend,
         )

@@ -4,6 +4,7 @@ Same plots, same arguments, and a figure returned rather than shown.
 """
 
 import matplotlib
+import matplotlib.figure
 import numpy as np
 import plotly.graph_objects as go
 import pytest
@@ -202,3 +203,107 @@ def test_plotly_scatter_traces_cover_1to1_regression_points_and_quantiles(cmp):
     assert "Data" in names
     assert "Q-Q" in names
     assert any(n.startswith("Fit:") for n in names)
+
+
+@pytest.mark.parametrize("normalize_std", [False, True])
+def test_taylor_returns_a_polar_plotly_figure(cc, normalize_std):
+    fig = cc.plot.taylor(backend="plotly", normalize_std=normalize_std)
+
+    assert isinstance(fig, go.Figure)
+    assert fig.layout.polar.sector == (0, 90)
+    assert all(t.type == "scatterpolar" for t in fig.data)
+
+
+def test_taylor_places_the_models_at_arccos_of_the_correlation(cmp):
+    from modelskill import metrics as mtr
+
+    sk = cmp.skill(metrics=[mtr.cc, mtr._std_mod]).to_dataframe()
+    fig = cmp.plot.taylor(backend="plotly")
+
+    # a single-model Comparer labels its taylor point "model", not the model name
+    model = fig.data[-1]
+    assert model.theta[0] == pytest.approx(
+        np.degrees(np.arccos(sk["cc"].iloc[0])), abs=1e-6
+    )
+    assert model.r[0] == pytest.approx(sk["_std_mod"].iloc[0], rel=1e-6)
+
+
+def test_taylor_matplotlib_still_returns_a_matplotlib_figure(cc):
+    assert isinstance(cc.plot.taylor(), matplotlib.figure.Figure)
+
+
+def test_temporal_coverage_has_one_row_per_data_source(o1, o2, mr1):
+    fig = ms.plotting.temporal_coverage([o1, o2], mr1, backend="plotly")
+
+    assert isinstance(fig, go.Figure)
+    assert [t.name for t in fig.data] == ["SW_1", "HKNA", "EPL"]
+
+
+def test_temporal_coverage_limits_the_time_axis_to_the_model_period(o1, mr1):
+    limited = ms.plotting.temporal_coverage(o1, mr1, backend="plotly")
+    unlimited = ms.plotting.temporal_coverage(
+        o1, mr1, limit_to_model_period=False, backend="plotly"
+    )
+
+    assert limited.layout.xaxis.range is not None
+    assert unlimited.layout.xaxis.range is None
+
+
+def test_spatial_overview_shows_the_domain_and_the_observations(o1, o2, mr1):
+    fig = ms.plotting.spatial_overview([o1, o2], mr1, backend="plotly")
+
+    assert isinstance(fig, go.Figure)
+    assert [t.name for t in fig.data] == ["Domain", "HKNA", "EPL"]
+    # equal aspect ratio, as for a map
+    assert fig.layout.yaxis.scaleanchor == "x"
+
+
+def test_spatial_overview_track_observations_are_drawn_as_points(o1, mr1):
+    track = ms.TrackObservation(
+        "tests/testdata/SW/Alti_c2_Dutch.dfs0", item=3, name="c2"
+    )
+    fig = ms.plotting.spatial_overview([o1, track], mr1, backend="plotly")
+
+    c2 = [t for t in fig.data if t.name == "c2"][0]
+    assert c2.mode == "markers"
+    assert len(c2.x) == track.n_points
+
+
+@pytest.fixture
+def wave_dir_dataframe():
+    import mikeio
+
+    ds = mikeio.read("tests/testdata/wave_dir.dfs0")
+    return ds[[0, 2, 1, 3]].to_dataframe()
+
+
+def test_wind_rose_is_a_stacked_polar_bar_chart(wave_dir_dataframe):
+    fig = ms.plotting.wind_rose(wave_dir_dataframe, backend="plotly")
+
+    assert isinstance(fig, go.Figure)
+    assert fig.layout.barmode == "stack"
+    assert all(t.type == "barpolar" for t in fig.data)
+    # north up, clockwise, as in the matplotlib version
+    assert fig.layout.polar.angularaxis.direction == "clockwise"
+    assert fig.layout.polar.angularaxis.rotation == 90
+
+
+def test_wind_rose_dual_has_a_legend_group_per_dataset(wave_dir_dataframe):
+    dual = ms.plotting.wind_rose(wave_dir_dataframe, backend="plotly")
+    single = ms.plotting.wind_rose(wave_dir_dataframe.iloc[:, :2], backend="plotly")
+
+    assert set(t.legendgroup for t in dual.data) == {"Measurement", "Model"}
+    assert set(t.legendgroup for t in single.data) == {"Measurement"}
+    assert len(dual.data) == 2 * len(single.data)
+
+
+def test_wind_rose_calm_becomes_the_polar_hole(wave_dir_dataframe):
+    fig = ms.plotting.wind_rose(wave_dir_dataframe, backend="plotly")
+
+    assert 0 < fig.layout.polar.hole < 1
+
+
+def test_wind_rose_matplotlib_is_unchanged(wave_dir_dataframe):
+    ax = ms.plotting.wind_rose(wave_dir_dataframe)
+
+    assert ax.name == "polar"

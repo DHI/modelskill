@@ -777,6 +777,7 @@ class ComparerPlotter:
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
+        backend: Backend = "matplotlib",
     ):
         """Taylor diagram for model skill comparison.
 
@@ -795,10 +796,13 @@ class ComparerPlotter:
             size of the marker, by default 6
         title : str, optional
             title of the plot, by default "Taylor diagram"
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
 
         Returns
         -------
-        matplotlib.figure.Figure
+        matplotlib.figure.Figure or plotly.graph_objects.Figure
 
         Examples
         --------
@@ -859,6 +863,7 @@ class ComparerPlotter:
             obs_text=f"Obs: {cmp.name}",
             normalize_std=normalize_std,
             title=title,
+            backend=backend,
         )
 
     def residual_hist(
