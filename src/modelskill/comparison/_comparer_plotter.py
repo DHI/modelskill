@@ -24,6 +24,8 @@ import matplotlib.colors as colors
 from ..plotting import _plotly
 from ..plotting._backend import (
     Backend,
+    FigureResult,
+    PlotResult,
     reject_matplotlib_axes,
     validate_backend,
 )
@@ -54,9 +56,7 @@ class ComparerPlotter:
         self.comparer = comparer
         self.is_directional = comparer.quantity.is_directional
 
-    def __call__(
-        self, *args, **kwargs
-    ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
+    def __call__(self, *args, **kwargs) -> PlotResult | list[PlotResult]:
         """Plot scatter plot of modelled vs observed data"""
         return self.scatter(*args, **kwargs)
 
@@ -69,7 +69,7 @@ class ComparerPlotter:
         figsize: Tuple[float, float] | None = None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         """Timeseries plot showing compared data: observation vs modelled
 
         Parameters
@@ -159,7 +159,7 @@ class ComparerPlotter:
         alpha: float = 0.5,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult | list[PlotResult]:
         """Plot histogram of model data and observations.
 
         Parameters
@@ -228,7 +228,7 @@ class ComparerPlotter:
         alpha: float | None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         from ._comparison import MOD_COLORS  # TODO move to here
 
         cmp = self.comparer
@@ -288,7 +288,7 @@ class ComparerPlotter:
         figsize=None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         """Plot kde (kernel density estimates of distributions) of model data and observations.
 
         Parameters
@@ -378,7 +378,7 @@ class ComparerPlotter:
         figsize=None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         """Make quantile-quantile (q-q) plot of model data and observations.
 
         Primarily used to compare multiple models.
@@ -488,7 +488,7 @@ class ComparerPlotter:
         figsize=None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         """Make a box plot of model data and observations.
 
         Parameters
@@ -572,7 +572,7 @@ class ComparerPlotter:
         skill_table: Union[str, List[str], Mapping[str, str], bool] | None = None,
         ax: matplotlib.axes.Axes | None = None,
         **kwargs,
-    ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
+    ) -> PlotResult | list[PlotResult]:
         """Scatter plot tailored for model-observation comparison.
 
         Optionally, with density histogram.
@@ -701,7 +701,7 @@ class ComparerPlotter:
         ylabel: str | None,
         skill_table: Union[str, List[str], Mapping[str, str], bool] | None,
         **kwargs,
-    ):
+    ) -> PlotResult:
         """Scatter plot for one model only"""
 
         cmp = self.comparer
@@ -778,7 +778,7 @@ class ComparerPlotter:
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
         backend: Backend = "matplotlib",
-    ):
+    ) -> FigureResult | None:
         """Taylor diagram for model skill comparison.
 
         Taylor diagram showing model std and correlation to observation
@@ -875,7 +875,7 @@ class ComparerPlotter:
         ax=None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult | list[PlotResult]:
         """plot histogram of residual values
 
         Parameters
@@ -949,7 +949,7 @@ class ComparerPlotter:
         mod_name=None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         """Residual histogram for one model only"""
         cmp = self.comparer
         title = (

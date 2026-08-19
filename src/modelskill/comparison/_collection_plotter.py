@@ -23,6 +23,8 @@ from .. import metrics as mtr
 from ..plotting import TaylorPoint, scatter, taylor_diagram, _plotly
 from ..plotting._backend import (
     Backend,
+    FigureResult,
+    PlotResult,
     reject_matplotlib_axes,
     validate_backend,
 )
@@ -52,7 +54,7 @@ class ComparerCollectionPlotter:
         self.cc = cc
         self.is_directional = False
 
-    def __call__(self, *args: Any, **kwds: Any) -> Axes | list[Axes]:
+    def __call__(self, *args: Any, **kwds: Any) -> PlotResult | list[PlotResult]:
         return self.scatter(*args, **kwds)
 
     def scatter(
@@ -76,7 +78,7 @@ class ComparerCollectionPlotter:
         skill_table: Union[str, List[str], Mapping[str, str], bool] | None = None,
         ax: Axes | None = None,
         **kwargs,
-    ) -> Axes | list[Axes]:
+    ) -> PlotResult | list[PlotResult]:
         """Scatter plot tailored for comparing model output with observations.
 
         Optionally, with density histogram.
@@ -208,7 +210,7 @@ class ComparerCollectionPlotter:
         skill_table: Union[str, List[str], Mapping[str, str], bool] | None,
         ax,
         **kwargs,
-    ):
+    ) -> PlotResult:
         assert (
             mod_name in self.cc.mod_names
         ), f"Model {mod_name} not found in collection {self.cc.mod_names}"
@@ -290,7 +292,7 @@ class ComparerCollectionPlotter:
         title=None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         """Plot kernel density estimate of observation and model data.
 
         Parameters
@@ -386,7 +388,7 @@ class ComparerCollectionPlotter:
         figsize: Tuple[float, float] | None = None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult | list[PlotResult]:
         """Plot histogram of specific model and all observations.
 
         Parameters
@@ -457,7 +459,7 @@ class ComparerCollectionPlotter:
         figsize: Tuple[float, float] | None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         from ._comparison import MOD_COLORS
 
         assert (
@@ -521,7 +523,7 @@ class ComparerCollectionPlotter:
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
         backend: Backend = "matplotlib",
-    ):
+    ) -> FigureResult | None:
         """Taylor diagram for model skill comparison.
 
         Taylor diagram showing model std and correlation to observation
@@ -611,7 +613,7 @@ class ComparerCollectionPlotter:
         title=None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         """Plot box plot of observations and model data.
 
         Parameters
@@ -694,7 +696,7 @@ class ComparerCollectionPlotter:
         figsize=None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         """Make quantile-quantile (q-q) plot of model data and observations.
 
         Primarily used to compare multiple models.
@@ -808,7 +810,7 @@ class ComparerCollectionPlotter:
         ax=None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult | list[PlotResult]:
         """plot histogram of residual values
 
         Parameters
@@ -882,7 +884,7 @@ class ComparerCollectionPlotter:
         mod_name=None,
         backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         """Residual histogram for one model only"""
         df = self.cc.sel(model=mod_name)._to_long_dataframe()
         residuals = df.mod_val.values - df.obs_val.values
@@ -926,7 +928,7 @@ class ComparerCollectionPlotter:
         figsize: Tuple | None = None,
         title: str | None = None,
         backend: Backend = "matplotlib",
-    ):
+    ) -> PlotResult:
         """Plot observation points on a map showing the model domain
 
         Parameters
@@ -963,7 +965,7 @@ class ComparerCollectionPlotter:
         figsize: Any | None = None,
         title: Any | None = None,
         backend: Backend = "matplotlib",
-    ):
+    ) -> PlotResult:
         """Plot graph showing temporal coverage for all observations and models
 
         Parameters

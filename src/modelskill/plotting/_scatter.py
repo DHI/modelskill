@@ -17,7 +17,12 @@ import modelskill.settings as settings
 from modelskill.settings import options
 
 from ..metrics import _linear_regression
-from ._backend import Backend, reject_matplotlib_axes, validate_backend
+from ._backend import (
+    Backend,
+    PlotResult,
+    reject_matplotlib_axes,
+    validate_backend,
+)
 from ._plotly import scatter as _scatter_plotly
 from ._misc import (
     quantiles_xy,
@@ -52,7 +57,7 @@ def scatter(
     skill_score_unit: str | None = "",
     ax: Axes | None = None,
     **kwargs,
-) -> Axes:
+) -> PlotResult:
     """Scatter plot tailored for model skill comparison.
 
     Scatter plot showing compared data: observation vs modelled
