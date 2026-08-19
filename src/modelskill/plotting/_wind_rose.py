@@ -1,9 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import List, Tuple, Union, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import matplotlib.axes
+from typing import List, Tuple, Union
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -12,6 +9,8 @@ import pandas as pd
 from matplotlib.collections import PatchCollection
 from matplotlib.legend import Legend
 from matplotlib.patches import Polygon, Rectangle
+
+from ._backend import Backend, reject_matplotlib_axes, validate_backend
 
 
 @dataclass
@@ -148,7 +147,8 @@ def wind_rose(
     figsize: tuple[float, float] = (8, 8),
     ax=None,
     title=None,
-) -> matplotlib.axes.Axes:
+    backend: Backend = "matplotlib",
+):
     """Plots a (dual) wind (wave or current) roses with calms.
 
     The size of the calm is determined by the primary (measurement) data.
@@ -191,11 +191,13 @@ def wind_rose(
         Matplotlib axis to plot on defined as polar, it can be done using "subplot_kw = dict(projection = 'polar')". Default = None, new axis created.
     title: str Default= None
         title of the plot
+    backend : str, optional
+        "matplotlib" (static) or "plotly" (interactive), by default "matplotlib"
 
     Returns
     -------
-    matplotlib.axes.Axes
-        Matplotlib axis with the plot
+    matplotlib.axes.Axes or plotly.graph_objects.Figure
+        The axes (matplotlib backend) or figure (plotly backend)
 
     Examples
     --------
@@ -207,6 +209,9 @@ def wind_rose(
     ms.plotting.wind_rose(df)
     ```
     """
+    validate_backend(backend)
+    reject_matplotlib_axes(ax, backend)
+
     if hasattr(data, "to_numpy"):
         data = data.to_numpy()
 
@@ -257,6 +262,26 @@ def wind_rose(
     # TODO this overwrites the calm value calculated above
     if calm_size is not None:
         calm = calm_size
+
+    if backend == "plotly":
+        from . import _plotly
+
+        return _plotly.wind_rose(
+            dir_centers=dh.dir_centers,
+            dir_step=dir_step,
+            densities=[dh.density, dh2.density] if dual else [dh.density],
+            mag_bins=ui,
+            labels=labels if dual else labels[:1],
+            colorscales=[cmap1, cmap2],
+            calm=calm,
+            calm_text=calm_text,
+            rmax=rmax,
+            r_ticks=ri,
+            title=title,
+            figsize=figsize,
+            secondary_dir_step_factor=secondary_dir_step_factor,
+            legend=legend,
+        )
 
     cmap = _get_cmap(cmap1)
 

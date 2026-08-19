@@ -68,13 +68,35 @@ c2           113 -0.00  0.35   0.35  0.29  0.98  0.13  0.90
 
 See the [user guide](https://dhi.github.io/modelskill/user-guide/getting-started.html) for more.
 
+## Plotting backends
+
+Plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/), the
+default) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
+
+```python
+cc["HKNA"].plot.timeseries(figsize=(10, 4), backend="plotly")
+```
+
+![timeseries](https://raw.githubusercontent.com/DHI/modelskill/main/images/plotly_timeseries.png)
+
+Every plot takes a `backend` argument -- `scatter`, `hist`, `kde`, `qq`, `box`,
+`residual_hist` and `taylor` on both `Comparer` and `ComparerCollection`,
+`Comparer.plot.timeseries`, `ComparerCollection.plot.spatial_overview` and
+`.temporal_coverage`, the `timeseries` and `hist` plots on observations and model results,
+and the standalone functions in `ms.plotting`.
+
+The same arguments (`title`, `figsize` in inches, `xlim`, `ylim`, ...) work with both
+backends. The matplotlib backend returns a `matplotlib.axes.Axes` (or `Figure` for
+`taylor`), the plotly backend a `plotly.graph_objects.Figure`. Extra `**kwargs` go to the
+underlying matplotlib call, or to
+[`Figure.update_layout`](https://plotly.com/python/reference/layout/) respectively.
+
 ## Where can I get help?
 * Documentation - [https://dhi.github.io/modelskill/](https://dhi.github.io/modelskill/)
 * Examples - [https://dhi.github.io/modelskill/examples/](https://dhi.github.io/modelskill/examples/)
 * General help, new ideas and feature requests - [GitHub Discussions](https://github.com/DHI/modelskill/discussions)
 * Bugs - [GitHub Issues](https://github.com/DHI/modelskill/issues)
 
-<<<<<<< HEAD
 ## Testing
 
 ModelSkill is tested extensively, with an overall statement coverage of ~90%. The test suite runs on every pull request against Python 3.12 and 3.14, and on a schedule on both Linux and Windows.
@@ -90,21 +112,3 @@ Contributions are welcome — see [CONTRIBUTING.md](https://github.com/DHI/model
 ## License
 
 [MIT](https://github.com/DHI/modelskill/blob/main/LICENSE)
-=======
-Plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/), the default) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
-
-```python
-cc["HKNA"].plot.timeseries(figsize=(10, 4), backend="plotly")
-```
-
-![timeseries](https://raw.githubusercontent.com/DHI/modelskill/main/images/plotly_timeseries.png)
-
-The `backend` argument is accepted by `scatter`, `hist`, `kde`, `qq`, `box` and
-`residual_hist` on both `Comparer` and `ComparerCollection`, by `Comparer.plot.timeseries`,
-and by the `timeseries` and `hist` plots on observations and model results. The same arguments (`title`, `figsize` in inches, `xlim`, `ylim`, ...)
-work with both backends; the matplotlib backend returns a `matplotlib.axes.Axes` and the
-plotly backend a `plotly.graph_objects.Figure`. Extra `**kwargs` go to the underlying
-matplotlib call or to [`Figure.update_layout`](https://plotly.com/python/reference/layout/)
-respectively. `taylor`, `spatial_overview`, `temporal_coverage` and `wind_rose` are
-matplotlib-only.
->>>>>>> b4ecd5f9 (Make plotly a first-class plotting backend)
