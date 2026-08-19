@@ -19,3 +19,19 @@ def gc_after_test():
         gc.collect()
     else:
         yield
+
+
+def pytest_addoption(parser):
+    """Add the flag that rewrites the network snapshots instead of checking them."""
+    parser.addoption(
+        "--update-snapshots",
+        action="store_true",
+        default=False,
+        help="Rewrite stored snapshots from the current behaviour instead of comparing.",
+    )
+
+
+@pytest.fixture
+def update_snapshots(request):
+    """Whether the run was asked to rewrite snapshots rather than check them."""
+    return request.config.getoption("--update-snapshots")
