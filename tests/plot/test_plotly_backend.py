@@ -3,6 +3,8 @@
 Same plots, same arguments, and a figure returned rather than shown.
 """
 
+import sys
+
 import matplotlib
 import matplotlib.figure
 import numpy as np
@@ -11,6 +13,7 @@ import pytest
 from matplotlib.axes import Axes
 
 import modelskill as ms
+from modelskill.plotting import _plotly
 
 # every plot method that takes a `backend` argument
 PLOT_KINDS = ["timeseries", "scatter", "hist", "kde", "qq", "box", "residual_hist"]
@@ -170,6 +173,21 @@ def test_directional_quantity_gets_a_compass_axis(directional_cmp, kind):
     assert list(axis.tickvals) == list(np.linspace(0, 360, 9))
 
 
+def test_directional_scatter_gets_a_compass_axis_on_both_backends(directional_cmp):
+    compass = list(np.linspace(0, 360, 9))
+    fig = directional_cmp.plot.scatter(backend="plotly")
+    ax = directional_cmp.plot.scatter()
+
+    assert list(fig.layout.xaxis.tickvals) == compass
+    assert list(fig.layout.yaxis.tickvals) == compass
+    assert fig.layout.xaxis.range == (0, 360)
+    assert fig.layout.yaxis.range == (0, 360)
+    assert list(ax.get_xticks()) == compass
+    assert list(ax.get_yticks()) == compass
+    assert ax.get_xlim() == (0.0, 360.0)
+    assert ax.get_ylim() == (0.0, 360.0)
+
+
 def test_scatter_skill_table_is_shown_in_plotly(cmp):
     fig = cmp.plot.scatter(backend="plotly", skill_table=True)
 
@@ -193,6 +211,11 @@ def test_bin_edges_are_translated_to_plotly_bins(cmp):
     assert fig.data[0].xbins.start == 0.0
     assert fig.data[0].xbins.end == 1.5
     assert fig.data[0].xbins.size == 0.5
+
+
+def test_non_uniform_bin_edges_are_rejected_by_the_plotly_backend(cmp):
+    with pytest.raises(ValueError, match="uniformly spaced bin edges"):
+        cmp.plot.hist(bins=[0.0, 0.5, 1.0, 3.0], backend="plotly")
 
 
 def test_plotly_scatter_traces_cover_1to1_regression_points_and_quantiles(cmp):
@@ -269,6 +292,15 @@ def test_spatial_overview_track_observations_are_drawn_as_points(o1, mr1):
     assert len(c2.x) == track.n_points
 
 
+@pytest.mark.parametrize("backend", ["matplotlib", "plotly"])
+def test_spatial_overview_rejects_an_unsupported_observation(o1, mr1, backend):
+    class NotAnObservation:
+        name = "nope"
+
+    with pytest.raises(ValueError, match="Could not show observation"):
+        ms.plotting.spatial_overview([o1, NotAnObservation()], mr1, backend=backend)
+
+
 @pytest.fixture
 def wave_dir_dataframe():
     import mikeio
@@ -297,6 +329,14 @@ def test_wind_rose_dual_has_a_legend_group_per_dataset(wave_dir_dataframe):
     assert len(dual.data) == 2 * len(single.data)
 
 
+def test_wind_rose_has_compass_labels_like_matplotlib(wave_dir_dataframe):
+    fig = ms.plotting.wind_rose(wave_dir_dataframe, backend="plotly")
+
+    labels = list(fig.layout.polar.angularaxis.ticktext)
+    assert labels[:5] == ["N", "NNE", "NE", "ENE", "E"]
+    assert list(fig.layout.polar.angularaxis.tickvals)[:3] == [0.0, 22.5, 45.0]
+
+
 def test_wind_rose_calm_becomes_the_polar_hole(wave_dir_dataframe):
     fig = ms.plotting.wind_rose(wave_dir_dataframe, backend="plotly")
 
@@ -307,3 +347,45 @@ def test_wind_rose_matplotlib_is_unchanged(wave_dir_dataframe):
     ax = ms.plotting.wind_rose(wave_dir_dataframe)
 
     assert ax.name == "polar"
+
+
+# --- plotly layout interop ---
+
+
+def test_import_plotly_go_missing_dependency_gives_actionable_error(monkeypatch):
+    # setting a sys.modules entry to None makes the import raise ImportError
+    monkeypatch.setitem(sys.modules, "plotly.graph_objects", None)
+
+    with pytest.raises(ImportError, match=r'pip install "modelskill\[plotly\]"'):
+        _plotly.import_plotly_go()
+
+
+def test_figsize_is_translated_to_plotly_pixels():
+    assert _plotly.figsize_to_layout(None) == {}
+    assert _plotly.figsize_to_layout((8, 6)) == {"width": 800, "height": 600}
+
+
+def test_apply_layout_uses_figsize_for_width_and_height():
+    fig = _plotly.apply_layout(go.Figure(), figsize=(3, 4))
+
+    assert fig.layout.width == 300
+    assert fig.layout.height == 400
+
+
+def test_apply_layout_lets_explicit_width_win_over_figsize():
+    fig = _plotly.apply_layout(go.Figure(), figsize=(3, 4), width=1000)
+
+    assert fig.layout.width == 1000
+    assert fig.layout.height == 400
+
+
+def test_apply_layout_ignores_none_values():
+    fig = _plotly.apply_layout(go.Figure(), figsize=None, title=None)
+
+    assert fig.layout.width is None
+    assert fig.layout.title.text is None
+
+
+def test_apply_layout_names_the_offending_matplotlib_argument():
+    with pytest.raises(ValueError, match="Invalid plotly layout argument: 'cmap'"):
+        _plotly.apply_layout(go.Figure(), cmap="OrRd")

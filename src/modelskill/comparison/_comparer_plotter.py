@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import (
-    Literal,
     Union,
     List,
     Tuple,
@@ -30,6 +29,7 @@ from ..plotting._backend import (
     validate_backend,
 )
 from ..plotting._misc import (
+    RESIDUAL_COLOR,
     _get_fig_ax,
     _xtick_directional,
     _ytick_directional,
@@ -561,7 +561,7 @@ class ComparerPlotter:
         show_hist: bool | None = None,
         show_density: bool | None = None,
         norm: colors.Normalize | None = None,
-        backend: Literal["matplotlib", "plotly"] = "matplotlib",
+        backend: Backend = "matplotlib",
         figsize: Tuple[float, float] = (8, 8),
         xlim: Tuple[float, float] | None = None,
         ylim: Tuple[float, float] | None = None,
@@ -691,7 +691,7 @@ class ComparerPlotter:
         show_hist: bool | None,
         show_density: bool | None,
         norm: colors.Normalize | None,
-        backend: Literal["matplotlib", "plotly"],
+        backend: Backend,
         figsize: Tuple[float, float],
         xlim: Tuple[float, float] | None,
         ylim: Tuple[float, float] | None,
@@ -760,12 +760,9 @@ class ComparerPlotter:
             ylabel=ylabel,
             skill_scores=skill_scores,
             skill_score_unit=skill_score_unit,
+            directional=self.is_directional,
             **kwargs,
         )
-
-        if backend == "matplotlib" and self.is_directional:
-            _xtick_directional(ax, xlim)
-            _ytick_directional(ax, ylim)
 
         return ax
 
@@ -973,7 +970,7 @@ class ComparerPlotter:
 
         _, ax = _get_fig_ax(ax, figsize)
 
-        color = _plotly.RESIDUAL_COLOR if color is None else color
+        color = RESIDUAL_COLOR if color is None else color
         ax.hist(cmp._residual, bins=bins, color=color, **kwargs)
         ax.set_title(title)
         ax.set_xlabel(xlabel)

@@ -78,6 +78,7 @@ def spatial_overview(
     mods = [] if mod is None else list(mod) if isinstance(mod, Iterable) else [mod]  # type: ignore
 
     geometries = [_model_geometry(m) for m in mods]
+    points, tracks = _classify_observations(obs)
 
     if backend == "plotly":
         from . import _plotly
@@ -88,16 +89,8 @@ def spatial_overview(
                 for g in geometries
                 for polygon in g.boundary_polygons.exteriors
             ],
-            points=[
-                (o.name, o.x, o.y)
-                for o in obs
-                if isinstance(o, (PointObservation, VerticalObservation))
-            ],
-            tracks=[
-                (o.name, o.x, o.y)
-                for o in obs
-                if isinstance(o, TrackObservation) and o.n_points < 10000
-            ],
+            points=points,
+            tracks=tracks,
             title=title,
             figsize=figsize,
         )
@@ -107,19 +100,15 @@ def spatial_overview(
     for g in geometries:
         g.plot.outline(ax=ax)  # type: ignore
 
-    for o in obs:
-        if isinstance(o, (PointObservation, VerticalObservation)):
-            ax.scatter(x=o.x, y=o.y, marker="x")
-        elif isinstance(o, TrackObservation):
-            if o.n_points < 10000:
-                ax.scatter(x=o.x, y=o.y, marker=".")
-            else:
-                print(f"{o.name}: Too many points to plot")
-                # TODO: group by lonlat bin or sample randomly
+    for _, x, y in points:
+        ax.scatter(x=x, y=y, marker="x")
+
+    for name, x, y in tracks:
+        if len(x) < 10000:
+            ax.scatter(x=x, y=y, marker=".")
         else:
-            raise ValueError(
-                f"Could not show observation {o}. Only PointObservation and TrackObservation supported."
-            )
+            print(f"{name}: Too many points to plot")
+            # TODO: group by lonlat bin or sample randomly
 
     xlim = ax.get_xlim()
     offset_x = 0.02 * (xlim[1] - xlim[0])
@@ -134,6 +123,27 @@ def spatial_overview(
     ax.set_title(title)
 
     return ax
+
+
+def _classify_observations(obs):
+    """Split observations into labelled points and tracks, for either backend
+
+    Raises
+    ------
+    ValueError
+        if an observation is neither a point nor a track observation
+    """
+    points, tracks = [], []
+    for o in obs:
+        if isinstance(o, (PointObservation, VerticalObservation)):
+            points.append((o.name, o.x, o.y))
+        elif isinstance(o, TrackObservation):
+            tracks.append((o.name, o.x, o.y))
+        else:
+            raise ValueError(
+                f"Could not show observation {o}. Only PointObservation and TrackObservation supported."
+            )
+    return points, tracks
 
 
 def _model_geometry(m):

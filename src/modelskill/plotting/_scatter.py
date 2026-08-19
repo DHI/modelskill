@@ -30,6 +30,8 @@ from ._misc import (
     sample_points,
     format_skill_table,
     _get_fig_ax,
+    _xtick_directional,
+    _ytick_directional,
 )
 
 
@@ -56,6 +58,7 @@ def scatter(
     skill_scores: Mapping[str, float] | None = None,
     skill_score_unit: str | None = "",
     ax: Axes | None = None,
+    directional: bool = False,
     **kwargs,
 ) -> PlotResult:
     """Scatter plot tailored for model skill comparison.
@@ -132,6 +135,9 @@ def scatter(
         unit for skill_scores, by default None
     ax : matplotlib.axes.Axes, optional
         axes to plot on, by default None
+    directional : bool, optional
+        draw the axes as a 0-360 degree compass, for directional quantities,
+        by default False
     **kwargs
         other keyword arguments to plt.scatter() (matplotlib backend) or
         fig.update_layout() (plotly backend)
@@ -184,6 +190,11 @@ def scatter(
     xymax = max([xmax, ymax])
 
     nbins_hist, binsize = _get_bins(bins, xymin=xymin, xymax=xymax)
+
+    if directional:
+        # a directional axis spans the full compass unless the user says otherwise
+        xlim = (0.0, 360.0) if xlim is None else xlim
+        ylim = (0.0, 360.0) if ylim is None else ylim
 
     if xlim is None:
         xlim = (xymin - binsize, xymax + binsize)
@@ -268,6 +279,7 @@ def scatter(
         skill_scores=skill_scores,
         skill_score_unit=skill_score_unit,
         fit_to_quantiles=fit_to_quantiles,
+        directional=directional,
         **backend_kwargs,
     )
 
@@ -297,6 +309,7 @@ def _scatter_matplotlib(
     skill_scores,
     skill_score_unit,
     fit_to_quantiles,
+    directional,
     ax,
     cmap=None,
     **kwargs,
@@ -430,6 +443,10 @@ def _scatter_matplotlib(
         )
 
     ax.set_title(title)
+
+    if directional:
+        _xtick_directional(ax, xlim)
+        _ytick_directional(ax, ylim)
 
     return ax
 
