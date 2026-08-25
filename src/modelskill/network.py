@@ -902,7 +902,12 @@ class Network:
         df = df_raw.reorder_levels(["quantity", "node"], axis=1)
         quantities = df.columns.get_level_values("quantity").unique()
         return xr.Dataset(
-            {q: xr.DataArray(df[q], dims=["time", "node"]) for q in quantities}
+            {
+                q: xr.DataArray(
+                    df[q], dims=["time", "node"], attrs={"long_name": str(q)}
+                )
+                for q in quantities
+            }
         )
 
     @property

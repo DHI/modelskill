@@ -1,19 +1,30 @@
 """
 # Observations
 
-ModelSkill supports four types of observations:
+ModelSkill supports five types of observations:
 
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
 * [`VerticalObservation`](`modelskill.VerticalObservation`) - a vertical profile from a dfs0/nc file or a DataFrame
 * [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs.
+* [`ReachObservation`](`modelskill.ReachObservation`) - a network reach timeseries for a quantity uniform along the reach.
 
 An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
 
 from __future__ import annotations
 
-from typing import Literal, Any, Union, overload
+import sqlite3
+from pathlib import Path
+from typing import (
+    Any,
+    Iterable,
+    Literal,
+    NamedTuple,
+    Sequence,
+    Union,
+    overload,
+)
 from typing_extensions import Self
 import warnings
 import pandas as pd
@@ -33,6 +44,10 @@ from .timeseries import (
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
 Serializable = Union[str, int, float]
+
+# Where a node observation sits: an internal network ID, an original node alias,
+# or a breakpoint given as (reach_id, distance) along a reach.
+NodeLocation = Union[int, str, tuple[str, float]]
 
 
 def observation(
@@ -111,6 +126,339 @@ def _guess_gtype(**kwargs) -> GeometryType:
             "Use PointObservation, TrackObservation, VerticalObservation, NodeObservation, ReachObservation to be explicit."
         )
         return GeometryType.POINT
+
+
+def _item_names(data: Any) -> list[str]:
+    """Names of the individual timeseries held by an already-opened data source."""
+    if isinstance(data, pd.DataFrame):
+        return [str(c) for c in data.columns]
+    if isinstance(data, xr.Dataset):
+        return [str(v) for v in data.data_vars]
+    if hasattr(data, "names"):  # mikeio.Dataset
+        return [str(n) for n in data.names]
+    if hasattr(data, "name"):  # pd.Series, mikeio.DataArray, xr.DataArray
+        return [str(data.name)]
+    raise ValueError(
+        f"Cannot determine item names from data of type {type(data).__name__}"
+    )
+
+
+class _Station(NamedTuple):
+    """One measured timeseries, resolved to the network location it belongs to."""
+
+    item_name: str  #: name of the item in the data source
+    name: str  #: display name for the observation
+    location: str | tuple[str, float]  #: node name, or (reach, chainage)
+    kind: Literal["node", "reach"]  #: which observation class fits
+    quantity: str  #: modelled quantity name
+
+
+class _MikePlusStationResolver:
+    """Resolves data source items to network locations, via a MIKE+ database.
+
+    A MIKE+ project ships a sqlite database alongside its result files. Two of
+    its tables say where the measured timeseries belong in the network:
+
+    * ``m_Measurement`` - one row per measured timeseries, naming the file
+      (``tsfilename``) and the item within it (``tsitemname``), plus the
+      modelled quantity (``resitemname``).
+    * ``m_Station`` - the location, as ``locationid`` plus a ``locationtype``
+      saying whether that identifier names a node or a link.
+
+    Everything MIKE+ specific is contained here - the table names, the join, the
+    ``locationtype`` codes, the encoding of ``resitemname`` - so a change to the
+    database layout is a change to this class alone. Callers see only
+    :class:`_Station`.
+    """
+
+    _TABLES: dict[str, set[str]] = {
+        "m_Station": {
+            "muid",
+            "locationid",
+            "locationtype",
+            "chainagevalue",
+            "assetname",
+        },
+        "m_Measurement": {
+            "measurementstationid",
+            "tsfilename",
+            "tsitemname",
+            "resitemname",
+        },
+    }
+
+    # m_Station.locationtype codes. 8 is a junction and 12 a tank or reservoir;
+    # both are graph nodes. 9 is a link, which becomes a breakpoint when the
+    # station carries a chainage and a whole reach when it does not. Unknown
+    # codes raise rather than guess.
+    _NODE_TYPES = frozenset({8, 12})
+    _LINK_TYPES = frozenset({9})
+
+    _QUERY = """
+        SELECT m.tsitemname    AS item_name,
+               m.tsfilename    AS tsfilename,
+               m.resitemname   AS resitemname,
+               s.assetname     AS assetname,
+               s.locationid    AS locationid,
+               s.locationtype  AS locationtype,
+               s.chainagevalue AS chainagevalue
+        FROM m_Measurement m
+        JOIN m_Station s ON s.muid = m.measurementstationid
+    """
+
+    def __init__(
+        self,
+        db: str | Path | sqlite3.Connection,
+        *,
+        source: str | None = None,
+    ) -> None:
+        """Read the join, and the station names needed to explain a failure.
+
+        ``db`` is a path or an already-open connection; an open one is left open.
+        ``source`` restricts the measurements to one result file, matched on file
+        name, so a full path is fine. Without it, measurements from every file
+        are considered and an item registered against two of them raises.
+        """
+        self._source = source
+
+        if isinstance(db, sqlite3.Connection):
+            conn, opened = db, None
+        else:
+            conn = opened = sqlite3.connect(str(db))
+        try:
+            self._validate(conn)
+
+            query, params = self._QUERY, []
+            if source is not None:
+                query += " WHERE m.tsfilename LIKE ?"
+                params.append(f"%{Path(source).name}%")
+            rows = pd.read_sql_query(query, conn, params=params)
+
+            # Read the station names now rather than on demand: the only other
+            # use is naming stations that carry no measurement, on the failure
+            # path, and reading them here is what lets the connection close.
+            self._assets = set(
+                pd.read_sql_query("SELECT assetname FROM m_Station", conn)["assetname"]
+                .dropna()
+                .tolist()
+            )
+        finally:
+            if opened is not None:
+                opened.close()
+
+        rows["quantity"] = rows["resitemname"].str.split(";").str[0].str.strip()
+        self._rows = rows
+
+    def resolve(
+        self,
+        item_names: Iterable[str],
+        *,
+        quantity: str | None = None,
+        kind: Literal["node", "reach"] | None = None,
+        on_missing: Literal["raise", "skip"] = "raise",
+    ) -> list[_Station]:
+        """Resolve item names, e.g. the columns of a dfs0, to their locations.
+
+        ``quantity`` selects one of several measured quantities; left None it is
+        inferred, and raises when the selection holds more than one. ``kind``
+        restricts the result to nodes or to reaches. ``on_missing="skip"`` drops
+        items the database does not register, which otherwise raise.
+        """
+        requested = list(dict.fromkeys(item_names))
+        rows = self._rows[self._rows["item_name"].isin(requested)].copy()
+
+        missing = [item for item in requested if item not in set(rows["item_name"])]
+        if missing and on_missing == "raise":
+            raise ValueError(
+                f"{len(missing)} of {len(requested)} items could not be resolved "
+                f"against the MIKE+ database.\n"
+                + self._unresolved_message(missing)
+                + '\n  Pass on_missing="skip" to ignore these.'
+            )
+
+        if ambiguous := sorted(
+            rows.loc[rows.duplicated("item_name", keep=False), "item_name"].unique()
+        ):
+            raise ValueError(
+                f"Item(s) {ambiguous} are registered against more than one file. "
+                "Pass 'source' to say which file the data comes from."
+            )
+
+        if rows.empty:
+            raise ValueError("No items could be resolved against the MIKE+ database.")
+
+        located = rows.apply(self._location, axis=1)
+        rows["kind"] = [k for k, _ in located]
+        rows["location"] = [location for _, location in located]
+
+        if quantity is None:
+            pool = rows if kind is None else rows[rows["kind"] == kind]
+            available = sorted(pool["quantity"].unique())
+            if len(available) == 0:
+                raise ValueError(
+                    f"No {kind} locations found. Quantities present: "
+                    f"{rows['quantity'].value_counts().to_dict()}."
+                )
+            if len(available) > 1:
+                raise ValueError(
+                    "Several quantities present, so 'quantity' cannot be inferred: "
+                    f"{pool['quantity'].value_counts().to_dict()}. "
+                    f"Pass one of {available}."
+                )
+            quantity = available[0]
+
+        selection = rows[rows["quantity"] == quantity]
+        if selection.empty:
+            raise ValueError(
+                f"Quantity {quantity!r} not found. Available: "
+                f"{rows['quantity'].value_counts().to_dict()}."
+            )
+
+        if kind is not None:
+            of_kind = selection[selection["kind"] == kind]
+            if of_kind.empty:
+                other = sorted(selection["kind"].unique())
+                raise ValueError(
+                    f"All {len(selection)} {quantity!r} station(s) are of kind "
+                    f"{other}, not {kind!r}."
+                )
+            selection = of_kind
+
+        names = self._display_names(selection)
+        return [
+            _Station(
+                item_name=str(row.item_name),
+                name=str(name),
+                location=row.location,
+                kind=row.kind,
+                quantity=str(row.quantity),
+            )
+            for name, row in zip(names, selection.itertuples())
+        ]
+
+    def _validate(self, conn: sqlite3.Connection) -> None:
+        tables = {
+            row[0]
+            for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        }
+        if missing := sorted(set(self._TABLES) - tables):
+            raise ValueError(
+                f"Database is missing table(s) {missing}. "
+                "A MIKE+ database with 'm_Station' and 'm_Measurement' is required."
+            )
+        for table, required in self._TABLES.items():
+            columns = {row[1] for row in conn.execute(f"PRAGMA table_info([{table}])")}
+            if missing_cols := sorted(required - columns):
+                raise ValueError(
+                    f"Table '{table}' is missing column(s) {missing_cols}. "
+                    "The database layout is not the one modelskill expects."
+                )
+
+    def _location(self, row: pd.Series) -> tuple[str, str | tuple[str, float]]:
+        # A link station with a chainage names a point along a reach, which is a
+        # node observation at a breakpoint. Without a chainage it names the reach
+        # as a whole.
+        try:
+            location_type = int(row["locationtype"])
+        except (TypeError, ValueError):
+            location_type = -1
+
+        location_id = str(row["locationid"])
+        if location_type in self._NODE_TYPES:
+            return "node", location_id
+        if location_type in self._LINK_TYPES:
+            chainage = row["chainagevalue"]
+            if pd.isna(chainage):
+                return "reach", location_id
+            return "node", (location_id, float(chainage))
+
+        raise ValueError(
+            f"Station '{row['locationid']}' has unsupported locationtype "
+            f"{row['locationtype']!r}. Known codes are "
+            f"{sorted(self._NODE_TYPES | self._LINK_TYPES)}."
+        )
+
+    def _unresolved_message(self, missing: Sequence[str]) -> str:
+        known = [item for item in missing if item in self._assets]
+        unknown = [item for item in missing if item not in self._assets]
+
+        lines = []
+        if known:
+            where = f" for '{Path(self._source).name}'" if self._source else ""
+            lines.append(
+                f"  Known station, no measurement registered{where} ({len(known)}):\n"
+                + "\n".join(f"    {item}" for item in known)
+            )
+        if unknown:
+            lines.append(
+                f"  Not found in the database ({len(unknown)}):\n"
+                + "\n".join(f"    {item}" for item in unknown)
+            )
+        return "\n".join(lines)
+
+    @staticmethod
+    def _display_names(selection: pd.DataFrame) -> pd.Series:
+        # assetname is far shorter than the raw item name and is normally unique,
+        # but it is only safe as a display name when it distinguishes every row.
+        assets = selection["assetname"]
+        if assets.notna().all() and assets.nunique() == len(selection):
+            return assets.astype(str)
+        return selection["item_name"].astype(str)
+
+
+def _observations_from_mikeplus(
+    cls: type,
+    *,
+    data: PointType,
+    db: Any,
+    kind: Literal["node", "reach"],
+    location_arg: str,
+    quantity: Quantity | str | None,
+    source: str | None,
+    on_missing: Literal["raise", "skip"],
+    aux_items: list[int | str] | None,
+    attrs: dict | None,
+) -> list[Any]:
+    """Build observations from a data source and a MIKE+ database."""
+    from .timeseries._point import _open_and_name
+
+    if source is None and isinstance(data, (str, Path)):
+        source = str(data)
+
+    # Open once rather than per observation; a path would otherwise be re-read
+    # for every station in the database.
+    opened, _ = _open_and_name(data, None)
+
+    given_quantity = quantity if isinstance(quantity, Quantity) else None
+    wanted = quantity.name if isinstance(quantity, Quantity) else quantity
+
+    stations = _MikePlusStationResolver(db, source=source).resolve(
+        _item_names(opened),
+        quantity=wanted,
+        kind=kind,
+        on_missing=on_missing,
+    )
+
+    observations = []
+    for station in stations:
+        obs = cls(
+            opened,
+            item=station.item_name,
+            name=station.name,
+            quantity=given_quantity,
+            aux_items=aux_items,
+            attrs=attrs,
+            **{location_arg: station.location},
+        )
+        if given_quantity is None:
+            # The database names the quantity; the data source knows its unit.
+            obs.quantity = Quantity(
+                name=station.quantity,
+                unit=obs.quantity.unit,
+                is_directional=obs.quantity.is_directional,
+            )
+        observations.append(obs)
+    return observations
 
 
 def _validate_attrs(data_attrs: dict, attrs: dict | None) -> None:
@@ -595,7 +943,7 @@ class NodeObservation(Observation):
         cls,
         *,
         data: PointType,
-        nodes: dict[int, str | int],
+        nodes: dict[NodeLocation, str | int],
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
@@ -606,20 +954,37 @@ class NodeObservation(Observation):
     def from_multiple(
         cls,
         *,
-        nodes: dict[int, PointType],
+        nodes: dict[NodeLocation, PointType],
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> list[NodeObservation]:
         pass
 
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType,
+        db: str | Path | Any,
+        quantity: Quantity | str | None = None,
+        source: str | None = None,
+        on_missing: Literal["raise", "skip"] = "raise",
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[NodeObservation]: ...
+
     @classmethod
     def from_multiple(
         cls,
         *,
         data: PointType | None = None,
-        nodes: dict[int, Any] | None = None,
-        quantity: Quantity | None = None,
+        nodes: dict[NodeLocation, Any] | None = None,
+        db: str | Path | Any | None = None,
+        quantity: Quantity | str | None = None,
+        source: str | None = None,
+        on_missing: Literal["raise", "skip"] = "raise",
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> list[NodeObservation]:
@@ -638,14 +1003,41 @@ class NodeObservation(Observation):
 
                obs = NodeObservation.from_multiple(data=df, nodes={123: "col_a", 456: "col_b"})
 
+        3. **MIKE+ database** — pass a single ``data`` object together with
+           ``db``, and the locations are looked up in the database::
+
+               obs = NodeObservation.from_multiple(data="calib.dfs0", db="model.sqlite")
+
+           One observation is created per item of ``data`` that the database
+           places on a node, so several sensors at the same node are all kept.
+
         Parameters
         ----------
         data : PointType, optional
-            Shared data source (required when ``nodes`` values are column selectors).
-        nodes : dict[int, PointType | str | int]
-            Mapping of node_id -> data source or column selector.
-        quantity : Quantity | None, optional
-            Physical quantity metadata, by default None.
+            Shared data source (required when ``nodes`` values are column
+            selectors, and when ``db`` is given).
+        nodes : dict[int | str | tuple[str, float], PointType | str | int]
+            Mapping of location -> data source or column selector. A location
+            takes any of the forms accepted by ``at``: an internal network ID,
+            a node alias, or a ``(reach_id, distance)`` breakpoint.
+
+            Note that a location can appear only once, so this form cannot
+            express several observations at the same node. Use ``db`` when the
+            data has several sensors at one location.
+        db : str, Path or sqlite3.Connection, optional
+            MIKE+ database locating the items of ``data`` in the network.
+            Mutually exclusive with ``nodes``.
+        quantity : Quantity or str, optional
+            Physical quantity metadata, by default None. With ``db``, a string
+            selects which quantity to build observations for and the metadata
+            comes from the database; omit it and the quantity is inferred when
+            the data holds only one.
+        source : str, optional
+            With ``db``, the file the items come from. Taken from ``data`` when
+            that is a path, by default None.
+        on_missing : {"raise", "skip"}, optional
+            With ``db``, what to do with items the database cannot place, by
+            default "raise".
         aux_items : list[int | str] | None, optional
             Auxiliary items, by default None.
         attrs : dict | None, optional
@@ -655,7 +1047,39 @@ class NodeObservation(Observation):
         -------
         list[NodeObservation]
             List of NodeObservation objects.
+
+        Raises
+        ------
+        ValueError
+            If both ``nodes`` and ``db`` are given, if neither is, or if the
+            database cannot resolve the requested items.
         """
+        if db is not None:
+            if nodes is not None:
+                raise ValueError(
+                    "'nodes' and 'db' are mutually exclusive: the database "
+                    "supplies the locations."
+                )
+            if data is None:
+                raise ValueError("'data' is required when 'db' is given")
+            return _observations_from_mikeplus(
+                cls,
+                data=data,
+                db=db,
+                kind="node",
+                location_arg="at",
+                quantity=quantity,
+                source=source,
+                on_missing=on_missing,
+                aux_items=aux_items,
+                attrs=attrs,
+            )
+
+        if isinstance(quantity, str):
+            raise TypeError(
+                "'quantity' must be a Quantity unless 'db' is given, got str"
+            )
+
         if nodes is None:
             raise ValueError("'nodes' argument is required")
         if not isinstance(nodes, dict):
@@ -763,6 +1187,183 @@ class ReachObservation(Observation):
     def _create_new_instance(self, data: xr.Dataset) -> Self:
         """Reconstruct instance from a dataset slice."""
         return self.__class__(data, reach=str(data.coords["reach"].item()))
+
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType,
+        reaches: dict[str, str | int],
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[ReachObservation]: ...
+
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        reaches: dict[str, PointType],
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[ReachObservation]:
+        pass
+
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType,
+        db: str | Path | Any,
+        quantity: Quantity | str | None = None,
+        source: str | None = None,
+        on_missing: Literal["raise", "skip"] = "raise",
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[ReachObservation]: ...
+
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType | None = None,
+        reaches: dict[str, Any] | None = None,
+        db: str | Path | Any | None = None,
+        quantity: Quantity | str | None = None,
+        source: str | None = None,
+        on_missing: Literal["raise", "skip"] = "raise",
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[ReachObservation]:
+        """Create multiple ReachObservation objects.
+
+        Two calling conventions are supported:
+
+        1. **Separate data sources** — pass only ``reaches`` as a dict mapping
+           each reach ID to its own data source (file path, DataFrame, etc.)::
+
+               obs = ReachObservation.from_multiple(reaches={"r1": df1, "r2": "sensor.csv"})
+
+        2. **Shared data source** — pass a single ``data`` object together with
+           ``reaches`` as a dict mapping each reach ID to the column name or
+           index to select from ``data``::
+
+               obs = ReachObservation.from_multiple(data=df, reaches={"r1": "col_a", "r2": "col_b"})
+
+        3. **MIKE+ database** — pass a single ``data`` object together with
+           ``db``, and the reaches are looked up in the database::
+
+               obs = ReachObservation.from_multiple(data="calib.dfs0", db="model.sqlite")
+
+           One observation is created per item of ``data`` that the database
+           places on a link without a chainage.
+
+        Parameters
+        ----------
+        data : PointType, optional
+            Shared data source (required when ``reaches`` values are column
+            selectors, and when ``db`` is given).
+        reaches : dict[str, PointType | str | int]
+            Mapping of reach_id -> data source or column selector.
+
+            Note that a reach can appear only once, so this form cannot express
+            several observations on the same reach. Use ``db`` when the data has
+            several sensors on one reach.
+        db : str, Path or sqlite3.Connection, optional
+            MIKE+ database locating the items of ``data`` in the network.
+            Mutually exclusive with ``reaches``.
+        quantity : Quantity or str, optional
+            Physical quantity metadata, by default None. With ``db``, a string
+            selects which quantity to build observations for and the metadata
+            comes from the database; omit it and the quantity is inferred when
+            the data holds only one.
+        source : str, optional
+            With ``db``, the file the items come from. Taken from ``data`` when
+            that is a path, by default None.
+        on_missing : {"raise", "skip"}, optional
+            With ``db``, what to do with items the database cannot place, by
+            default "raise".
+        aux_items : list[int | str] | None, optional
+            Auxiliary items, by default None.
+        attrs : dict | None, optional
+            Additional attributes, by default None.
+
+        Returns
+        -------
+        list[ReachObservation]
+            List of ReachObservation objects.
+
+        Raises
+        ------
+        ValueError
+            If both ``reaches`` and ``db`` are given, if neither is, or if the
+            database cannot resolve the requested items.
+        """
+        if db is not None:
+            if reaches is not None:
+                raise ValueError(
+                    "'reaches' and 'db' are mutually exclusive: the database "
+                    "supplies the locations."
+                )
+            if data is None:
+                raise ValueError("'data' is required when 'db' is given")
+            return _observations_from_mikeplus(
+                cls,
+                data=data,
+                db=db,
+                kind="reach",
+                location_arg="reach",
+                quantity=quantity,
+                source=source,
+                on_missing=on_missing,
+                aux_items=aux_items,
+                attrs=attrs,
+            )
+
+        if isinstance(quantity, str):
+            raise TypeError(
+                "'quantity' must be a Quantity unless 'db' is given, got str"
+            )
+
+        if reaches is None:
+            raise ValueError("'reaches' argument is required")
+        if not isinstance(reaches, dict):
+            raise TypeError(
+                f"'reaches' must be a dict mapping reach_id -> data_source, got {type(reaches).__name__}"
+            )
+
+        reach_ids = list(reaches.keys())
+
+        if data is None:
+            data_sources: list[PointType] = list(reaches.values())
+            return [
+                cls(
+                    data_i,
+                    reach=reach_i,
+                    item=None,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    attrs=attrs,
+                )
+                for data_i, reach_i in zip(data_sources, reach_ids)
+            ]
+        else:
+            reach_items: list[int | str | None] = list(reaches.values())
+            return [
+                cls(
+                    data,
+                    reach=reach_i,
+                    item=item_i,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    attrs=attrs,
+                )
+                for reach_i, item_i in zip(reach_ids, reach_items)
+            ]
 
 
 def unit_display_name(name: str) -> str:
