@@ -6,7 +6,7 @@ ModelSkill supports five types of observations:
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
 * [`VerticalObservation`](`modelskill.VerticalObservation`) - a vertical profile from a dfs0/nc file or a DataFrame
-* [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs.
+* [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for a named node or break point.
 * [`ReachObservation`](`modelskill.ReachObservation`) - a network reach timeseries for a quantity uniform along the reach.
 
 An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
@@ -27,6 +27,7 @@ from typing import (
 )
 from typing_extensions import Self
 import warnings
+import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -45,9 +46,9 @@ from .timeseries import (
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
 Serializable = Union[str, int, float]
 
-# Where a node observation sits: an internal network ID, an original node alias,
-# or a breakpoint given as (reach_id, distance) along a reach.
-NodeLocation = Union[int, str, tuple[str, float]]
+# Where a node observation sits: the name the network gave the node, or a
+# breakpoint given as (reach_id, distance) along a reach.
+NodeLocation = Union[str, tuple[str, float]]
 
 
 def observation(
@@ -93,7 +94,7 @@ def observation(
     >>> import modelskill as ms
     >>> o_pt = ms.observation(df, item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o_tr = ms.observation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
-    >>> o_node = ms.observation(df, item="Water Level", at=123, name="123")
+    >>> o_node = ms.observation(df, item="Water Level", at="123", name="123")
     >>> o_reach = ms.observation(df, item="Discharge", reach="reach_1", name="reach_1_Q")
     """
     if gtype is None:
@@ -818,14 +819,13 @@ class NodeObservation(Observation):
     """Class for observations at network nodes.
 
     Create a NodeObservation from a DataFrame or other data source.
-    The ``at`` parameter accepts three forms:
+    The ``at`` parameter accepts two forms:
 
-    * **int** — internal network ID, used directly.
-    * **str** — original node alias (e.g. Res1D node name), resolved to an
-      integer ID automatically when matched against a
-      :class:`~modelskill.model.network.NetworkModelResult`.
-    * **tuple[str, float]** — breakpoint location as ``(reach_id, distance)``
-      along a reach, resolved via the alias map at match time.
+    * **str** — the node's name in the model (e.g. a Res1D node name).
+    * **tuple[str, float]** — a breakpoint, as ``(reach_id, distance)`` along a
+      reach.
+
+    Both are resolved against the network when the observation is matched.
 
     .. note::
         "Node" in this API follows the broad graph sense: it covers both
@@ -842,12 +842,11 @@ class NodeObservation(Observation):
     ----------
     data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
         data source with time series for the node
-    at : int, str, or tuple[str, float]
+    at : str or tuple[str, float]
         Observation location. Accepted forms:
 
-        * **int** — internal network ID.
-        * **str** — original node alias (e.g. Res1D node name).
-        * **tuple[str, float]** — breakpoint as ``(reach_id, distance)``.
+        * **str** — the node's name in the model (e.g. a Res1D node name).
+        * **tuple[str, float]** — a breakpoint, as ``(reach_id, distance)``.
     item : (int, str), optional
         index or name of the wanted item/column, by default None
         if data contains more than one item, item must be given
@@ -865,8 +864,8 @@ class NodeObservation(Observation):
     Examples
     --------
     >>> import modelskill as ms
-    >>> o1 = ms.NodeObservation(data, at=123, name="123")
-    >>> o2 = ms.NodeObservation(df, item="Water Level", at=456)
+    >>> o1 = ms.NodeObservation(data, at="123", name="123")
+    >>> o2 = ms.NodeObservation(df, item="Water Level", at="456")
     >>>
     >>> # String alias resolved at match time
     >>> o3 = ms.NodeObservation(data, at="node_A")
@@ -875,14 +874,14 @@ class NodeObservation(Observation):
     >>> o4 = ms.NodeObservation(data, at=("reach_1", 24.5))
     >>>
     >>> # Multiple node observations from separate data sources
-    >>> obs = ms.NodeObservation.from_multiple(nodes={123: df1, 456: df2})
+    >>> obs = ms.NodeObservation.from_multiple(nodes={"123": df1, "456": df2})
     """
 
     def __init__(
         self,
         data: PointType,
         *,
-        at: int | str | tuple[str, float],
+        at: str | tuple[str, float],
         item: int | str | None = None,
         name: str | None = None,
         weight: float = 1.0,
@@ -890,6 +889,12 @@ class NodeObservation(Observation):
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> None:
+        if isinstance(at, (int, np.integer)) and not isinstance(at, bool):
+            raise TypeError(
+                "'at' takes a node name or a (reach, distance) pair, not an integer. "
+                "The integers a Network hands out are an internal index; "
+                "network.recall(<int>) gives the name back."
+            )
         if isinstance(at, tuple):
             reach, distance = str(at[0]), float(at[1])
             if not self._is_input_validated(data):
@@ -916,14 +921,14 @@ class NodeObservation(Observation):
         super().__init__(data=data, weight=weight, attrs=attrs)
 
     @property
-    def at(self) -> int | str | tuple[str, float]:
-        """Observation location: node ID (int/str) or breakpoint ``(reach_id, distance)`` tuple."""
+    def at(self) -> str | tuple[str, float]:
+        """Observation location: a node name, or a ``(reach_id, distance)`` breakpoint."""
         if "reach" in self.data.coords:
             return (
                 str(self.data.coords["reach"].item()),
                 float(self.data.coords["distance"].item()),
             )
-        return self.data.coords["node"].item()  # int or str
+        return str(self.data.coords["node"].item())
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
         """Reconstruct instance from a dataset slice."""
@@ -935,7 +940,7 @@ class NodeObservation(Observation):
                     float(data.coords["distance"].item()),
                 ),
             )
-        return self.__class__(data, at=data.coords["node"].item())
+        return self.__class__(data, at=str(data.coords["node"].item()))
 
     @overload
     @classmethod
@@ -995,13 +1000,13 @@ class NodeObservation(Observation):
         1. **Separate data sources** — pass only ``nodes`` as a dict mapping
            each node ID to its own data source (file path, DataFrame, etc.)::
 
-               obs = NodeObservation.from_multiple(nodes={123: df1, 456: "sensor.csv"})
+               obs = NodeObservation.from_multiple(nodes={"123": df1, "456": "sensor.csv"})
 
         2. **Shared data source** — pass a single ``data`` object together with
            ``nodes`` as a dict mapping each node ID to the column name or index
            to select from ``data``::
 
-               obs = NodeObservation.from_multiple(data=df, nodes={123: "col_a", 456: "col_b"})
+               obs = NodeObservation.from_multiple(data=df, nodes={"123": "col_a", "456": "col_b"})
 
         3. **MIKE+ database** — pass a single ``data`` object together with
            ``db``, and the locations are looked up in the database::
@@ -1016,10 +1021,10 @@ class NodeObservation(Observation):
         data : PointType, optional
             Shared data source (required when ``nodes`` values are column
             selectors, and when ``db`` is given).
-        nodes : dict[int | str | tuple[str, float], PointType | str | int]
+        nodes : dict[str | tuple[str, float], PointType | str | int]
             Mapping of location -> data source or column selector. A location
-            takes any of the forms accepted by ``at``: an internal network ID,
-            a node alias, or a ``(reach_id, distance)`` breakpoint.
+            takes either of the forms accepted by ``at``: a node name, or a
+            ``(reach_id, distance)`` breakpoint.
 
             Note that a location can appear only once, so this form cannot
             express several observations at the same node. Use ``db`` when the

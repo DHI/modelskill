@@ -403,7 +403,7 @@ def node_obs_invalid(network):
     time = pd.date_range("2017-10-27", periods=10, freq="h")
     data = np.random.normal(1.5, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
-    return ms.NodeObservation(df, at=999, name="Node_999_Obs")
+    return ms.NodeObservation(df, at="999", name="Node_999_Obs")
 
 
 @pytest.fixture
@@ -1038,7 +1038,7 @@ def test_match_node_obs_with_multiple_network_models(
 
 
 def test_match_network_invalid_node_error(node_obs_invalid, network_mr):
-    with pytest.raises(ValueError, match="Node 999 not found"):
+    with pytest.raises(ValueError, match="not found"):
         ms.match(node_obs_invalid, network_mr)
 
 

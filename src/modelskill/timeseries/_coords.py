@@ -51,7 +51,7 @@ class XYZCoords:
 
 
 class NodeCoords:
-    def __init__(self, node: int | str | None = None):
+    def __init__(self, node: str | None = None):
         self.node = node if node is not None else np.nan
 
     @property

@@ -244,9 +244,9 @@ class TestNetworkModelResult:
     def test_extract_invalid_node(self, sample_network, sample_node_data):
         """Test extraction of a node not present in the network"""
         nmr = NetworkModelResult(sample_network)
-        obs = NodeObservation(sample_node_data, at=999, name="Node_999")
+        obs = NodeObservation(sample_node_data, at="999", name="Node_999")
 
-        with pytest.raises(ValueError, match="Node 999 not found"):
+        with pytest.raises(ValueError, match="not found"):
             nmr.extract(obs)
 
     def test_extract_wrong_observation_type(self, sample_network):
@@ -283,26 +283,26 @@ class TestNodeObservation:
         """Test initialization with pandas DataFrame"""
 
         obs = NodeObservation(
-            sample_node_data, at=123, name="Sensor_1", item="WaterLevel"
+            sample_node_data, at="123", name="Sensor_1", item="WaterLevel"
         )
 
-        assert obs.at == 123
+        assert obs.at == "123"
         assert obs.name == "Sensor_1"
         assert len(obs.time) == 10
         assert isinstance(obs.time, pd.DatetimeIndex)
 
     def test_init_with_series(self, sample_series):
         """Test initialization with pandas Series"""
-        obs = NodeObservation(sample_series, at=456, name="Node_456")
+        obs = NodeObservation(sample_series, at="456", name="Node_456")
 
-        assert obs.at == 456
+        assert obs.at == "456"
         assert obs.name == "Node_456"
         assert len(obs.time) == 10
 
     def test_node_attrs(self, sample_node_data):
         """Test attrs property"""
         attrs = {"source": "test", "version": "1.0"}
-        obs = NodeObservation(sample_node_data, at=123, attrs=attrs, weight=2.5)
+        obs = NodeObservation(sample_node_data, at="123", attrs=attrs, weight=2.5)
 
         assert obs.attrs["source"] == "test"
         assert obs.attrs["version"] == "1.0"
@@ -313,7 +313,7 @@ class TestNodeObservation:
         """Test that from_multiple returns a list of NodeObservation objects"""
         obs_list = NodeObservation.from_multiple(
             data=multi_data,
-            nodes={123: "station_0", 456: "station_1", 789: "station_2"},
+            nodes={"123": "station_0", "456": "station_1", "789": "station_2"},
         )
 
         assert len(obs_list) == 3
@@ -322,17 +322,17 @@ class TestNodeObservation:
     def test_node_ids_are_assigned_correctly(self, multi_data):
         obs_list = NodeObservation.from_multiple(
             data=multi_data,
-            nodes={123: "station_0", 456: "station_1", 789: "station_2"},
+            nodes={"123": "station_0", "456": "station_1", "789": "station_2"},
         )
 
-        assert obs_list[0].node == 123
-        assert obs_list[1].node == 456
-        assert obs_list[2].node == 789
+        assert obs_list[0].node == "123"
+        assert obs_list[1].node == "456"
+        assert obs_list[2].node == "789"
 
     def test_names_derived_from_column_names(self, multi_data):
         obs_list = NodeObservation.from_multiple(
             data=multi_data,
-            nodes={123: "station_0", 456: "station_1", 789: "station_2"},
+            nodes={"123": "station_0", "456": "station_1", "789": "station_2"},
         )
 
         assert obs_list[0].name == "station_0"
@@ -348,12 +348,12 @@ class TestNodeObservation:
             coords={"time": sample_node_data.index},
         )
         obs_list = NodeObservation.from_multiple(
-            data=ds, nodes={123: "station_0", 456: "station_1"}
+            data=ds, nodes={"123": "station_0", "456": "station_1"}
         )
 
         assert len(obs_list) == 2
-        assert obs_list[0].node == 123
-        assert obs_list[1].node == 456
+        assert obs_list[0].node == "123"
+        assert obs_list[1].node == "456"
 
     def test_nodes_must_be_dict(self, multi_data):
         with pytest.raises(TypeError, match="'nodes' must be a dict"):
@@ -363,7 +363,7 @@ class TestNodeObservation:
         attrs = {"source": "sensor_array", "version": 2}
         obs_list = NodeObservation.from_multiple(
             data=multi_data,
-            nodes={1: "station_0", 2: "station_1", 3: "station_2"},
+            nodes={"1": "station_0", "2": "station_1", "3": "station_2"},
             attrs=attrs,
         )
 
@@ -373,38 +373,38 @@ class TestNodeObservation:
 
     def test_init_from_csv(self):
         obs = NodeObservation(
-            "tests/testdata/network_sensor_1.csv", at=1, item="water_level@sens1"
+            "tests/testdata/network_sensor_1.csv", at="1", item="water_level@sens1"
         )
 
-        assert obs.at == 1
+        assert obs.at == "1"
         assert len(obs.time) == 110
         assert isinstance(obs.time, pd.DatetimeIndex)
 
     def test_from_multiple_csvs_via_dict(self):
         obs_list = NodeObservation.from_multiple(
             nodes={
-                1: "tests/testdata/network_sensor_1.csv",
-                2: "tests/testdata/network_sensor_2.csv",
-                3: "tests/testdata/network_sensor_3.csv",
+                "1": "tests/testdata/network_sensor_1.csv",
+                "2": "tests/testdata/network_sensor_2.csv",
+                "3": "tests/testdata/network_sensor_3.csv",
             }
         )
 
         assert len(obs_list) == 3
         assert all(isinstance(obs, NodeObservation) for obs in obs_list)
-        assert obs_list[0].node == 1
-        assert obs_list[1].node == 2
-        assert obs_list[2].node == 3
+        assert obs_list[0].node == "1"
+        assert obs_list[1].node == "2"
+        assert obs_list[2].node == "3"
         for obs in obs_list:
             assert len(obs.time) > 0
 
     def test_nodes_dict_maps_node_to_item(self, multi_data):
         obs_list = NodeObservation.from_multiple(
-            data=multi_data, nodes={123: "station_0", 456: "station_1"}
+            data=multi_data, nodes={"123": "station_0", "456": "station_1"}
         )
 
         assert len(obs_list) == 2
-        assert obs_list[0].node == 123
-        assert obs_list[1].node == 456
+        assert obs_list[0].node == "123"
+        assert obs_list[1].node == "456"
         assert obs_list[0].name == "station_0"
         assert obs_list[1].name == "station_1"
 
@@ -414,12 +414,12 @@ class TestNodeObservation:
 
     def test_single_node_dict(self, sample_node_data):
         obs_list = NodeObservation.from_multiple(
-            data=sample_node_data, nodes={123: "WaterLevel"}
+            data=sample_node_data, nodes={"123": "WaterLevel"}
         )
 
         assert len(obs_list) == 1
         assert isinstance(obs_list[0], NodeObservation)
-        assert obs_list[0].node == 123
+        assert obs_list[0].node == "123"
 
     def test_nodes_keys_accept_aliases(self, multi_data):
         obs_list = NodeObservation.from_multiple(
@@ -494,9 +494,9 @@ class TestNodeModelResult:
     def test_init_(self, request, fixture_name):
         """Test initialization with pandas DataFrame"""
         data = request.getfixturevalue(fixture_name)
-        nmr = NodeModelResult(data, node=123, name="Node_123_Model")
+        nmr = NodeModelResult(data, node="123", name="Node_123_Model")
 
-        assert nmr.node == 123
+        assert nmr.node == "123"
         assert nmr.name == "Node_123_Model"
         assert len(nmr.time) == 10
 
@@ -641,17 +641,12 @@ def test_extract_reach_observation_breakpoint_node_missing_raises_valueerror(
 
 
 class TestNodeObservationAliases:
-    """NodeObservation accepts int, str alias, and (reach, distance) tuple."""
+    """NodeObservation accepts a node name or a (reach, distance) tuple."""
 
-    def test_integer_node_unchanged(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, at=42)
-        assert obs.at == 42
-        assert isinstance(obs.at, int)
-
-    def test_integer_node_coord(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, at=42)
-        assert "node" in obs.data.coords
-        assert int(obs.data.coords["node"].item()) == 42
+    @pytest.mark.parametrize("at", [42, np.int64(42)])
+    def test_an_integer_is_refused(self, sample_node_data, at):
+        with pytest.raises(TypeError, match="not an integer"):
+            NodeObservation(sample_node_data, at=at)
 
     def test_string_alias_stored(self, sample_node_data):
         obs = NodeObservation(sample_node_data, at="node_A", name="test")

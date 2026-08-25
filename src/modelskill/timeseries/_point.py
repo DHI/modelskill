@@ -286,7 +286,7 @@ def _parse_network_node_input(
     name: str | None,
     item: str | int | None,
     quantity: Quantity | None,
-    node: int | str | None,
+    node: str | None,
     aux_items: Sequence[int | str] | None,
 ) -> xr.Dataset:
     if node is None:

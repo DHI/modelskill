@@ -49,8 +49,13 @@ class NodeModelResult(TimeSeries):
     name : str, optional
         The name of the model result,
         by default None (will be set to file name or item name)
-    node : int, optional
-        node ID (integer), by default None
+    node : str or tuple[str, float], optional
+        Where the data sits: a node name, or a break point as
+        ``(reach_id, distance)``. By default None, which requires data that
+        already carries a ``node`` or ``reach`` coordinate.
+    node_index : int, optional
+        The integer the network used for this location, recorded as provenance.
+        Nothing reads it back, by default None
     item : str | int | None, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
@@ -62,14 +67,14 @@ class NodeModelResult(TimeSeries):
     Examples
     --------
     >>> import modelskill as ms
-    >>> mr = ms.NodeModelResult(data, node=123, name="Node_123")
-    >>> mr2 = ms.NodeModelResult(df, item="Water Level", node=456)
+    >>> mr = ms.NodeModelResult(data, node="123", name="Node_123")
+    >>> mr2 = ms.NodeModelResult(df, item="Water Level", node=("r1", 24.5))
     """
 
     def __init__(
         self,
         data: PointType,
-        node: int | str | tuple[str, float | None] | None = None,
+        node: str | tuple[str, float | None] | None = None,
         *,
         node_index: int | None = None,
         name: str | None = None,
@@ -358,18 +363,11 @@ class NetworkModelResult:
             aux_items=self.sel_items.aux,
         )
 
-    def _resolve_alias(self, alias: int | str | tuple[str, float]) -> int:
+    def _resolve_alias(self, alias: str | tuple[str, float]) -> int:
         # Delegated to Network.find rather than matched against the dataset's own
         # name/reach/distance coords: find() searches the whole topology, so a hit
         # that is missing from the dataset is a location whose timeseries was not
         # loaded, which is a different mistake from one that does not exist.
-        if isinstance(alias, (int, np.integer)) and not isinstance(alias, bool):
-            if alias not in self.data.indexes["node"]:
-                raise ValueError(
-                    f"Node {alias} not found. Available: {list(self.nodes[:5])}..."
-                )
-            return int(alias)
-
         try:
             if isinstance(alias, tuple):
                 reach_id, distance = alias

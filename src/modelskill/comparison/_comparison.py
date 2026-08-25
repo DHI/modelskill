@@ -650,12 +650,12 @@ class Comparer:
 
     @property
     def node(self) -> Any:
-        """node-coordinate"""
+        """Name of the node this comparer sits at"""
         return self._coordinate_values("node")
 
     @property
     def reach(self) -> Any:
-        """reach-coordinate"""
+        """Name of the reach this comparer sits on"""
         return self._coordinate_values("reach")
 
     @property
