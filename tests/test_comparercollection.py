@@ -454,9 +454,9 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
 @pytest.fixture
 def node_comparer() -> modelskill.comparison.Comparer:
     """A comparer built by matching a NodeObservation against a NetworkModelResult (node gtype)."""
-    pytest.importorskip("networkx")
+    pytest.importorskip("mikeio1d.network")
+    from mikeio1d.network import Network, BasicNode, BasicReach
     from modelskill.model.network import NetworkModelResult
-    from modelskill.network import Network, BasicNode, BasicReach
     from modelskill.obs import NodeObservation
 
     time = pd.date_range("2019-01-01", periods=6, freq="D")
@@ -480,9 +480,14 @@ def node_comparer() -> modelskill.comparison.Comparer:
 @pytest.fixture
 def reach_comparer() -> modelskill.comparison.Comparer:
     """A comparer built by matching a ReachObservation (reach gtype)."""
-    pytest.importorskip("networkx")
+    pytest.importorskip("mikeio1d.network")
+    from mikeio1d.network import (
+        Network,
+        BasicNode,
+        BasicReach,
+        ReachBreakPoint,
+    )
     from modelskill.model.network import NetworkModelResult
-    from modelskill.network import Network, BasicNode, BasicReach, ReachBreakPoint
     from modelskill.obs import ReachObservation
 
     class Point(ReachBreakPoint):

@@ -7,10 +7,21 @@ import mikeio
 import modelskill as ms
 from modelskill.comparison._comparison import ItemSelection
 from modelskill.model.dfsu import DfsuModelResult
-try:
-    from modelskill.network import _make_basic_network
-except ImportError:
-    pass
+
+
+def _make_basic_network(node_ids, time, data, quantity="WaterLevel"):
+    """A chain of nodes, each carrying one quantity, joined by unit reaches."""
+    from mikeio1d.network import Network, BasicNode, BasicReach
+
+    nodes = [
+        BasicNode(node_id, pd.DataFrame({quantity: data[:, i]}, index=time))
+        for i, node_id in enumerate(node_ids)
+    ]
+    reaches = [
+        BasicReach(f"r{i}", nodes[i], nodes[i + 1], length=100.0)
+        for i in range(len(nodes) - 1)
+    ]
+    return Network(reaches)
 
 
 @pytest.fixture
@@ -366,7 +377,7 @@ def network_mr(network):
 @pytest.fixture
 def node_obs1(network):
     """NodeObservation for node '100'"""
-    node_id = network.find(node="100")
+    node_id = "100"
     time = pd.date_range("2017-10-27", periods=18, freq="h")
     # Add some noise to make it different from model
     np.random.seed(123)
@@ -378,7 +389,7 @@ def node_obs1(network):
 @pytest.fixture
 def node_obs2(network):
     """NodeObservation for node '200'"""
-    node_id = network.find(node="200")
+    node_id = "200"
     time = pd.date_range("2017-10-27", periods=15, freq="h")
     np.random.seed(456)
     data = np.random.normal(1.6, 0.25, len(time))
@@ -410,7 +421,7 @@ def network_mr2(network2):
 @pytest.fixture
 def node_obs_gaps(network):
     """NodeObservation with time gaps"""
-    node_id = network.find(node="100")
+    node_id = "100"
     time = pd.date_range("2017-10-27", periods=10, freq="2h")  # Different frequency
     data = np.random.normal(1.5, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
@@ -1064,7 +1075,8 @@ def test_network_match_multi_obs_multi_model_comprehensive(
 def test_network_match_error_non_node_observation(network_mr, point_obs_error):
     """Test that non-NodeObservation raises appropriate error"""
     with pytest.raises(
-        TypeError, match="NetworkModelResult supports NodeObservation and ReachObservation"
+        TypeError,
+        match="NetworkModelResult supports NodeObservation and ReachObservation",
     ):
         ms.match(point_obs_error, network_mr)
 
