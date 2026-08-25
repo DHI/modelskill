@@ -1,6 +1,6 @@
 # ADR-013: The Network Topology Layer Belongs to mikeio1d
 
-**Status**: Draft
+**Status**: Accepted
 
 **Date**: 2026-08
 
@@ -24,6 +24,8 @@ mikeio1d gains an optional network module that builds and owns `Network`. models
 Original IDs become the only identifier a user handles: `NodeObservation.at` takes a node name or a `(reach, distance)` pair, and no longer an integer. The alias integers stay an internal index — they exist because the ID space is mixed and a tuple cannot be an xarray coordinate value, not because anyone should type one. A saved comparer records the original ID beside the integer, so reloading it does not depend on the numbering the installed mikeio1d happened to hand out.
 
 The move is verified rather than trusted: the current loader's output over every fixture is snapshotted first — graph edges with their lengths and boundary flags, the alias map, the dataframe, the answers `find` and `recall` give — and those snapshots become the upstream module's acceptance test. Code moves verbatim before it is cleaned up. Neither project releases the feature until both can: modelskill 1.4.0 waits for the mikeio1d release that carries the module.
+
+Phase 1 landed as mikeio1d [#247](https://github.com/DHI/mikeio1d/pull/247), merged 2026-08-19. The six snapshots pass there unchanged: first against the code moved verbatim, then again after the entry points collapsed into a single `Network.open`. That second pass is what says the redesign changed no behaviour. The module is still unreleased, so the version pin this decision requires waits on mikeio1d's next release.
 
 ## Alternatives Considered
 
