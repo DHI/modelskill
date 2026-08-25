@@ -4,6 +4,17 @@
 
 **Date**: 2026-08
 
+## Narrowed by ADR-013
+
+The constructors, the companion arguments, the extension tables, the coverage test and the
+`.inp` reader are mikeio1d's. It replaced `from_mike` and `from_epanet` with one
+`Network.open` that reads the extension. Naming a constructor after the product that wrote
+the file is still the rule, and mikeio1d applies it.
+
+For modelskill this leaves one step: `NetworkModelResult` hands a path to mikeio1d. The
+refusal messages for `.out`, `.resx` and the formats without a fixture are written there
+now.
+
 ## Context
 
 `Network` is built from result files read through mikeio1d, whose single `Res1D` class opens nine extensions across five products — MIKE 1D (`.res1d`), MIKE 11 (`.res11`), MOUSE (`.prf`, `.crf`, `.xrf`), EPANET (`.res`), SWMM (`.out`), Water Hammer (`.whr`), and `.resx`, which is shared by the last three. There is no per-format reader and no per-format constructor argument, so from mikeio1d's side all nine look alike. modelskill's constructor was named `from_res1d`, and its extension guard was briefly widened to accept everything mikeio1d could read — making the name promise one format while reading nine.
@@ -22,18 +33,6 @@ Name constructors after the product that writes the file, and ship one only wher
 A product's companion files are arguments rather than constructors of their own. A companion describes a network defined elsewhere and cannot stand alone, so `from_epanet(res, resx=..., inp=...)` and not a `from_resx()`. Each companion is validated against the main file — same time axis, no unknown IDs — because two unrelated runs would otherwise merge silently.
 
 Every extension mikeio1d reads is accounted for in one of three module-level tables in `network.py`: readable by `from_mike`, readable by `from_epanet`, or refused with a reason that names the file or method which would lift it. A test asserts the tables cover exactly `Res1D.get_supported_file_extensions()`, so a mikeio1d release adding a tenth format fails CI instead of leaving that format silently unreachable. `from_res1d` is removed without a deprecation shim: it shipped only in the 1.4.0a3 alpha, and the network module is opt-in and absent from the API reference.
-
-## Superseded in part by ADR-013
-
-Everything below the line this note sits above is now mikeio1d's: the constructors, the
-companion arguments, the extension tables and the coverage test moved there with the rest
-of the topology layer, and `Network.open` replaced the two product constructors with one
-entry point that reads the extension. The reasoning about naming a constructor after the
-product that wrote the file still holds, and still applies -- upstream. What stays here is
-the consequence for modelskill: a path handed to `NetworkModelResult` is opened by
-mikeio1d, and the refusal messages for `.out`, `.resx` and the fixture-less formats are
-upstream's to word. The `.inp` reader went with them, so the last consequence below is no
-longer ours to carry.
 
 ## Alternatives Considered
 
