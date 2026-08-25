@@ -538,6 +538,25 @@ def test_save_and_load_round_trips_node_gtype_raw_data(node_comparer, tmp_path):
     assert cc2[0].raw_mod_data["Network_Model"].node == "123"
 
 
+def test_a_comparer_saved_by_1_4_0a3_still_loads():
+    """The alpha wrote the graph integer into the node coordinate.
+
+    Nothing on the load path derives a location from it any more, so such a file
+    keeps working -- it just gives the integer back. Needs no mikeio1d: it is a
+    netcdf file, not a network.
+    """
+    cmp = ms.load("tests/testdata/node_comparer_1.4.0a3.nc")
+
+    assert cmp.gtype == "node"
+    assert cmp.node == 0
+    assert cmp.skill().to_dataframe().shape[0] == 1
+
+    # Turning it back into an observation is where the integer is refused, since
+    # NodeObservation no longer accepts one.
+    with pytest.raises(TypeError, match="not an integer"):
+        cmp._to_observation()
+
+
 def test_save_and_load_round_trips_reach_gtype_raw_data(reach_comparer, tmp_path):
     """Reach-gtype comparers must survive a save()/load() round trip too."""
     cc = ms.ComparerCollection([reach_comparer])
