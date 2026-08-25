@@ -1507,3 +1507,36 @@ class TestReadInp:
         )
 
         assert read_pipe_lengths(path) == {"1": 10.0, "3": 20.0}
+
+
+# ======================== location identity ========================
+
+
+class TestLocationIdentity:
+    """A network timeseries is identified by the name its network gave it."""
+
+    def test_breakpoint_observation_converts_to_a_dataframe(self, sample_node_data):
+        obs = ms.NodeObservation(sample_node_data, at=("r1", 24.5), item="WaterLevel")
+
+        df = obs.to_dataframe()
+
+        assert list(df.columns) == ["WaterLevel"]
+        assert len(df) == len(sample_node_data)
+
+    def test_reach_observation_converts_to_a_dataframe(self, sample_node_data):
+        obs = ms.ReachObservation(sample_node_data, reach="r1", item="WaterLevel")
+
+        df = obs.to_dataframe()
+
+        assert list(df.columns) == ["WaterLevel"]
+
+    def test_a_named_node_survives_trimming(self, sample_network, sample_node_data):
+        nmr = NetworkModelResult(sample_network)
+        extracted = nmr.extract(ms.NodeObservation(sample_node_data, at="123"))
+
+        trimmed = extracted.trim(
+            start_time=extracted.time[1], end_time=extracted.time[-1]
+        )
+
+        assert trimmed.node == extracted.node
+        assert len(trimmed) == len(extracted) - 1

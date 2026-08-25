@@ -10,6 +10,7 @@ import xarray as xr
 
 from ..types import GeometryType
 from ..quantity import Quantity
+from ._coords import NETWORK_LOCATION_COORDS
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
 from .. import __version__
 
@@ -366,10 +367,12 @@ class TimeSeries:
             return df[cols]
         elif self.gtype == str(GeometryType.VERTICAL):
             return self.data.drop_vars(["x", "y"]).to_dataframe()
-        elif self.gtype == str(GeometryType.NODE):
-            return self.data.drop_vars(["node"]).to_dataframe()
-        elif self.gtype == str(GeometryType.REACH):
-            return self.data.drop_vars(["reach"]).to_dataframe()
+        elif self.gtype in (str(GeometryType.NODE), str(GeometryType.REACH)):
+            # A breakpoint carries reach and distance rather than node, so drop
+            # whichever of them this one has.
+            return self.data.drop_vars(
+                NETWORK_LOCATION_COORDS, errors="ignore"
+            ).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 

@@ -472,8 +472,45 @@ def node_comparer() -> modelskill.comparison.Comparer:
     network = Network([reach])
 
     nmr = NetworkModelResult(network, name="Network_Model")
-    node_id = network.find(node="123")
-    obs = NodeObservation(node_a_data, at=node_id, name="Node_123_Obs")
+    obs = NodeObservation(node_a_data, at="123", name="Node_123_Obs")
+
+    return ms.match(obs, nmr)
+
+
+@pytest.fixture
+def reach_comparer() -> modelskill.comparison.Comparer:
+    """A comparer built by matching a ReachObservation (reach gtype)."""
+    pytest.importorskip("networkx")
+    from modelskill.model.network import NetworkModelResult
+    from modelskill.network import Network, BasicNode, BasicReach, ReachBreakPoint
+    from modelskill.obs import ReachObservation
+
+    class Point(ReachBreakPoint):
+        def __init__(self, reach, distance, data):
+            self._id = (reach, distance)
+            self._data = data
+
+        @property
+        def id(self):
+            return self._id
+
+        @property
+        def data(self):
+            return self._data
+
+    time = pd.date_range("2019-01-01", periods=6, freq="D")
+    values = pd.DataFrame({"WaterLevel": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]}, index=time)
+    empty = pd.DataFrame()
+    reach = BasicReach(
+        "r1",
+        BasicNode("123", empty),
+        BasicNode("456", empty),
+        length=100.0,
+        breakpoints=[Point("r1", 50.0, values)],
+    )
+
+    nmr = NetworkModelResult(Network([reach]), name="Network_Model")
+    obs = ReachObservation(values, reach="r1", name="Reach_r1_Obs")
 
     return ms.match(obs, nmr)
 
@@ -489,6 +526,25 @@ def test_save_and_load_round_trips_node_gtype_raw_data(node_comparer, tmp_path):
     assert cc2[0].gtype == "node"
     assert len(cc2[0].raw_mod_data["Network_Model"]) == len(
         node_comparer.raw_mod_data["Network_Model"]
+    )
+    # The node was addressed by name, and the name is what comes back: reloading
+    # must not depend on the integer the network happened to hand out.
+    assert cc2[0].node == "123"
+    assert cc2[0].raw_mod_data["Network_Model"].node == "123"
+
+
+def test_save_and_load_round_trips_reach_gtype_raw_data(reach_comparer, tmp_path):
+    """Reach-gtype comparers must survive a save()/load() round trip too."""
+    cc = ms.ComparerCollection([reach_comparer])
+    fn = tmp_path / "test_cc_reach.msk"
+    cc.save(fn)
+
+    cc2 = ms.load(fn)
+
+    assert cc2[0].gtype == "reach"
+    assert cc2[0].reach == "r1"
+    assert len(cc2[0].raw_mod_data["Network_Model"]) == len(
+        reach_comparer.raw_mod_data["Network_Model"]
     )
 
 

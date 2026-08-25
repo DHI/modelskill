@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import xarray as xr
 
-from modelskill.timeseries import TimeSeries, _parse_network_node_input
+from modelskill.timeseries import (
+    TimeSeries,
+    _parse_network_breakpoint_input,
+    _parse_network_node_input,
+)
+from modelskill.timeseries._coords import location_from_coords
 from ._base import SelectedItems
 from ..obs import NodeObservation, ReachObservation
 from ..quantity import Quantity
@@ -50,41 +55,74 @@ class NodeModelResult(TimeSeries):
     def __init__(
         self,
         data: PointType,
-        node: int,
+        node: int | str | tuple[str, float | None] | None = None,
         *,
+        node_index: int | None = None,
         name: str | None = None,
         item: str | int | None = None,
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
     ):
         if not self._is_input_validated(data):
-            data = _parse_network_node_input(
-                data,
-                name=name,
-                item=item,
-                quantity=quantity,
-                node=node,
-                aux_items=aux_items,
-            )
+            if isinstance(node, tuple):
+                reach, distance = node
+                data = _parse_network_breakpoint_input(
+                    data,
+                    name=name,
+                    item=item,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    reach=reach,
+                    distance=distance,
+                )
+            elif node is not None:
+                data = _parse_network_node_input(
+                    data,
+                    name=name,
+                    item=item,
+                    quantity=quantity,
+                    node=node,
+                    aux_items=aux_items,
+                )
+            else:
+                raise ValueError(
+                    "'NodeModelResult' needs a node name or a (reach, distance) "
+                    "pair when the data does not already carry its location"
+                )
 
         if not isinstance(data, xr.Dataset):
             raise ValueError("'NodeModelResult' requires xarray.Dataset")
-        if data.coords.get("node") is None:
-            raise ValueError("'node' coordinate not found in data")
+        if not {"node", "reach"} & set(data.coords):
+            raise ValueError(
+                "'NodeModelResult' needs a node name, a (reach, distance) pair, or "
+                "data that already carries a 'node' or 'reach' coordinate"
+            )
+        if node_index is not None:
+            data = data.assign_coords(node_index=int(node_index))
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
 
     @property
-    def node(self) -> int:
-        """Node ID of model result"""
-        node_val = self.data.coords["node"]
-        return int(node_val.item())
+    def node(self) -> Any:
+        """Where this result was extracted, as its network named it."""
+        return location_from_coords(self.data)
+
+    @property
+    def node_index(self) -> int | None:
+        """Graph integer this location had in the network it came from, if recorded.
+
+        Provenance only. Nothing reads it back: the numbering belongs to one
+        network built by one version, so a saved result is identified by
+        :attr:`node` instead.
+        """
+        if "node_index" not in self.data.coords:
+            return None
+        return int(np.atleast_1d(self.data.coords["node_index"].values)[0])
 
     def _create_new_instance(self, data: xr.Dataset) -> NodeModelResult:
-        """Extract node from data and create new instance"""
-        node = int(data.coords["node"].item())
-        return self.__class__(data, node=node)
+        """Create a new instance; the location already travels in the coords."""
+        return self.__class__(data)
 
 
 class NetworkModelResult:

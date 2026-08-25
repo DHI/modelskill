@@ -26,8 +26,14 @@ from ..model.network import NodeModelResult
 from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
-from ..obs import PointObservation, TrackObservation, NodeObservation
+from ..obs import (
+    PointObservation,
+    TrackObservation,
+    NodeObservation,
+    ReachObservation,
+)
 from ..model import PointModelResult, TrackModelResult, VerticalModelResult
+from ..timeseries._coords import NETWORK_LOCATION_COORDS, location_from_coords
 from ..timeseries._timeseries import _normalize_time_to_ns, _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
@@ -54,7 +60,7 @@ Serializable = Union[str, int, float]
 
 def _drop_scalar_coords(data: xr.Dataset) -> xr.Dataset:
     """Drop scalar coordinate variables that shouldn't appear as columns in dataframes"""
-    coords_to_drop = ["x", "y", "z", "node"]
+    coords_to_drop = ["x", "y", "z", *NETWORK_LOCATION_COORDS]
     return data.drop_vars(coords_to_drop, errors="ignore")
 
 
@@ -72,8 +78,8 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
 
     # coordinates
     # Only add x, y, z coordinates if they don't exist and we don't have node coordinates
-    has_node_coords = "node" in data.coords
-    if not has_node_coords:
+    has_network_coords = bool({"node", "reach"} & set(data.coords))
+    if not has_network_coords:
         if "x" not in data.coords:
             data.coords["x"] = np.nan
         if "y" not in data.coords:
@@ -112,8 +118,10 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
     # Validate attrs
     if "gtype" not in data.attrs:
         # Determine gtype based on available coordinates
-        if "node" in data.coords:
+        if "node" in data.coords or {"reach", "distance"} <= set(data.coords):
             data.attrs["gtype"] = str(GeometryType.NODE)
+        elif "reach" in data.coords:
+            data.attrs["gtype"] = str(GeometryType.REACH)
         else:
             data.attrs["gtype"] = str(GeometryType.POINT)
     # assert "gtype" in data.attrs, "data must have a gtype attribute"
@@ -645,6 +653,21 @@ class Comparer:
         """node-coordinate"""
         return self._coordinate_values("node")
 
+    @property
+    def reach(self) -> Any:
+        """reach-coordinate"""
+        return self._coordinate_values("reach")
+
+    @property
+    def distance(self) -> Any:
+        """along-reach distance of a breakpoint"""
+        return self._coordinate_values("distance")
+
+    @property
+    def _at(self) -> Any:
+        """Where this comparer sits, in the form NodeObservation.at takes"""
+        return location_from_coords(self.data)
+
     def _coordinate_values(self, coord: str) -> None | Any:
         """Get coordinate values if they exist, otherwise return None"""
         if coord not in self.data.coords:
@@ -773,7 +796,9 @@ class Comparer:
 
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
-    def _to_observation(self) -> PointObservation | TrackObservation | NodeObservation:
+    def _to_observation(
+        self,
+    ) -> PointObservation | TrackObservation | NodeObservation | ReachObservation:
         """Convert to Observation"""
         if self.gtype == "point":
             df = _drop_scalar_coords(self.data)[self._obs_str].to_dataframe()
@@ -804,7 +829,16 @@ class Comparer:
             return NodeObservation(
                 data=df,
                 name=self.name,
-                at=self.node,
+                at=self._at,
+                quantity=self.quantity,
+                # TODO: add attrs
+            )
+        elif self.gtype == "reach":
+            df = _drop_scalar_coords(self.data)[self._obs_str].to_dataframe()
+            return ReachObservation(
+                data=df,
+                name=self.name,
+                reach=self.reach,
                 quantity=self.quantity,
                 # TODO: add attrs
             )
@@ -1012,9 +1046,9 @@ class Comparer:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
 
         if self.gtype == "vertical":
-            data = self.data.drop_vars("node", errors="ignore")
+            data = self.data.drop_vars(NETWORK_LOCATION_COORDS, errors="ignore")
         else:
-            data = self.data.drop_vars(["z", "node"], errors="ignore")
+            data = self.data.drop_vars(["z", *NETWORK_LOCATION_COORDS], errors="ignore")
 
         # this step is necessary since we keep arbitrary derived data in the dataset, but not z/node
         # i.e. using a hardcoded whitelist of variables to keep is less flexible
@@ -1361,7 +1395,7 @@ class Comparer:
         # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
 
         # There is no need to save raw data for track data, since it is identical to the matched data
-        if self.gtype in ("point", "node"):
+        if self.gtype in ("point", "node", "reach"):
             ds = self.data.copy()  # copy needed to avoid modifying self.data
 
             for key, ts_mod in self.raw_mod_data.items():
@@ -1396,7 +1430,7 @@ class Comparer:
             # FIXME: consider during Phase3
             return Comparer(matched_data=data)
 
-        if data.gtype in ("point", "node"):
+        if data.gtype in ("point", "node", "reach"):
             raw_mod_data: Dict[
                 str,
                 PointModelResult
@@ -1413,10 +1447,8 @@ class Comparer:
                         {"_time_raw_" + new_key: "time", var_name: new_key}
                     )
                     ts: PointModelResult | NodeModelResult
-                    if data.gtype == "node":
-                        ts = NodeModelResult(
-                            data=ds, node=int(ds.coords["node"].item()), name=new_key
-                        )
+                    if data.gtype in ("node", "reach"):
+                        ts = NodeModelResult(data=ds, name=new_key)
                     else:
                         ts = PointModelResult(data=ds, name=new_key)
 
