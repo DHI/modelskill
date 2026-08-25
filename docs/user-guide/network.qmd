@@ -8,16 +8,16 @@ jupyter: python3
 ## Extra dependencies required
 
 Network support depends on libraries that are **not** installed
-by default, e.g. `networkx`. You can install them alongside `modelskill` using the _networks_ extra:
+by default, e.g. `networkx`. You can install them alongside `modelskill` using the _network_ extra:
 
 ```bash
-uv pip install modelskill[networks]
+uv pip install modelskill[network]
 ```
 
 or 
 
 ```bash
-uv add modelskill[networks]
+uv add modelskill[network]
 ```
 
 :::
@@ -132,7 +132,7 @@ Network  →  NetworkModelResult  →  match()  →  Comparer
 
 ## Building a Network
 
-You can build a `Network` object by loading it from a supported network result file. Reading these files relies on [mikeio1d](https://github.com/DHI/mikeio1d), so install the `networks` dependency group first.
+You can build a `Network` object by loading it from a supported network result file. Reading these files relies on [mikeio1d](https://github.com/DHI/mikeio1d), so install the `network` dependency group first.
 
 There is one constructor per product that writes the file:
 

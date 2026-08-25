@@ -36,7 +36,7 @@ jobs:
         version: "1.8.27"
 
     - name: Install dependencies
-      run: uv sync --group dev --group docs --group networks
+      run: uv sync --group dev --group docs --group network
 
     - name: Build documentation
       run: just docs

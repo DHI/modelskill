@@ -1,9 +1,9 @@
 """Opt-in network module for network model results (e.g. MIKE 1D / res1d).
 
-Requires the ``networks`` dependency group (networkx, mikeio1d).
+Requires the ``network`` dependency group (networkx, mikeio1d).
 Install with::
 
-    uv sync --group networks
+    uv sync --group network
 
 Import this module explicitly to use network functionality::
 
