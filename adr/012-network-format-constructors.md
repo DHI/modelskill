@@ -1,6 +1,6 @@
 # ADR-012: One Network Constructor per Modelling Product
 
-**Status**: Draft
+**Status**: Accepted, narrowed by [ADR-013](013-network-topology-in-mikeio1d.md)
 
 **Date**: 2026-08
 
@@ -22,6 +22,18 @@ Name constructors after the product that writes the file, and ship one only wher
 A product's companion files are arguments rather than constructors of their own. A companion describes a network defined elsewhere and cannot stand alone, so `from_epanet(res, resx=..., inp=...)` and not a `from_resx()`. Each companion is validated against the main file — same time axis, no unknown IDs — because two unrelated runs would otherwise merge silently.
 
 Every extension mikeio1d reads is accounted for in one of three module-level tables in `network.py`: readable by `from_mike`, readable by `from_epanet`, or refused with a reason that names the file or method which would lift it. A test asserts the tables cover exactly `Res1D.get_supported_file_extensions()`, so a mikeio1d release adding a tenth format fails CI instead of leaving that format silently unreachable. `from_res1d` is removed without a deprecation shim: it shipped only in the 1.4.0a3 alpha, and the network module is opt-in and absent from the API reference.
+
+## Superseded in part by ADR-013
+
+Everything below the line this note sits above is now mikeio1d's: the constructors, the
+companion arguments, the extension tables and the coverage test moved there with the rest
+of the topology layer, and `Network.open` replaced the two product constructors with one
+entry point that reads the extension. The reasoning about naming a constructor after the
+product that wrote the file still holds, and still applies -- upstream. What stays here is
+the consequence for modelskill: a path handed to `NetworkModelResult` is opened by
+mikeio1d, and the refusal messages for `.out`, `.resx` and the fixture-less formats are
+upstream's to word. The `.inp` reader went with them, so the last consequence below is no
+longer ours to carry.
 
 ## Alternatives Considered
 
