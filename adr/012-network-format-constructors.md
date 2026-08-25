@@ -11,9 +11,8 @@ The constructors, the companion arguments, the extension tables, the coverage te
 `Network.open` that reads the extension. Naming a constructor after the product that wrote
 the file is still the rule, and mikeio1d applies it.
 
-For modelskill this leaves one step: `NetworkModelResult` hands a path to mikeio1d. The
-refusal messages for `.out`, `.resx` and the formats without a fixture are written there
-now.
+`NetworkModelResult` hands a path to mikeio1d. The refusal messages for `.out`, `.resx`
+and the formats without a fixture are written there.
 
 ## Context
 
