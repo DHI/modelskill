@@ -1,12 +1,15 @@
 from __future__ import annotations
-from typing import Sequence, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import matplotlib.axes
+from typing import Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
 
+from ._backend import (
+    Backend,
+    PlotResult,
+    reject_matplotlib_axes,
+    validate_backend,
+)
 from ._misc import _get_fig_ax
 
 
@@ -19,7 +22,8 @@ def temporal_coverage(
     ax=None,
     figsize=None,
     title=None,
-) -> matplotlib.axes.Axes:
+    backend: Backend = "matplotlib",
+) -> PlotResult:
     """Plot graph showing temporal coverage for all observations and models
 
     Parameters
@@ -32,13 +36,15 @@ def temporal_coverage(
         Show temporal coverage only for period covered
         by the model, by default True
     marker : str, optional
-        plot marker for observations, by default "_"
+        plot marker for observations (matplotlib backend only), by default "_"
     ax: matplotlib.axes, optional
         Adding to existing axis, instead of creating new fig
     figsize : Tuple(float, float), optional
         size of figure, by default (7, 0.45*n_lines)
     title: str, optional
         plot title, default empty
+    backend : str, optional
+        "matplotlib" (static) or "plotly" (interactive), by default "matplotlib"
 
     See Also
     --------
@@ -46,8 +52,8 @@ def temporal_coverage(
 
     Returns
     -------
-    matplotlib.axes.Axes
-        The matplotlib axes object
+    matplotlib.axes.Axes or plotly.graph_objects.Figure
+        The axes (matplotlib backend) or figure (plotly backend)
 
     Examples
     --------
@@ -71,13 +77,30 @@ def temporal_coverage(
     ms.plotting.temporal_coverage(mod=[mr1, mr2], figsize=(5,3))
     ```
     """
+    validate_backend(backend)
+    reject_matplotlib_axes(ax, backend)
+
     obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
     mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
 
     n_lines = len(obs) + len(mod)
     if figsize is None:
-        ysize = max(2.0, 0.45 * n_lines)
-        figsize = (7, ysize)
+        figsize = (7, max(2.0, 0.45 * n_lines))
+
+    if backend == "plotly":
+        from . import _plotly
+
+        # models first, so that the rows match the matplotlib backend
+        lines = [(mr.name, mr.time, True) for mr in mod]
+        lines += [(o.name, o.time, False) for o in obs]
+        xlim = (
+            (mod[0].time[0], mod[0].time[-1])
+            if (len(mod) > 0 and limit_to_model_period)
+            else None
+        )
+        return _plotly.temporal_coverage(
+            lines=lines, xlim=xlim, title=title, figsize=figsize
+        )
 
     fig, ax = _get_fig_ax(ax=ax, figsize=figsize)
     y = np.repeat(0.0, 2)

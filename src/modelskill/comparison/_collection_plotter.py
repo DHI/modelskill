@@ -4,7 +4,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     List,
-    Literal,
     Mapping,
     Sequence,
     Tuple,
@@ -17,13 +16,24 @@ from matplotlib.axes import Axes
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
 
-from matplotlib.figure import Figure
 import numpy as np
 import pandas as pd
 
 from .. import metrics as mtr
-from ..plotting import TaylorPoint, scatter, taylor_diagram
-from ..plotting._misc import _get_fig_ax, _xtick_directional, _ytick_directional
+from ..plotting import TaylorPoint, scatter, taylor_diagram, _plotly
+from ..plotting._backend import (
+    Backend,
+    FigureResult,
+    PlotResult,
+    reject_matplotlib_axes,
+    validate_backend,
+)
+from ..plotting._misc import (
+    RESIDUAL_COLOR,
+    _get_fig_ax,
+    _xtick_directional,
+    _ytick_directional,
+)
 from ..settings import options
 from ..utils import _get_idx
 from ._comparer_plotter import quantiles_xy
@@ -49,7 +59,7 @@ class ComparerCollectionPlotter:
         self.cc = cc
         self.is_directional = False
 
-    def __call__(self, *args: Any, **kwds: Any) -> Axes | list[Axes]:
+    def __call__(self, *args: Any, **kwds: Any) -> PlotResult | list[PlotResult]:
         return self.scatter(*args, **kwds)
 
     def scatter(
@@ -62,7 +72,7 @@ class ComparerCollectionPlotter:
         show_hist: bool | None = None,
         show_density: bool | None = None,
         norm: colors.Normalize | None = None,
-        backend: Literal["matplotlib", "plotly"] = "matplotlib",
+        backend: Backend = "matplotlib",
         figsize: Tuple[float, float] = (8, 8),
         xlim: Tuple[float, float] | None = None,
         ylim: Tuple[float, float] | None = None,
@@ -73,7 +83,7 @@ class ComparerCollectionPlotter:
         skill_table: Union[str, List[str], Mapping[str, str], bool] | None = None,
         ax: Axes | None = None,
         **kwargs,
-    ) -> Axes | list[Axes]:
+    ) -> PlotResult | list[PlotResult]:
         """Scatter plot tailored for comparing model output with observations.
 
         Optionally, with density histogram.
@@ -152,6 +162,9 @@ class ComparerCollectionPlotter:
         >>> cc.sel(observations=['c2','HKNA']).plot.scatter()
         """
 
+        validate_backend(backend)
+        reject_matplotlib_axes(ax, backend)
+
         cc = self.cc
 
         mod_names = cc.mod_names
@@ -191,7 +204,7 @@ class ComparerCollectionPlotter:
         show_points: bool | int | float | None,
         show_hist: bool | None,
         show_density: bool | None,
-        backend: Literal["matplotlib", "plotly"],
+        backend: Backend,
         figsize: Tuple[float, float],
         xlim: Tuple[float, float] | None,
         ylim: Tuple[float, float] | None,
@@ -202,7 +215,7 @@ class ComparerCollectionPlotter:
         skill_table: Union[str, List[str], Mapping[str, str], bool] | None,
         ax,
         **kwargs,
-    ):
+    ) -> PlotResult:
         assert (
             mod_name in self.cc.mod_names
         ), f"Model {mod_name} not found in collection {self.cc.mod_names}"
@@ -267,33 +280,42 @@ class ComparerCollectionPlotter:
             skill_scores=skill_scores,
             skill_score_unit=skill_score_unit,
             ax=ax,
+            directional=self.is_directional,
             **kwargs,
         )
 
-        if backend == "matplotlib" and self.is_directional:
-            _xtick_directional(ax, xlim)
-            _ytick_directional(ax, ylim)
-
         return ax
 
-    def kde(self, *, ax=None, figsize=None, title=None, **kwargs) -> Axes:
+    def kde(
+        self,
+        *,
+        ax=None,
+        figsize=None,
+        title=None,
+        backend: Backend = "matplotlib",
+        **kwargs,
+    ) -> PlotResult:
         """Plot kernel density estimate of observation and model data.
 
         Parameters
         ----------
         ax : Axes, optional
-            matplotlib axes, by default None
+            matplotlib axes (matplotlib backend only), by default None
         figsize : tuple, optional
-            width and height of the figure, by default None
+            width and height of the figure in inches, by default None
         title : str, optional
             plot title, by default None
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
         **kwargs
-            passed to pandas.DataFrame.plot.kde()
+            passed to pandas.DataFrame.plot.kde() (matplotlib backend) or
+            fig.update_layout() (plotly backend); `bw_method` is passed to
+            the kernel density estimate by both backends
 
         Returns
         -------
-        Axes
-            matplotlib axes
+        Axes or plotly.graph_objects.Figure
 
         Examples
         --------
@@ -302,9 +324,32 @@ class ComparerCollectionPlotter:
         >>> cc.plot.kde(bw_method='silverman')
 
         """
-        _, ax = _get_fig_ax(ax, figsize)
+        validate_backend(backend)
+        reject_matplotlib_axes(ax, backend)
 
         df = self.cc._to_long_dataframe()
+        title = (
+            _default_univarate_title("Density plot", self.cc)
+            if title is None
+            else title
+        )
+
+        if backend == "plotly":
+            series = {"Observation": df.obs_val.values}
+            series.update(
+                {m: df[df.model == m].mod_val.values for m in self.cc.mod_names}
+            )
+            return _plotly.kde(
+                series=series,
+                title=title,
+                xlabel=self.cc._unit_text,
+                figsize=figsize,
+                directional=self.is_directional,
+                **kwargs,
+            )
+
+        _, ax = _get_fig_ax(ax, figsize)
+
         ax = df.obs_val.plot.kde(
             ax=ax, linestyle="dashed", label="Observation", **kwargs
         )
@@ -315,11 +360,6 @@ class ComparerCollectionPlotter:
 
         ax.set_xlabel(f"{self.cc._unit_text}")
 
-        title = (
-            _default_univarate_title("Density plot", self.cc)
-            if title is None
-            else title
-        )
         ax.set_title(title)
         ax.legend()
 
@@ -348,11 +388,10 @@ class ComparerCollectionPlotter:
         alpha: float = 0.5,
         ax=None,
         figsize: Tuple[float, float] | None = None,
+        backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult | list[PlotResult]:
         """Plot histogram of specific model and all observations.
-
-        Wraps pandas.DataFrame hist() method.
 
         Parameters
         ----------
@@ -365,15 +404,20 @@ class ComparerCollectionPlotter:
         alpha : float, optional
             alpha transparency fraction, by default 0.5
         ax : matplotlib axes, optional
-            axes to plot on, by default None
+            axes to plot on (matplotlib backend only), by default None
         figsize : tuple, optional
-            width and height of the figure, by default None
+            width and height of the figure in inches, by default None
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
         **kwargs
-            other keyword arguments to df.hist()
+            other keyword arguments to df.hist() (matplotlib backend) or
+            fig.update_layout() (plotly backend)
 
         Returns
         -------
-        matplotlib axes
+        Axes or plotly.graph_objects.Figure
+            one per model, or a list if the collection has multiple models
 
         Examples
         --------
@@ -385,23 +429,25 @@ class ComparerCollectionPlotter:
         pandas.Series.hist
         matplotlib.axes.Axes.hist
         """
+        validate_backend(backend)
+        reject_matplotlib_axes(ax, backend)
 
-        mod_names = self.cc.mod_names
-
-        axes = []
-        for mod_name in mod_names:
-            ax_mod = self._hist_one_model(
-                mod_name=mod_name,
-                bins=bins,
-                title=title,
-                density=density,
-                alpha=alpha,
-                ax=ax,
-                figsize=figsize,
-                **kwargs,
+        figs = []
+        for mod_name in self.cc.mod_names:
+            figs.append(
+                self._hist_one_model(
+                    mod_name=mod_name,
+                    bins=bins,
+                    title=title,
+                    density=density,
+                    alpha=alpha,
+                    ax=ax,
+                    figsize=figsize,
+                    backend=backend,
+                    **kwargs,
+                )
             )
-            axes.append(ax_mod)
-        return axes[0] if len(axes) == 1 else axes
+        return figs[0] if len(figs) == 1 else figs
 
     def _hist_one_model(
         self,
@@ -413,11 +459,10 @@ class ComparerCollectionPlotter:
         alpha: float,
         ax,
         figsize: Tuple[float, float] | None,
+        backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         from ._comparison import MOD_COLORS
-
-        _, ax = _get_fig_ax(ax, figsize)
 
         assert (
             mod_name in self.cc.mod_names
@@ -428,21 +473,37 @@ class ComparerCollectionPlotter:
             _default_univarate_title("Histogram", self.cc) if title is None else title
         )
 
-        cmp = self.cc
-        df = cmp._to_long_dataframe()
+        df = self.cc._to_long_dataframe()
+        obs_color = self.cc[0].data["Observation"].attrs["color"]
+        xlabel = f"{self.cc[df.observation.iloc[0]]._unit_text}"
+
+        if backend == "plotly":
+            return _plotly.histogram(
+                series={
+                    mod_name: df[df.model == mod_name].mod_val.values,
+                    "observations": df.obs_val.values,
+                },
+                colors=[MOD_COLORS[mod_idx], obs_color],
+                bins=bins,
+                density=density,
+                alpha=alpha,
+                title=title,
+                xlabel=xlabel,
+                figsize=figsize,
+                directional=self.is_directional,
+                **kwargs,
+            )
+
+        _, ax = _get_fig_ax(ax, figsize)
+
         kwargs["alpha"] = alpha
         kwargs["density"] = density
         df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_idx], ax=ax, **kwargs)
-        df.obs_val.hist(
-            bins=bins,
-            color=self.cc[0].data["Observation"].attrs["color"],
-            ax=ax,
-            **kwargs,
-        )
+        df.obs_val.hist(bins=bins, color=obs_color, ax=ax, **kwargs)
 
         ax.legend([mod_name, "observations"])
         ax.set_title(title)
-        ax.set_xlabel(f"{self.cc[df.observation.iloc[0]]._unit_text}")
+        ax.set_xlabel(xlabel)
 
         if density:
             ax.set_ylabel("density")
@@ -463,7 +524,8 @@ class ComparerCollectionPlotter:
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
-    ) -> Figure | None:
+        backend: Backend = "matplotlib",
+    ) -> FigureResult | None:
         """Taylor diagram for model skill comparison.
 
         Taylor diagram showing model std and correlation to observation
@@ -484,10 +546,13 @@ class ComparerCollectionPlotter:
             size of the marker, by default 6
         title : str, optional
             title of the plot, by default "Taylor diagram"
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
 
         Returns
         -------
-        matplotlib.figure.Figure
+        matplotlib.figure.Figure or plotly.graph_objects.Figure
 
         Examples
         ------
@@ -539,26 +604,38 @@ class ComparerCollectionPlotter:
             figsize=figsize,
             normalize_std=normalize_std,
             title=title,
+            backend=backend,
         )
 
-    def box(self, *, ax=None, figsize=None, title=None, **kwargs) -> Axes:
+    def box(
+        self,
+        *,
+        ax=None,
+        figsize=None,
+        title=None,
+        backend: Backend = "matplotlib",
+        **kwargs,
+    ) -> PlotResult:
         """Plot box plot of observations and model data.
 
         Parameters
         ----------
         ax : Axes, optional
-            matplotlib axes, by default None
+            matplotlib axes (matplotlib backend only), by default None
         figsize : tuple, optional
-            width and height of the figure, by default None
+            width and height of the figure in inches, by default None
         title : str, optional
             plot title, by default None
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
         **kwargs
-            passed to pandas.DataFrame.plot.box()
+            passed to pandas.DataFrame.plot.box() (matplotlib backend) or
+            fig.update_layout() (plotly backend)
 
         Returns
         -------
-        Axes
-            matplotlib axes
+        Axes or plotly.graph_objects.Figure
 
         Examples
         --------
@@ -566,7 +643,8 @@ class ComparerCollectionPlotter:
         >>> cc.plot.box(showmeans=True)
         >>> cc.plot.box(ax=ax, title="Box plot")
         """
-        _, ax = _get_fig_ax(ax, figsize)
+        validate_backend(backend)
+        reject_matplotlib_axes(ax, backend)
 
         df = self.cc._to_long_dataframe()
 
@@ -579,6 +657,22 @@ class ComparerCollectionPlotter:
             df_model = df[df.model == model]
             data[model] = df_model.mod_val.values
 
+        title = (
+            _default_univarate_title("Box plot", self.cc) if title is None else title
+        )
+
+        if backend == "plotly":
+            return _plotly.box(
+                series=data,
+                title=title,
+                ylabel=f"{self.cc._unit_text}",
+                figsize=figsize,
+                directional=self.is_directional,
+                **kwargs,
+            )
+
+        _, ax = _get_fig_ax(ax, figsize)
+
         data = {k: pd.Series(v) for k, v in data.items()}
         df = pd.DataFrame(data)
 
@@ -588,10 +682,6 @@ class ComparerCollectionPlotter:
         ax = df.plot.box(ax=ax, **kwargs)
 
         ax.set_ylabel(f"{self.cc._unit_text}")
-
-        title = (
-            _default_univarate_title("Box plot", self.cc) if title is None else title
-        )
         ax.set_title(title)
 
         if self.is_directional:
@@ -606,8 +696,9 @@ class ComparerCollectionPlotter:
         title=None,
         ax=None,
         figsize=None,
+        backend: Backend = "matplotlib",
         **kwargs,
-    ):
+    ) -> PlotResult:
         """Make quantile-quantile (q-q) plot of model data and observations.
 
         Primarily used to compare multiple models.
@@ -621,26 +712,54 @@ class ComparerCollectionPlotter:
         title : str, optional
             plot title, default: "Q-Q plot for [observation name]"
         ax : matplotlib.axes.Axes, optional
-            axes to plot on, by default None
+            axes to plot on (matplotlib backend only), by default None
         figsize : tuple, optional
-            figure size, by default None
+            figure size in inches, by default None
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
         **kwargs
-            other keyword arguments to plt.plot()
+            other keyword arguments to plt.plot() (matplotlib backend) or
+            fig.update_layout() (plotly backend)
 
         Returns
         -------
-        matplotlib axes
+        Axes or plotly.graph_objects.Figure
 
         Examples
         --------
         >>> cc.plot.qq()
 
         """
+        validate_backend(backend)
+        reject_matplotlib_axes(ax, backend)
+
         cc = self.cc
+        df = cc._to_long_dataframe()
+        title = (
+            _default_univarate_title("Q-Q plot for ", self.cc)
+            if title is None
+            else title
+        )
+
+        if backend == "plotly":
+            quantile_pairs = {}
+            for model in cc.mod_names:
+                df_model = df[df.model == model]
+                quantile_pairs[model] = quantiles_xy(
+                    df_model.obs_val.values, df_model.mod_val.values, quantiles
+                )
+            return _plotly.qq(
+                quantiles=quantile_pairs,
+                title=title,
+                xlabel="Observation, " + cc._unit_text,
+                ylabel="Model, " + cc._unit_text,
+                figsize=figsize,
+                directional=self.is_directional,
+                **kwargs,
+            )
 
         _, ax = _get_fig_ax(ax, figsize)
-
-        df = cc._to_long_dataframe()
 
         xmin, xmax, ymin, ymax = np.inf, -np.inf, np.inf, -np.inf
 
@@ -676,11 +795,6 @@ class ComparerCollectionPlotter:
         ax.legend()
         ax.set_xlabel("Observation, " + cc._unit_text)
         ax.set_ylabel("Model, " + cc._unit_text)
-        title = (
-            _default_univarate_title("Q-Q plot for ", self.cc)
-            if title is None
-            else title
-        )
         ax.set_title(title)
 
         if self.is_directional:
@@ -690,8 +804,15 @@ class ComparerCollectionPlotter:
         return ax
 
     def residual_hist(
-        self, bins=100, title=None, color=None, figsize=None, ax=None, **kwargs
-    ) -> Axes | list[Axes]:
+        self,
+        bins=100,
+        title=None,
+        color=None,
+        figsize=None,
+        ax=None,
+        backend: Backend = "matplotlib",
+        **kwargs,
+    ) -> PlotResult | list[PlotResult]:
         """plot histogram of residual values
 
         Parameters
@@ -703,16 +824,24 @@ class ComparerCollectionPlotter:
         color : str, optional
             residual color, by default "#8B8D8E"
         figsize : tuple, optional
-            figure size, by default None
+            figure size in inches, by default None
         ax : Axes | list[Axes], optional
-            axes to plot on, by default None
+            axes to plot on (matplotlib backend only), by default None
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
         **kwargs
-            other keyword arguments to plt.hist()
+            other keyword arguments to plt.hist() (matplotlib backend) or
+            fig.update_layout() (plotly backend)
 
         Returns
         -------
-        Axes | list[Axes]
+        Axes or plotly.graph_objects.Figure
+            one per model, or a list if the collection has multiple models
         """
+        validate_backend(backend)
+        reject_matplotlib_axes(ax, backend)
+
         cc = self.cc
 
         if cc.n_models == 1:
@@ -723,6 +852,7 @@ class ComparerCollectionPlotter:
                 figsize=figsize,
                 ax=ax,
                 mod_name=cc.mod_names[0],
+                backend=backend,
                 **kwargs,
             )
 
@@ -739,6 +869,7 @@ class ComparerCollectionPlotter:
                 color=color,
                 figsize=figsize,
                 ax=axs[i],
+                backend=backend,
                 **kwargs,
             )
             axs[i] = ax_mod
@@ -753,24 +884,38 @@ class ComparerCollectionPlotter:
         figsize=None,
         ax=None,
         mod_name=None,
+        backend: Backend = "matplotlib",
         **kwargs,
-    ) -> Axes:
+    ) -> PlotResult:
         """Residual histogram for one model only"""
-        _, ax = _get_fig_ax(ax, figsize)
-
         df = self.cc.sel(model=mod_name)._to_long_dataframe()
         residuals = df.mod_val.values - df.obs_val.values
 
-        default_color = "#8B8D8E"
-        color = default_color if color is None else color
         title = (
             _default_univarate_title(f"Residuals, Model {mod_name}", self.cc)
             if title is None
             else title
         )
+        xlabel = f"Residuals of {self.cc._unit_text}"
+
+        if backend == "plotly":
+            return _plotly.residual_hist(
+                residuals=residuals,
+                bins=bins,
+                color=color,
+                title=title,
+                xlabel=xlabel,
+                figsize=figsize,
+                directional=self.is_directional,
+                **kwargs,
+            )
+
+        _, ax = _get_fig_ax(ax, figsize)
+
+        color = RESIDUAL_COLOR if color is None else color
         ax.hist(residuals, bins=bins, color=color, **kwargs)
         ax.set_title(title)
-        ax.set_xlabel(f"Residuals of {self.cc._unit_text}")
+        ax.set_xlabel(xlabel)
 
         if self.is_directional:
             ticks = np.linspace(-180, 180, 9)
@@ -784,7 +929,8 @@ class ComparerCollectionPlotter:
         ax=None,
         figsize: Tuple | None = None,
         title: str | None = None,
-    ) -> Axes:
+        backend: Backend = "matplotlib",
+    ) -> PlotResult:
         """Plot observation points on a map showing the model domain
 
         Parameters
@@ -795,18 +941,23 @@ class ComparerCollectionPlotter:
             figure size, by default None
         title: str, optional
             plot title, default empty
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
 
         Returns
         -------
-        matplotlib.axes.Axes
-            The matplotlib axes object
+        matplotlib.axes.Axes or plotly.graph_objects.Figure
+            The axes (matplotlib backend) or figure (plotly backend)
         """
         from ..plotting import spatial_overview
 
         obs = [cmp._to_observation() for cmp in self.cc]
         # TODO how to add model domain(s)
 
-        return spatial_overview(obs, ax=ax, figsize=figsize, title=title)
+        return spatial_overview(
+            obs, ax=ax, figsize=figsize, title=title, backend=backend
+        )
 
     def temporal_coverage(
         self,
@@ -815,7 +966,8 @@ class ComparerCollectionPlotter:
         ax: Any | None = None,
         figsize: Any | None = None,
         title: Any | None = None,
-    ) -> Axes:
+        backend: Backend = "matplotlib",
+    ) -> PlotResult:
         """Plot graph showing temporal coverage for all observations and models
 
         Parameters
@@ -831,6 +983,14 @@ class ComparerCollectionPlotter:
             size of figure, by default (7, 0.45*n_lines)
         title: str, optional
             plot title, default empty
+        backend : str, optional
+            "matplotlib" (static) or "plotly" (interactive),
+            by default "matplotlib"
+
+        Returns
+        -------
+        matplotlib.axes.Axes or plotly.graph_objects.Figure
+            The axes (matplotlib backend) or figure (plotly backend)
         """
         from ..plotting import temporal_coverage
 
@@ -845,4 +1005,5 @@ class ComparerCollectionPlotter:
             ax=ax,
             figsize=figsize,
             title=title,
+            backend=backend,
         )

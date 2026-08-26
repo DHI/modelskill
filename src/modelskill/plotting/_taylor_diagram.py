@@ -1,14 +1,17 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import warnings
-from typing import TYPE_CHECKING, Collection
-
-if TYPE_CHECKING:
-    import matplotlib.figure
+from typing import Collection
 
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 
+from ._backend import (
+    Backend,
+    FigureResult,
+    reject_matplotlib_axes,
+    validate_backend,
+)
 from ._taylor_diagram_external import TaylorDiagram
 
 
@@ -30,7 +33,8 @@ def taylor_diagram(
     normalize_std: bool = False,
     ax: Axes | None = None,
     title: str = "Taylor diagram",
-) -> matplotlib.figure.Figure:
+    backend: Backend = "matplotlib",
+) -> FigureResult:
     """
     Plot a Taylor diagram using the given observations and points.
 
@@ -48,12 +52,31 @@ def taylor_diagram(
         Whether to normalize the standard deviation of the points by the standard deviation of the observations. Default is False.
     title : str, optional
         Title of the plot. Default is "Taylor diagram".
+    backend : str, optional
+        "matplotlib" (static) or "plotly" (interactive), by default "matplotlib"
 
     Returns
     --------
-    matplotlib.figure.Figure
-            The matplotlib figure object
+    matplotlib.figure.Figure or plotly.graph_objects.Figure
+            The figure object
     """
+    validate_backend(backend)
+    reject_matplotlib_axes(ax, backend)
+
+    if isinstance(points, TaylorPoint):
+        points = [points]
+
+    if backend == "plotly":
+        from . import _plotly
+
+        return _plotly.taylor(
+            points=list(points),
+            obs_std=obs_std,
+            obs_text=obs_text,
+            normalize_std=normalize_std,
+            title=title,
+            figsize=figsize,
+        )
 
     if figsize[0] != figsize[1]:
         warnings.warn(
@@ -71,8 +94,6 @@ def taylor_diagram(
     contours = td.add_contours(levels=8, colors="0.5", linestyles="dotted")
     plt.clabel(contours, inline=1, fontsize=10, fmt="%.2f")
 
-    if isinstance(points, TaylorPoint):
-        points = [points]
     for p in points:
         assert isinstance(p, TaylorPoint)
         m = "o" if p.marker is None else p.marker

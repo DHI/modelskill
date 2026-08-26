@@ -28,6 +28,10 @@ Or the development version:
 
 `> pip install https://github.com/DHI/modelskill/archive/main.zip`
 
+Interactive plots (`backend="plotly"`) require an extra dependency:
+
+`> pip install "modelskill[plotly]"`
+
 
 ## Example notebooks
 
@@ -101,10 +105,22 @@ ms.plotting.spatial_overview([HKNA, EPL, c2], mr, figsize=(7,7))
 
 ### Timeseries plot
 
-Timeseries plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/)) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
+Plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/), the default) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
 
 ```python
-cc["HKNA"].plot.timeseries(width=1000, backend="plotly")
+cc["HKNA"].plot.timeseries(figsize=(10, 4), backend="plotly")
 ```
 
 ![timeseries](https://raw.githubusercontent.com/DHI/modelskill/main/images/plotly_timeseries.png)
+
+Every plot takes a `backend` argument -- `scatter`, `hist`, `kde`, `qq`, `box`,
+`residual_hist` and `taylor` on both `Comparer` and `ComparerCollection`,
+`Comparer.plot.timeseries`, `ComparerCollection.plot.spatial_overview` and
+`.temporal_coverage`, the `timeseries` and `hist` plots on observations and model results,
+and the standalone functions in `ms.plotting`.
+
+The same arguments (`title`, `figsize` in inches, `xlim`, `ylim`, ...) work with both
+backends. The matplotlib backend returns a `matplotlib.axes.Axes` (or `Figure` for
+`taylor`), the plotly backend a `plotly.graph_objects.Figure`. Extra `**kwargs` go to the
+underlying matplotlib call, or to
+[`Figure.update_layout`](https://plotly.com/python/reference/layout/) respectively.
