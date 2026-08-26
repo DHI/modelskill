@@ -8,6 +8,9 @@ on:
     # Run weekly on Mondays at 5:00 AM UTC
     - cron: '0 5 * * 1'
 
+permissions:
+  contents: read
+
 jobs:
   test-mikeio-main:
     runs-on: ubuntu-latest
