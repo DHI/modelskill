@@ -1,59 +1,37 @@
 <img src="https://raw.githubusercontent.com/DHI/modelskill/main/images/logo/modelskill.svg" width="300">
 
-# ModelSkill: Flexible Model skill evaluation.
- ![Python version](https://img.shields.io/pypi/pyversions/modelskill.svg) 
-![Python package](https://github.com/DHI/modelskill/actions/workflows/full_test.yml/badge.svg) [![PyPI version](https://badge.fury.io/py/modelskill.svg)](https://badge.fury.io/py/modelskill)
+# ModelSkill: compare model results with observations in Python
+ ![Python version](https://img.shields.io/pypi/pyversions/modelskill.svg)
+ [![Full test](https://github.com/DHI/modelskill/actions/workflows/full_test.yml/badge.svg)](https://github.com/DHI/modelskill/actions/workflows/full_test.yml)
+[![PyPI version](https://badge.fury.io/py/modelskill.svg)](https://badge.fury.io/py/modelskill)
+![OS](https://img.shields.io/badge/OS-Windows%20%7C%20Linux-blue)
 ![Downloads](https://img.shields.io/pypi/dm/modelskill)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/DHI/modelskill/blob/main/LICENSE)
 
-[ModelSkill](https://github.com/DHI/modelskill) is a python package for scoring [MIKE](https://www.mikepoweredbydhi.com) models (other models can be evaluated as well). 
+Match observations with model results, calculate skill metrics, and make plots and reports.
 
-Contribute with new ideas in the [discussion](https://github.com/DHI/modelskill/discussions), report an [issue](https://github.com/DHI/modelskill/issues) or browse the [documentation](https://dhi.github.io/modelskill/). 
+ModelSkill is primarily used for [MIKE](https://www.dhigroup.com/technologies/mikepoweredbydhi) models, but other models can be evaluated as well. It is meant to be your companion during model setup, calibration, and validation and reporting.
 
+## Requirements
 
-## Use cases
-
-[ModelSkill](https://github.com/DHI/modelskill) would like to be your companion during the different phases of a MIKE modelling workflow.
-
-* Model setup - exploratory phase   
-* Model calibration
-* Model validation and reporting - communicate your final results
+* Windows or Linux operating system
+* Python x64 3.12 - 3.14
 
 ## Installation
 
-From [pypi](https://pypi.org/project/modelskill/):
-
-`> pip install modelskill`
+```bash
+pip install modelskill
+```
 
 Or the development version:
 
-`> pip install https://github.com/DHI/modelskill/archive/main.zip`
+```bash
+pip install https://github.com/DHI/modelskill/archive/main.zip
+```
 
+## Getting started
 
-## Example notebooks
-
-
-* [Hydrology_Vistula_Catchment.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Hydrology_Vistula_Catchment.ipynb)
-* [Metocean_multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Metocean_multi_model_comparison.ipynb)
-* [Multi_variable_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Multi_variable_comparison.ipynb)
-* [Metocean_track_comparison_global.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Metocean_track_comparison_global.ipynb) 
-* [Gridded_NetCDF_ModelResult.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Gridded_NetCDF_ModelResult.ipynb)
-* [Directional_data_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Directional_data_comparison.ipynb)
-* [Combine_comparers.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Combine_comparers.ipynb)
-
-
-## Workflow
-
-1. Define **ModelResults**
-2. Define **Observations**
-3. **Match** Observations and ModelResults
-4. Do plotting, statistics, reporting using the **Comparer**
-
-Read more about the workflow in the [getting started guide](https://dhi.github.io/modelskill/user-guide/getting-started.html).
-
-
-## Example of use
-
-Start by defining model results and observations:
+Define model results and observations:
 
 ```python
 >>> import modelskill as ms
@@ -63,48 +41,45 @@ Start by defining model results and observations:
 >>> c2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
 ```
 
-Then, connect observations and model results, and extract data at observation points:
+Match them in space and time, extracting model data at the observation positions:
 
 ```python
 >>> cc = ms.match([HKNA, EPL, c2], mr)
 ```
 
-With the comparer object, cc, all sorts of skill assessments and plots can be made:
+The resulting `ComparerCollection`, cc, is the starting point for skill assessment and plotting:
 
 ```python
 >>> cc.skill().round(2)
                n  bias  rmse  urmse   mae    cc    si    r2
-observation                                                
-HKNA         385 -0.20  0.35   0.29  0.25  0.97  0.09  0.99
-EPL           66 -0.08  0.22   0.20  0.18  0.97  0.07  0.99
-c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
-```
-
-### Overview of observation locations
-
-```python
-ms.plotting.spatial_overview([HKNA, EPL, c2], mr, figsize=(7,7))
-```
-
-![map](https://raw.githubusercontent.com/DHI/modelskill/main/images/map.png)
-
-
-
-### Scatter plot
-
-```python
->>> ms.load_style('MOOD')  # optional
+observation
+HKNA         386 -0.20  0.36   0.29  0.26  0.97  0.09  0.90
+EPL           67 -0.07  0.22   0.21  0.19  0.97  0.08  0.93
+c2           113 -0.00  0.35   0.35  0.29  0.98  0.13  0.90
 >>> cc.plot.scatter()
+>>> cc["HKNA"].plot.timeseries(backend="plotly")
 ```
 
-![scatter](https://raw.githubusercontent.com/DHI/modelskill/main/images/scatter.png)
+See the [user guide](https://dhi.github.io/modelskill/user-guide/getting-started.html) for more.
 
-### Timeseries plot
+## Where can I get help?
+* Documentation - [https://dhi.github.io/modelskill/](https://dhi.github.io/modelskill/)
+* Examples - [https://dhi.github.io/modelskill/examples/](https://dhi.github.io/modelskill/examples/)
+* General help, new ideas and feature requests - [GitHub Discussions](https://github.com/DHI/modelskill/discussions)
+* Bugs - [GitHub Issues](https://github.com/DHI/modelskill/issues)
 
-Timeseries plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/)) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
+## Testing
 
-```python
-cc["HKNA"].plot.timeseries(width=1000, backend="plotly")
+ModelSkill is tested extensively, with an overall statement coverage of ~90%. The test suite runs on every pull request against Python 3.12 and 3.14, and on a schedule on both Linux and Windows.
+
+```bash
+uv run pytest --cov=modelskill
 ```
 
-![timeseries](https://raw.githubusercontent.com/DHI/modelskill/main/images/plotly_timeseries.png)
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](https://github.com/DHI/modelskill/blob/main/CONTRIBUTING.md). Key architectural decisions are documented as [ADRs](https://github.com/DHI/modelskill/tree/main/adr).
+
+## License
+
+[MIT](https://github.com/DHI/modelskill/blob/main/LICENSE)
