@@ -28,6 +28,16 @@ uv sync --group docs
 make docs
 ```
 
+### Checking links
+
+A full doc render takes minutes. To validate links faster, install [lychee](https://lychee.cli.rs/) (`brew install lychee`, `cargo install lychee`, or grab a binary from the [releases page](https://github.com/lycheeverse/lychee/releases)), then:
+
+```bash
+just linkcheck         # .qmd sources, offline (no render needed)
+just linkcheck-site    # render with --no-execute, then check rendered HTML (catches quartodoc cross-refs and anchors)
+just linkcheck-online  # .qmd sources + external URLs
+```
+
 ## Running specific tests
 
 ```bash
