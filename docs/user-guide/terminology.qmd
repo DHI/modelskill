@@ -8,10 +8,6 @@ format-links: false
 ModelSkill is a library for assessing the skill of numerical models. It provides tools for comparing model results with observations, plotting the results and calculating validation metrics. This page defines some of the key terms used in the documentation.
 
 
-## {{< fa ruler >}} Skill
-**Skill** refers to the ability of a numerical model to accurately represent the real-world phenomenon it aims to simulate. It is a measure of how well the model performs in reproducing the observed system. Skill can be assessed using various metrics, such as accuracy, precision, and reliability, depending on the specific goals of the model and the nature of the data. In ModelSkill, [`skill`](`modelskill.Comparer.skill`) is also a specific method on [Comparer](`modelskill.Comparer`) objects that returns a [`SkillTable`](`modelskill.SkillTable`) with aggregated skill scores per observation and model for a list of selected [metrics](`modelskill.metrics`). 
-
-
 ## {{< fa check >}} Validation
 **Validation** is the process of assessing the model's performance by comparing its output to real-world observations or data collected from the system being modeled. It helps ensure that the model accurately represents the system it simulates. Validation is typically performed before the model is used for prediction or decision-making.
 
@@ -20,16 +16,20 @@ ModelSkill is a library for assessing the skill of numerical models. It provides
 **Calibration** is the process of adjusting the model's parameters or settings to improve its performance. It involves fine-tuning the model to better match observed data. Calibration aims to reduce discrepancies between model predictions and actual measurements. At the end of the calibration process, the calibrated model should be validated with independent data.
 
 
-## {{< fa ruler >}} Performance
-**Performance** is a measure of how well a numerical model operates in reproducing the observed system. It can be assessed using various metrics, such as accuracy, precision, and reliability, depending on the specific goals of the model and the nature of the data. In this context, **performance** is synonymous with **skill**.
-
-
 ## {{< fa chart-line >}} Timeseries
-A **timeseries** is a sequence of data points in time. In ModelSkill, The data can either be from [observations](#observation) or [model results](#model-result). Timeseries can univariate or multivariate; ModelSkill primarily supports univariate timeseries. Multivariate timeseries can be assessed one variable at a time. Timeseries can also have different spatial dimensions, such as point, track, line, or area.
+A **timeseries** is a sequence of data points in time at a single location (or a single moving location). In ModelSkill, the data can either be from [observations](#observation) or [model results](#model-result). Timeseries can be univariate or multivariate; ModelSkill primarily supports univariate timeseries — multivariate timeseries can be assessed one variable at a time. Spatially, a timeseries is either *point* (fixed location) or *track* (location varies with time). Gridded model results ([`GridModelResult`](`modelskill.GridModelResult`)) and flexible-mesh model results ([`DfsuModelResult`](`modelskill.DfsuModelResult`)) are not themselves timeseries; they are [fields](#field) that yield a timeseries at each location after extraction.
+
+
+## {{< fa globe >}} Field
+A **field** is data defined over a spatial extent — a regular [grid](#model-result) or a flexible mesh — with a value at each location and timestep. ModelSkill supports gridded fields ([`GridModelResult`](`modelskill.GridModelResult`)) and flexible-mesh fields ([`DfsuModelResult`](`modelskill.DfsuModelResult`)). Fields are not directly comparable to observations; the [`match`](`modelskill.match`) function extracts a [timeseries](#timeseries) at each observation location and produces a [Comparer](#comparer) from the result.
+
+
+## {{< fa shapes >}} Geometry type (gtype)
+The **geometry type** (`gtype`) is a label describing the spatial structure of an [observation](#observation) or [model result](#model-result). The values used in ModelSkill are `point`, `track`, `grid`, and `unstructured` (i.e. flexible mesh). The geometry type determines match-compatibility: an observation and a model result can be matched only when their geometry types are compatible. Accessible via the `.gtype` attribute on observations, model results, and [Comparers](#comparer).
 
 
 ## {{< fa temperature-half >}} Observation
-An **observation** refers to real-world data or measurements collected from the system you are modeling. Observations serve as a reference for assessing the model's performance. These data points are used to compare with the model's predictions during validation and calibration. Observations are usually based on field measurements or laboratory experiments, but for the purposes of model validation, they can also be derived from other models (e.g. a reference model). ModelSkill supports [point](`modelskill.PointModelResult`) and [track](`modelskill.TrackModelResult`) observation types.
+An **observation** refers to real-world data or measurements collected from the system you are modeling. Observations serve as a reference for assessing the model's performance. These data points are used to compare with the model's predictions during validation and calibration. Observations are usually based on field measurements or laboratory experiments, but for the purposes of model validation, they can also be derived from other models (e.g. a reference model). ModelSkill supports [point](`modelskill.PointObservation`) and [track](`modelskill.TrackObservation`) observation types.
 
 
 ## {{< fa temperature-half >}} Measurement
@@ -37,7 +37,35 @@ A **measurement** is called [observation](#observation) in ModelSkill.
 
 
 ## {{< fa database >}} Model result
-A **model result** is the output of any type of numerical model. It is the data generated by the model during a simulation. Model results can be compared with observations to assess the model's performance. In the context of validation, the term "model result" is often used interchangeably with "model output" or "model prediction". ModelSkill supports [point](`modelskill.PointModelResult`), [track](`modelskill.TrackModelResult`), [dfsu](`modelskill.DfsuModelResult`) and [grid](`modelskill.GridModelResult`) model result types.
+A **model result** is the output of any type of numerical model. It is the data generated by the model during a simulation. Model results can be compared with observations to assess the model's performance. In the context of validation, the term "model result" is often used interchangeably with "model output" or "model prediction". ModelSkill supports [point](`modelskill.PointModelResult`), [track](`modelskill.TrackModelResult`), flexible-mesh ([dfsu](`modelskill.DfsuModelResult`)) and [grid](`modelskill.GridModelResult`) model result types, plus [`DummyModelResult`](`modelskill.DummyModelResult`) for [baselines](#baseline).
+
+
+## {{< fa chart-simple >}} Baseline
+A **baseline** is a reference [model result](#model-result) representing a naive or trivial prediction — for example, the observation mean, persistence, or climatology. Baselines anchor skill scores such as the [Nash–Sutcliffe efficiency](`modelskill.metrics.nse`) that quantify how much better a real model is than doing nothing clever. ModelSkill provides [`DummyModelResult`](`modelskill.DummyModelResult`) for this purpose.
+
+
+## {{< fa scale-balanced >}} Quantity
+A **[Quantity](`modelskill.Quantity`)** is a physical quantity (a name plus a unit, e.g. *Water Level [m]*, *Wind Speed [m/s]*) attached to an [observation](#observation) or [model result](#model-result). Observations and model results must share a compatible Quantity to be matched — you cannot validate water level against wind speed. When reading dfs files via [mikeio](https://github.com/DHI/mikeio), Quantity is derived from `EUMType` and `EUMUnit`.
+
+
+## {{< fa link >}} match()
+The function [`match`](`modelskill.match`) is used to match a model result with observations. It returns a [`Comparer`](`modelskill.Comparer`) object or a [`ComparerCollection`](`modelskill.ComparerCollection`) object.
+
+
+## Matched data
+In ModelSkill, observations and model results are *matched* when they refer to the same positions in space and time. If the [observations](#observation) and [model results](#model-result) are already matched, the [`from_matched`](`modelskill.from_matched`) function can be used to create a [Comparer](#comparer) directly. Otherwise, the [match](#match) function can be used to match the observations and model results in space and time.
+
+
+## Comparer
+A [**Comparer**](`modelskill.Comparer`) is an object that stores the matched observation and model result data for a *single* observation. It is used to calculate validation metrics and generate plots. A Comparer can be created using the [`match`](`modelskill.match`) function.
+
+
+## ComparerCollection
+A [**ComparerCollection**](`modelskill.ComparerCollection`) is a collection of [Comparer](#comparer)s. It is used to compare *multiple* observations with one or more model results. A ComparerCollection can be created using the [`match`](`modelskill.match`) function or by passing a list of Comparers to the [`ComparerCollection`](`modelskill.ComparerCollection`) constructor.
+
+
+## {{< fa ruler >}} Skill
+**Skill** refers to the ability of a numerical model to accurately represent the real-world phenomenon it aims to simulate. It is a measure of how well the model performs in reproducing the observed system. Skill can be assessed using various metrics, such as accuracy, precision, and reliability, depending on the specific goals of the model and the nature of the data. In ModelSkill, [`skill`](`modelskill.Comparer.skill`) is also a specific method on [Comparer](`modelskill.Comparer`) objects that returns a [`SkillTable`](`modelskill.SkillTable`) with aggregated skill scores per observation and model for a list of selected [metrics](`modelskill.metrics`). Also called *performance*.
 
 
 ## {{< fa ruler >}} Metric
@@ -45,23 +73,7 @@ A **metric** is a quantitative measure (a mathematical expression) used to evalu
 
 
 ## {{< fa ruler >}} Score
-A **score** is a numerical value that summarizes the model's performance based on chosen metrics. Scores can be used to rank or compare different models or model configurations. In the context of validation, the "skill score" or "validation score" often quantifies the model's overall performance. The score of a model is a single number, calculated as a weighted average for all time-steps, observations and variables. If you want to perform automated calibration, you can use the score as the objective function. In ModelSkill, [`score`](`modelskill.ComparerCollection.score`) is also a specific method on [Comparer](`modelskill.Comparer`) objects that returns a single number aggregated score using a specific [metric](#metric). 
-
-
-## Matched data
-In ModelSkill, observations and model results are *matched* when they refer to the same positions in space and time. If the [observations](#observation) and [model results](#model-result) are already matched, the [`from_matched`](`modelskill.from_matched`) function can be used to create a [Comparer](#comparer) directly. Otherwise, the [match](#match) function can be used to match the observations and model results in space and time. 
-
-
-## {{< fa link >}} match()
-The function [`match`](`modelskill.match`) is used to match a model result with observations. It returns a [`Comparer`](`modelskill.Comparer`) object or a [`ComparerCollection`](`modelskill.ComparerCollection`) object.
-
-
-## Comparer
-A [**Comparer**](`modelskill.Comparer`) is an object that stores the matched observation and model result data for a *single* observation. It is used to calculate validation metrics and generate plots. A Comparer can be created using the [`match`](`modelskill.match`) function. 
-
-
-## ComparerCollection
-A [**ComparerCollection**](`modelskill.ComparerCollection`) is a collection of [Comparer](#comparer)s. It is used to compare *multiple* observations with one or more model results. A ComparerCollection can be created using the [`match`](`modelskill.match`) function or by passing a list of Comparers to the [`ComparerCollection`](`modelskill.ComparerCollection`) constructor. 
+A **score** is a numerical value that summarizes the model's performance based on a chosen [metric](#metric). Scores can be used to rank or compare different models or model configurations, and are well suited as the objective function in automated calibration. A score is a single number, calculated as a weighted average over all time-steps, observations and variables. In ModelSkill, [`score`](`modelskill.ComparerCollection.score`) is naturally a method on [ComparerCollection](`modelskill.ComparerCollection`) — the cross-observation weighting is what makes the result a single representative number. It is also available on [Comparer](`modelskill.Comparer`) as the degenerate single-observation case.
 
 
 ## Abbreviations
@@ -76,4 +88,3 @@ A [**ComparerCollection**](`modelskill.ComparerCollection`) is a collection of [
 | `sk` | `SkillTable` |
 | `mtr` | Metric |
 | `q` | `Quantity` |
-
