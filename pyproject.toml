@@ -60,6 +60,8 @@ test = [
     "geopandas",
 ]
 
+app = ["streamlit>=1.41.1"]
+
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
 
 networks = ["mikeio1d>=1.2.1", "networkx"]
