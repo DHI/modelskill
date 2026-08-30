@@ -8,6 +8,7 @@ from ._comparison import Comparer
 from ._collection import ComparerCollection
 from ._comparer_plotter import ComparerPlotter
 from ._collection_plotter import ComparerCollectionPlotter
+from ._vertical_comparison import VerticalAccessor, VerticalPlotter
 
 
 __all__ = [
@@ -15,4 +16,6 @@ __all__ = [
     "ComparerCollection",
     "ComparerPlotter",
     "ComparerCollectionPlotter",
+    "VerticalAccessor",
+    "VerticalPlotter",
 ]

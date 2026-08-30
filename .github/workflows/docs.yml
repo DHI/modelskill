@@ -1,8 +1,19 @@
 name: Documentation
 
-on: 
+on:
   push:
     branches: [ main]
+    paths:
+      - 'docs/**'
+      - 'src/modelskill/**'
+  pull_request:
+    paths:
+      - 'docs/**'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
@@ -10,23 +21,41 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
+    - uses: extractions/setup-just@v3
+
     - name: Set up uv
       uses: astral-sh/setup-uv@v6
       with:
-        python-version: "3.14"
+        python-version: "3.13"  # Need to use 3.13 for docs build due to pythonnet dependency not yet supporting 3.14
         enable-cache: true
 
-    - name: Install dependencies
-      run: uv sync --group dev --group docs
-    
-    - name: Build documentation
-      run: |
-        make docs
-
-    - name: Publish to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3.6.1
+    - name: Set up Quarto
+      uses: quarto-dev/quarto-actions/setup@v2
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs/_site/
-      
+        version: "1.8.27"
+
+    - name: Install dependencies
+      run: uv sync --group dev --group docs --group networks
+
+    - name: Build documentation
+      run: just docs
+
+    - name: Upload Pages artifact
+      if: github.event_name == 'push'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: docs/_site/
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

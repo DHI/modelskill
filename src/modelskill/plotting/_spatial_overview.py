@@ -9,7 +9,8 @@ if TYPE_CHECKING:
 
 from ..model.point import PointModelResult
 from ..model.track import TrackModelResult
-from ..obs import Observation, PointObservation, TrackObservation
+from ..model.vertical import VerticalModelResult
+from ..obs import Observation, PointObservation, TrackObservation, VerticalObservation
 from ._misc import _get_ax
 
 
@@ -22,8 +23,8 @@ def spatial_overview(
         | Sequence[GeometryFM2D]
     ] = None,
     ax=None,
-    figsize: Optional[Tuple] = None,
-    title: Optional[str] = None,
+    figsize: Tuple | None = None,
+    title: str | None = None,
 ) -> matplotlib.axes.Axes:
     """Plot observation points on a map showing the model domain
 
@@ -69,7 +70,7 @@ def spatial_overview(
 
     # TODO: support Gridded ModelResults
     for m in mods:
-        if isinstance(m, (PointModelResult, TrackModelResult)):
+        if isinstance(m, (PointModelResult, TrackModelResult, VerticalModelResult)):
             raise ValueError(
                 f"Model type {type(m)} not supported. Only DfsuModelResult and mikeio.GeometryFM supported!"
             )
@@ -79,11 +80,15 @@ def spatial_overview(
         else:
             g = m
 
+        # mikeio's 3D geometries (GeometryFM3D) cannot be plotted directly
+        if hasattr(g, "to_2d_geometry"):
+            g = g.to_2d_geometry()
+
             # TODO this is not supported for all model types
         g.plot.outline(ax=ax)
 
     for o in obs:
-        if isinstance(o, PointObservation):
+        if isinstance(o, (PointObservation, VerticalObservation)):
             ax.scatter(x=o.x, y=o.y, marker="x")
         elif isinstance(o, TrackObservation):
             if o.n_points < 10000:

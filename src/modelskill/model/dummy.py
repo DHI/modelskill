@@ -1,12 +1,12 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 import pandas as pd
 
 from modelskill.model.point import PointModelResult
 from modelskill.model.track import TrackModelResult
-from modelskill.obs import PointObservation, TrackObservation
+from modelskill.obs import PointObservation, TrackObservation, VerticalObservation
 
 
 @dataclass
@@ -28,7 +28,7 @@ class DummyModelResult:
     --------
     >>> import pandas as pd
     >>> import modelskill as ms
-    >>> df = pd.DataFrame([0.0, 1.0], index=pd.date_range("2000", freq="H", periods=2))
+    >>> df = pd.DataFrame([0.0, 1.0], index=pd.date_range("2000", freq="h", periods=2))
     >>> obs = ms.PointObservation(df, name="foo")
     >>> mr = ms.DummyModelResult(strategy='mean')
     >>> pmr = mr.extract(obs)
@@ -49,14 +49,18 @@ class DummyModelResult:
 
     def extract(
         self,
-        observation: PointObservation | TrackObservation,
-        spatial_method: Optional[str] = None,
+        observation: PointObservation | TrackObservation | VerticalObservation,
+        spatial_method: str | None = None,
     ) -> PointModelResult | TrackModelResult:
         if spatial_method is not None:
             raise NotImplementedError(
                 "spatial interpolation not possible when matching point model results with point observations"
             )
 
+        if isinstance(observation, VerticalObservation):
+            raise NotImplementedError(
+                "DummyModelResult does not support VerticalObservation yet"
+            )
         da = observation.data[observation.name].copy()
         if self.strategy == "mean":
             da[:] = da.mean()

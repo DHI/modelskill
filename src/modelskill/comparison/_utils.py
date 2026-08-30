@@ -11,7 +11,7 @@ IdxOrNameTypes = Union[int, str, List[int], List[str]]
 
 
 def _add_spatial_grid_to_df(
-    df: pd.DataFrame, bins, binsize: Optional[float]
+    df: pd.DataFrame, bins, binsize: float | None
 ) -> pd.DataFrame:
     if binsize is None:
         # bins from bins
@@ -47,9 +47,9 @@ def _add_spatial_grid_to_df(
         bins_y = np.arange(y_start, y_end + binsize / 2, binsize)
     # cut and get bin centre
     df["xBin"] = pd.cut(df.x, bins=bins_x)
-    df["xBin"] = df["xBin"].apply(lambda x: x.mid)
+    df["xBin"] = df["xBin"].apply(lambda x: x.mid if pd.notna(x) else x)
     df["yBin"] = pd.cut(df.y, bins=bins_y)
-    df["yBin"] = df["yBin"].apply(lambda x: x.mid)
+    df["yBin"] = df["yBin"].apply(lambda x: x.mid if pd.notna(x) else x)
 
     return df
 
@@ -59,7 +59,7 @@ def _groupby_df(
     *,
     by: List[str | pd.Grouper],
     metrics: List[Callable],
-    n_min: Optional[int] = None,
+    n_min: int | None = None,
 ) -> pd.DataFrame:
     def calc_metrics(group: pd.DataFrame) -> pd.Series:
         # set index to time column (in most cases a DatetimeIndex, but not always)

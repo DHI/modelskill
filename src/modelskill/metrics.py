@@ -11,7 +11,6 @@ from typing import (
     Callable,
     List,
     Literal,
-    Optional,
     Set,
     Tuple,
     TypeVar,
@@ -21,7 +20,6 @@ from typing import (
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
-from scipy import stats
 
 from .settings import options
 
@@ -43,7 +41,7 @@ F = TypeVar("F", bound=Callable)
 def metric(
     best: Literal["+", "-", 0, 1] | None = None,
     has_units: bool = False,
-    display_name: Optional[str] = None,
+    display_name: str | None = None,
 ) -> Callable[[F], F]:
     """Decorator to indicate a function as a metric.
 
@@ -101,7 +99,7 @@ def max_error(obs: ArrayLike, model: ArrayLike) -> Any:
 
 
 @metric(best="-", has_units=True)
-def mae(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None) -> Any:
+def mae(obs: ArrayLike, model: ArrayLike, weights: ArrayLike | None = None) -> Any:
     """alias for mean_absolute_error"""
     assert obs.size == model.size
     return mean_absolute_error(obs, model, weights)
@@ -109,7 +107,7 @@ def mae(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None) -
 
 @metric(best="-", has_units=True)
 def mean_absolute_error(
-    obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None
+    obs: ArrayLike, model: ArrayLike, weights: ArrayLike | None = None
 ) -> Any:
     r"""Mean Absolute Error (MAE)
 
@@ -155,7 +153,7 @@ def mean_absolute_percentage_error(obs: ArrayLike, model: ArrayLike) -> Any:
 
 
 @metric(best="-", has_units=True)
-def urmse(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None) -> Any:
+def urmse(obs: ArrayLike, model: ArrayLike, weights: ArrayLike | None = None) -> Any:
     r"""Unbiased Root Mean Squared Error (uRMSE)
 
     $$
@@ -183,7 +181,7 @@ def urmse(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None)
 def rmse(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
     unbiased: bool = False,
 ) -> Any:
     """alias for root_mean_squared_error"""
@@ -194,7 +192,7 @@ def rmse(
 def root_mean_squared_error(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
     unbiased: bool = False,
 ) -> Any:
     r"""Root Mean Squared Error (RMSE)
@@ -484,7 +482,7 @@ def scatter_index2(obs: ArrayLike, model: ArrayLike) -> Any:
     {\sum_{i=1}^n obs_i^2}}
     $$
 
-    Range: [0, 100]; Best: 0
+    Range: $[0, \infty)$; Best: 0
     """
     assert obs.size == model.size
     if len(obs) == 0:
@@ -507,8 +505,10 @@ def explained_variance(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""EV: Explained variance
 
      EV is the explained variance and measures the proportion
-     [0 - 1] to which the model accounts for the variation
-     (dispersion) of the observations.
+     to which the model accounts for the variation (dispersion)
+     of the observations. A perfect match gives 1; a model that
+     explains less variance than the observed mean gives a
+     negative value.
 
      In cases with no bias, EV is equal to r2
 
@@ -519,7 +519,7 @@ def explained_variance(obs: ArrayLike, model: ArrayLike) -> Any:
     (obs_i - \overline{obs})^2}
     $$
 
-    Range: [0, 1]; Best: 1
+    Range: $(-\infty, 1]$; Best: 1
 
     See Also
     --------
@@ -588,9 +588,14 @@ def peak_ratio(
     time = obs.index
 
     # Calculate number of years
-    dt_int = (time[1:].values - time[0:-1].values).view("int64")
-    dt_int_mode = float(stats.mode(dt_int, keepdims=False)[0]) / 1e9  # in seconds
-    N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)
+    # Use total_seconds() to handle any datetime precision (ns, us, ms, s)
+    dt = time[1:] - time[:-1]
+    dt_seconds = dt.total_seconds().values
+    # Lazy import: scipy.stats is heavy and only used by a few metrics, not on package import
+    from scipy import stats
+
+    dt_mode_seconds = float(stats.mode(dt_seconds, keepdims=False)[0])
+    N_years = dt_mode_seconds / 24 / 3600 / 365.25 * len(time)
     peak_index, AAP_ = _partial_duration_series(
         time,
         obs,
@@ -957,7 +962,7 @@ def c_max_error(obs: ArrayLike, model: ArrayLike) -> Any:
 
     Notes
     -----
-    Range: $[0, \\infty)$; Best: 0
+    Range: $[0, 180]$; Best: 0
 
     Returns
     -------
@@ -985,7 +990,7 @@ def c_max_error(obs: ArrayLike, model: ArrayLike) -> Any:
 def c_mean_absolute_error(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """Circular mean absolute error
 
@@ -1016,7 +1021,7 @@ def c_mean_absolute_error(
 def c_mae(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """alias for circular mean absolute error"""
     return c_mean_absolute_error(obs, model, weights)
@@ -1026,7 +1031,7 @@ def c_mae(
 def c_root_mean_squared_error(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """Circular root mean squared error
 
@@ -1056,7 +1061,7 @@ def c_root_mean_squared_error(
 def c_rmse(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """alias for circular root mean squared error"""
     return c_root_mean_squared_error(obs, model, weights)
@@ -1066,7 +1071,7 @@ def c_rmse(
 def c_unbiased_root_mean_squared_error(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """Circular unbiased root mean squared error
 
@@ -1099,7 +1104,7 @@ def c_unbiased_root_mean_squared_error(
 def c_urmse(
     obs: ArrayLike,
     model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    weights: ArrayLike | None = None,
 ) -> Any:
     """alias for circular unbiased root mean squared error"""
     return c_unbiased_root_mean_squared_error(obs, model, weights)

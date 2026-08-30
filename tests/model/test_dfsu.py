@@ -70,9 +70,6 @@ def test_dfsu_repr(hd_oresund_2d):
 def test_dfsu_properties(hd_oresund_2d):
     mr = ms.model_result(hd_oresund_2d, name="Oresund2d", item="Surface elevation")
 
-    # TODO Not sure this assert is useful
-    assert mr.data.geometry.is_2d
-
     # Note != name of item
     assert mr.quantity.name == "Surface Elevation"
     assert mr.quantity.unit == "m"
@@ -118,7 +115,7 @@ def test_dfsu_aux_items_fail(hd_oresund_2d):
         )
 
 
-def test_dfsu_dataarray(hd_oresund_2d):
+def test_dfsu_dataarray_and_dataset(hd_oresund_2d):
     ds = mikeio.read(hd_oresund_2d)
     assert ds.n_items == 4
     da = ds[0]
@@ -129,6 +126,10 @@ def test_dfsu_dataarray(hd_oresund_2d):
 
     mr.name = "Oresund2"
     assert mr.name == "Oresund2"
+
+    mr2 = ms.model_result(ds, name="Oresund", item="Surface elevation")
+    assert isinstance(mr2, ms.DfsuModelResult)
+    assert mr2.name == "Oresund"
 
 
 def test_dfsu_factory(hd_oresund_2d):

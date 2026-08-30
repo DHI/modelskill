@@ -1,3 +1,5 @@
 /.quarto/
 _sidebar.yml
 objects.json
+
+**/*.quarto_ipynb

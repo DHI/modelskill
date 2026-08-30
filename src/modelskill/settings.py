@@ -74,7 +74,6 @@ from typing import (
     Iterable,
     List,
     NamedTuple,
-    Optional,
     Dict,
     Tuple,
     Type,
@@ -87,8 +86,8 @@ class RegisteredOption(NamedTuple):
     key: str
     defval: object
     doc: str
-    validator: Optional[Callable[[object], Any]]
-    # cb: Optional[Callable[[str], Any]]
+    validator: Callable[[object], Any] | None
+    # cb: Callable[[str], Any] | None
 
 
 # holds registered option metadata
@@ -180,7 +179,7 @@ def _option_to_dict(pat: str = "") -> Dict:
     return d
 
 
-def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[str]:
+def _describe_option_short(pat: str = "", _print_desc: bool = True) -> str | None:
     keys = _select_options(pat)
     if len(keys) == 0:
         raise OptionError("No such keys(s)")
@@ -193,7 +192,7 @@ def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[
     return s
 
 
-def _describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
+def _describe_option(pat: str = "", _print_desc: bool = True) -> str | None:
     keys = _select_options(pat)
     if len(keys) == 0:
         raise OptionError("No such keys(s)")
@@ -350,8 +349,8 @@ def register_option(
     key: str,
     defval: object,
     doc: str = "",
-    validator: Optional[Callable[[Any], Any]] = None,
-    # cb: Optional[Callable[[str], Any]] = None,
+    validator: Callable[[Any], Any] | None = None,
+    # cb: Callable[[str], Any] | None = None,
 ) -> None:
     """
     Register an option in the package-wide modelskill settingss object
