@@ -23,7 +23,7 @@ class VerticalPlotter:
         self.comparer = comparer
 
     def __call__(self, *args, **kwargs) -> matplotlib.axes.Axes:
-        """Plot scatter plot of modelled vs observed data"""
+        """Plot vertical profiles of model and observations (alias for `profile`)"""
         return self.profile(*args, **kwargs)
 
     def profile(
@@ -43,6 +43,9 @@ class VerticalPlotter:
             Matplotlib Axes to plot on (if None, a new figure and axes will be created).
         figsize : tuple, optional
             Size of the figure (only used if ax is None).
+        show_matched_model : bool, optional
+            Also show the model values interpolated to the observation depths
+            as markers, by default False (only the raw model profile is drawn).
 
         Returns
         -------
@@ -284,15 +287,27 @@ class VerticalAccessor:
         return Comparer(ds, raw_mod_data=raw_mod_data)
 
     def mean(self):
-        """Aggregate the comparison vertically using a specified aggregation function."""
+        """Aggregate the profile to a single mean value per timestep.
+
+        Returns a point `Comparer`. The raw model profile is restricted to the
+        depth range covered by the observation before aggregating.
+        """
         return self._agg(agg_func="mean")
 
     def min(self):
-        """Aggregate the comparison vertically using a specified aggregation function."""
+        """Aggregate the profile to a single min value per timestep.
+
+        Returns a point `Comparer`. The raw model profile is restricted to the
+        depth range covered by the observation before aggregating.
+        """
         return self._agg(agg_func="min")
 
     def max(self):
-        """Aggregate the comparison vertically using a specified aggregation function."""
+        """Aggregate the profile to a single max value per timestep.
+
+        Returns a point `Comparer`. The raw model profile is restricted to the
+        depth range covered by the observation before aggregating.
+        """
         return self._agg(agg_func="max")
 
     def skill(
