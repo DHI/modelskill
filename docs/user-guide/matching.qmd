@@ -91,7 +91,7 @@ cc = ms.match([o1, o2], mr_dfsu, spatial_method='contained')
 
 ::: callout-note
 * Extraction of *track* data does not currently support the "contained" method.
-* Extraction of point data from 3D dfsu files is not yet fully supported. It is recommended to extract the data "offline" prior to using ModelSkill.
+* Extraction of *point* data from 3D dfsu files is not yet fully supported. It is recommended to extract the data "offline" prior to using ModelSkill. Extraction of whole *profiles* from 3D dfsu files is supported, see [matching of vertical profiles](#matching-of-vertical-profiles).
 :::
 
 
@@ -102,6 +102,43 @@ Extracting data from a GridModelResult is done through xarray's `interp()` funct
 ```{python}
 cc = ms.match([o1, o2], mr_nc, spatial_method='nearest')   
 ```
+
+
+## Matching of vertical profiles
+
+A [](`~modelskill.VerticalObservation`) (e.g. a CTD cast) is matched with either a
+[](`~modelskill.VerticalModelResult`) - a column extracted beforehand - or a *3D*
+[](`~modelskill.DfsuModelResult`), in which case the column at the observation
+position is extracted as part of the matching.
+
+::: {.callout-note}
+Vertical profile support is still in development and the API may change.
+:::
+
+```{python}
+vo = ms.VerticalObservation("../data/vertical/VerticalProfile_obs1.dfs0",
+                            item="Salinity", z_item="z", x=657500, y=6553600)
+mr_3d = ms.model_result("../data/vertical/sigma_z_coast.dfsu", item="Salinity")
+cmp = ms.match(vo, mr_3d)
+cmp
+```
+
+Matching is done in two steps:
+
+1. The model profile is taken from the model time *closest* to each observation time. The tolerance defaults to half the median model time step, so observation times without a nearby model profile are dropped.
+2. The model values are interpolated *linearly in depth* onto the observation depths. Observation depths outside the model depth range are discarded - no extrapolation is performed.
+
+Note that the temporal step is a nearest-neighbour selection rather than the
+linear interpolation in time used for point and track data. This preserves each
+modelled profile as a whole instead of blending two profiles.
+
+The result is a [](`~modelskill.Comparer`) with `gtype="vertical"` in *long* format:
+one row per (time, depth) pair.
+
+::: callout-note
+* Extraction from a 3D dfsu file only supports `spatial_method="contained"` (the default); the other methods are not implemented for vertical profiles.
+* The `max_model_gap` argument is not yet supported for vertical matching.
+:::
 
 
 ## Event-based matching and handling of gaps

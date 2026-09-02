@@ -18,7 +18,7 @@ they will need to be defined and then matched in space and time with the `match(
 
 ### Define observations
 
-The observations can be defined as either a [`PointObservation`](`modelskill.PointObservation`) or a [`TrackObservation`](`modelskill.TrackObservation`) (a moving point).
+The observations can be defined as a [`PointObservation`](`modelskill.PointObservation`), a [`TrackObservation`](`modelskill.TrackObservation`) (a moving point) or a [`VerticalObservation`](`modelskill.VerticalObservation`) (a depth profile at a fixed position).
 
 ```{python}
 import modelskill as ms
@@ -34,8 +34,9 @@ A model result will either be a simple point/track like the observations, or spa
 
 * [`PointModelResult`](`modelskill.PointModelResult`) - a point result from a dfs0/nc file or a DataFrame
 * [`TrackModelResult`](`modelskill.TrackModelResult`) - a track result from a dfs0/nc file or a DataFrame
+* [`VerticalModelResult`](`modelskill.VerticalModelResult`) - a depth profile from a dfs0 file or a DataFrame
 * [`GridModelResult`](`modelskill.GridModelResult`) - a spatial field from a dfs2/nc file or a Xarray Dataset
-* [`DfsuModelResult`](`modelskill.DfsuModelResult`) - a spatial field from a dfsu file
+* [`DfsuModelResult`](`modelskill.DfsuModelResult`) - a spatial field from a dfsu file (2D or 3D)
 
 ```{python}
 mr1 = ms.PointModelResult("../data/model.dfs0", item="WL")
@@ -49,6 +50,24 @@ The `match()` function will interpolate the model results to the time (and space
 cc = ms.match(o1, mr1)
 cc
 ```
+
+
+## Vertical profiles
+
+Model results can also be validated against vertical profiles, e.g. CTD casts of
+salinity or temperature. The observation is a
+[`VerticalObservation`](`modelskill.VerticalObservation`) and the model result is either a
+[`VerticalModelResult`](`modelskill.VerticalModelResult`) (a pre-extracted column) or a
+3D [`DfsuModelResult`](`modelskill.DfsuModelResult`), from which the column at the
+observation position is *extracted* automatically (see [matching](matching.qmd)).
+
+The result is an ordinary [`Comparer`](`modelskill.Comparer`) with `gtype="vertical"`,
+so `cmp.skill()` and all the usual plots work as before. In addition, a `vertical`
+accessor gives access to depth-aware skill and plots (see [plotting](plotting.qmd)).
+The comparer can be sliced by depth with `cmp.sel(z=-2)` or `cmp.sel(z=slice(-10, 0))`
+(see [selecting data](selecting-data.qmd)), and the profile can be collapsed to a
+single value per timestep with `cmp.vertical.mean()`, `.min()` or `.max()` (which
+return point comparers).
 
 
 ## Analysis
