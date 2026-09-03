@@ -1372,8 +1372,9 @@ class Comparer:
                 + ["z"]
             )
             return df[cols]
-        elif self.gtype == str(GeometryType.NODE):
-            # For network data, drop node coordinate like other geometries drop their coordinates
+        elif self.gtype in (str(GeometryType.NODE), str(GeometryType.REACH)):
+            # For network data, drop the location coordinates like other geometries
+            # drop theirs
             return _drop_scalar_coords(self.data).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")

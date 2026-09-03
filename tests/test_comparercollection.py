@@ -572,6 +572,21 @@ def test_save_and_load_round_trips_reach_gtype_raw_data(reach_comparer, tmp_path
     )
 
 
+def test_to_dataframe_on_a_node_comparer(node_comparer):
+    df = node_comparer.to_dataframe()
+
+    assert list(df.columns) == ["Observation", "Network_Model"]
+    assert df.index.name == "time"
+
+
+def test_to_dataframe_on_a_reach_comparer(reach_comparer):
+    """The location coordinates are dropped, as they are for every other gtype."""
+    df = reach_comparer.to_dataframe()
+
+    assert list(df.columns) == ["Observation", "Network_Model"]
+    assert df.index.name == "time"
+
+
 # ======================== plotting ========================
 
 
