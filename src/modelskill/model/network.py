@@ -289,6 +289,17 @@ class NetworkModelResult:
                 "NetworkModelResult(Network.open(path, nodes=[...]))."
             )
 
+        # A location that carries no data for this quantity is all-NaN here, just
+        # as it is on the reach path: MIKE 1D stores quantities at different grid
+        # points, so a breakpoint carrying Discharge may carry no WaterLevel.
+        item = self.sel_items.values
+        if not bool(self.data[item].sel(node=node_id).notnull().any()):
+            raise ValueError(
+                f"{observation.at!r} was found in the network but has no data for "
+                f"quantity '{item}'. Choose a location that has this quantity, or a "
+                "model result for a quantity this location has."
+            )
+
         return self._as_node_result(node_id)
 
     def _extract_reach(self, observation: ReachObservation) -> NodeModelResult:

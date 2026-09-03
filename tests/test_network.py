@@ -640,6 +640,22 @@ def test_extract_reach_observation_breakpoint_node_missing_raises_valueerror(
         nmr.extract(obs)
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_extract_breakpoint_without_data_for_the_quantity_raises_valueerror(
+    sample_node_data,
+):
+    """MIKE 1D stores WaterLevel and Discharge at alternating grid points, so a
+    breakpoint that exists can still hold nothing for the selected quantity."""
+    network = Network.open("./tests/testdata/network.res1d")
+    nmr = NetworkModelResult(network, item="WaterLevel")
+    obs = ms.NodeObservation(sample_node_data, at=("94l1", 21.285), item="WaterLevel")
+
+    with pytest.raises(ValueError, match="no data for quantity 'WaterLevel'"):
+        nmr.extract(obs)
+
+
 class TestNodeObservationAliases:
     """NodeObservation accepts a node name or a (reach, distance) tuple."""
 
