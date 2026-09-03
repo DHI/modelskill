@@ -108,19 +108,19 @@ Resolution happens inside `ms.match()`.  A name the network does not hold raises
 
 When your observation sits at a chainage along a reach rather than at a named junction node, you can use the `at` argument and pass a `(reach_id, distance)` tuple.  The `NetworkModelResult` looks up the corresponding breakpoint at match time:
 
-```python
-obs_bp = ms.NodeObservation(path_to_sensor_data_1, at=("94l1", 21.285))
+```{python}
+obs_bp = ms.NodeObservation(path_to_sensor_data_1, at=("94l1", 42.57))
 
 cc = ms.match(obs=obs_bp, mod=mr)
 cc.skill()
 ```
 
-The tuple form is equivalent to calling `network.find(reach="94l1", distance=21.285)` beforehand, and is resolved during matching.
+The tuple form is equivalent to calling `network.find(reach="94l1", distance=42.57)` beforehand, and is resolved during matching.
 
 ::: {.callout-note}
 ## Chainage tolerance
 
-Break point distances are matched within the tolerance mikeio1d uses to decide two chainages are the same place, so small floating-point discrepancies between the distance you type and the value stored in the network are handled gracefully.  If no break point falls within it, a `ValueError` is raised. The distance recorded on the match is the network's own, not the one you typed.
+Break point distances are matched within the tolerance mikeio1d uses to decide two chainages are the same place, so small floating-point discrepancies between the distance you type and the value stored in the network are handled gracefully.  If no break point falls within it, a `ValueError` is raised, as it is when the break point exists but carries no data for the quantity you are scoring - MIKE 1D stores water level and discharge at alternating grid points along a reach.
 :::
 
 ### 3. Using ReachObservation for reach-uniform quantities
