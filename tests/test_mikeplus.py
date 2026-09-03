@@ -313,6 +313,40 @@ def test_item_registered_against_several_files_raises_without_source(tmp_path):
         )
 
 
+def test_a_station_that_is_no_place_in_the_network_is_left_out(tmp_path):
+    """A rain gauge registered in the same file must not fail the whole resolve."""
+    path = build_db(
+        tmp_path / "gauge.sqlite",
+        [
+            station("s1", "wNode_1", JUNCTION, "PT.401"),
+            station("s2", "Catch_1", 1, "RG.1"),
+        ],
+        [
+            measurement("s1", "item_pressure", "Pressure"),
+            measurement("s2", "item_rain", "Rainfall"),
+        ],
+    )
+
+    obs_list = NodeObservation.from_multiple(
+        data=frame("item_pressure", "item_rain"), db=path, quantity="Pressure"
+    )
+
+    assert [obs.name for obs in obs_list] == ["PT.401"]
+
+
+def test_asking_for_a_quantity_only_an_unplaceable_station_carries_raises(tmp_path):
+    path = build_db(
+        tmp_path / "gauge_only.sqlite",
+        [station("s2", "Catch_1", 1, "RG.1")],
+        [measurement("s2", "item_rain", "Rainfall")],
+    )
+
+    with pytest.raises(ValueError, match="unsupported locationtype"):
+        NodeObservation.from_multiple(
+            data=frame("item_rain"), db=path, quantity="Rainfall"
+        )
+
+
 def test_unknown_locationtype_raises(tmp_path):
     path = build_db(
         tmp_path / "weird.sqlite",

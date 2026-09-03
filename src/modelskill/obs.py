@@ -190,8 +190,10 @@ class _MikePlusStationResolver:
 
     # m_Station.locationtype codes. 8 is a junction and 12 a tank or reservoir;
     # both are graph nodes. 9 is a link, which becomes a breakpoint when the
-    # station carries a chainage and a whole reach when it does not. Unknown
-    # codes raise rather than guess.
+    # station carries a chainage and a whole reach when it does not. A station
+    # with any other code is not a place in the network, so it is left out
+    # rather than guessed at, and reported when it was what the caller asked
+    # for.
     _NODE_TYPES = frozenset({8, 12})
     _LINK_TYPES = frozenset({9})
 
@@ -264,7 +266,8 @@ class _MikePlusStationResolver:
         ``quantity`` selects one of several measured quantities; left None it is
         inferred, and raises when the selection holds more than one. ``kind``
         restricts the result to nodes or to reaches. ``on_missing="skip"`` drops
-        items the database does not register, which otherwise raise.
+        items the database does not register, which otherwise raise. Stations the
+        database does not place in the network are always left out.
         """
         requested = list(dict.fromkeys(item_names))
         rows = self._rows[self._rows["item_name"].isin(requested)].copy()
@@ -294,12 +297,14 @@ class _MikePlusStationResolver:
         rows["location"] = [location for _, location in located]
 
         if quantity is None:
-            pool = rows if kind is None else rows[rows["kind"] == kind]
+            placed = rows[rows["kind"].notna()]
+            pool = placed if kind is None else placed[placed["kind"] == kind]
             available = sorted(pool["quantity"].unique())
             if len(available) == 0:
                 raise ValueError(
                     f"No {kind} locations found. Quantities present: "
                     f"{rows['quantity'].value_counts().to_dict()}."
+                    + self._unsupported_message(rows)
                 )
             if len(available) > 1:
                 raise ValueError(
@@ -319,12 +324,24 @@ class _MikePlusStationResolver:
         if kind is not None:
             of_kind = selection[selection["kind"] == kind]
             if of_kind.empty:
-                other = sorted(selection["kind"].unique())
+                other = sorted(selection["kind"].dropna().unique())
+                if not other:
+                    raise ValueError(
+                        f"No {quantity!r} station could be placed in the network."
+                        + self._unsupported_message(selection)
+                    )
                 raise ValueError(
                     f"All {len(selection)} {quantity!r} station(s) are of kind "
-                    f"{other}, not {kind!r}."
+                    f"{other}, not {kind!r}." + self._unsupported_message(selection)
                 )
             selection = of_kind
+
+        selection = selection[selection["kind"].notna()]
+        if selection.empty:
+            raise ValueError(
+                f"No {quantity!r} station could be placed in the network."
+                + self._unsupported_message(rows)
+            )
 
         names = self._display_names(selection)
         return [
@@ -356,7 +373,10 @@ class _MikePlusStationResolver:
                     "The database layout is not the one modelskill expects."
                 )
 
-    def _location(self, row: pd.Series) -> tuple[str, str | tuple[str, float]]:
+    def _location(
+        self, row: pd.Series
+    ) -> tuple[str | None, str | tuple[str, float] | None]:
+        """The kind and location of one station, or (None, None) if it is neither."""
         # A link station with a chainage names a point along a reach, which is a
         # node observation at a breakpoint. Without a chainage it names the reach
         # as a whole.
@@ -374,9 +394,21 @@ class _MikePlusStationResolver:
                 return "reach", location_id
             return "node", (location_id, float(chainage))
 
-        raise ValueError(
-            f"Station '{row['locationid']}' has unsupported locationtype "
-            f"{row['locationtype']!r}. Known codes are "
+        return None, None
+
+    def _unsupported_message(self, rows: pd.DataFrame) -> str:
+        """Names the stations of ``rows`` that are not places in the network."""
+        unsupported = rows[rows["kind"].isna()]
+        if unsupported.empty:
+            return ""
+
+        listed = ", ".join(
+            f"'{row.locationid}' ({row.locationtype!r})"
+            for row in unsupported.itertuples()
+        )
+        return (
+            " Station(s) with an unsupported locationtype were left out: "
+            f"{listed}. Known codes are "
             f"{sorted(self._NODE_TYPES | self._LINK_TYPES)}."
         )
 
