@@ -1204,7 +1204,8 @@ class ReachObservation(Observation):
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
-    ) -> list[ReachObservation]: ...
+    ) -> list[ReachObservation]:
+        pass
 
     @overload
     @classmethod
