@@ -716,70 +716,81 @@ class TrackObservation(Observation):
 
 
 class VerticalObservation(Observation):
-    """Class for observations of vertical profiles.
+    """Observation of a vertical profile at a fixed (x, y) location.
 
-    Create a VerticalObservation from a dfs0/nc file or tabular data
-    containing time, vertical coordinate, and observed values.
+    Create a VerticalObservation from a dfs0 file, mikeio.Dataset,
+    pandas.DataFrame or xarray.Dataset in long format: one row per
+    (time, z) pair, with one item/column holding the vertical coordinate
+    and another holding the observed value. At least two items are required
+    (z + value); if more are present, `item` must be given.
 
     Parameters
     ----------
-    data : (str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset)
-        Input data with vertical profile observations.
+    data : str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset
+        Input data or path to a dfs0 file.
     item : int or str, optional
-        Index or name of the primary observation item.
-        If the input contains more than one candidate value item,
-        this argument must be provided.
+        Index or name of the value item. Required if the input has more
+        than two items.
     x : float, optional
-        x-coordinate of the observation location. If not provided,
-        it is inferred from data when possible.
+        x-coordinate of the profile location, inferred from data when possible.
     y : float, optional
-        y-coordinate of the observation location. If not provided,
-        it is inferred from data when possible.
+        y-coordinate of the profile location, inferred from data when possible.
     z_item : int or str, optional
-        Index or name of the vertical coordinate item, by default 0.
+        Index or name of the item holding the vertical coordinate, by default 0.
     name : str, optional
-        User-defined name for identification in plots and summaries.
+        Name of the observation, by default the file or item name.
     weight : float, optional
-        Weighting factor for skill scores, by default 1.0.
+        Weighting factor for skill scores in a ComparerCollection, by default 1.0.
     quantity : Quantity, optional
-        Physical quantity metadata used for validation against model results.
+        Observed quantity, for MIKE files this is inferred from the EUM information
     aux_items : list[int | str], optional
-        List of auxiliary item names or indices to keep in the dataset.
+        Auxiliary items to keep alongside the value item, by default None.
     attrs : dict, optional
         Additional attributes to be added to the underlying dataset.
 
+    Notes
+    -----
+    A dfs0 with N depth levels has its profile timestamps repeated N times on
+    a non-equidistant time axis. Duplicate (time, z) pairs are not allowed and
+    will raise a ValueError.
+
     Examples
     --------
-    >>> import modelskill as ms
-    >>> import pandas as pd
-    >>> df = pd.DataFrame(
-    ...     {
-    ...         "z": [0.0, -5.0, -10.0, 0.0, -5.0, -10.0],
-    ...         "value": [0.1, 0.3, 0.4, 0.5, 0.3, 0.3],
-    ...     },
-    ...     index=pd.to_datetime(
-    ...         [
-    ...             "2010-01-01 01:00:00",
-    ...             "2010-01-01 01:00:00",
-    ...             "2010-01-01 01:00:00",
-    ...             "2010-01-01 02:00:00",
-    ...             "2010-01-01 02:00:00",
-    ...             "2010-01-01 02:00:00",
-    ...         ]
-    ...     ),
-    ... )
-    >>> df.index.name = "t"
-    >>> print(df.to_string())
-                           z  value
-    t
-    2010-01-01 01:00:00   0.0    0.1
-    2010-01-01 01:00:00  -5.0    0.3
-    2010-01-01 01:00:00 -10.0    0.4
-    2010-01-01 02:00:00   0.0    0.5
-    2010-01-01 02:00:00  -5.0    0.3
-    2010-01-01 02:00:00 -10.0    0.3
+    From a `pandas.DataFrame` in long format:
 
-    >>> o = ms.VerticalObservation(df, item="value", z_item="z", x=12.0, y=55.0)
+    ```{python}
+    import modelskill as ms
+    import pandas as pd
+
+    times = pd.to_datetime(["2010-01-01 01:00"] * 3 + ["2010-01-01 02:00"] * 3)
+    df = pd.DataFrame(
+        {
+            "z": [0.0, -5.0, -10.0, 0.0, -5.0, -10.0],
+            "Salinity": [30.0, 30.2, 30.3, 30.4, 30.2, 30.2],
+        },
+        index=times,
+    )
+    ms.VerticalObservation(
+        df,
+        item="Salinity",
+        z_item="z",
+        x=12.0,
+        y=55.0,
+        quantity=ms.Quantity("Salinity", "PSU"),
+    )
+    ```
+
+    From a dfs0 file (with z and Salinity items):
+
+    ```{python}
+    ms.VerticalObservation(
+        "../data/vertical/VerticalProfile_obs1.dfs0",
+        item="Salinity",
+        z_item="z",
+        x=657500,
+        y=6553600,
+    )
+    ```
     """
 
     def __init__(
