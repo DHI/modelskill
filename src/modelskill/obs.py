@@ -1012,6 +1012,14 @@ class NodeObservation(Observation):
         """Observation location: a node name, or a ``(reach_id, distance)`` breakpoint."""
         return _at_from_coords(self.data)
 
+    @property
+    def node(self) -> Any:
+        """Name of the node this observation sits at, or None for a break point."""
+        return self._coordinate_values("node")
+
+    def _location_repr(self) -> str | None:
+        return f"Location: {self.at}"
+
     def _create_new_instance(self, data: xr.Dataset) -> Self:
         """Reconstruct instance from a dataset slice."""
         return self.__class__(data, at=_at_from_coords(data))
@@ -1266,6 +1274,9 @@ class ReachObservation(Observation):
     def reach(self) -> str:
         """Reach ID of this observation."""
         return str(self.data.coords["reach"].item())
+
+    def _location_repr(self) -> str | None:
+        return f"Location: {self.reach}"
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
         """Reconstruct instance from a dataset slice."""

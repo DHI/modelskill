@@ -269,11 +269,6 @@ class TimeSeries:
     def y(self, value: Any) -> None:
         self.data["y"] = value
 
-    @property
-    def node(self) -> Any:
-        """node-coordinate"""
-        return self._coordinate_values("node")
-
     def _coordinate_values(self, coord: str) -> Any:
         return _coordinate_values(self.data, coord)
 
@@ -295,16 +290,18 @@ class TimeSeries:
     def _aux_vars(self):
         return list(self.data.filter_by_attrs(kind="aux").data_vars)
 
+    def _location_repr(self) -> str | None:
+        """The location line for ``__repr__``, or None when there is nothing to say."""
+        if self.gtype == str(GeometryType.POINT):
+            if self.x is not None and self.y is not None:
+                return f"Location: {self.x}, {self.y}"
+        return None
+
     def __repr__(self) -> str:
         res = []
         res.append(f"<{self.__class__.__name__}>: {self.name}")
-        if self.gtype == str(GeometryType.POINT):
-            # Show location based on available coordinates
-            if "node" in self.data.coords:
-                node_id = self.data.coords["node"].item()
-                res.append(f"Node: {node_id}")
-            elif self.x is not None and self.y is not None:
-                res.append(f"Location: {self.x}, {self.y}")
+        if (location := self._location_repr()) is not None:
+            res.append(location)
         res.append(f"Time: {self.time[0]} - {self.time[-1]}")
         res.append(f"Quantity: {self.quantity}")
         if len(self._aux_vars) > 0:

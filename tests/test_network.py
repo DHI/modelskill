@@ -499,6 +499,7 @@ class TestNodeModelResult:
         assert nmr.node == "123"
         assert nmr.name == "Node_123_Model"
         assert len(nmr.time) == 10
+        assert "Location: 123" in repr(nmr)
 
 
 class TestNetworkIntegration:

@@ -126,6 +126,9 @@ class NodeModelResult(TimeSeries):
         """Where this result was extracted, as its network named it."""
         return _location_from_coords(self.data)
 
+    def _location_repr(self) -> str | None:
+        return f"Location: {self.node}"
+
     @property
     def node_index(self) -> int | None:
         """Graph integer this location had in the network it came from, if recorded.
