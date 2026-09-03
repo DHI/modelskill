@@ -16,7 +16,7 @@ from modelskill.timeseries import (
 from ._base import SelectedItems
 from ..obs import NodeObservation, ReachObservation, _location_from_coords
 from ..quantity import Quantity
-from ..types import PointType
+from ..types import GeometryType, PointType
 
 if TYPE_CHECKING:
     from mikeio1d.network import Network
@@ -110,7 +110,7 @@ class NodeModelResult(TimeSeries):
 
         if not isinstance(data, xr.Dataset):
             raise ValueError("'NodeModelResult' requires xarray.Dataset")
-        if not {"node", "reach"} & set(data.coords):
+        if GeometryType.from_coords(data) is None:
             raise ValueError(
                 "'NodeModelResult' needs a node name, a (reach, distance) pair, or "
                 "data that already carries a 'node' or 'reach' coordinate"

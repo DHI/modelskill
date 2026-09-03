@@ -102,16 +102,9 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
 
     # Validate coordinates: x,y spatial, node-based, or reach-based (with or without chainage)
     has_spatial_coords = "x" in ds.coords and "y" in ds.coords
-    has_node_coord = "node" in ds.coords
-    has_breakpoint_coords = "reach" in ds.coords and "distance" in ds.coords
-    has_reach_coord = "reach" in ds.coords and "distance" not in ds.coords
+    has_network_coords = GeometryType.from_coords(ds) is not None
 
-    if (
-        not has_spatial_coords
-        and not has_node_coord
-        and not has_breakpoint_coords
-        and not has_reach_coord
-    ):
+    if not has_spatial_coords and not has_network_coords:
         raise ValueError(
             "data must have either x,y coordinates, a node coordinate, "
             "reach+distance coordinates, or a reach coordinate"

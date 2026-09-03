@@ -168,12 +168,7 @@ def _include_attributes(
 ) -> xr.Dataset:
     ds = ds.copy()
 
-    if "node" in ds.coords or ("reach" in ds.coords and "distance" in ds.coords):
-        ds.attrs["gtype"] = str(GeometryType.NODE)
-    elif "reach" in ds.coords:
-        ds.attrs["gtype"] = str(GeometryType.REACH)
-    else:
-        ds.attrs["gtype"] = str(GeometryType.POINT)
+    ds.attrs["gtype"] = str(GeometryType.from_coords(ds) or GeometryType.POINT)
 
     ds[name].attrs["long_name"] = quantity.name
     ds[name].attrs["units"] = quantity.unit

@@ -56,6 +56,40 @@ class GeometryType(Enum):
                 f"GeometryType {s} not recognized. Available options: {[m.name for m in GeometryType]}"
             ) from e
 
+    @staticmethod
+    def from_coords(ds: xr.Dataset) -> "GeometryType | None":
+        """The geometry a dataset's coordinates make it.
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            Dataset to inspect.
+
+        Returns
+        -------
+        GeometryType or None
+            NODE for a node or a break point, REACH for a whole reach, and None
+            for data that carries no network location.
+
+        Examples
+        --------
+        >>> import xarray as xr
+        >>> from modelskill.types import GeometryType
+        >>> GeometryType.from_coords(xr.Dataset(coords={"node": "123"}))
+        <GeometryType.NODE: 'node'>
+        >>> GeometryType.from_coords(xr.Dataset(coords={"reach": "r1", "distance": 24.5}))
+        <GeometryType.NODE: 'node'>
+        >>> GeometryType.from_coords(xr.Dataset(coords={"reach": "r1"}))
+        <GeometryType.REACH: 'reach'>
+        >>> GeometryType.from_coords(xr.Dataset(coords={"x": 0.0, "y": 0.0})) is None
+        True
+        """
+        if "node" in ds.coords or {"reach", "distance"} <= set(ds.coords):
+            return GeometryType.NODE
+        if "reach" in ds.coords:
+            return GeometryType.REACH
+        return None
+
 
 DataInputType = Union[
     str,
