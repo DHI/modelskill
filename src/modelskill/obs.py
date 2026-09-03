@@ -217,7 +217,7 @@ class _MikePlusStationResolver:
 
         ``db`` is a path or an already-open connection; an open one is left open.
         ``source`` restricts the measurements to one result file, matched on file
-        name, so a full path is fine. Without it, measurements from every file
+        name alone, so a full path is fine. Without it, measurements from every file
         are considered and an item registered against two of them raises.
         """
         self._source = source
@@ -229,11 +229,7 @@ class _MikePlusStationResolver:
         try:
             self._validate(conn)
 
-            query, params = self._QUERY, []
-            if source is not None:
-                query += " WHERE m.tsfilename LIKE ?"
-                params.append(f"%{Path(source).name}%")
-            rows = pd.read_sql_query(query, conn, params=params)
+            rows = pd.read_sql_query(self._QUERY, conn)
 
             # Read the station names now rather than on demand: the only other
             # use is naming stations that carry no measurement, on the failure
@@ -246,6 +242,11 @@ class _MikePlusStationResolver:
         finally:
             if opened is not None:
                 opened.close()
+
+        if source is not None:
+            wanted = self._file_name(source).casefold()
+            names = rows["tsfilename"].fillna("").map(self._file_name)
+            rows = rows[names.str.casefold() == wanted]
 
         rows["quantity"] = rows["resitemname"].str.split(";").str[0].str.strip()
         self._rows = rows
@@ -385,7 +386,7 @@ class _MikePlusStationResolver:
 
         lines = []
         if known:
-            where = f" for '{Path(self._source).name}'" if self._source else ""
+            where = f" for '{self._file_name(self._source)}'" if self._source else ""
             lines.append(
                 f"  Known station, no measurement registered{where} ({len(known)}):\n"
                 + "\n".join(f"    {item}" for item in known)
@@ -396,6 +397,11 @@ class _MikePlusStationResolver:
                 + "\n".join(f"    {item}" for item in unknown)
             )
         return "\n".join(lines)
+
+    @staticmethod
+    def _file_name(path: object) -> str:
+        """The file name in a path, whose separator is Windows' in the database."""
+        return str(path).replace("\\", "/").rsplit("/", 1)[-1]
 
     @staticmethod
     def _display_names(selection: pd.DataFrame) -> pd.Series:

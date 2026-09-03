@@ -266,6 +266,37 @@ def test_source_accepts_a_full_path(tmp_path):
     assert len(obs_list) == 1
 
 
+def test_source_matches_the_whole_file_name(tmp_path):
+    """A file name that is a substring of another must not match it as well."""
+    path = build_db(
+        tmp_path / "substring.sqlite",
+        [station("s1", "wNode_1", JUNCTION, "PT.401")],
+        [
+            measurement("s1", "item_a", "Pressure", file="calib.dfs0"),
+            measurement("s1", "item_a", "Pressure", file="my_calib.dfs0"),
+        ],
+    )
+
+    obs_list = NodeObservation.from_multiple(
+        data=frame("item_a"), db=path, quantity="Pressure", source="calib.dfs0"
+    )
+
+    assert len(obs_list) == 1
+
+
+def test_an_underscore_in_the_source_is_not_a_wildcard(tmp_path):
+    path = build_db(
+        tmp_path / "wildcard.sqlite",
+        [station("s1", "wNode_1", JUNCTION, "PT.401")],
+        [measurement("s1", "item_a", "Pressure", file="calibX1.dfs0")],
+    )
+
+    with pytest.raises(ValueError, match="could not be resolved"):
+        NodeObservation.from_multiple(
+            data=frame("item_a"), db=path, quantity="Pressure", source="calib_1.dfs0"
+        )
+
+
 def test_item_registered_against_several_files_raises_without_source(tmp_path):
     path = build_db(
         tmp_path / "ambiguous.sqlite",
