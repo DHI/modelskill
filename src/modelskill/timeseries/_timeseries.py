@@ -16,6 +16,18 @@ from .. import __version__
 
 T = TypeVar("T", bound="TimeSeries")
 
+
+def _coordinate_values(ds: xr.Dataset, coord: str) -> Any:
+    """A dataset's values for one coordinate, or None when it has no such coordinate.
+
+    A scalar coordinate is unwrapped to its single value; anything else is
+    handed back as the array it is.
+    """
+    if coord not in ds.coords:
+        return None
+    vals = ds[coord].values
+    return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
+
 DEFAULT_COLORS = [
     "#b30000",
     "#7c1158",
@@ -262,11 +274,8 @@ class TimeSeries:
         """node-coordinate"""
         return self._coordinate_values("node")
 
-    def _coordinate_values(self, coord: str) -> None | float | np.ndarray:
-        if coord not in self.data.coords:
-            return None  # Node-based data doesn't have y coordinate
-        vals = self.data[coord].values
-        return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
+    def _coordinate_values(self, coord: str) -> Any:
+        return _coordinate_values(self.data, coord)
 
     @property
     def _is_modelresult(self) -> bool:

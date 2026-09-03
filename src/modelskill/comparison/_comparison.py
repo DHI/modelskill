@@ -35,7 +35,11 @@ from ..obs import (
 )
 from ..model import PointModelResult, TrackModelResult, VerticalModelResult
 from ..timeseries._coords import NETWORK_LOCATION_COORDS
-from ..timeseries._timeseries import _normalize_time_to_ns, _validate_data_var_name
+from ..timeseries._timeseries import (
+    _coordinate_values,
+    _normalize_time_to_ns,
+    _validate_data_var_name,
+)
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
 
@@ -664,12 +668,9 @@ class Comparer:
         """Where this comparer sits, in the form NodeObservation.at takes"""
         return _location_from_coords(self.data)
 
-    def _coordinate_values(self, coord: str) -> None | Any:
+    def _coordinate_values(self, coord: str) -> Any:
         """Get coordinate values if they exist, otherwise return None"""
-        if coord not in self.data.coords:
-            return None
-        vals = self.data[coord].values
-        return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
+        return _coordinate_values(self.data, coord)
 
     @property
     def n_models(self) -> int:

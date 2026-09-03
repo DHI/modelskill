@@ -41,6 +41,7 @@ from .timeseries import (
     _parse_network_node_input,
     _parse_network_breakpoint_input,
 )
+from .timeseries._timeseries import _coordinate_values
 
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
@@ -885,7 +886,7 @@ def _location_from_coords(ds: xr.Dataset) -> Any:
 
 
 def _scalar(ds: xr.Dataset, name: str) -> Any:
-    value = np.atleast_1d(ds.coords[name].values)[0]
+    value = _coordinate_values(ds, name)
     return value.item() if hasattr(value, "item") else value
 
 
