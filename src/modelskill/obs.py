@@ -989,7 +989,8 @@ class NodeObservation(Observation):
         on_missing: Literal["raise", "skip"] = "raise",
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
-    ) -> list[NodeObservation]: ...
+    ) -> list[NodeObservation]:
+        pass
 
     @classmethod
     def from_multiple(
@@ -1214,7 +1215,8 @@ class ReachObservation(Observation):
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
-    ) -> list[ReachObservation]: ...
+    ) -> list[ReachObservation]:
+        pass
 
     @overload
     @classmethod
@@ -1240,7 +1242,8 @@ class ReachObservation(Observation):
         on_missing: Literal["raise", "skip"] = "raise",
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
-    ) -> list[ReachObservation]: ...
+    ) -> list[ReachObservation]:
+        pass
 
     @classmethod
     def from_multiple(
