@@ -31,9 +31,10 @@ from ..obs import (
     TrackObservation,
     NodeObservation,
     ReachObservation,
+    _location_from_coords,
 )
 from ..model import PointModelResult, TrackModelResult, VerticalModelResult
-from ..timeseries._coords import NETWORK_LOCATION_COORDS, location_from_coords
+from ..timeseries._coords import NETWORK_LOCATION_COORDS
 from ..timeseries._timeseries import _normalize_time_to_ns, _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
@@ -666,7 +667,7 @@ class Comparer:
     @property
     def _at(self) -> Any:
         """Where this comparer sits, in the form NodeObservation.at takes"""
-        return location_from_coords(self.data)
+        return _location_from_coords(self.data)
 
     def _coordinate_values(self, coord: str) -> None | Any:
         """Get coordinate values if they exist, otherwise return None"""

@@ -13,9 +13,8 @@ from modelskill.timeseries import (
     _parse_network_breakpoint_input,
     _parse_network_node_input,
 )
-from modelskill.timeseries._coords import location_from_coords
 from ._base import SelectedItems
-from ..obs import NodeObservation, ReachObservation
+from ..obs import NodeObservation, ReachObservation, _location_from_coords
 from ..quantity import Quantity
 from ..types import PointType
 
@@ -125,7 +124,7 @@ class NodeModelResult(TimeSeries):
     @property
     def node(self) -> Any:
         """Where this result was extracted, as its network named it."""
-        return location_from_coords(self.data)
+        return _location_from_coords(self.data)
 
     @property
     def node_index(self) -> int | None:
