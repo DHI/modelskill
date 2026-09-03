@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from modelskill import Quantity
 from modelskill.obs import NodeObservation, ReachObservation
 
 STATION_COLUMNS = [
@@ -501,6 +502,21 @@ class TestNodeObservationFromDatabase:
     def test_db_without_data_raises(self, db):
         with pytest.raises(ValueError, match="'data' is required"):
             NodeObservation.from_multiple(db=db)
+
+    def test_a_quantity_object_supplies_metadata_and_does_not_select(self, tmp_path):
+        """A Quantity's name is the caller's own, not a name in the database."""
+        path = build_db(
+            tmp_path / "metadata.sqlite",
+            [station("s1", "wNode_1", JUNCTION, "PT.401")],
+            [measurement("s1", "item_a", "Pressure")],
+        )
+
+        obs_list = NodeObservation.from_multiple(
+            data=frame("item_a"), db=path, quantity=Quantity("Pressure_m", "m")
+        )
+
+        assert [obs.quantity.name for obs in obs_list] == ["Pressure_m"]
+        assert [obs.quantity.unit for obs in obs_list] == ["m"]
 
     def test_quantity_string_without_db_raises(self, calibration_data):
         with pytest.raises(TypeError, match="must be a Quantity"):

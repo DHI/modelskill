@@ -468,8 +468,10 @@ def _observations_from_mikeplus(
     # for every station in the database.
     opened, _ = _open_and_name(data, None)
 
+    # A Quantity is metadata and does not select: its name is the caller's own,
+    # not the database's. Only a string names a quantity in the database.
     given_quantity = quantity if isinstance(quantity, Quantity) else None
-    wanted = quantity.name if isinstance(quantity, Quantity) else quantity
+    wanted = quantity if isinstance(quantity, str) else None
 
     stations = _MikePlusStationResolver(db, source=source).resolve(
         _item_names(opened),
@@ -1086,7 +1088,10 @@ class NodeObservation(Observation):
             Physical quantity metadata, by default None. With ``db``, a string
             selects which quantity to build observations for and the metadata
             comes from the database; omit it and the quantity is inferred when
-            the data holds only one.
+            the data holds only one. A ``Quantity`` supplies the metadata and
+            does not select, so the database must hold only one quantity for
+            this kind of location - to do both, pass the string and set
+            ``obs.quantity`` on the observations afterwards.
         source : str, optional
             With ``db``, the file the items come from. Taken from ``data`` when
             that is a path, by default None.
@@ -1337,7 +1342,10 @@ class ReachObservation(Observation):
             Physical quantity metadata, by default None. With ``db``, a string
             selects which quantity to build observations for and the metadata
             comes from the database; omit it and the quantity is inferred when
-            the data holds only one.
+            the data holds only one. A ``Quantity`` supplies the metadata and
+            does not select, so the database must hold only one quantity for
+            this kind of location - to do both, pass the string and set
+            ``obs.quantity`` on the observations afterwards.
         source : str, optional
             With ``db``, the file the items come from. Taken from ``data`` when
             that is a path, by default None.
