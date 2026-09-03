@@ -889,6 +889,18 @@ def _scalar(ds: xr.Dataset, name: str) -> Any:
     return value.item() if hasattr(value, "item") else value
 
 
+def _at_from_coords(ds: xr.Dataset) -> str | tuple[str, float]:
+    """The location in the form ``NodeObservation`` takes it.
+
+    Unlike :func:`_location_from_coords`, which reports the location as
+    recorded, this coerces to the types the ``at`` argument is declared with.
+    """
+    location = _location_from_coords(ds)
+    if isinstance(location, tuple):
+        return (str(location[0]), float(location[1]))
+    return str(location)
+
+
 class NodeObservation(Observation):
     """Class for observations at network nodes.
 
@@ -997,24 +1009,11 @@ class NodeObservation(Observation):
     @property
     def at(self) -> str | tuple[str, float]:
         """Observation location: a node name, or a ``(reach_id, distance)`` breakpoint."""
-        if "reach" in self.data.coords:
-            return (
-                str(self.data.coords["reach"].item()),
-                float(self.data.coords["distance"].item()),
-            )
-        return str(self.data.coords["node"].item())
+        return _at_from_coords(self.data)
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
         """Reconstruct instance from a dataset slice."""
-        if "reach" in data.coords:
-            return self.__class__(
-                data,
-                at=(
-                    str(data.coords["reach"].item()),
-                    float(data.coords["distance"].item()),
-                ),
-            )
-        return self.__class__(data, at=str(data.coords["node"].item()))
+        return self.__class__(data, at=_at_from_coords(data))
 
     @overload
     @classmethod
