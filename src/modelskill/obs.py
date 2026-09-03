@@ -1231,7 +1231,8 @@ class ReachObservation(Observation):
         on_missing: Literal["raise", "skip"] = "raise",
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
-    ) -> list[ReachObservation]: ...
+    ) -> list[ReachObservation]:
+        pass
 
     @classmethod
     def from_multiple(
