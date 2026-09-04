@@ -52,8 +52,8 @@ def make_breakpoint_network(reach_id, distance, data):
     return Network([reach])
 
 
-def node_series(network):
-    """Each node's own series, keyed by node id, read off the network's reaches.
+def node_series(network, quantity="WaterLevel"):
+    """Each node's own series for `quantity`, keyed by node id, read off the reaches.
 
     The three nodes of `sample_network` carry three different series, so a
     comparer built from one of them cannot be satisfied by any of the others.
@@ -61,5 +61,5 @@ def node_series(network):
     nodes = {}
     for reach in network.reaches.values():
         for node in (reach.start, reach.end):
-            nodes[node.id] = node.data["WaterLevel"]
+            nodes[node.id] = node.data[quantity]
     return pd.DataFrame(nodes)

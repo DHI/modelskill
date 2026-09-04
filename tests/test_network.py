@@ -9,6 +9,7 @@ pytest.importorskip("mikeio1d.network")
 import pandas as pd
 import xarray as xr
 import numpy as np
+import mikeio1d
 import modelskill as ms
 from mikeio1d.network import Network, BasicNode, BasicReach
 from modelskill import (
@@ -460,8 +461,8 @@ class TestValuesReachTheComparer:
     """The series a comparer holds is the one the network keeps at that location.
 
     The observation is built from the model's own data, so an exact match is the
-    expected outcome and any mix-up between locations or models shows up as a
-    non-zero score.
+    expected outcome and any mix-up between locations, quantities or models shows
+    up as a non-zero score.
     """
 
     def test_extract_returns_the_nodes_own_series(self, sample_network):
@@ -546,6 +547,75 @@ class TestValuesReachTheComparer:
 
         assert cmp.n_points == len(values)
         assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+    def test_the_selected_item_brings_its_own_values(self, sample_network_multivars):
+        """Discharge is ten times WaterLevel here, so the selected column cannot
+        pass for the one left behind."""
+        discharge = node_series(sample_network_multivars, "Discharge")
+        nmr = NetworkModelResult(
+            sample_network_multivars, item="Discharge", name="Network_Model"
+        )
+        obs = NodeObservation(discharge, at="123", item="123")
+
+        extracted = nmr.extract(obs)
+
+        assert extracted.to_dataframe()["Network_Model"].to_numpy() == pytest.approx(
+            discharge["123"].to_numpy()
+        )
+
+    def test_a_matched_item_scores_zero_against_its_own_series(
+        self, sample_network_multivars
+    ):
+        discharge = node_series(sample_network_multivars, "Discharge")
+        nmr = NetworkModelResult(
+            sample_network_multivars, item="Discharge", name="Network_Model"
+        )
+        obs = NodeObservation(discharge, at="123", item="123", name="Node_123_Obs")
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+    def test_an_aux_item_brings_its_own_values(self, sample_network_multivars):
+        """The aux item rides alongside the scored one, and holds its own series."""
+        water_level = node_series(sample_network_multivars)
+        discharge = node_series(sample_network_multivars, "Discharge")
+        nmr = NetworkModelResult(
+            sample_network_multivars,
+            item="WaterLevel",
+            aux_items=["Discharge"],
+            name="Network_Model",
+        )
+        obs = NodeObservation(water_level, at="123", item="123", name="Node_123_Obs")
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.data["Discharge"].attrs["kind"] == "aux"
+        assert cmp.data["Discharge"].to_numpy() == pytest.approx(
+            discharge["123"].to_numpy()
+        )
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_a_model_result_built_from_a_file_carries_the_files_own_values():
+    """Checked against mikeio1d's own read of the file.
+
+    That read goes straight to the result file, not through the Network the
+    model result is built on, so the two agreeing pins the whole way in.
+    """
+    path = "./tests/testdata/network.res1d"
+    expected = mikeio1d.open(path).nodes.read()["WaterLevel:1"]
+    mr = NetworkModelResult(path, item="WaterLevel", name="Network_Model")
+    obs = NodeObservation(expected, at="1", name="Node_1_Obs")
+
+    extracted = mr.extract(obs)
+
+    assert extracted.to_dataframe()["Network_Model"].to_numpy() == pytest.approx(
+        expected.to_numpy()
+    )
 
 
 @pytest.mark.skipif(
