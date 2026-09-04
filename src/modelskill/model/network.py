@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Sequence
 
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 import xarray as xr
 
@@ -250,11 +249,6 @@ class NetworkModelResult:
     def time(self) -> pd.DatetimeIndex:
         """Return the time coordinate as a pandas.DatetimeIndex."""
         return pd.DatetimeIndex(self.data.time.to_index())
-
-    @property
-    def nodes(self) -> npt.NDArray[np.intp]:
-        """Return the node IDs as a numpy array of integers."""
-        return self.data.node.values
 
     def extract(
         self,

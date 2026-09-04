@@ -89,7 +89,6 @@ class TestNetworkModelResult:
 
         assert len(nmr.time) == 10
         assert isinstance(nmr.time, pd.DatetimeIndex)
-        assert len(nmr.nodes) == 3
 
     def test_quantity_name_survives_to_the_model_result(self, sample_network):
         """The network knows its quantity by name even without a unit."""
@@ -625,7 +624,7 @@ def test_a_model_result_can_be_built_from_a_result_file():
     mr = NetworkModelResult("./tests/testdata/network.res1d", item="WaterLevel")
 
     assert mr.quantity.name == "WaterLevel"
-    assert len(mr.nodes) > 0
+    assert len(mr.time) > 0
 
 
 @pytest.mark.skipif(
