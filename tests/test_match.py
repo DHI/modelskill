@@ -7,6 +7,7 @@ import mikeio
 import modelskill as ms
 from modelskill.comparison._comparison import ItemSelection
 from modelskill.model.dfsu import DfsuModelResult
+
 try:
     from modelskill.network import _make_basic_network
 except ImportError:
@@ -1064,7 +1065,8 @@ def test_network_match_multi_obs_multi_model_comprehensive(
 def test_network_match_error_non_node_observation(network_mr, point_obs_error):
     """Test that non-NodeObservation raises appropriate error"""
     with pytest.raises(
-        TypeError, match="NetworkModelResult supports NodeObservation and ReachObservation"
+        TypeError,
+        match="NetworkModelResult supports NodeObservation and ReachObservation",
     ):
         ms.match(point_obs_error, network_mr)
 

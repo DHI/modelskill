@@ -647,6 +647,60 @@ def test_from_mike_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
     assert len(ds.data_vars) == 0
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_topology_only_locations_share_one_empty_frame():
+    """Topology-only locations must not each allocate their own empty frame.
+
+    That is two DataFrame allocations per reach, which profiling showed to be
+    the single largest cost of a filtered load (gh #679).
+    """
+    path_to_file = "./tests/testdata/network.res1d"
+
+    network = Network.from_mike(path_to_file, nodes=[], reaches=[])
+    g = network.graph
+
+    frames = [g.nodes[n]["data"] for n in g.nodes]
+    assert all(frame.empty for frame in frames)
+    assert len({id(frame) for frame in frames}) == 1
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_reads_each_selected_node_once(monkeypatch):
+    """A node shared by several reaches is read once, not once per reach.
+
+    _generate_graph keeps only the first copy of a node's data, so the repeat
+    reads were discarded work (gh #679). The per-reach boundary reads are
+    genuinely distinct and must not be collapsed.
+    """
+    from modelskill.model.adapters import _res1d
+
+    reads: dict[str, int] = {}
+    unpatched = _res1d._simplify_colnames
+
+    def counting_simplify_colnames(location, *args, **kwargs):
+        name = type(location).__name__
+        reads[name] = reads.get(name, 0) + 1
+        return unpatched(location, *args, **kwargs)
+
+    monkeypatch.setattr(_res1d, "_simplify_colnames", counting_simplify_colnames)
+
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_mike(path_to_file, reaches=[])
+
+    n_unique_nodes = len(
+        {reach.start.id for reach in network._reaches.values()}
+        | {reach.end.id for reach in network._reaches.values()}
+    )
+    n_reach_endpoints = 2 * len(network._reaches)
+
+    assert reads["ResultNode"] == n_unique_nodes
+    assert reads["ResultGridPoint"] == n_reach_endpoints
+
+
 # ---------------------------------------------------------------------------
 # Optional reach length
 # ---------------------------------------------------------------------------
@@ -820,6 +874,104 @@ class TestExtensionPolicy:
 
         with pytest.raises(TypeError, match="file_path"):
             Network.from_mike(res)
+
+
+# ---------------------------------------------------------------------------
+# from_mike — quantities filter
+#
+# In network.res1d every node carries WaterLevel only, interior gridpoints
+# carry either Discharge or WaterLevel.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_reads_all_quantities_by_default():
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_mike(path_to_file)
+
+    assert set(network.quantities) == {"WaterLevel", "Discharge"}
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_quantities_filter_reads_only_requested_quantity():
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_mike(path_to_file, quantities="Discharge")
+
+    assert network.quantities == ["Discharge"]
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_quantities_filter_leaves_other_locations_topology_only():
+    """A location that does not carry the requested quantity is not an error."""
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_mike(path_to_file, quantities="Discharge")
+    g = network.graph
+
+    assert g.nodes[network.find(node="1")]["data"].empty
+    assert (
+        g.number_of_nodes() == Network.from_mike(path_to_file).graph.number_of_nodes()
+    )
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_quantities_filter_populates_matching_breakpoints():
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_mike(path_to_file, quantities="Discharge")
+
+    breakpoints = network._reaches["100l1"].breakpoints
+    populated = [bp for bp in breakpoints if not bp.data.empty]
+
+    assert [bp.quantities for bp in populated] == [["Discharge"]]
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_quantities_filter_keeps_node_data_for_node_quantity():
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_mike(path_to_file, quantities="WaterLevel")
+
+    assert network.quantities == ["WaterLevel"]
+    assert not network.graph.nodes[network.find(node="1")]["data"].empty
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_empty_quantities_keeps_topology_and_loads_nothing():
+    path_to_file = "./tests/testdata/network.res1d"
+    full_network = Network.from_mike(path_to_file)
+    network = Network.from_mike(path_to_file, quantities=[])
+
+    assert network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
+    assert network.quantities == []
+
+    df = network.to_dataframe()
+    assert df.empty
+    assert isinstance(df.columns, pd.MultiIndex)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+)
+def test_from_mike_quantities_filter_combines_with_nodes_filter():
+    path_to_file = "./tests/testdata/network.res1d"
+    network = Network.from_mike(
+        path_to_file, nodes=["1"], reaches=[], quantities=["WaterLevel"]
+    )
+    g = network.graph
+
+    nodes_with_data = [n for n in g.nodes if not g.nodes[n]["data"].empty]
+    assert [network.recall(n)["node"] for n in nodes_with_data] == ["1"]
+    assert list(g.nodes[network.find(node="1")]["data"].columns) == ["WaterLevel"]
 
 
 # ---------------------------------------------------------------------------
