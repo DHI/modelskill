@@ -4,8 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from modelskill import Quantity
-from modelskill.obs import NodeObservation, ReachObservation
+from modelskill import NodeObservation, Quantity, ReachObservation
 
 STATION_COLUMNS = [
     "muid",
@@ -496,7 +495,7 @@ class TestNodeObservationFromDatabase:
     def test_db_and_nodes_are_mutually_exclusive(self, db, calibration_data):
         with pytest.raises(ValueError, match="mutually exclusive"):
             NodeObservation.from_multiple(
-                data=calibration_data, db=db, nodes={1: "item_pressure_1"}
+                data=calibration_data, db=db, nodes={"wNode_1": "item_pressure_1"}
             )
 
     def test_db_without_data_raises(self, db):
@@ -522,7 +521,7 @@ class TestNodeObservationFromDatabase:
         with pytest.raises(TypeError, match="must be a Quantity"):
             NodeObservation.from_multiple(
                 data=calibration_data,
-                nodes={1: "item_pressure_1"},
+                nodes={"wNode_1": "item_pressure_1"},
                 quantity="Pressure",
             )
 
