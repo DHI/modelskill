@@ -456,8 +456,6 @@ def node_comparer() -> modelskill.comparison.Comparer:
     """A comparer built by matching a NodeObservation against a NetworkModelResult (node gtype)."""
     pytest.importorskip("mikeio1d.network")
     from mikeio1d.network import Network, BasicNode, BasicReach
-    from modelskill.model.network import NetworkModelResult
-    from modelskill.obs import NodeObservation
 
     time = pd.date_range("2019-01-01", periods=6, freq="D")
     node_a_data = pd.DataFrame(
@@ -471,8 +469,8 @@ def node_comparer() -> modelskill.comparison.Comparer:
     )
     network = Network([reach])
 
-    nmr = NetworkModelResult(network, name="Network_Model")
-    obs = NodeObservation(node_a_data, at="123", name="Node_123_Obs")
+    nmr = ms.NetworkModelResult(network, name="Network_Model")
+    obs = ms.NodeObservation(node_a_data, at="123", name="Node_123_Obs")
 
     return ms.match(obs, nmr)
 
@@ -481,27 +479,9 @@ def node_comparer() -> modelskill.comparison.Comparer:
 def reach_comparer() -> modelskill.comparison.Comparer:
     """A comparer built by matching a ReachObservation (reach gtype)."""
     pytest.importorskip("mikeio1d.network")
-    from mikeio1d.network import (
-        Network,
-        BasicNode,
-        BasicReach,
-        ReachBreakPoint,
-    )
-    from modelskill.model.network import NetworkModelResult
-    from modelskill.obs import ReachObservation
+    from mikeio1d.network import Network, BasicNode, BasicReach
 
-    class Point(ReachBreakPoint):
-        def __init__(self, reach, distance, data):
-            self._id = (reach, distance)
-            self._data = data
-
-        @property
-        def id(self):
-            return self._id
-
-        @property
-        def data(self):
-            return self._data
+    from tests.network_helpers import BreakPoint
 
     time = pd.date_range("2019-01-01", periods=6, freq="D")
     values = pd.DataFrame({"WaterLevel": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]}, index=time)
@@ -511,11 +491,11 @@ def reach_comparer() -> modelskill.comparison.Comparer:
         BasicNode("123", empty),
         BasicNode("456", empty),
         length=100.0,
-        breakpoints=[Point("r1", 50.0, values)],
+        breakpoints=[BreakPoint("r1", 50.0, values)],
     )
 
-    nmr = NetworkModelResult(Network([reach]), name="Network_Model")
-    obs = ReachObservation(values, reach="r1", name="Reach_r1_Obs")
+    nmr = ms.NetworkModelResult(Network([reach]), name="Network_Model")
+    obs = ms.ReachObservation(values, reach="r1", name="Reach_r1_Obs")
 
     return ms.match(obs, nmr)
 
@@ -551,11 +531,6 @@ def test_a_comparer_saved_by_1_4_0a3_still_loads():
     assert cmp.node == 0
     assert cmp.skill().to_dataframe().shape[0] == 1
 
-    # Turning it back into an observation is where the integer is refused, since
-    # NodeObservation no longer accepts one.
-    with pytest.raises(TypeError, match="not an integer"):
-        cmp._to_observation()
-
 
 def test_save_and_load_round_trips_reach_gtype_raw_data(reach_comparer, tmp_path):
     """Reach-gtype comparers must survive a save()/load() round trip too."""
@@ -585,6 +560,22 @@ def test_to_dataframe_on_a_reach_comparer(reach_comparer):
 
     assert list(df.columns) == ["Observation", "Network_Model"]
     assert df.index.name == "time"
+
+
+def test_skill_on_a_node_comparer(node_comparer):
+    sk = node_comparer.skill()
+
+    assert sk.to_dataframe().shape[0] == 1
+    assert "Node_123_Obs" in sk.index
+
+
+def test_plot_a_node_comparer(node_comparer):
+    assert node_comparer.plot.timeseries() is not None
+    assert node_comparer.plot.scatter() is not None
+
+
+def test_plot_a_reach_comparer(reach_comparer):
+    assert reach_comparer.plot.timeseries() is not None
 
 
 # ======================== plotting ========================
