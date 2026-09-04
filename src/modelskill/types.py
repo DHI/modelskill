@@ -57,8 +57,12 @@ class GeometryType(Enum):
             ) from e
 
     @staticmethod
-    def from_coords(ds: xr.Dataset) -> "GeometryType | None":
-        """The geometry a dataset's coordinates make it.
+    def from_network_coords(ds: xr.Dataset) -> "GeometryType | None":
+        """The network location a dataset's coordinates record, if any.
+
+        Only network coordinates are read. Data located some other way, by x and
+        y for instance, records no network location and gives None rather than
+        the geometry it does have.
 
         Parameters
         ----------
@@ -75,13 +79,13 @@ class GeometryType(Enum):
         --------
         >>> import xarray as xr
         >>> from modelskill.types import GeometryType
-        >>> GeometryType.from_coords(xr.Dataset(coords={"node": "123"}))
+        >>> GeometryType.from_network_coords(xr.Dataset(coords={"node": "123"}))
         <GeometryType.NODE: 'node'>
-        >>> GeometryType.from_coords(xr.Dataset(coords={"reach": "r1", "distance": 24.5}))
+        >>> GeometryType.from_network_coords(xr.Dataset(coords={"reach": "r1", "distance": 24.5}))
         <GeometryType.NODE: 'node'>
-        >>> GeometryType.from_coords(xr.Dataset(coords={"reach": "r1"}))
+        >>> GeometryType.from_network_coords(xr.Dataset(coords={"reach": "r1"}))
         <GeometryType.REACH: 'reach'>
-        >>> GeometryType.from_coords(xr.Dataset(coords={"x": 0.0, "y": 0.0})) is None
+        >>> GeometryType.from_network_coords(xr.Dataset(coords={"x": 0.0, "y": 0.0})) is None
         True
         """
         if "node" in ds.coords or {"reach", "distance"} <= set(ds.coords):

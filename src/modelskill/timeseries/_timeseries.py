@@ -28,6 +28,7 @@ def _coordinate_values(ds: xr.Dataset, coord: str) -> Any:
     vals = ds[coord].values
     return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
+
 DEFAULT_COLORS = [
     "#b30000",
     "#7c1158",
@@ -114,7 +115,7 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
 
     # Validate coordinates: x,y spatial, node-based, or reach-based (with or without chainage)
     has_spatial_coords = "x" in ds.coords and "y" in ds.coords
-    has_network_coords = GeometryType.from_coords(ds) is not None
+    has_network_coords = GeometryType.from_network_coords(ds) is not None
 
     if not has_spatial_coords and not has_network_coords:
         raise ValueError(

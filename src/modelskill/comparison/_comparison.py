@@ -83,7 +83,7 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
 
     # coordinates
     # Only add x, y, z coordinates if they don't exist and we don't have node coordinates
-    has_network_coords = GeometryType.from_coords(data) is not None
+    has_network_coords = GeometryType.from_network_coords(data) is not None
     if not has_network_coords:
         if "x" not in data.coords:
             data.coords["x"] = np.nan
@@ -123,7 +123,9 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
     # Validate attrs
     if "gtype" not in data.attrs:
         # Determine gtype based on available coordinates
-        data.attrs["gtype"] = str(GeometryType.from_coords(data) or GeometryType.POINT)
+        data.attrs["gtype"] = str(
+            GeometryType.from_network_coords(data) or GeometryType.POINT
+        )
     # assert "gtype" in data.attrs, "data must have a gtype attribute"
     # assert data.attrs["gtype"] in [
     #     str(GeometryType.POINT),

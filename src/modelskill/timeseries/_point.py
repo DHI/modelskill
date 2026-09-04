@@ -168,7 +168,7 @@ def _include_attributes(
 ) -> xr.Dataset:
     ds = ds.copy()
 
-    ds.attrs["gtype"] = str(GeometryType.from_coords(ds) or GeometryType.POINT)
+    ds.attrs["gtype"] = str(GeometryType.from_network_coords(ds) or GeometryType.POINT)
 
     ds[name].attrs["long_name"] = quantity.name
     ds[name].attrs["units"] = quantity.unit

@@ -110,7 +110,7 @@ class NodeModelResult(TimeSeries):
 
         if not isinstance(data, xr.Dataset):
             raise ValueError("'NodeModelResult' requires xarray.Dataset")
-        if GeometryType.from_coords(data) is None:
+        if GeometryType.from_network_coords(data) is None:
             raise ValueError(
                 "'NodeModelResult' needs a node name, a (reach, distance) pair, or "
                 "data that already carries a 'node' or 'reach' coordinate"
