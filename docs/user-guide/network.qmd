@@ -470,6 +470,46 @@ cc_q.skill()
 Use `ReachObservation` when your measured quantity is representative of the whole reach (e.g. discharge, which is constant along a reach in steady flow).  If you need to compare a quantity that varies spatially along the reach (e.g. water level at a specific chainage), use a `NodeObservation` with a `(reach, distance)` tuple instead (see [Option B](#option-b-breakpoint-by-reach-distance-tuple) above).
 :::
 
+## Locating observations with a MIKE+ database
+
+The examples above assume you already know where each sensor sits in the network.  A MIKE+ project normally records that itself, in the sqlite database shipped alongside the result files: `m_Measurement` says which file and item each measured timeseries lives in, and `m_Station` says where in the network it belongs.
+
+Pass that database as `db` and modelskill does the lookup for you:
+
+```python
+quantity = "Pressure"
+
+network = Network.from_epanet("model.res", quantities=quantity)
+network_model = ms.NetworkModelResult(network, item=quantity)
+
+obs = ms.NodeObservation.from_multiple(
+    data="calibration.dfs0",
+    db="model.sqlite",
+    quantity=quantity,
+)
+
+cc = ms.match(obs, network_model)
+```
+
+One observation is created per item of the data source, named after the station's asset name.  Because the mapping runs item by item rather than location by location, several sensors at the same node — a pair either side of a check valve, say — all become separate observations.
+
+Reach-uniform quantities work the same way through the sibling method:
+
+```python
+obs_q = ms.ReachObservation.from_multiple(
+    data="calibration.dfs0", db="model.sqlite", quantity="Flow"
+)
+```
+
+Which class to use is decided by the database, not by you: stations recorded on a junction or a tank are node observations, and stations recorded on a link are reach observations.  Asking `NodeObservation` for a quantity that the database places on links raises an error naming `ReachObservation`, and the other way around.
+
+A few details worth knowing:
+
+* **`quantity` is optional.**  Omit it and the quantity is inferred, as long as the data holds only one for the class you asked for.  A calibration file mixing pressure and flow raises an error listing what it found.
+* **The quantity name comes from the database, the unit from the data.**  Calibration files often carry no usable EUM information, so the database is the only reliable source for the name.
+* **`source` picks between files.**  It defaults to `data` when that is a path.  Pass it explicitly if you hand over an already-read `mikeio.Dataset` or a `DataFrame`, since neither remembers where it came from.
+* **Items the database cannot place raise by default**, separating the two causes: a station that exists but has no measurement registered for this file, and an item that is not in the database at all.  Pass `on_missing="skip"` to build observations from the rest.
+
 ## Development
 
 ### Custom network formats

@@ -32,7 +32,7 @@ from modelskill.network import (
     _MIKE_EXTENSIONS,
     _UNSUPPORTED_EXTENSIONS,
 )
-from modelskill.obs import NodeObservation
+from modelskill.obs import NodeObservation, ReachObservation
 from modelskill.quantity import Quantity
 
 
@@ -154,6 +154,36 @@ class TestNetworkModelResult:
         assert len(nmr.time) == 10
         assert isinstance(nmr.time, pd.DatetimeIndex)
         assert len(nmr.nodes) == 3
+
+    def test_quantity_name_survives_to_the_model_result(self, sample_network):
+        """The network knows its quantity by name even without a unit."""
+        nmr = NetworkModelResult(sample_network)
+
+        assert nmr.quantity.name == "WaterLevel"
+        assert nmr.quantity != Quantity.undefined()
+
+    def test_quantity_carries_into_extracted_node(self, sample_network):
+        nmr = NetworkModelResult(sample_network)
+        obs_data = pd.DataFrame({"sensor": np.zeros(len(nmr.time))}, index=nmr.time)
+        extracted = nmr.extract(NodeObservation(obs_data, at="123"))
+
+        assert extracted.quantity.name == "WaterLevel"
+
+    def test_explicit_quantity_wins(self, sample_network):
+        given = Quantity(name="Water Level", unit="meter")
+        nmr = NetworkModelResult(sample_network, quantity=given)
+
+        assert nmr.quantity == given
+
+    def test_unit_is_used_when_the_data_carries_one(self, sample_network):
+        network = sample_network.copy()
+        ds = network.to_dataset()
+        ds["WaterLevel"].attrs["units"] = "meter"
+        network.to_dataset = lambda: ds  # type: ignore[method-assign]
+
+        nmr = NetworkModelResult(network)
+
+        assert nmr.quantity == Quantity(name="WaterLevel", unit="meter")
 
     def test_init_with_name(self, sample_network):
         """Test initialization with explicit name"""
@@ -374,6 +404,71 @@ class TestNodeObservation:
         assert len(obs_list) == 1
         assert isinstance(obs_list[0], NodeObservation)
         assert obs_list[0].node == 123
+
+    def test_nodes_keys_accept_aliases(self, multi_data):
+        obs_list = NodeObservation.from_multiple(
+            data=multi_data, nodes={"node_A": "station_0", "node_B": "station_1"}
+        )
+
+        assert [obs.at for obs in obs_list] == ["node_A", "node_B"]
+
+    def test_nodes_keys_accept_breakpoints(self, multi_data):
+        obs_list = NodeObservation.from_multiple(
+            data=multi_data,
+            nodes={("reach_1", 24.5): "station_0", ("reach_1", 50.0): "station_1"},
+        )
+
+        assert [obs.at for obs in obs_list] == [("reach_1", 24.5), ("reach_1", 50.0)]
+
+
+class TestReachObservationFromMultiple:
+    @pytest.fixture
+    def multi_data(self, sample_node_data):
+        return pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"].values,
+                "station_1": sample_node_data["WaterLevel"].values + 0.1,
+            },
+            index=sample_node_data.index,
+        )
+
+    def test_returns_list_of_reach_observations(self, multi_data):
+        obs_list = ReachObservation.from_multiple(
+            data=multi_data, reaches={"reach_1": "station_0", "reach_2": "station_1"}
+        )
+
+        assert len(obs_list) == 2
+        assert all(isinstance(obs, ReachObservation) for obs in obs_list)
+        assert [obs.reach for obs in obs_list] == ["reach_1", "reach_2"]
+        assert [obs.name for obs in obs_list] == ["station_0", "station_1"]
+
+    def test_separate_data_sources(self):
+        obs_list = ReachObservation.from_multiple(
+            reaches={
+                "reach_1": "tests/testdata/network_sensor_1.csv",
+                "reach_2": "tests/testdata/network_sensor_2.csv",
+            }
+        )
+
+        assert [obs.reach for obs in obs_list] == ["reach_1", "reach_2"]
+        assert all(len(obs.time) > 0 for obs in obs_list)
+
+    def test_attrs_propagated(self, multi_data):
+        obs_list = ReachObservation.from_multiple(
+            data=multi_data,
+            reaches={"reach_1": "station_0"},
+            attrs={"source": "sensor_array"},
+        )
+
+        assert obs_list[0].attrs["source"] == "sensor_array"
+
+    def test_reaches_none_raises(self, multi_data):
+        with pytest.raises(ValueError, match="'reaches' argument is required"):
+            ReachObservation.from_multiple(data=multi_data, reaches=None)
+
+    def test_reaches_must_be_dict(self, multi_data):
+        with pytest.raises(TypeError, match="'reaches' must be a dict"):
+            ReachObservation.from_multiple(data=multi_data, reaches="reach_1")
 
 
 class TestNodeModelResult:
@@ -856,7 +951,7 @@ class TestBoundaryEdges:
 
         network = Network([BasicReach("r1", a, b, length=100.0)])
 
-        (_, _, data), = network.graph.edges(data=True)
+        ((_, _, data),) = network.graph.edges(data=True)
         assert data["boundary"] is False
 
     def test_breakpoint_at_reach_start_is_tagged_boundary(self):
@@ -866,7 +961,9 @@ class TestBoundaryEdges:
         network = Network([BasicReach("r1", a, b, 100.0, breakpoints)])
 
         edges = {frozenset((u, v)): d for u, v, d in network.graph.edges(data=True)}
-        start_bp_key = frozenset((network.find(node="a"), network.find(reach="r1", distance=0.0)))
+        start_bp_key = frozenset(
+            (network.find(node="a"), network.find(reach="r1", distance=0.0))
+        )
         interior_key = frozenset(
             (
                 network.find(reach="r1", distance=0.0),
@@ -883,7 +980,9 @@ class TestBoundaryEdges:
 
         network = Network([BasicReach("r1", a, b, 100.0, breakpoints)])
 
-        end_bp_key = frozenset((network.find(node="b"), network.find(reach="r1", distance=100.0)))
+        end_bp_key = frozenset(
+            (network.find(node="b"), network.find(reach="r1", distance=100.0))
+        )
 
         assert network.graph.edges[tuple(end_bp_key)]["boundary"] is True
         assert network.graph.edges[tuple(end_bp_key)]["length"] == 0.0
@@ -902,7 +1001,9 @@ class TestBoundaryEdges:
 
         network = Network([BasicReach("r1", a, b, noisy_length, breakpoints)])
 
-        end_bp_key = frozenset((network.find(node="b"), network.find(reach="r1", distance=100.0)))
+        end_bp_key = frozenset(
+            (network.find(node="b"), network.find(reach="r1", distance=100.0))
+        )
         data = network.graph.edges[tuple(end_bp_key)]
 
         assert data["boundary"] is True

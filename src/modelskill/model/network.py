@@ -144,6 +144,13 @@ class NetworkModelResult:
         if quantity is None:
             da = self.data[sel_items.values]
             quantity = Quantity.from_cf_attrs(da.attrs)
+            if quantity == Quantity.undefined():
+                # A network knows its quantity by name even when no unit
+                # travels with the data -- res1d and EPANET files carry the
+                # name only. Quantity.from_cf_attrs needs both, so fall back to
+                # the name alone rather than reporting nothing at all.
+                name = da.attrs.get("long_name") or str(sel_items.values)
+                quantity = Quantity(name=name, unit="")
         self.quantity = quantity
 
         # Mark data variables as model data

@@ -1,18 +1,20 @@
 """
 # Observations
 
-ModelSkill supports four types of observations:
+ModelSkill supports five types of observations:
 
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
 * [`VerticalObservation`](`modelskill.VerticalObservation`) - a vertical profile from a dfs0/nc file or a DataFrame
 * [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs.
+* [`ReachObservation`](`modelskill.ReachObservation`) - a network reach timeseries for a quantity uniform along the reach.
 
 An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Literal, Any, Union, overload
 from typing_extensions import Self
 import warnings
@@ -33,6 +35,10 @@ from .timeseries import (
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
 Serializable = Union[str, int, float]
+
+# Where a node observation sits: an internal network ID, an original node alias,
+# or a breakpoint given as (reach_id, distance) along a reach.
+NodeLocation = Union[int, str, tuple[str, float]]
 
 
 def observation(
@@ -111,6 +117,79 @@ def _guess_gtype(**kwargs) -> GeometryType:
             "Use PointObservation, TrackObservation, VerticalObservation, NodeObservation, ReachObservation to be explicit."
         )
         return GeometryType.POINT
+
+
+def _item_names(data: Any) -> list[str]:
+    """Names of the individual timeseries held by an already-opened data source."""
+    if isinstance(data, pd.DataFrame):
+        return [str(c) for c in data.columns]
+    if isinstance(data, xr.Dataset):
+        return [str(v) for v in data.data_vars]
+    if hasattr(data, "names"):  # mikeio.Dataset
+        return [str(n) for n in data.names]
+    if hasattr(data, "name"):  # pd.Series, mikeio.DataArray, xr.DataArray
+        return [str(data.name)]
+    raise ValueError(
+        f"Cannot determine item names from data of type {type(data).__name__}"
+    )
+
+
+def _observations_from_mikeplus(
+    cls: type,
+    *,
+    data: PointType,
+    db: Any,
+    kind: Literal["node", "reach"],
+    location_arg: str,
+    quantity: Quantity | str | None,
+    source: str | None,
+    on_missing: Literal["raise", "skip"],
+    aux_items: list[int | str] | None,
+    attrs: dict | None,
+) -> list[Any]:
+    """Build observations from a data source and a MIKE+ database."""
+    from .network._mikeplus import resolve_stations
+    from .timeseries._point import _open_and_name
+
+    if source is None and isinstance(data, (str, Path)):
+        source = str(data)
+
+    # Open once rather than per observation; a path would otherwise be re-read
+    # for every station in the database.
+    opened, _ = _open_and_name(data, None)
+
+    given_quantity = quantity if isinstance(quantity, Quantity) else None
+    wanted = quantity.name if isinstance(quantity, Quantity) else quantity
+
+    stations = resolve_stations(
+        db,
+        item_names=_item_names(opened),
+        source=source,
+        quantity=wanted,
+        kind=kind,
+        on_missing=on_missing,
+    )
+
+    observations = []
+    for station in stations.itertuples():
+        obs = cls(
+            opened,
+            item=station.item_name,
+            name=station.name,
+            quantity=given_quantity,
+            aux_items=aux_items,
+            attrs=attrs,
+            **{location_arg: station.location},
+        )
+        if given_quantity is None:
+            # The database names the quantity; the data source knows its unit.
+            obs.quantity = Quantity(
+                name=station.quantity,
+                unit=obs.quantity.unit,
+                is_directional=obs.quantity.is_directional,
+            )
+        observations.append(obs)
+    return observations
 
 
 def _validate_attrs(data_attrs: dict, attrs: dict | None) -> None:
@@ -606,7 +685,7 @@ class NodeObservation(Observation):
         cls,
         *,
         data: PointType,
-        nodes: dict[int, str | int],
+        nodes: dict[NodeLocation, str | int],
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
@@ -617,20 +696,37 @@ class NodeObservation(Observation):
     def from_multiple(
         cls,
         *,
-        nodes: dict[int, PointType],
+        nodes: dict[NodeLocation, PointType],
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> list[NodeObservation]:
         pass
 
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType,
+        db: str | Path | Any,
+        quantity: Quantity | str | None = None,
+        source: str | None = None,
+        on_missing: Literal["raise", "skip"] = "raise",
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[NodeObservation]: ...
+
     @classmethod
     def from_multiple(
         cls,
         *,
         data: PointType | None = None,
-        nodes: dict[int, Any] | None = None,
-        quantity: Quantity | None = None,
+        nodes: dict[NodeLocation, Any] | None = None,
+        db: str | Path | Any | None = None,
+        quantity: Quantity | str | None = None,
+        source: str | None = None,
+        on_missing: Literal["raise", "skip"] = "raise",
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> list[NodeObservation]:
@@ -649,14 +745,41 @@ class NodeObservation(Observation):
 
                obs = NodeObservation.from_multiple(data=df, nodes={123: "col_a", 456: "col_b"})
 
+        3. **MIKE+ database** — pass a single ``data`` object together with
+           ``db``, and the locations are looked up in the database::
+
+               obs = NodeObservation.from_multiple(data="calib.dfs0", db="model.sqlite")
+
+           One observation is created per item of ``data`` that the database
+           places on a node, so several sensors at the same node are all kept.
+
         Parameters
         ----------
         data : PointType, optional
-            Shared data source (required when ``nodes`` values are column selectors).
-        nodes : dict[int, PointType | str | int]
-            Mapping of node_id -> data source or column selector.
-        quantity : Quantity | None, optional
-            Physical quantity metadata, by default None.
+            Shared data source (required when ``nodes`` values are column
+            selectors, and when ``db`` is given).
+        nodes : dict[int | str | tuple[str, float], PointType | str | int]
+            Mapping of location -> data source or column selector. A location
+            takes any of the forms accepted by ``at``: an internal network ID,
+            a node alias, or a ``(reach_id, distance)`` breakpoint.
+
+            Note that a location can appear only once, so this form cannot
+            express several observations at the same node. Use ``db`` when the
+            data has several sensors at one location.
+        db : str, Path or sqlite3.Connection, optional
+            MIKE+ database locating the items of ``data`` in the network.
+            Mutually exclusive with ``nodes``.
+        quantity : Quantity or str, optional
+            Physical quantity metadata, by default None. With ``db``, a string
+            selects which quantity to build observations for and the metadata
+            comes from the database; omit it and the quantity is inferred when
+            the data holds only one.
+        source : str, optional
+            With ``db``, the file the items come from. Taken from ``data`` when
+            that is a path, by default None.
+        on_missing : {"raise", "skip"}, optional
+            With ``db``, what to do with items the database cannot place, by
+            default "raise".
         aux_items : list[int | str] | None, optional
             Auxiliary items, by default None.
         attrs : dict | None, optional
@@ -666,7 +789,39 @@ class NodeObservation(Observation):
         -------
         list[NodeObservation]
             List of NodeObservation objects.
+
+        Raises
+        ------
+        ValueError
+            If both ``nodes`` and ``db`` are given, if neither is, or if the
+            database cannot resolve the requested items.
         """
+        if db is not None:
+            if nodes is not None:
+                raise ValueError(
+                    "'nodes' and 'db' are mutually exclusive: the database "
+                    "supplies the locations."
+                )
+            if data is None:
+                raise ValueError("'data' is required when 'db' is given")
+            return _observations_from_mikeplus(
+                cls,
+                data=data,
+                db=db,
+                kind="node",
+                location_arg="at",
+                quantity=quantity,
+                source=source,
+                on_missing=on_missing,
+                aux_items=aux_items,
+                attrs=attrs,
+            )
+
+        if isinstance(quantity, str):
+            raise TypeError(
+                "'quantity' must be a Quantity unless 'db' is given, got str"
+            )
+
         if nodes is None:
             raise ValueError("'nodes' argument is required")
         if not isinstance(nodes, dict):
@@ -774,6 +929,183 @@ class ReachObservation(Observation):
     def _create_new_instance(self, data: xr.Dataset) -> Self:
         """Reconstruct instance from a dataset slice."""
         return self.__class__(data, reach=str(data.coords["reach"].item()))
+
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType,
+        reaches: dict[str, str | int],
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[ReachObservation]: ...
+
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        reaches: dict[str, PointType],
+        quantity: Quantity | None = None,
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[ReachObservation]:
+        pass
+
+    @overload
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType,
+        db: str | Path | Any,
+        quantity: Quantity | str | None = None,
+        source: str | None = None,
+        on_missing: Literal["raise", "skip"] = "raise",
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[ReachObservation]: ...
+
+    @classmethod
+    def from_multiple(
+        cls,
+        *,
+        data: PointType | None = None,
+        reaches: dict[str, Any] | None = None,
+        db: str | Path | Any | None = None,
+        quantity: Quantity | str | None = None,
+        source: str | None = None,
+        on_missing: Literal["raise", "skip"] = "raise",
+        aux_items: list[int | str] | None = None,
+        attrs: dict | None = None,
+    ) -> list[ReachObservation]:
+        """Create multiple ReachObservation objects.
+
+        Two calling conventions are supported:
+
+        1. **Separate data sources** — pass only ``reaches`` as a dict mapping
+           each reach ID to its own data source (file path, DataFrame, etc.)::
+
+               obs = ReachObservation.from_multiple(reaches={"r1": df1, "r2": "sensor.csv"})
+
+        2. **Shared data source** — pass a single ``data`` object together with
+           ``reaches`` as a dict mapping each reach ID to the column name or
+           index to select from ``data``::
+
+               obs = ReachObservation.from_multiple(data=df, reaches={"r1": "col_a", "r2": "col_b"})
+
+        3. **MIKE+ database** — pass a single ``data`` object together with
+           ``db``, and the reaches are looked up in the database::
+
+               obs = ReachObservation.from_multiple(data="calib.dfs0", db="model.sqlite")
+
+           One observation is created per item of ``data`` that the database
+           places on a link without a chainage.
+
+        Parameters
+        ----------
+        data : PointType, optional
+            Shared data source (required when ``reaches`` values are column
+            selectors, and when ``db`` is given).
+        reaches : dict[str, PointType | str | int]
+            Mapping of reach_id -> data source or column selector.
+
+            Note that a reach can appear only once, so this form cannot express
+            several observations on the same reach. Use ``db`` when the data has
+            several sensors on one reach.
+        db : str, Path or sqlite3.Connection, optional
+            MIKE+ database locating the items of ``data`` in the network.
+            Mutually exclusive with ``reaches``.
+        quantity : Quantity or str, optional
+            Physical quantity metadata, by default None. With ``db``, a string
+            selects which quantity to build observations for and the metadata
+            comes from the database; omit it and the quantity is inferred when
+            the data holds only one.
+        source : str, optional
+            With ``db``, the file the items come from. Taken from ``data`` when
+            that is a path, by default None.
+        on_missing : {"raise", "skip"}, optional
+            With ``db``, what to do with items the database cannot place, by
+            default "raise".
+        aux_items : list[int | str] | None, optional
+            Auxiliary items, by default None.
+        attrs : dict | None, optional
+            Additional attributes, by default None.
+
+        Returns
+        -------
+        list[ReachObservation]
+            List of ReachObservation objects.
+
+        Raises
+        ------
+        ValueError
+            If both ``reaches`` and ``db`` are given, if neither is, or if the
+            database cannot resolve the requested items.
+        """
+        if db is not None:
+            if reaches is not None:
+                raise ValueError(
+                    "'reaches' and 'db' are mutually exclusive: the database "
+                    "supplies the locations."
+                )
+            if data is None:
+                raise ValueError("'data' is required when 'db' is given")
+            return _observations_from_mikeplus(
+                cls,
+                data=data,
+                db=db,
+                kind="reach",
+                location_arg="reach",
+                quantity=quantity,
+                source=source,
+                on_missing=on_missing,
+                aux_items=aux_items,
+                attrs=attrs,
+            )
+
+        if isinstance(quantity, str):
+            raise TypeError(
+                "'quantity' must be a Quantity unless 'db' is given, got str"
+            )
+
+        if reaches is None:
+            raise ValueError("'reaches' argument is required")
+        if not isinstance(reaches, dict):
+            raise TypeError(
+                f"'reaches' must be a dict mapping reach_id -> data_source, got {type(reaches).__name__}"
+            )
+
+        reach_ids = list(reaches.keys())
+
+        if data is None:
+            data_sources: list[PointType] = list(reaches.values())
+            return [
+                cls(
+                    data_i,
+                    reach=reach_i,
+                    item=None,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    attrs=attrs,
+                )
+                for data_i, reach_i in zip(data_sources, reach_ids)
+            ]
+        else:
+            reach_items: list[int | str | None] = list(reaches.values())
+            return [
+                cls(
+                    data,
+                    reach=reach_i,
+                    item=item_i,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    attrs=attrs,
+                )
+                for reach_i, item_i in zip(reach_ids, reach_items)
+            ]
 
 
 def unit_display_name(name: str) -> str:
