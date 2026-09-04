@@ -22,22 +22,6 @@ from tests.network_helpers import make_breakpoint_network, make_network
 
 
 @pytest.fixture
-def node_values():
-    """A distinct series per node, so no node can stand in for another."""
-    time = pd.date_range("2010-01-01", periods=10, freq="h")
-    values = np.arange(30.0).reshape(10, 3)
-    return pd.DataFrame(values, index=time, columns=["123", "456", "789"])
-
-
-@pytest.fixture
-def distinct_network(node_values):
-    """A three-node network holding `node_values`, one column per node."""
-    return make_network(
-        list(node_values.columns), node_values.index, node_values.to_numpy()
-    )
-
-
-@pytest.fixture
 def sample_network():
     """Sample Network with 3 nodes (WaterLevel quantity)"""
     time = pd.date_range("2010-01-01", periods=10, freq="h")
@@ -472,6 +456,19 @@ class TestNetworkIntegration:
             assert comparer.n_points > 0
 
 
+def node_series(network):
+    """Each node's own series, keyed by node id, read off the network's reaches.
+
+    The three nodes of `sample_network` carry three different series, so a
+    comparer built from one of them cannot be satisfied by any of the others.
+    """
+    nodes = {}
+    for reach in network.reaches.values():
+        for node in (reach.start, reach.end):
+            nodes[node.id] = node.data["WaterLevel"]
+    return pd.DataFrame(nodes)
+
+
 class TestValuesReachTheComparer:
     """The series a comparer holds is the one the network keeps at that location.
 
@@ -480,34 +477,33 @@ class TestValuesReachTheComparer:
     non-zero score.
     """
 
-    def test_extract_returns_the_nodes_own_series(self, distinct_network, node_values):
-        nmr = NetworkModelResult(distinct_network, name="Network_Model")
-        obs = NodeObservation(node_values, at="456", item="456")
+    def test_extract_returns_the_nodes_own_series(self, sample_network):
+        values = node_series(sample_network)
+        nmr = NetworkModelResult(sample_network, name="Network_Model")
+        obs = NodeObservation(values, at="456", item="456")
 
         extracted = nmr.extract(obs)
 
         assert extracted.to_dataframe()["Network_Model"].to_numpy() == pytest.approx(
-            node_values["456"].to_numpy()
+            values["456"].to_numpy()
         )
 
-    def test_a_matched_node_scores_zero_against_its_own_series(
-        self, distinct_network, node_values
-    ):
-        nmr = NetworkModelResult(distinct_network, name="Network_Model")
-        obs = NodeObservation(node_values, at="456", item="456", name="Node_456_Obs")
+    def test_a_matched_node_scores_zero_against_its_own_series(self, sample_network):
+        values = node_series(sample_network)
+        nmr = NetworkModelResult(sample_network, name="Network_Model")
+        obs = NodeObservation(values, at="456", item="456", name="Node_456_Obs")
 
         cmp = ms.match(obs, nmr)
 
-        assert cmp.n_points == len(node_values)
+        assert cmp.n_points == len(values)
         assert cmp.score()["Network_Model"] == pytest.approx(0.0)
 
-    def test_every_node_of_a_collection_keeps_its_own_series(
-        self, distinct_network, node_values
-    ):
+    def test_every_node_of_a_collection_keeps_its_own_series(self, sample_network):
         """One observation per node, each read from that node's own column."""
-        nmr = NetworkModelResult(distinct_network, name="Network_Model")
+        values = node_series(sample_network)
+        nmr = NetworkModelResult(sample_network, name="Network_Model")
         obs_list = NodeObservation.from_multiple(
-            data=node_values, nodes={nid: nid for nid in node_values.columns}
+            data=values, nodes={nid: nid for nid in values.columns}
         )
 
         cc = ms.match(obs_list, nmr)
@@ -516,22 +512,21 @@ class TestValuesReachTheComparer:
         for cmp in cc:
             assert cmp.score()["Network_Model"] == pytest.approx(0.0)
 
-    def test_two_networks_keep_their_series_apart(self, distinct_network, node_values):
+    def test_two_networks_keep_their_series_apart(self, sample_network):
         """The second network is the first shifted by 0.1.
 
         A crossed model column would put that shift on the wrong name.
         """
+        values = node_series(sample_network)
         shifted = make_network(
-            list(node_values.columns),
-            node_values.index,
-            node_values.to_numpy() + 0.1,
+            list(values.columns), values.index, values.to_numpy() + 0.1
         )
-        obs = NodeObservation(node_values, at="456", item="456", name="Node_456_Obs")
+        obs = NodeObservation(values, at="456", item="456", name="Node_456_Obs")
 
         cmp = ms.match(
             obs,
             [
-                NetworkModelResult(distinct_network, name="Network_1"),
+                NetworkModelResult(sample_network, name="Network_1"),
                 NetworkModelResult(shifted, name="Network_2"),
             ],
         )
