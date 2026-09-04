@@ -74,6 +74,81 @@ _EXTENSION_CONSTRUCTORS: dict[str, str] = {
 }
 
 
+# The encodings a companion file's text is worth re-reading as. mikeio1d hands
+# back '.res' names decoded as UTF-8 but '.resx' names decoded with the Windows
+# ANSI codepage, so a name holding a non-ASCII character arrives spelled two
+# ways from one model. cp1252 is that codepage on a Western-European Windows.
+_COMPANION_ENCODINGS = ("cp1252", "latin-1")
+
+
+def _repair_mis_decoded(name: str) -> list[str]:
+    """Re-read a name as UTF-8, undoing a single-byte decoding of those bytes.
+
+    Parameters
+    ----------
+    name : str
+        A location name as the companion file reported it.
+
+    Returns
+    -------
+    list of str
+        The candidate spellings, which is empty when no encoding round-trips.
+        A caller must check a candidate against the main file before using it:
+        the encoding that produced the name is a guess.
+    """
+    candidates = []
+    for encoding in _COMPANION_ENCODINGS:
+        try:
+            repaired = name.encode(encoding).decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            continue
+        if repaired != name and repaired not in candidates:
+            candidates.append(repaired)
+    return candidates
+
+
+def _rekey_by_main_file(locations: Any, known: Any) -> dict[str, Any]:
+    """Key a companion file's locations by their names in the main result file.
+
+    A name that already matches, or that no re-reading reconciles, keeps the
+    spelling it came with — so a companion from a genuinely different model
+    still holds names the main file does not, and validation still catches it.
+
+    Parameters
+    ----------
+    locations : mapping of str to location
+        The companion file's nodes or reaches.
+    known : container of str
+        The main file's names for the same kind of location.
+
+    Returns
+    -------
+    dict of str to location
+    """
+    rekeyed = {}
+    for name in locations:
+        key = name
+        if name not in known:
+            key = next(
+                (c for c in _repair_mis_decoded(name) if c in known),
+                name,
+            )
+        rekeyed[key] = locations[name]
+    return rekeyed
+
+
+class _Companion:
+    """A companion result file, keyed by the main file's location names.
+
+    Stands in for the ``Res1D`` it wraps everywhere the loader reaches into a
+    companion, so a node or reach is found under one spelling of its name.
+    """
+
+    def __init__(self, res: Res1D, extra: Res1D) -> None:
+        self.nodes = _rekey_by_main_file(extra.nodes, res.nodes)
+        self.reaches = _rekey_by_main_file(extra.reaches, res.reaches)
+
+
 def _check_file_path_is_str(res: Res1D) -> None:
     """Reject a Res1D opened with a path object rather than a string.
 
@@ -727,8 +802,13 @@ class Network:
         return read_pipe_lengths(path)
 
     @staticmethod
-    def _open_companion_result(res: Res1D, resx: str | Path | Res1D) -> Res1D:
+    def _open_companion_result(res: Res1D, resx: str | Path | Res1D) -> _Companion:
         """Open and validate a companion ``.resx`` result file.
+
+        Returns
+        -------
+        _Companion
+            The companion's locations, keyed by their names in ``res``.
 
         Raises
         ------
@@ -768,7 +848,9 @@ class Network:
                 f"{len(res.time_index)} ending {res.end_time}."
             )
 
-        unknown_nodes = set(extra.nodes) - set(res.nodes)
+        companion = _Companion(res, extra)
+
+        unknown_nodes = set(companion.nodes) - set(res.nodes)
         if unknown_nodes:
             raise ValueError(
                 f"The '.resx' companion holds nodes {sorted(unknown_nodes)} that are "
@@ -776,7 +858,7 @@ class Network:
                 "the same model."
             )
 
-        unknown_reaches = set(extra.reaches) - set(res.reaches)
+        unknown_reaches = set(companion.reaches) - set(res.reaches)
         if unknown_reaches:
             raise ValueError(
                 f"The '.resx' companion holds reaches {sorted(unknown_reaches)} that are "
@@ -784,7 +866,7 @@ class Network:
                 "the same model."
             )
 
-        return extra
+        return companion
 
     @staticmethod
     def _validate_extension(
@@ -837,7 +919,7 @@ class Network:
         nodes: list[str],
         reaches: list[str],
         *,
-        extra: Res1D | None = None,
+        extra: _Companion | None = None,
         lengths: dict[str, float] | None = None,
         quantities: set[str] | None = None,
     ) -> list[Res1DReach]:
@@ -1282,6 +1364,91 @@ class Network:
             Deep copy of the Network object
         """
         return deepcopy(self)
+
+
+def _find_epanet_companions(res: Path) -> tuple[Path | None, Path | None]:
+    """Find the ``.resx`` and ``.inp`` files sitting beside an EPANET ``.res``.
+
+    A companion is recognised by sharing the result file's directory and stem.
+    Either may be missing, in which case ``None`` takes its place.
+
+    Parameters
+    ----------
+    res : Path
+        Path to an EPANET ``.res`` result file.
+
+    Returns
+    -------
+    tuple of (Path or None, Path or None)
+        The ``.resx`` and ``.inp`` companions, in that order.
+    """
+
+    def sibling(suffix: str) -> Path | None:
+        # Upper case too, since only Windows matches suffixes case-insensitively.
+        for spelling in (suffix, suffix.upper()):
+            candidate = res.with_suffix(spelling)
+            if candidate.is_file():
+                return candidate
+        return None
+
+    return sibling(".resx"), sibling(".inp")
+
+
+def _network_from_path(path: str | Path) -> Network:
+    """Build a Network from a result file, picking the constructor by extension.
+
+    Backs ``NetworkModelResult(path)``. The extension names the product that
+    wrote the file - ``.res`` is EPANET's and nobody else's - so the mapping in
+    ``_EXTENSION_CONSTRUCTORS`` decides which constructor runs. An EPANET file
+    also gets its ``.resx`` and ``.inp`` companions read when they sit beside it,
+    since without the ``.inp`` no reach has a length and reach matching cannot
+    work.
+
+    Parameters
+    ----------
+    path : str or Path
+        Path to a ``.res1d``, ``.res11`` or ``.res`` result file.
+
+    Returns
+    -------
+    Network
+
+    Raises
+    ------
+    NotImplementedError
+        If the file extension is not one modelskill can read.
+    """
+    file = Path(path)
+    extension = file.suffix.lower()
+    # Every mapped extension is allowed here, so _validate_extension's
+    # "use the other constructor" arm cannot fire; the default only keeps the
+    # caller name sensible for extensions it refuses outright.
+    constructor = _EXTENSION_CONSTRUCTORS.get(extension, "from_mike")
+    Network._validate_extension(
+        file.suffix,
+        allowed=_MIKE_EXTENSIONS | _EPANET_EXTENSIONS,
+        caller=constructor,
+    )
+
+    if constructor == "from_mike":
+        return Network.from_mike(file)
+
+    resx, inp = _find_epanet_companions(file)
+    try:
+        return Network.from_epanet(file, resx=resx, inp=inp)
+    except ValueError as err:
+        found = [companion for companion in (resx, inp) if companion is not None]
+        if not found:
+            raise
+        # The companions were never asked for, so name them: otherwise the error
+        # points at files the caller did not know were being read.
+        names = ", ".join(f"'{companion.name}'" for companion in found)
+        raise ValueError(
+            f"Failed to build a network from '{file.name}': {err}\n"
+            f"Companion files read alongside it, because they share its folder: "
+            f"{names}. Use Network.from_epanet(r'{file}') to read the result file "
+            "on its own, or pass the companions you want explicitly."
+        ) from err
 
 
 def _make_basic_network(node_ids, time, data, quantity="WaterLevel"):
