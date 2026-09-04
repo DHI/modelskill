@@ -18,7 +18,7 @@ from modelskill import (
     ReachObservation,
 )
 
-from tests.network_helpers import make_breakpoint_network, make_network
+from tests.network_helpers import make_breakpoint_network, make_network, node_series
 
 
 @pytest.fixture
@@ -454,19 +454,6 @@ class TestNetworkIntegration:
         for comparer in comparer_collection:
             assert "Network_Model" in comparer.mod_names
             assert comparer.n_points > 0
-
-
-def node_series(network):
-    """Each node's own series, keyed by node id, read off the network's reaches.
-
-    The three nodes of `sample_network` carry three different series, so a
-    comparer built from one of them cannot be satisfied by any of the others.
-    """
-    nodes = {}
-    for reach in network.reaches.values():
-        for node in (reach.start, reach.end):
-            nodes[node.id] = node.data["WaterLevel"]
-    return pd.DataFrame(nodes)
 
 
 class TestValuesReachTheComparer:
