@@ -37,3 +37,16 @@ def make_network(node_ids, time, data, quantity="WaterLevel"):
         for i in range(len(nodes) - 1)
     ]
     return Network(reaches)
+
+
+def make_breakpoint_network(reach_id, distance, data):
+    """A one-reach network whose data sits on a break point, not on its nodes."""
+    empty = pd.DataFrame()
+    reach = BasicReach(
+        reach_id,
+        BasicNode("start", empty),
+        BasicNode("end", empty),
+        length=100.0,
+        breakpoints=[BreakPoint(reach_id, distance, data)],
+    )
+    return Network([reach])

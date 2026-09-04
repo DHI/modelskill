@@ -479,22 +479,14 @@ def node_comparer() -> modelskill.comparison.Comparer:
 def reach_comparer() -> modelskill.comparison.Comparer:
     """A comparer built by matching a ReachObservation (reach gtype)."""
     pytest.importorskip("mikeio1d.network")
-    from mikeio1d.network import Network, BasicNode, BasicReach
-
-    from tests.network_helpers import BreakPoint
+    from tests.network_helpers import make_breakpoint_network
 
     time = pd.date_range("2019-01-01", periods=6, freq="D")
     values = pd.DataFrame({"WaterLevel": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]}, index=time)
-    empty = pd.DataFrame()
-    reach = BasicReach(
-        "r1",
-        BasicNode("123", empty),
-        BasicNode("456", empty),
-        length=100.0,
-        breakpoints=[BreakPoint("r1", 50.0, values)],
-    )
 
-    nmr = ms.NetworkModelResult(Network([reach]), name="Network_Model")
+    nmr = ms.NetworkModelResult(
+        make_breakpoint_network("r1", 50.0, values), name="Network_Model"
+    )
     obs = ms.ReachObservation(values, reach="r1", name="Reach_r1_Obs")
 
     return ms.match(obs, nmr)

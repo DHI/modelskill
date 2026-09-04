@@ -9,21 +9,6 @@ from modelskill.comparison._comparison import ItemSelection
 from modelskill.model.dfsu import DfsuModelResult
 
 
-def _make_basic_network(node_ids, time, data, quantity="WaterLevel"):
-    """A chain of nodes, each carrying one quantity, joined by unit reaches."""
-    from mikeio1d.network import Network, BasicNode, BasicReach
-
-    nodes = [
-        BasicNode(node_id, pd.DataFrame({quantity: data[:, i]}, index=time))
-        for i, node_id in enumerate(node_ids)
-    ]
-    reaches = [
-        BasicReach(f"r{i}", nodes[i], nodes[i + 1], length=100.0)
-        for i in range(len(nodes) - 1)
-    ]
-    return Network(reaches)
-
-
 @pytest.fixture
 def o1():
     fn = "tests/testdata/SW/HKNA_Hm0.dfs0"
@@ -352,20 +337,24 @@ class TestVerticalObservation:
 def network():
     """Network fixture with 3 nodes"""
     pytest.importorskip("networkx")
+    from tests.network_helpers import make_network
+
     time = pd.date_range("2017-10-27", periods=20, freq="h")
     np.random.seed(42)
     data = np.random.normal(1.5, 0.3, (20, 3))
-    return _make_basic_network(["100", "200", "300"], time, data)
+    return make_network(["100", "200", "300"], time, data)
 
 
 @pytest.fixture
 def network2():
     """Second network fixture with offset data for multi-model tests"""
     pytest.importorskip("networkx")
+    from tests.network_helpers import make_network
+
     time = pd.date_range("2017-10-27", periods=20, freq="h")
     np.random.seed(42)
     data = np.random.normal(1.5, 0.3, (20, 3)) + 0.1
-    return _make_basic_network(["100", "200", "300"], time, data)
+    return make_network(["100", "200", "300"], time, data)
 
 
 @pytest.fixture
@@ -1015,6 +1004,37 @@ def test_match_node_obs_with_network_model(node_obs1, network_mr):
     assert cmp.n_points == 18
     assert cmp.name == "Station_A"
     assert cmp.gtype == "node"
+    assert cmp.mod_names == ["Network_Model"]
+
+
+def test_match_reach_obs_with_network_model():
+    """A reach observation matches any breakpoint along the reach."""
+    pytest.importorskip("mikeio1d.network")
+    from tests.network_helpers import make_breakpoint_network
+
+    time = pd.date_range("2017-10-27", periods=20, freq="h")
+    np.random.seed(42)
+    model_data = pd.DataFrame(
+        {"WaterLevel": np.random.normal(1.5, 0.3, len(time))}, index=time
+    )
+    network_mr = ms.NetworkModelResult(
+        make_breakpoint_network("r0", 50.0, model_data), name="Network_Model"
+    )
+
+    np.random.seed(123)
+    obs_time = time[:18]
+    df = pd.DataFrame(
+        {"WaterLevel": np.random.normal(1.4, 0.2, len(obs_time))}, index=obs_time
+    )
+    obs = ms.ReachObservation(df, reach="r0", name="Reach_r0")
+
+    cmp = ms.match(obs, network_mr)
+
+    assert cmp.n_models == 1
+    assert cmp.n_points == 18
+    assert cmp.name == "Reach_r0"
+    assert cmp.gtype == "reach"
+    assert cmp.reach == "r0"
     assert cmp.mod_names == ["Network_Model"]
 
 

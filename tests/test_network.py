@@ -18,7 +18,7 @@ from modelskill import (
     ReachObservation,
 )
 
-from tests.network_helpers import BreakPoint, make_network
+from tests.network_helpers import make_breakpoint_network, make_network
 
 
 @pytest.fixture
@@ -56,15 +56,7 @@ def breakpoint_network():
     time = pd.date_range("2010-01-01", periods=10, freq="h")
     np.random.seed(42)
     values = pd.DataFrame({"WaterLevel": np.random.randn(10)}, index=time)
-    empty = pd.DataFrame()
-    reach = BasicReach(
-        "r1",
-        BasicNode("start", empty),
-        BasicNode("end", empty),
-        length=100.0,
-        breakpoints=[BreakPoint("r1", 50.0, values)],
-    )
-    return Network([reach])
+    return make_breakpoint_network("r1", 50.0, values)
 
 
 @pytest.fixture
