@@ -1,6 +1,7 @@
 from __future__ import annotations
 import warnings
-from typing import Any, Iterable, Collection, overload, Hashable, TYPE_CHECKING
+from collections.abc import Collection, Sequence
+from typing import Any, Iterable, overload, Hashable, TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
@@ -14,7 +15,7 @@ from .metrics import small_is_best, large_is_best, zero_is_best, one_is_best
 
 
 # TODO remove ?
-def _validate_multi_index(index, min_levels=2, max_levels=2):  # type: ignore
+def _validate_multi_index(index, min_levels=2, max_levels=2):
     errors = []
     if isinstance(index, pd.MultiIndex):
         if len(index.levels) < min_levels:
@@ -220,7 +221,7 @@ class SkillArrayPlotter:
         s = self.skillarray
         ser = s._ser
 
-        errors = _validate_multi_index(ser.index)  # type: ignore
+        errors = _validate_multi_index(ser.index)
         if len(errors) > 0:
             warnings.warn("plot_grid: " + "\n".join(errors))
             # TODO raise error?
@@ -282,11 +283,11 @@ class SkillArrayPlotter:
 
 
 class DeprecatedSkillPlotter:
-    def __init__(self, skilltable):  # type: ignore
+    def __init__(self, skilltable):
         self.skilltable = skilltable
 
     @staticmethod
-    def _deprecated_warning(method, field):  # type: ignore
+    def _deprecated_warning(method, field):
         warnings.warn(
             f"Selecting metric in plot functions like modelskill.skill().plot.{method}({field}) is deprecated and will be removed in a future version. Use modelskill.skill()['{field}'].plot.{method}() instead.",
             FutureWarning,
@@ -297,20 +298,20 @@ class DeprecatedSkillPlotter:
             "It is not possible to call plot directly on SkillTable! Select metric first (which gives a plotable SkillArray)"
         )
 
-    def line(self, field, **kwargs):  # type: ignore
-        self._deprecated_warning("line", field)  # type: ignore
+    def line(self, field, **kwargs):
+        self._deprecated_warning("line", field)
         return self.skilltable[field].plot.line(**kwargs)
 
-    def bar(self, field, **kwargs):  # type: ignore
-        self._deprecated_warning("bar", field)  # type: ignore
+    def bar(self, field, **kwargs):
+        self._deprecated_warning("bar", field)
         return self.skilltable[field].plot.bar(**kwargs)
 
-    def barh(self, field, **kwargs):  # type: ignore
-        self._deprecated_warning("barh", field)  # type: ignore
+    def barh(self, field, **kwargs):
+        self._deprecated_warning("barh", field)
         return self.skilltable[field].plot.barh(**kwargs)
 
-    def grid(self, field, **kwargs):  # type: ignore
-        self._deprecated_warning("grid", field)  # type: ignore
+    def grid(self, field, **kwargs):
+        self._deprecated_warning("grid", field)
         return self.skilltable[field].plot.grid(**kwargs)
 
 
@@ -429,7 +430,7 @@ class SkillTable:
             data if isinstance(data, pd.DataFrame) else data.to_dataframe()
         )
         # TODO remove in v1.1
-        self.plot = DeprecatedSkillPlotter(self)  # type: ignore
+        self.plot = DeprecatedSkillPlotter(self)
 
     # TODO: remove?
     @property
@@ -507,10 +508,10 @@ class SkillTable:
     def __getitem__(self, key: Hashable | int) -> SkillArray: ...
 
     @overload
-    def __getitem__(self, key: Iterable[Hashable]) -> SkillTable: ...
+    def __getitem__(self, key: Collection[Hashable]) -> SkillTable: ...
 
     def __getitem__(
-        self, key: Hashable | Iterable[Hashable]
+        self, key: Hashable | Collection[Hashable]
     ) -> SkillArray | SkillTable:
         if isinstance(key, int):
             key = list(self.data.columns)[key]
@@ -545,14 +546,14 @@ class SkillTable:
             # )
 
     @property
-    def iloc(self, *args, **kwargs):  # type: ignore
+    def iloc(self, *args, **kwargs):
         return self.data.iloc(*args, **kwargs)
 
     @property
-    def loc(self, *args, **kwargs):  # type: ignore
+    def loc(self, *args, **kwargs):
         return self.data.loc(*args, **kwargs)
 
-    def sort_index(self, *args, **kwargs) -> SkillTable:  # type: ignore
+    def sort_index(self, *args, **kwargs) -> SkillTable:
         """Sort by index (level) e.g. sorting by observation
 
         Wrapping pd.DataFrame.sort_index()
@@ -570,7 +571,7 @@ class SkillTable:
         """
         return self.__class__(self.data.sort_index(*args, **kwargs))
 
-    def sort_values(self, *args, **kwargs) -> SkillTable:  # type: ignore
+    def sort_values(self, *args, **kwargs) -> SkillTable:
         """Sort by values e.g. sorting by rmse values
 
         Wrapping pd.DataFrame.sort_values()
@@ -589,7 +590,7 @@ class SkillTable:
         """
         return self.__class__(self.data.sort_values(*args, **kwargs))
 
-    def swaplevel(self, *args, **kwargs) -> SkillTable:  # type: ignore
+    def swaplevel(self, *args, **kwargs) -> SkillTable:
         """Swap the levels of the MultiIndex e.g. swapping 'model' and 'observation'
 
         Wrapping pd.DataFrame.swaplevel()
@@ -765,7 +766,7 @@ class SkillTable:
     def style(
         self,
         decimals: int = 3,
-        metrics: Iterable[str] | None = None,
+        metrics: Sequence[str] | None = None,
         cmap: str = "OrRd",
         show_best: bool = True,
         **kwargs: Any,
@@ -844,7 +845,7 @@ class SkillTable:
 
         if len(bg_cols) > 0:
             sdf = sdf.background_gradient(subset=scols, cmap=cmap)
-            cmap_r = self._reverse_colormap(cmap)  # type: ignore
+            cmap_r = self._reverse_colormap(cmap)
             sdf = sdf.background_gradient(subset=lcols, cmap=cmap_r)
 
         if show_best:
@@ -856,7 +857,7 @@ class SkillTable:
 
         return sdf
 
-    def _reverse_colormap(self, cmap):  # type: ignore
+    def _reverse_colormap(self, cmap):
         cmap_r = cmap
         if isinstance(cmap, str):
             if cmap[-2:] == "_r":
@@ -901,14 +902,14 @@ class SkillTable:
 
     # TODO: remove plot_* methods in v1.1; warnings are not needed
     # as the refering method is also deprecated
-    def plot_line(self, **kwargs):  # type: ignore
-        return self.plot.line(**kwargs)  # type: ignore
+    def plot_line(self, **kwargs):
+        return self.plot.line(**kwargs)
 
-    def plot_bar(self, **kwargs):  # type: ignore
-        return self.plot.bar(**kwargs)  # type: ignore
+    def plot_bar(self, **kwargs):
+        return self.plot.bar(**kwargs)
 
-    def plot_barh(self, **kwargs):  # type: ignore
-        return self.plot.barh(**kwargs)  # type: ignore
+    def plot_barh(self, **kwargs):
+        return self.plot.barh(**kwargs)
 
-    def plot_grid(self, **kwargs):  # type: ignore
-        return self.plot.grid(**kwargs)  # type: ignore
+    def plot_grid(self, **kwargs):
+        return self.plot.grid(**kwargs)

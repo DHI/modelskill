@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections.abc import Collection, Sequence
 from copy import deepcopy
 import os
 from pathlib import Path
@@ -11,7 +12,6 @@ from typing import (
     List,
     Union,
     Mapping,
-    Iterable,
     overload,
     Hashable,
     Tuple,
@@ -87,7 +87,7 @@ class ComparerCollection(Mapping):
 
     plotter = ComparerCollectionPlotter
 
-    def __init__(self, comparers: Iterable[Comparer]) -> None:
+    def __init__(self, comparers: Collection[Comparer]) -> None:
         self._comparers: Dict[str, Comparer] = {}
 
         names = [c.name for c in comparers]
@@ -214,13 +214,13 @@ class ComparerCollection(Mapping):
         return ComparerCollection(cmps)
 
     @overload
-    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection: ...  # type: ignore[overload-overlap]
+    def __getitem__(self, x: slice | Collection[Hashable]) -> ComparerCollection: ...
 
     @overload
     def __getitem__(self, x: int | Hashable) -> Comparer: ...
 
     def __getitem__(
-        self, x: int | Hashable | slice | Iterable[Hashable]
+        self, x: int | Hashable | slice | Collection[Hashable]
     ) -> Comparer | ComparerCollection:
         if isinstance(x, str):
             return self._comparers[x]
@@ -233,7 +233,7 @@ class ComparerCollection(Mapping):
             name = _get_name(x, self.obs_names)
             return self._comparers[name]
 
-        if isinstance(x, Iterable):
+        if isinstance(x, Collection):
             cmps = [self[i] for i in x]
             return ComparerCollection(cmps)
 
@@ -420,8 +420,8 @@ class ComparerCollection(Mapping):
 
     def skill(
         self,
-        by: str | Iterable[str] | None = None,
-        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
+        by: str | Collection[str] | None = None,
+        metrics: Sequence[str] | Sequence[Callable] | str | Callable | None = None,
         observed: bool = False,
     ) -> SkillTable:
         """Aggregated skill assessment of model(s)
@@ -490,14 +490,14 @@ class ComparerCollection(Mapping):
         df = cc._to_long_dataframe(attrs_keys=attrs_keys, observed=observed)
 
         res = _groupby_df(df, by=agg_cols, metrics=pmetrics)
-        mtr_cols = [m.__name__ for m in pmetrics]  # type: ignore
+        mtr_cols = [m.__name__ for m in pmetrics]
         res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
         res = self._append_xy_to_res(res, cc)
-        res = cc._add_as_col_if_not_in_index(df, skilldf=res)  # type: ignore
+        res = cc._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
     def _to_long_dataframe(
-        self, attrs_keys: Iterable[str] | None = None, observed: bool = False
+        self, attrs_keys: Collection[str] | None = None, observed: bool = False
     ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
         frames = []
@@ -568,9 +568,9 @@ class ComparerCollection(Mapping):
         self,
         bins: int = 5,
         binsize: float | None = None,
-        by: str | Iterable[str] | None = None,
-        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        n_min: int | None = None,
+        by: str | Collection[str] | None = None,
+        metrics: Sequence[str] | Sequence[Callable] | str | Callable | None = None,
+        n_min: Optional[int] = None,
         **kwargs: Any,
     ) -> SkillGrid:
         """Skill assessment of model(s) on a regular spatial grid.

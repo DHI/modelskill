@@ -4,7 +4,6 @@ from datetime import timedelta
 from pathlib import Path
 from typing import (
     Collection,
-    Iterable,
     Literal,
     Mapping,
     Sequence,
@@ -95,10 +94,10 @@ def from_matched(
     data: Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset],
     *,
     obs_item: str | int | None = 0,
-    mod_items: Iterable[str | int] | None = None,
-    aux_items: Iterable[str | int] | None = None,
-    quantity: Quantity | None = None,
-    name: str | None = None,
+    mod_items: Optional[Collection[str | int]] = None,
+    aux_items: Optional[Collection[str | int]] = None,
+    quantity: Optional[Quantity] = None,
+    name: Optional[str] = None,
     weight: float = 1.0,
     x: float | None = None,
     y: float | None = None,
@@ -116,9 +115,9 @@ def from_matched(
         with columns obs_item, mod_items, aux_items
     obs_item : [str, int], optional
         Name or index of observation item, by default first item
-    mod_items : Iterable[str, int], optional
+    mod_items : Collection of [str, int], optional
         Names or indicies of model items, if None all remaining columns are model items, by default None
-    aux_items : Iterable[str, int], optional
+    aux_items : Collection of [str, int], optional
         Names or indicies of auxiliary items, by default None
     quantity : Quantity, optional
         Quantity of the observation and model results, by default Quantity(name="Undefined", unit="Undefined")
@@ -209,7 +208,7 @@ def match(
 
 @overload
 def match(
-    obs: Iterable[ObsTypes],
+    obs: Sequence[ObsTypes],
     mod: MRTypes | Sequence[MRTypes],
     *,
     max_model_gap: float | None = None,
@@ -380,8 +379,8 @@ def _match_single_obs(
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
 
-def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
-    assert all([len(x) > 0 for x in idxs]), "All datetime indices must be non-empty"
+def _get_global_start_end(idxs: Collection[pd.DatetimeIndex]) -> Period:
+    assert all([len(x) > 0 for x in idxs])
 
     starts = [x[0] for x in idxs]
     ends = [x[-1] for x in idxs]

@@ -5,10 +5,10 @@ import inspect
 
 import sys
 import warnings
+from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
-    Iterable,
     List,
     Literal,
     Set,
@@ -1169,7 +1169,7 @@ def get_metric(metric: Union[str, Callable]) -> Callable:
 
 
 def _parse_metric(
-    metric: str | Iterable[str] | Callable | Iterable[Callable] | None,
+    metric: str | Sequence[str] | Callable | Sequence[Callable] | None,
     *,
     directional: bool = False,
 ) -> List[Callable]:
@@ -1184,7 +1184,7 @@ def _parse_metric(
         metrics: list = [metric]
     elif callable(metric):
         metrics = [metric]
-    elif isinstance(metric, Iterable):
+    elif isinstance(metric, Sequence):
         metrics = list(metric)
 
     parsed_metrics = []
