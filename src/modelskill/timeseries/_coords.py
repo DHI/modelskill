@@ -5,11 +5,6 @@ from typing import Any
 import numpy as np
 import xarray as xr
 
-#: Scalar coordinates that say where a network timeseries sits, rather than what
-#: it holds. They are dropped on the way to a dataframe, where they would
-#: otherwise become columns.
-NETWORK_LOCATION_COORDS = ("node", "node_index", "reach", "distance")
-
 
 class XYZCoords:
     def __init__(
@@ -73,6 +68,12 @@ def _coordinate_values(ds: xr.Dataset, coord: str) -> Any:
     return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
 
+#: Scalar coordinates that say where a network timeseries sits, rather than what
+#: it holds. They are dropped on the way to a dataframe, where they would
+#: otherwise become columns.
+NETWORK_LOCATION_COORDS = ("node", "node_index", "reach", "distance")
+
+
 def network_location(ds: xr.Dataset) -> Any:
     """Where a network timeseries sits, as the network that produced it named it.
 
@@ -82,15 +83,15 @@ def network_location(ds: xr.Dataset) -> Any:
     saved by an older version gives back the integer it stored.
     """
     if "node" in ds.coords:
-        return _scalar(ds, "node")
+        return _network_scalar(ds, "node")
     if "reach" in ds.coords:
-        reach = _scalar(ds, "reach")
+        reach = _network_scalar(ds, "reach")
         if "distance" not in ds.coords:
             return reach
-        return (reach, _scalar(ds, "distance"))
+        return (reach, _network_scalar(ds, "distance"))
     return None
 
 
-def _scalar(ds: xr.Dataset, name: str) -> Any:
+def _network_scalar(ds: xr.Dataset, name: str) -> Any:
     value = _coordinate_values(ds, name)
     return value.item() if hasattr(value, "item") else value
