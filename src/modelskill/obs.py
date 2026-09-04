@@ -41,7 +41,7 @@ from .timeseries import (
     _parse_network_node_input,
     _parse_network_breakpoint_input,
 )
-from .timeseries._coords import _coordinate_values
+from .timeseries._coords import network_location
 
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
@@ -867,36 +867,14 @@ class VerticalObservation(Observation):
         return self._coordinate_values("z")
 
 
-def _location_from_coords(ds: xr.Dataset) -> Any:
-    """Where a network timeseries sits, as the network that produced it named it.
-
-    Returns a node name for a node, a ``(reach, distance)`` pair for a
-    breakpoint, a reach name when no distance was given, and None for data that
-    carries no network location. The value is returned as recorded, so a comparer
-    saved by an older version gives back the integer it stored.
-    """
-    if "node" in ds.coords:
-        return _scalar(ds, "node")
-    if "reach" in ds.coords:
-        reach = _scalar(ds, "reach")
-        if "distance" not in ds.coords:
-            return reach
-        return (reach, _scalar(ds, "distance"))
-    return None
-
-
-def _scalar(ds: xr.Dataset, name: str) -> Any:
-    value = _coordinate_values(ds, name)
-    return value.item() if hasattr(value, "item") else value
-
-
 def _at_from_coords(ds: xr.Dataset) -> str | tuple[str, float]:
     """The location in the form ``NodeObservation`` takes it.
 
-    Unlike :func:`_location_from_coords`, which reports the location as
-    recorded, this coerces to the types the ``at`` argument is declared with.
+    Unlike :func:`~modelskill.timeseries._coords.network_location`, which
+    reports the location as recorded, this coerces to the types the ``at``
+    argument is declared with.
     """
-    location = _location_from_coords(ds)
+    location = network_location(ds)
     if isinstance(location, tuple):
         return (str(location[0]), float(location[1]))
     return str(location)

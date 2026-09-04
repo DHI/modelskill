@@ -71,3 +71,26 @@ def _coordinate_values(ds: xr.Dataset, coord: str) -> Any:
         return None
     vals = ds[coord].values
     return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
+
+
+def network_location(ds: xr.Dataset) -> Any:
+    """Where a network timeseries sits, as the network that produced it named it.
+
+    Returns a node name for a node, a ``(reach, distance)`` pair for a
+    breakpoint, a reach name when no distance was given, and None for data that
+    carries no network location. The value is returned as recorded, so a comparer
+    saved by an older version gives back the integer it stored.
+    """
+    if "node" in ds.coords:
+        return _scalar(ds, "node")
+    if "reach" in ds.coords:
+        reach = _scalar(ds, "reach")
+        if "distance" not in ds.coords:
+            return reach
+        return (reach, _scalar(ds, "distance"))
+    return None
+
+
+def _scalar(ds: xr.Dataset, name: str) -> Any:
+    value = _coordinate_values(ds, name)
+    return value.item() if hasattr(value, "item") else value

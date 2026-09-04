@@ -14,7 +14,8 @@ from modelskill.timeseries import (
     _parse_network_node_input,
 )
 from ._base import SelectedItems
-from ..obs import NodeObservation, ReachObservation, _location_from_coords
+from ..obs import NodeObservation, ReachObservation
+from ..timeseries._coords import network_location
 from ..quantity import Quantity
 from ..types import GeometryType, PointType
 
@@ -124,7 +125,7 @@ class NodeModelResult(TimeSeries):
     @property
     def node(self) -> Any:
         """Where this result was extracted, as its network named it."""
-        return _location_from_coords(self.data)
+        return network_location(self.data)
 
     def _location_repr(self) -> str | None:
         return f"Location: {self.node}"
