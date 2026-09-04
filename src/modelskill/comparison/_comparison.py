@@ -34,9 +34,8 @@ from ..obs import (
     _location_from_coords,
 )
 from ..model import PointModelResult, TrackModelResult, VerticalModelResult
-from ..timeseries._coords import NETWORK_LOCATION_COORDS
+from ..timeseries._coords import NETWORK_LOCATION_COORDS, _coordinate_values
 from ..timeseries._timeseries import (
-    _coordinate_values,
     _normalize_time_to_ns,
     _validate_data_var_name,
 )

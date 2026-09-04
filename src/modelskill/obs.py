@@ -41,7 +41,7 @@ from .timeseries import (
     _parse_network_node_input,
     _parse_network_breakpoint_input,
 )
-from .timeseries._timeseries import _coordinate_values
+from .timeseries._coords import _coordinate_values
 
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file

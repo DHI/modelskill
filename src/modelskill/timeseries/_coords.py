@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
+import xarray as xr
 
 #: Scalar coordinates that say where a network timeseries sits, rather than what
 #: it holds. They are dropped on the way to a dataframe, where they would
@@ -56,3 +59,15 @@ class ReachCoords:
         if self.distance is not None:
             d["distance"] = self.distance
         return d
+
+
+def _coordinate_values(ds: xr.Dataset, coord: str) -> Any:
+    """A dataset's values for one coordinate, or None when it has no such coordinate.
+
+    A scalar coordinate is unwrapped to its single value; anything else is
+    handed back as the array it is.
+    """
+    if coord not in ds.coords:
+        return None
+    vals = ds[coord].values
+    return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals

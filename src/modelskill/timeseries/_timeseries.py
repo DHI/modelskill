@@ -10,23 +10,11 @@ import xarray as xr
 
 from ..types import GeometryType
 from ..quantity import Quantity
-from ._coords import NETWORK_LOCATION_COORDS
+from ._coords import NETWORK_LOCATION_COORDS, _coordinate_values
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
 from .. import __version__
 
 T = TypeVar("T", bound="TimeSeries")
-
-
-def _coordinate_values(ds: xr.Dataset, coord: str) -> Any:
-    """A dataset's values for one coordinate, or None when it has no such coordinate.
-
-    A scalar coordinate is unwrapped to its single value; anything else is
-    handed back as the array it is.
-    """
-    if coord not in ds.coords:
-        return None
-    vals = ds[coord].values
-    return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
 
 DEFAULT_COLORS = [
