@@ -22,6 +22,22 @@ from tests.network_helpers import make_breakpoint_network, make_network
 
 
 @pytest.fixture
+def node_values():
+    """A distinct series per node, so no node can stand in for another."""
+    time = pd.date_range("2010-01-01", periods=10, freq="h")
+    values = np.arange(30.0).reshape(10, 3)
+    return pd.DataFrame(values, index=time, columns=["123", "456", "789"])
+
+
+@pytest.fixture
+def distinct_network(node_values):
+    """A three-node network holding `node_values`, one column per node."""
+    return make_network(
+        list(node_values.columns), node_values.index, node_values.to_numpy()
+    )
+
+
+@pytest.fixture
 def sample_network():
     """Sample Network with 3 nodes (WaterLevel quantity)"""
     time = pd.date_range("2010-01-01", periods=10, freq="h")
@@ -454,6 +470,100 @@ class TestNetworkIntegration:
         for comparer in comparer_collection:
             assert "Network_Model" in comparer.mod_names
             assert comparer.n_points > 0
+
+
+class TestValuesReachTheComparer:
+    """The series a comparer holds is the one the network keeps at that location.
+
+    The observation is built from the model's own data, so an exact match is the
+    expected outcome and any mix-up between locations or models shows up as a
+    non-zero score.
+    """
+
+    def test_extract_returns_the_nodes_own_series(self, distinct_network, node_values):
+        nmr = NetworkModelResult(distinct_network, name="Network_Model")
+        obs = NodeObservation(node_values, at="456", item="456")
+
+        extracted = nmr.extract(obs)
+
+        assert extracted.to_dataframe()["Network_Model"].to_numpy() == pytest.approx(
+            node_values["456"].to_numpy()
+        )
+
+    def test_a_matched_node_scores_zero_against_its_own_series(
+        self, distinct_network, node_values
+    ):
+        nmr = NetworkModelResult(distinct_network, name="Network_Model")
+        obs = NodeObservation(node_values, at="456", item="456", name="Node_456_Obs")
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.n_points == len(node_values)
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+    def test_every_node_of_a_collection_keeps_its_own_series(
+        self, distinct_network, node_values
+    ):
+        """One observation per node, each read from that node's own column."""
+        nmr = NetworkModelResult(distinct_network, name="Network_Model")
+        obs_list = NodeObservation.from_multiple(
+            data=node_values, nodes={nid: nid for nid in node_values.columns}
+        )
+
+        cc = ms.match(obs_list, nmr)
+
+        assert len(cc) == 3
+        for cmp in cc:
+            assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+    def test_two_networks_keep_their_series_apart(self, distinct_network, node_values):
+        """The second network is the first shifted by 0.1.
+
+        A crossed model column would put that shift on the wrong name.
+        """
+        shifted = make_network(
+            list(node_values.columns),
+            node_values.index,
+            node_values.to_numpy() + 0.1,
+        )
+        obs = NodeObservation(node_values, at="456", item="456", name="Node_456_Obs")
+
+        cmp = ms.match(
+            obs,
+            [
+                NetworkModelResult(distinct_network, name="Network_1"),
+                NetworkModelResult(shifted, name="Network_2"),
+            ],
+        )
+
+        bias = cmp.score(metric="bias")
+        assert bias["Network_1"] == pytest.approx(0.0)
+        assert bias["Network_2"] == pytest.approx(0.1)
+
+    def test_a_matched_breakpoint_scores_zero_against_its_own_series(
+        self, breakpoint_network
+    ):
+        """The break point's data sits on neither of the reach's nodes."""
+        values = breakpoint_network.reaches["r1"].breakpoints[0].data
+        nmr = NetworkModelResult(breakpoint_network, name="Network_Model")
+        obs = NodeObservation(values, at=("r1", 50.0), name="BP_Obs")
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.n_points == len(values)
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+    def test_a_matched_reach_scores_zero_against_its_breakpoints_series(
+        self, breakpoint_network
+    ):
+        values = breakpoint_network.reaches["r1"].breakpoints[0].data
+        nmr = NetworkModelResult(breakpoint_network, name="Network_Model")
+        obs = ReachObservation(values, reach="r1", name="Reach_Obs")
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.n_points == len(values)
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0)
 
 
 @pytest.mark.skipif(
