@@ -43,7 +43,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-networks = ["mikeio1d", "networkx"]
+# networkx and xarray arrive through mikeio1d's own network extra, which
+# carries the topology layer this package builds on (ADR-013).
+network = ["mikeio1d[network]"]
 
 [dependency-groups]
 dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2", "netCDF4", "dask"]
@@ -62,7 +64,12 @@ test = [
 
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
 
-networks = ["mikeio1d>=1.2.1", "networkx"]
+network = ["mikeio1d[network]"]
+
+[tool.uv.sources]
+# TODO: swap for a version floor in both "network" entries above once mikeio1d
+# releases the network module. ADR-013 holds modelskill 1.4.0 until it does.
+mikeio1d = { git = "https://github.com/DHI/mikeio1d", branch = "main" }
 
 [project.urls]
 "Homepage" = "https://github.com/DHI/modelskill"

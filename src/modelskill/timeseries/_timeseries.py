@@ -10,10 +10,12 @@ import xarray as xr
 
 from ..types import GeometryType
 from ..quantity import Quantity
+from ._coords import NETWORK_LOCATION_COORDS, _coordinate_values
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
 from .. import __version__
 
 T = TypeVar("T", bound="TimeSeries")
+
 
 DEFAULT_COLORS = [
     "#b30000",
@@ -101,16 +103,9 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
 
     # Validate coordinates: x,y spatial, node-based, or reach-based (with or without chainage)
     has_spatial_coords = "x" in ds.coords and "y" in ds.coords
-    has_node_coord = "node" in ds.coords
-    has_breakpoint_coords = "reach" in ds.coords and "distance" in ds.coords
-    has_reach_coord = "reach" in ds.coords and "distance" not in ds.coords
+    has_network_coords = GeometryType.from_network_coords(ds) is not None
 
-    if (
-        not has_spatial_coords
-        and not has_node_coord
-        and not has_breakpoint_coords
-        and not has_reach_coord
-    ):
+    if not has_spatial_coords and not has_network_coords:
         raise ValueError(
             "data must have either x,y coordinates, a node coordinate, "
             "reach+distance coordinates, or a reach coordinate"
@@ -263,16 +258,8 @@ class TimeSeries:
     def y(self, value: Any) -> None:
         self.data["y"] = value
 
-    @property
-    def node(self) -> Any:
-        """node-coordinate"""
-        return self._coordinate_values("node")
-
-    def _coordinate_values(self, coord: str) -> None | float | np.ndarray:
-        if coord not in self.data.coords:
-            return None  # Node-based data doesn't have y coordinate
-        vals = self.data[coord].values
-        return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
+    def _coordinate_values(self, coord: str) -> Any:
+        return _coordinate_values(self.data, coord)
 
     @property
     def _is_modelresult(self) -> bool:
@@ -292,16 +279,18 @@ class TimeSeries:
     def _aux_vars(self):
         return list(self.data.filter_by_attrs(kind="aux").data_vars)
 
+    def _location_repr(self) -> str | None:
+        """The location line for ``__repr__``, or None when there is nothing to say."""
+        if self.gtype == str(GeometryType.POINT):
+            if self.x is not None and self.y is not None:
+                return f"Location: {self.x}, {self.y}"
+        return None
+
     def __repr__(self) -> str:
         res = []
         res.append(f"<{self.__class__.__name__}>: {self.name}")
-        if self.gtype == str(GeometryType.POINT):
-            # Show location based on available coordinates
-            if "node" in self.data.coords:
-                node_id = self.data.coords["node"].item()
-                res.append(f"Node: {node_id}")
-            elif self.x is not None and self.y is not None:
-                res.append(f"Location: {self.x}, {self.y}")
+        if (location := self._location_repr()) is not None:
+            res.append(location)
         res.append(f"Time: {self.time[0]} - {self.time[-1]}")
         res.append(f"Quantity: {self.quantity}")
         if len(self._aux_vars) > 0:
@@ -366,10 +355,12 @@ class TimeSeries:
             return df[cols]
         elif self.gtype == str(GeometryType.VERTICAL):
             return self.data.drop_vars(["x", "y"]).to_dataframe()
-        elif self.gtype == str(GeometryType.NODE):
-            return self.data.drop_vars(["node"]).to_dataframe()
-        elif self.gtype == str(GeometryType.REACH):
-            return self.data.drop_vars(["reach"]).to_dataframe()
+        elif self.gtype in (str(GeometryType.NODE), str(GeometryType.REACH)):
+            # A breakpoint carries reach and distance rather than node, so drop
+            # whichever of them this one has.
+            return self.data.drop_vars(
+                NETWORK_LOCATION_COORDS, errors="ignore"
+            ).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 

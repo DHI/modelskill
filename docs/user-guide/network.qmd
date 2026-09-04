@@ -7,400 +7,90 @@ jupyter: python3
 ::: {.callout-warning collapse="true"}
 ## Extra dependencies required
 
-Network support depends on libraries that are **not** installed
-by default, e.g. `networkx`. You can install them alongside `modelskill` using the _networks_ extra:
+Network support depends on `mikeio1d`, which reads the result files and builds
+the network, and which is **not** installed by default. Install it alongside
+`modelskill` with the _network_ extra:
 
 ```bash
-uv pip install modelskill[networks]
+uv pip install modelskill[network]
 ```
 
 or 
 
 ```bash
-uv add modelskill[networks]
+uv add modelskill[network]
 ```
 
 :::
-
-```{python}
-# | echo: false
-
-import pandas as pd
-import numpy as np
-from typing import Any
-from modelskill.network import Network, NetworkNode, NetworkReach, ReachBreakPoint
-
-
-class ExampleNode(NetworkNode):
-    """Node backed by an in-memory DataFrame, e.g. model output."""
-
-    def __init__(self, node_id: str, data: pd.DataFrame):
-        self._id = node_id
-        self._data = data
-
-    @property
-    def id(self) -> str:
-        return self._id
-
-    @property
-    def data(self) -> pd.DataFrame:
-        return self._data
-
-    @property
-    def boundary(self) -> dict[str, Any]:
-        return {}
-
-
-class ExampleReach(NetworkReach):
-    """Reach connecting two nodes with a given length."""
-
-    def __init__(
-        self,
-        reach_id: str,
-        start: NetworkNode,
-        end: NetworkNode,
-        length: float,
-        breakpoints: list | None = None,
-    ):
-        self._id = reach_id
-        self._start = start
-        self._end = end
-        self._length = length
-        self._breakpoints = breakpoints or []
-
-    @property
-    def id(self) -> str:
-        return self._id
-
-    @property
-    def start(self) -> NetworkNode:
-        return self._start
-
-    @property
-    def end(self) -> NetworkNode:
-        return self._end
-
-    @property
-    def length(self) -> float:
-        return self._length
-
-    @property
-    def breakpoints(self) -> list:
-        return self._breakpoints
-
-
-class ExampleBreakPoint(ReachBreakPoint):
-    def __init__(self, reach_id: str, distance: float, data: pd.DataFrame):
-        self._id = (reach_id, distance)
-        self._data = data
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def data(self):
-        return self._data
-
-
-# Synthetic model output covering the observation period
-model_time = pd.date_range("1994-08-07 16:00", periods=180, freq="1min")
-t = np.linspace(0, 2 * np.pi, len(model_time))
-
-df1 = pd.DataFrame({"WaterLevel": 194.0 + np.sin(t)}, index=model_time)
-df2 = pd.DataFrame({"WaterLevel": 193.8 + 0.8 * np.sin(t)}, index=model_time)
-df3 = pd.DataFrame({"WaterLevel": 193.6 + 0.6 * np.sin(t)}, index=model_time)
-df4 = pd.DataFrame({"WaterLevel": 193.9 + 0.9 * np.sin(t)}, index=model_time)
-
-node_s1 = ExampleNode("sensor_1", df1)
-node_s2 = ExampleNode("sensor_2", df2)
-node_s3 = ExampleNode("sensor_3", df3)
-
-bp = ExampleBreakPoint("r1", 200.0, df4)
-reach1 = ExampleReach("r1", node_s1, node_s2, length=500.0, breakpoints=[bp])
-reach2 = ExampleReach("r2", node_s2, node_s3, length=300.0)
-network = Network(reaches=[reach1, reach2])
-```
-
-A **Network** represents a 1D pipe or river network as a directed graph: nodes hold timeseries data (e.g. water level at a junction) and reaches carry the topology and reach length between them.  Break points along a reach (e.g. cross-section chainages) are supported as observation locations too.
-
-The typical workflow is:
-
-```
-Network  →  NetworkModelResult  →  match()  →  Comparer
-```
-
-## Building a Network
-
-You can build a `Network` object by loading it from a supported network result file. Reading these files relies on [mikeio1d](https://github.com/DHI/mikeio1d), so install the `networks` dependency group first.
-
-There is one constructor per product that writes the file:
-
-| Constructor | Extensions | Product |
-|---|---|---|
-| `Network.from_mike` | `.res1d`, `.res11` | MIKE 1D, MIKE 11 |
-| `Network.from_epanet` | `.res`, plus optional `.resx` and `.inp` | EPANET |
-
-The remaining formats mikeio1d can open cannot be turned into a `Network`, and say so when you try:
-
-| Extension | Why not |
-|---|---|
-| `.out` (SWMM) | The reach connectivity is not in the `.out` at all — it lives in the companion `.inp` input file, which modelskill does not read yet ([#689](https://github.com/DHI/modelskill/issues/689)). |
-| `.resx` | Not a network on its own. It holds extra results for the network defined in the sibling `.res`, so pass it as `from_epanet(res, resx=...)` instead. |
-| `.prf`, `.crf`, `.xrf` (MOUSE), `.whr` (Water Hammer) | No test fixture exists for these formats, so support cannot be verified. [Open an issue](https://github.com/DHI/modelskill/issues) if you need one. |
-
-### From a network result file
-
-The quickest way to get a `Network` is from the path to a result file:
 
 ```{python}
 # | echo: false
 
 path_to_res1d = "../../tests/testdata/network.res1d"
-path_to_res11 = "../../tests/testdata/network_cali.res11"
-path_to_epanet = "../../tests/testdata/epanet.res"
 path_to_sensor_data_1 = "../../tests/testdata/network_sensor_1.csv"
 path_to_sensor_data_2 = "../../tests/testdata/network_sensor_2.csv"
 ```
 
-```{python}
-from modelskill.network import Network
+A **network** is a 1D pipe or river network read as a graph: nodes hold timeseries
+data (water level at a junction, say), reaches carry the topology and the length
+between them, and break points along a reach are locations in their own right.
 
-network = Network.from_mike(path_to_res1d)
-network
+The workflow is the usual four steps, with the network standing in for a grid or a
+mesh:
+
+```
+result file  →  NetworkModelResult  →  match()  →  Comparer
 ```
 
-or a `mikeio1d.Res1D` that has already been opened:
+## Where the network comes from
 
-```python
-from mikeio1d import Res1D
+Reading the file and building the graph is [mikeio1d](https://github.com/DHI/mikeio1d)'s
+job, not modelskill's. `Network.open` reads MIKE 1D (`.res1d`), MIKE 11 (`.res11`)
+and EPANET (`.res`) results, finds the EPANET companion files, and says so when a
+format cannot be turned into a network. See its documentation for the companions,
+for loading only part of a large file, and for `find`/`recall` between the names the
+model uses and the graph's own integers.
 
-res = Res1D(path_to_res1d)
-network = Network.from_mike(res)
-```
-
-MIKE 11 files work the same way. Note that MIKE 11 keeps its timeseries on reach gridpoints rather than on nodes, so the nodes of such a network carry no data of their own:
-
-```{python}
-Network.from_mike(path_to_res11)
-```
-
-EPANET results use `from_epanet`:
+modelskill takes the file path directly, and opens it for you:
 
 ```{python}
-Network.from_epanet(path_to_epanet)
+import modelskill as ms
+
+mr = ms.NetworkModelResult(path_to_res1d, name="MyModel", item="WaterLevel")
+mr
 ```
 
-#### EPANET companion files
-
-An EPANET run writes more than one file, and the `.res` is not the whole picture:
-
-| File | What it adds |
-|---|---|
-| `.res` | The network and its main timeseries. Required. |
-| `.resx` | Extra results — tank volume and pump energy. Merged onto matching nodes. |
-| `.inp` | The model input. The only one of the three carrying reach lengths. |
-
-Pass the companions alongside the result file to get a fuller network:
+Open the network yourself when you need to name EPANET companion files, or to keep
+memory down on a large model by reading only the locations you will score:
 
 ```{python}
-# | echo: false
-path_to_epanet_resx = "../../tests/testdata/epanet.resx"
-path_to_epanet_inp = "../../tests/testdata/epanet.inp"
-```
+from mikeio1d.network import Network
 
-```{python}
-network_epanet = Network.from_epanet(
-    path_to_epanet,
-    resx=path_to_epanet_resx,
-    inp=path_to_epanet_inp,
-)
-network_epanet
-```
-
-`Volume` and `Volume Percentage` come from the `.resx`, and the reach lengths from the `.inp`:
-
-```{python}
-sorted(
-    d["length"]
-    for *_, d in network_epanet.graph.edges(data=True)
-    if d["length"] is not None
-)
-```
-
-::: {.callout-warning}
-## EPANET reach geometry is limited
-
-EPANET is a link-node model, and mikeio1d reports no length and a single synthetic gridpoint for each reach. So for an EPANET network:
-
-* without `inp=`, every edge of `network.graph` has `length=None`. A length-weighted `networkx` call then fails rather than returning a meaningless number — shortest-path treats the edge as unreachable, and anything that sums the weights raises `TypeError`. The attribute is always present, since `networkx` defaults a missing weight to `1`. With `inp=`, only pumps and valves stay `None`, since `[PIPES]` is the one section carrying lengths
-* reaches have no breakpoints, so a `ReachObservation` cannot be matched — use `NodeObservation` instead
-* `find(reach=..., distance=<number>)` never resolves; only `distance="start"` and `distance="end"` work
-
-For the same reason, `resx=` merges node quantities only. Its reach-level quantities — pump energy, efficiency and costs — have no breakpoint to live on, which is tracked in [#680](https://github.com/DHI/modelskill/issues/680).
-
-Node timeseries, `to_dataframe()`, `to_dataset()`, `find(node=...)` and `recall()` are unaffected.
-:::
-
-A MIKE 1D network contains multiple levels that are unified into a generic network structure as depicted in the image below. The image introduces concepts like _find_, _recall_ and _boundary_ which are explained in the following sections.
-
-![How a Res1D file maps to a Network object. Reaches and nodes are re-indexed as integers; boundary nodes expose `find()`/`recall()` round-trip lookups.](../images/res1d_network_mapping.png)
-
-#### Selective loading
-
-Large result files can contain thousands of nodes and gridpoints. Loading all of that data into memory is slow and may cause memory issues — especially when you only need the timeseries at a handful of nodes where observations exist.
-
-Both constructors accept the same two optional arguments to restrict what gets loaded:
-
-| Argument | Type | Effect |
-|---|---|---|
-| `nodes` | `None` \| `str` \| `list[str]` | Control which nodes have timeseries data loaded. `None` (default) loads all nodes; `[]` skips all node data; a name or list loads only those nodes. |
-| `reaches` | `None` \| `str` \| `list[str]` | Control which reaches have intermediate gridpoint data populated. `None` (default) loads everything; `[]` skips all gridpoints; a name or list of names loads only those reaches. |
-
-::: {.callout-note}
-Selective loading only controls **which timeseries are held in memory**. The full network topology (nodes, reaches, lengths) is always constructed so that `find()`, `recall()`, and graph algorithms still work on the complete network.
-:::
-
-The most memory-efficient setup — useful when you only care about specific junction nodes — is to pass the node IDs you need and skip all intermediate gridpoints with `reaches=[]`:
-
-```{python}
-network_subset = Network.from_mike(
-    path_to_res1d,
-    nodes=["78", "46"],
-    reaches=[],
-)
-network_subset
-```
-
-If you also need gridpoint data along a particular reach, pass its name (or a list of names):
-
-```{python}
-network_subset = Network.from_mike(
-    path_to_res1d,
-    nodes=["78", "46"],
-    reaches=["94l1"],
-)
-network_subset
-```
-
-When only some nodes are loaded, `to_dataframe()` and `to_dataset()` only contain columns for those nodes — the rest are graph-connected but data-free:
-
-```{python}
-network_subset.to_dataframe(sel="WaterLevel").head()
-```
-
-## Inspecting the Network
-
-### Available quantities
-
-```{python}
-network.quantities
-```
-
-### Underlying graph
-
-The network exposes a `networkx.Graph` so you can use any NetworkX algorithm or
-plotting function directly:
-
-```{python}
-# | echo: false
-
-plot_kwargs = {
-    "font_size": 6,
-    "node_size": 130,
-    "node_color": "white",
-    "edgecolors": "black",
-    "with_labels": True,
-}
-```
-
-```{python}
-import networkx as nx
-import matplotlib.pyplot as plt
-
-fig, ax = plt.subplots(figsize=(10, 9), layout="tight")
-nx.draw(network.graph, ax=ax, **plot_kwargs)
-plt.show()
-```
-
-### Timeseries data
-
-```{python}
-# Multi-index DataFrame: columns are (node, quantity)
-network.to_dataframe().head()
-```
-
-```{python}
-# Select a single quantity
-network.to_dataframe(sel="WaterLevel").head()
-```
-
-## Looking up node IDs
-
-After construction, nodes are re-labelled as integers.  Use `find()` to go from original coordinates to the integer ID and `recall()` to go back.
-
-::: {.callout-tip}
-When creating `NodeObservation` objects for skill assessment you generally do **not** need to call `find()`.  You can pass the original string ID as `node=`, and `NetworkModelResult` will resolve it for you during matching.  For breakpoints, use `at=(reach, distance)` rather than `node=`.  See [Skill assessment workflow](#skill-assessment-workflow) for details.
-:::
-
-```{python}
-# Look up a named node by its original id
-node_id = network.find(node="117")
-print(f"Node '117' → integer id {node_id}")
-
-# Recover the original label
-print(network.recall(node_id))
-```
-
-```{python}
-# Look up a break point by reach + chainage
-bp_id = network.find(reach="94l1", distance=21.285)
-print(f"Break point (94l1, 21.285) → integer id {bp_id}")
-print(network.recall(bp_id))
-```
-
-```{python}
-# Node batch lookup
-ids = network.find(node=["20", "113", "38"])
-print(ids)
-```
-
-```{python}
-# Reach lookup
-ids = network.find(reach="58l1", distance="start")
-print(ids)
-ids = network.find(reach="58l1", distance=[51.456, 77.185])
-print(ids)
-ids = network.find(reach="58l1", distance=["start", 77.185])
-print(ids)
+network = Network.open(path_to_res1d, nodes=["78", "46"], reaches=["94l1"])
+ms.NetworkModelResult(network, name="MyModel", item="WaterLevel")
 ```
 
 ## Skill assessment workflow
 
-### 1. Wrap the Network in a NetworkModelResult
+### 1. The model result
 
-```{python}
-import modelskill as ms
-from modelskill.model.network import NetworkModelResult
-
-mr = NetworkModelResult(network, name="MyModel", item="WaterLevel")
-mr
-```
+`mr` above is the model side of the comparison, holding one quantity over every
+location the file was read for.
 
 ### 2. Create NodeObservations and compute skill
 
 `NodeObservation` accepts a file path directly; the observation name is taken from the filename.
 
-The `at=` argument can be specified in three ways, depending on what information you have at hand.
+The `at=` argument takes either of two forms, depending on what you have at hand.
 
 ::: {.callout-note}
 ## MIKE 1D vocabulary vs the modelskill API
-In MIKE 1D, "nodes" are the named connection points in the 1D network (manholes, junctions, outfalls) while "reaches" are the pipe or channel segments that connect them.  The modelskill API uses `NodeObservation` more broadly: the `at=` argument accepts either a node ID (int or string) **or** a `(reach_id, distance)` breakpoint tuple that identifies a specific chainage along a reach.  If you only need a reach-level quantity (uniform across the reach), use `ReachObservation` with `reach=` instead.
+In MIKE 1D, "nodes" are the named connection points in the 1D network (manholes, junctions, outfalls) while "reaches" are the pipe or channel segments that connect them.  The modelskill API uses `NodeObservation` more broadly: the `at=` argument accepts either the node's name **or** a `(reach_id, distance)` break point tuple that identifies a specific chainage along a reach.  If you only need a reach-level quantity (uniform across the reach), use `ReachObservation` with `reach=` instead.
 :::
 
-#### Option A — original string alias
+#### Option A — the node's name
 
-Pass the original node identifier from the source format (e.g. the Res1D node name) as a plain string.  The `NetworkModelResult` resolves it to the correct integer ID at match time, so you do not need to call `network.find()` yourself:
+Pass the node's name in the model, e.g. the Res1D node name. It is resolved against the network at match time:
 
 ```{python}
 obs_1 = ms.NodeObservation(path_to_sensor_data_1, at="78")
@@ -411,26 +101,26 @@ cc.skill()
 ```
 
 ::: {.callout-note}
-Resolution happens inside `ms.match()`.  If the string is not found in the network's alias map a `ValueError` is raised with a clear message indicating which alias could not be resolved.
+Resolution happens inside `ms.match()`.  A name the network does not hold raises a `ValueError` that names the near misses.
 :::
 
 #### Option B — breakpoint by `(reach, distance)` tuple
 
 When your observation sits at a chainage along a reach rather than at a named junction node, you can use the `at` argument and pass a `(reach_id, distance)` tuple.  The `NetworkModelResult` looks up the corresponding breakpoint at match time:
 
-```python
-obs_bp = ms.NodeObservation(path_to_sensor_data_1, at=("94l1", 21.285))
+```{python}
+obs_bp = ms.NodeObservation(path_to_sensor_data_1, at=("94l1", 42.57))
 
 cc = ms.match(obs=obs_bp, mod=mr)
 cc.skill()
 ```
 
-The tuple form is equivalent to calling `network.find(reach="94l1", distance=21.285)` beforehand and is resolved during matching.
+The tuple form is equivalent to calling `network.find(reach="94l1", distance=42.57)` beforehand, and is resolved during matching.
 
 ::: {.callout-note}
 ## Chainage tolerance
 
-Breakpoint distances are matched with a tolerance of **1 × 10⁻³** (i.e. ±0.001 in whatever distance units the network uses).  This means that small floating-point discrepancies between the distance you type and the value stored in the network are handled gracefully.  If no breakpoint falls within that tolerance a `ValueError` is raised.
+Break point distances are matched within the tolerance mikeio1d uses to decide two chainages are the same place, so small floating-point discrepancies between the distance you type and the value stored in the network are handled gracefully.  If no break point falls within it, a `ValueError` is raised, as it is when the break point exists but carries no data for the quantity you are scoring - MIKE 1D stores water level and discharge at alternating grid points along a reach.
 :::
 
 ### 3. Using ReachObservation for reach-uniform quantities
@@ -447,7 +137,7 @@ obs_q
 Pass the observation to `ms.match()` exactly as you would a `NodeObservation`. modelskill resolves which breakpoint to use automatically:
 
 ```{python}
-mr_q = NetworkModelResult(network, name="MyModel", item="Discharge")
+mr_q = ms.NetworkModelResult(network, name="MyModel", item="Discharge")
 cc_q = ms.match(obs=obs_q, mod=mr_q)
 cc_q.skill()
 ```
@@ -456,130 +146,45 @@ cc_q.skill()
 Use `ReachObservation` when your measured quantity is representative of the whole reach (e.g. discharge, which is constant along a reach in steady flow).  If you need to compare a quantity that varies spatially along the reach (e.g. water level at a specific chainage), use a `NodeObservation` with a `(reach, distance)` tuple instead (see [Option B](#option-b-breakpoint-by-reach-distance-tuple) above).
 :::
 
-## Development
+## Locating observations with a MIKE+ database
 
-### Custom network formats
+The examples above assume you already know where each sensor sits in the network.  A MIKE+ project normally records that itself, in the sqlite database shipped alongside the result files: `m_Measurement` says which file and item each measured timeseries lives in, and `m_Station` says where in the network it belongs.
 
-In case you have your network data in a format that is not included in [Building a Network](#building-a-network), you can assemble a `Network` object by subclassing the abstract base classes `NetworkNode` and `NetworkReach`.
-
-`NetworkNode` requires three properties: `id`, `data`, and `boundary`.
-`NetworkReach` requires four: `id`, `start`, `end`, and `breakpoints`.
-
-`NetworkReach.length` is optional and defaults to `None`. Reach length matters in some domains (rivers, sewer networks) and not in others (link-node water distribution models), so override it only where a length exists. Where it is left undefined, the reach contributes an edge with `length=None` to `network.graph`, which keeps length-weighted graph algorithms from quietly treating the reach as free. Nothing else in modelskill reads the length — matching and extraction work from break point distances alone.
-
-
-The following is a simple implementation example:
+Pass that database as `db` and modelskill does the lookup for you:
 
 ```python
-import pandas as pd
-import numpy as np
-from typing import Any
-from modelskill.network import NetworkNode, NetworkReach, Network
+quantity = "Pressure"
 
+network = Network.open("model.res", quantities=quantity)
+network_model = ms.NetworkModelResult(network, item=quantity)
 
-class ExampleNode(NetworkNode):
-    """Node backed by an in-memory DataFrame, e.g. model output."""
+obs = ms.NodeObservation.from_multiple(
+    data="calibration.dfs0",
+    db="model.sqlite",
+    quantity=quantity,
+)
 
-    def __init__(self, node_id: str, data: pd.DataFrame):
-        self._id = node_id
-        self._data = data
-
-    @property
-    def id(self) -> str:
-        return self._id
-
-    @property
-    def data(self) -> pd.DataFrame:
-        return self._data
-
-    @property
-    def boundary(self) -> dict[str, Any]:
-        return {}
-
-
-class ExampleReach(NetworkReach):
-    """Reach connecting two nodes with a given length."""
-
-    def __init__(
-        self, reach_id: str, start: NetworkNode, end: NetworkNode, length: float,
-        breakpoints: list | None = None,
-    ):
-        self._id = reach_id
-        self._start = start
-        self._end = end
-        self._length = length
-        self._breakpoints = breakpoints or []
-
-    @property
-    def id(self) -> str:
-        return self._id
-
-    @property
-    def start(self) -> NetworkNode:
-        return self._start
-
-    @property
-    def end(self) -> NetworkNode:
-        return self._end
-
-    @property
-    def length(self) -> float:
-        return self._length
-
-    @property
-    def breakpoints(self) -> list:
-        return self._breakpoints
+cc = ms.match(obs, network_model)
 ```
 
-::: {.callout-tip}
-The three abstract properties that **every** `NetworkNode` subclass must implement are `id`, `data` and `boundary`. If `boundary` is not relevant for your use case, define the property to return an empty dictionary, as in the example above. Similarly, a `NetworkReach` with no intermediate points can return an empty `breakpoints` list, and one with no meaningful length can leave the `length` property out altogether.
-:::
+One observation is created per item of the data source, named after the station's asset name.  Because the mapping runs item by item rather than location by location, several sensors at the same node — a pair either side of a check valve, say — all become separate observations.
 
-
-```{python}
-from modelskill.network import Network
-
-# df1, df2 and df3 are DataFrame objects that are loaded in memory
-node_s1 = ExampleNode("sensor_1", df1)
-node_s2 = ExampleNode("sensor_2", df2)
-node_s3 = ExampleNode("sensor_3", df3)
-
-reach1 = ExampleReach("r1", node_s1, node_s2, length=500.0)
-reach2 = ExampleReach("r2", node_s2, node_s3, length=300.0)
-
-network = Network(reaches=[reach1, reach2])
-network
-```
-
-### Adding break points along a reach
-
-Break points represent intermediate chainage locations on a reach (e.g. cross-sections).  Subclass `ReachBreakPoint` the same way — implement `id` (a `(reach_id, distance)` tuple) and `data`:
+Reach-uniform quantities work the same way through the sibling method:
 
 ```python
-from modelskill.network import ReachBreakPoint
-
-
-class ExampleBreakPoint(ReachBreakPoint):
-    def __init__(self, reach_id: str, distance: float, data: pd.DataFrame):
-        self._id = (reach_id, distance)
-        self._data = data
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def data(self):
-        return self._data
-
-
-# df4 is a DataFrame object that has been loaded in memory
-bp = ExampleBreakPoint("r1", 200.0, df4)
-reach1 = ExampleReach("r1", node_s1, node_s2, length=500.0, breakpoints=[bp])
-reach2 = ExampleReach("r2", node_s2, node_s3, length=300.0)
-network = Network(reaches=[reach1, reach2])
+obs_q = ms.ReachObservation.from_multiple(
+    data="calibration.dfs0", db="model.sqlite", quantity="Flow"
+)
 ```
 
+Which class to use is decided by the database, not by you: stations recorded on a junction or a tank are node observations, and stations recorded on a link are reach observations.  Asking `NodeObservation` for a quantity that the database places on links raises an error naming `ReachObservation`, and the other way around.
+
+A few details worth knowing:
+
+* **`quantity` is optional.**  Omit it and the quantity is inferred, as long as the data holds only one for the class you asked for.  A calibration file mixing pressure and flow raises an error listing what it found.
+* **The quantity name comes from the database, the unit from the data.**  Calibration files often carry no usable EUM information, so the database is the only reliable source for the name.
+* **`source` picks between files.**  It defaults to `data` when that is a path.  Pass it explicitly if you hand over an already-read `mikeio.Dataset` or a `DataFrame`, since neither remembers where it came from.
+* **Items the database cannot place raise by default**, separating the two causes: a station that exists but has no measurement registered for this file, and an item that is not in the database at all.  Pass `on_missing="skip"` to build observations from the rest.
 
 ## See also
 

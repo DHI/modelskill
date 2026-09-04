@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import Any
+
 import numpy as np
+import xarray as xr
 
 
 class XYZCoords:
@@ -18,7 +23,7 @@ class XYZCoords:
 
 
 class NodeCoords:
-    def __init__(self, node: int | str | None = None):
+    def __init__(self, node: str | None = None):
         self.node = node if node is not None else np.nan
 
     @property
@@ -49,3 +54,44 @@ class ReachCoords:
         if self.distance is not None:
             d["distance"] = self.distance
         return d
+
+
+def _coordinate_values(ds: xr.Dataset, coord: str) -> Any:
+    """A dataset's values for one coordinate, or None when it has no such coordinate.
+
+    A scalar coordinate is unwrapped to its single value; anything else is
+    handed back as the array it is.
+    """
+    if coord not in ds.coords:
+        return None
+    vals = ds[coord].values
+    return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
+
+
+#: Scalar coordinates that say where a network timeseries sits, rather than what
+#: it holds. They are dropped on the way to a dataframe, where they would
+#: otherwise become columns.
+NETWORK_LOCATION_COORDS = ("node", "node_index", "reach", "distance")
+
+
+def network_location(ds: xr.Dataset) -> Any:
+    """Where a network timeseries sits, as the network that produced it named it.
+
+    Returns a node name for a node, a ``(reach, distance)`` pair for a
+    breakpoint, a reach name when no distance was given, and None for data that
+    carries no network location. The value is returned as recorded, so a comparer
+    saved by an older version gives back the integer it stored.
+    """
+    if "node" in ds.coords:
+        return _network_scalar(ds, "node")
+    if "reach" in ds.coords:
+        reach = _network_scalar(ds, "reach")
+        if "distance" not in ds.coords:
+            return reach
+        return (reach, _network_scalar(ds, "distance"))
+    return None
+
+
+def _network_scalar(ds: xr.Dataset, name: str) -> Any:
+    value = _coordinate_values(ds, name)
+    return value.item() if hasattr(value, "item") else value

@@ -454,10 +454,8 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
 @pytest.fixture
 def node_comparer() -> modelskill.comparison.Comparer:
     """A comparer built by matching a NodeObservation against a NetworkModelResult (node gtype)."""
-    pytest.importorskip("networkx")
-    from modelskill.model.network import NetworkModelResult
-    from modelskill.network import Network, BasicNode, BasicReach
-    from modelskill.obs import NodeObservation
+    pytest.importorskip("mikeio1d.network")
+    from mikeio1d.network import Network, BasicNode, BasicReach
 
     time = pd.date_range("2019-01-01", periods=6, freq="D")
     node_a_data = pd.DataFrame(
@@ -471,9 +469,25 @@ def node_comparer() -> modelskill.comparison.Comparer:
     )
     network = Network([reach])
 
-    nmr = NetworkModelResult(network, name="Network_Model")
-    node_id = network.find(node="123")
-    obs = NodeObservation(node_a_data, at=node_id, name="Node_123_Obs")
+    nmr = ms.NetworkModelResult(network, name="Network_Model")
+    obs = ms.NodeObservation(node_a_data, at="123", name="Node_123_Obs")
+
+    return ms.match(obs, nmr)
+
+
+@pytest.fixture
+def reach_comparer() -> modelskill.comparison.Comparer:
+    """A comparer built by matching a ReachObservation (reach gtype)."""
+    pytest.importorskip("mikeio1d.network")
+    from tests.network_helpers import make_breakpoint_network
+
+    time = pd.date_range("2019-01-01", periods=6, freq="D")
+    values = pd.DataFrame({"WaterLevel": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]}, index=time)
+
+    nmr = ms.NetworkModelResult(
+        make_breakpoint_network("r1", 50.0, values), name="Network_Model"
+    )
+    obs = ms.ReachObservation(values, reach="r1", name="Reach_r1_Obs")
 
     return ms.match(obs, nmr)
 
@@ -490,6 +504,70 @@ def test_save_and_load_round_trips_node_gtype_raw_data(node_comparer, tmp_path):
     assert len(cc2[0].raw_mod_data["Network_Model"]) == len(
         node_comparer.raw_mod_data["Network_Model"]
     )
+    # The node was addressed by name, and the name is what comes back: reloading
+    # must not depend on the integer the network happened to hand out.
+    assert cc2[0].node == "123"
+    assert cc2[0].raw_mod_data["Network_Model"].node == "123"
+
+
+def test_a_comparer_saved_by_1_4_0a3_still_loads():
+    """The alpha wrote the graph integer into the node coordinate.
+
+    Nothing on the load path derives a location from it any more, so such a file
+    keeps working -- it just gives the integer back. Needs no mikeio1d: it is a
+    netcdf file, not a network.
+    """
+    cmp = ms.load("tests/testdata/node_comparer_1.4.0a3.nc")
+
+    assert cmp.gtype == "node"
+    assert cmp.node == 0
+    assert cmp.skill().to_dataframe().shape[0] == 1
+
+
+def test_save_and_load_round_trips_reach_gtype_raw_data(reach_comparer, tmp_path):
+    """Reach-gtype comparers must survive a save()/load() round trip too."""
+    cc = ms.ComparerCollection([reach_comparer])
+    fn = tmp_path / "test_cc_reach.msk"
+    cc.save(fn)
+
+    cc2 = ms.load(fn)
+
+    assert cc2[0].gtype == "reach"
+    assert cc2[0].reach == "r1"
+    assert len(cc2[0].raw_mod_data["Network_Model"]) == len(
+        reach_comparer.raw_mod_data["Network_Model"]
+    )
+
+
+def test_to_dataframe_on_a_node_comparer(node_comparer):
+    df = node_comparer.to_dataframe()
+
+    assert list(df.columns) == ["Observation", "Network_Model"]
+    assert df.index.name == "time"
+
+
+def test_to_dataframe_on_a_reach_comparer(reach_comparer):
+    """The location coordinates are dropped, as they are for every other gtype."""
+    df = reach_comparer.to_dataframe()
+
+    assert list(df.columns) == ["Observation", "Network_Model"]
+    assert df.index.name == "time"
+
+
+def test_skill_on_a_node_comparer(node_comparer):
+    sk = node_comparer.skill()
+
+    assert sk.to_dataframe().shape[0] == 1
+    assert "Node_123_Obs" in sk.index
+
+
+def test_plot_a_node_comparer(node_comparer):
+    assert node_comparer.plot.timeseries() is not None
+    assert node_comparer.plot.scatter() is not None
+
+
+def test_plot_a_reach_comparer(reach_comparer):
+    assert reach_comparer.plot.timeseries() is not None
 
 
 # ======================== plotting ========================

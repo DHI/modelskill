@@ -23,9 +23,9 @@ test:
 typecheck:
     uv run mypy src/ --config-file pyproject.toml
 
-# Run doctests in metrics.py
+# Run doctests in metrics.py and types.py
 doctest:
-    uv run pytest src/modelskill/metrics.py --doctest-modules
+    uv run pytest src/modelskill/metrics.py src/modelskill/types.py --doctest-modules
 
 # Generate HTML coverage report
 coverage:
