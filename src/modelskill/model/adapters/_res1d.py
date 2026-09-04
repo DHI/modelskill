@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 if TYPE_CHECKING:
+    from mikeio1d import Res1D
     from mikeio1d.result_network import ResultNode, ResultGridPoint, ResultReach
 
 from modelskill.network import NetworkNode, ReachBreakPoint, NetworkReach
@@ -63,18 +64,18 @@ def _simplify_colnames(
 
 
 def _merge_extra_quantities(
-    base: pd.DataFrame, extra: pd.DataFrame, *, node_id: str
+    base: pd.DataFrame, extra: pd.DataFrame, *, location_id: str
 ) -> pd.DataFrame:
-    """Append a companion file's quantities to a node's frame as extra columns.
+    """Append a companion file's quantities to a node's or reach's frame.
 
     Parameters
     ----------
     base : pd.DataFrame
-        The node's frame from the main result file.
+        The node's or reach's frame from the main result file.
     extra : pd.DataFrame
-        The same node's frame from the companion file, sharing its time index.
-    node_id : str
-        Node ID, used in error messages.
+        The same location's frame from the companion file, sharing its time index.
+    location_id : str
+        Node or reach ID, used in error messages.
 
     Returns
     -------
@@ -83,9 +84,9 @@ def _merge_extra_quantities(
     Raises
     ------
     ValueError
-        If a quantity appears in both frames. Concatenating would give the node
-        two columns of the same name, which is the state ``_simplify_colnames``
-        already refuses.
+        If a quantity appears in both frames. Concatenating would give the
+        location two columns of the same name, which is the state
+        ``_simplify_colnames`` already refuses.
     """
     if extra.empty:
         return base
@@ -93,8 +94,8 @@ def _merge_extra_quantities(
     overlapping = base.columns.intersection(extra.columns)
     if len(overlapping) > 0:
         raise ValueError(
-            f"Node {node_id!r} already has {sorted(overlapping)} in the main "
-            "result file, so the companion file's copy cannot be merged in."
+            f"Location {location_id!r} already has {sorted(overlapping)} in the "
+            "main result file, so the companion file's copy cannot be merged in."
         )
 
     return pd.concat([base, extra], axis=1)
@@ -121,18 +122,83 @@ class Res1DNode(NetworkNode):
 
 class GridPoint(ReachBreakPoint):
     def __init__(
-        self, reach_id: str, chainage: float, data: pd.DataFrame | None = None
+        self, reach_id: str, chainage: float | None, data: pd.DataFrame | None = None
     ):
         self._id = (reach_id, chainage)
         self._data = _EMPTY_DATA if data is None else data
 
     @property
-    def id(self) -> tuple[str, float]:
+    def id(self) -> tuple[str, float | None]:
         return self._id
 
     @property
     def data(self) -> pd.DataFrame:
         return self._data
+
+
+def _resolve_reach_length(length: float | None, reach: ResultReach) -> float | None:
+    """Resolve a reach's effective length.
+
+    A length read from a companion input file wins, since mikeio1d has none
+    to offer for the formats that need one. Otherwise: mikeio1d returns 0
+    when it cannot read a reach length - link-node models such as EPANET
+    report this for every reach. Report it as undefined rather than as a
+    zero-length reach, which would make length-weighted graph algorithms
+    treat the reach as free. The two cases cannot be told apart upstream.
+    """
+    return length if length is not None else (reach.length or None)
+
+
+def _build_reach_breakpoints(
+    reach: ResultReach,
+    *,
+    length: float | None,
+    quantities: set[str] | None,
+    populate_gridpoints: bool,
+    extra: Res1D | None = None,
+) -> list[ReachBreakPoint]:
+    """Build a reach's break points from its mikeio1d gridpoints.
+
+    Reaches with more than 2 gridpoints have real, independently-measured
+    start/end points, so every gridpoint becomes a break point at its own
+    chainage (the first/last ones end up coincident with the reach's own
+    start_node/end_node - Network._generate_graph connects them with a
+    zero-length edge).
+
+    Reaches with 2 or fewer gridpoints are link-node models (e.g. EPANET),
+    whose single synthetic gridpoint belongs to neither end - it is
+    duplicated into two break points, one at each end (distance 0.0, and
+    distance `length` if known or None otherwise), so the reach's own
+    quantities (e.g. Flow) are reachable the same way MIKE's are. See
+    https://github.com/DHI/modelskill/issues/680.
+
+    A companion ``.resx`` result (``extra``) contributes its own reach-level
+    quantities (e.g. pump energy) the same way it already does for nodes,
+    matched to the main file's gridpoints by index - the only real case
+    today is a single-gridpoint reach against a single-gridpoint companion.
+    """
+    if len(reach.gridpoints) > 2:
+        unique_gridpoints = reach.gridpoints
+        distances_per_gridpoint = [[gp.chainage] for gp in unique_gridpoints]
+    else:
+        unique_gridpoints = reach.gridpoints[:1]
+        distances_per_gridpoint = [[0.0, length] for _ in unique_gridpoints]
+
+    extra_gridpoints: list[ResultGridPoint] = []
+    if extra is not None and reach.name in extra.reaches:
+        extra_gridpoints = extra.reaches[reach.name].gridpoints
+
+    breakpoints: list[ReachBreakPoint] = []
+    for i, (gp, distances) in enumerate(zip(unique_gridpoints, distances_per_gridpoint)):
+        data = _simplify_colnames(gp, quantities) if populate_gridpoints else None
+        if data is not None and i < len(extra_gridpoints):
+            data = _merge_extra_quantities(
+                data,
+                _simplify_colnames(extra_gridpoints[i], quantities),
+                location_id=reach.name,
+            )
+        breakpoints.extend(GridPoint(gp.reach_name, d, data) for d in distances)
+    return breakpoints
 
 
 class Res1DReach(NetworkReach):
@@ -144,9 +210,8 @@ class Res1DReach(NetworkReach):
         start_node: Res1DNode,
         end_node: Res1DNode,
         *,
-        populate_gridpoints: bool = True,
         length: float | None = None,
-        quantities: set[str] | None = None,
+        breakpoints: list[ReachBreakPoint] | None = None,
     ):
         self._id = reach.name
 
@@ -163,35 +228,10 @@ class Res1DReach(NetworkReach):
         if end_node.id != reach.end_node:
             raise ValueError("Incorrect ending node.")
 
-        # Reaches with more than 2 gridpoints have real, independently-measured
-        # start/end points, so the first and last gridpoint become breakpoints
-        # too (coincident with start_node/end_node - Network._generate_graph
-        # connects them with a zero-length edge). Reaches with 2 or fewer
-        # gridpoints are link-node models (e.g. EPANET), whose single synthetic
-        # gridpoint belongs to neither end; that case is not handled here, see
-        # https://github.com/DHI/modelskill/issues/680.
-        breakpoint_gridpoints = reach.gridpoints if len(reach.gridpoints) > 2 else []
-
         self._start = start_node
         self._end = end_node
-
-        # A length read from a companion input file wins, since mikeio1d has none
-        # to offer for the formats that need one. Otherwise: mikeio1d returns 0
-        # when it cannot read a reach length - link-node models such as EPANET
-        # report this for every reach. Report it as undefined rather than as a
-        # zero-length reach, which would make length-weighted graph algorithms
-        # treat the reach as free. The two cases cannot be told apart upstream.
-        self._length = length if length is not None else (reach.length or None)
-        self._breakpoints: list[ReachBreakPoint] = [
-            GridPoint(
-                gridpoint.reach_name,
-                gridpoint.chainage,
-                _simplify_colnames(gridpoint, quantities)
-                if populate_gridpoints
-                else None,
-            )
-            for gridpoint in breakpoint_gridpoints
-        ]
+        self._length = _resolve_reach_length(length, reach)
+        self._breakpoints = breakpoints or []
 
     @property
     def id(self) -> str:
