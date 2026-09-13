@@ -229,7 +229,7 @@ class TestVerticalModelResult:
         # ===
 
         # expected element depths from dfsu geometry
-        element_depths_expected = dfsu_col.geometry.calc_ze(dfsu_col._zn)
+        element_depths_expected = dfsu_col.z.elements
 
         # element depths at first timestep from VerticalModelResult
         element_depths_t0 = vmr.data.sel(time=vmr.data.time.values[0]).z.values
