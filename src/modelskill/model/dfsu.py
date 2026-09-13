@@ -1,5 +1,4 @@
 from __future__ import annotations
-import inspect
 from pathlib import Path
 from typing import Literal, get_args, cast
 
@@ -195,9 +194,7 @@ class DfsuModelResult(SpatialField):
             if isinstance(self.data, mikeio.Dataset):
                 ds_column = self.data.sel(x=x, y=y)
             elif isinstance(self.data, mikeio.dfsu.Dfsu3D):
-                # FIXME: open with specific element instead...make sure mikeio fix is in place before
-                # ds_column = self.data.read(elements=elemids) # when bug is fixed in mikeio
-                ds_column = self.data.read(items=self.sel_items.all).sel(x=x, y=y)
+                ds_column = self.data.read(elements=elemids, items=self.sel_items.all)
             else:
                 raise ValueError(
                     "Unsupported data type for vertical profile extraction."
@@ -207,8 +204,8 @@ class DfsuModelResult(SpatialField):
                 "Only spatial_method='contained' is currently implemented for vertical profile extraction from DfsuModelResult. "
             )
 
-        # get layer depth info
-        layer_boundaries = ds_column.geometry.calc_ze(ds_column._zn)
+        # z-coordinates at element centers, one row per timestep
+        element_depths = ds_column.z.elements
 
         item_name = self.sel_items.values
 
@@ -218,7 +215,7 @@ class DfsuModelResult(SpatialField):
 
         # Create flattened arrays # Repeat each timestamp n_layers times
         time_flat = np.repeat(ds_column.time, n_layers)
-        z_flat = layer_boundaries.flatten()  # Flatten z-coordinates
+        z_flat = element_depths.flatten()  # Flatten z-coordinates
         item_values_1d = ds_column[item_name].to_numpy().flatten()  # Flatten item?
         # aux_items_flat = {aux_item: ds_column[aux_item].to_numpy().flatten() for aux_item in self.sel_items.aux}
 
@@ -261,8 +258,8 @@ class DfsuModelResult(SpatialField):
             )
 
         if method == "contained":
-            signature = inspect.signature(self.data.geometry.find_index)
-            if "z" in signature.parameters and z is not None:
+            # only layered geometries can be indexed by z
+            if z is not None and hasattr(self.data.geometry, "n_layers"):
                 elemids = self.data.geometry.find_index(x=x, y=y, z=z)
             else:
                 elemids = self.data.geometry.find_index(x=x, y=y)
