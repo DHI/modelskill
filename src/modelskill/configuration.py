@@ -4,7 +4,9 @@ import pandas as pd
 import yaml
 from typing import Union
 
-from . import model_result, match, Quantity
+from .quantity import Quantity
+from .model import model_result
+from .matching import match
 from .obs import PointObservation, TrackObservation
 from .comparison import ComparerCollection
 

@@ -20,7 +20,7 @@ import pandas as pd
 import xarray as xr
 
 from .types import PointType, TrackType, VerticalType, GeometryType, DataInputType
-from . import Quantity
+from .quantity import Quantity
 from .timeseries import (
     TimeSeries,
     _parse_xyz_point_input,

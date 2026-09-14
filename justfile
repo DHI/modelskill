@@ -1,7 +1,7 @@
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
-# Run all checks: lint, typecheck, test, doctest
-check: lint typecheck test doctest
+# Run all checks: lint, layers, typecheck, test, doctest
+check: lint layers typecheck test doctest
 
 # Build package (after typecheck and test)
 build: typecheck test
@@ -18,6 +18,10 @@ format:
 # Run tests
 test:
     uv run pytest --disable-warnings
+
+# Check the import layering in .importlinter
+layers:
+    uv run lint-imports
 
 # Type check with mypy
 typecheck:
