@@ -275,10 +275,6 @@ class TimeSeries:
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
     @property
-    def _is_modelresult(self) -> bool:
-        return bool(self.data[self.name].attrs["kind"] == "model")
-
-    @property
     def values(self) -> np.ndarray:
         """Values as numpy array"""
         return self.data[self.name].values
