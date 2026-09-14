@@ -107,9 +107,6 @@ class ComparerCollection(Mapping):
     def _unit_text(self) -> str:
         # Picking the first one is arbitrary, but it should be the same for all
         # we could check that they are all the same, but let's assume that they are
-        # for cmp in self:
-        #     if cmp._unit_text != text:
-        #         warnings.warn(f"Unit text is inconsistent: {text} vs {cmp._unit_text}")
         return self[0]._unit_text
 
     @property

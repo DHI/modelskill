@@ -116,12 +116,6 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
             data.attrs["gtype"] = str(GeometryType.NODE)
         else:
             data.attrs["gtype"] = str(GeometryType.POINT)
-    # assert "gtype" in data.attrs, "data must have a gtype attribute"
-    # assert data.attrs["gtype"] in [
-    #     str(GeometryType.POINT),
-    #     str(GeometryType.TRACK),
-    # ], f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
-
     if "color" not in data["Observation"].attrs:
         data["Observation"].attrs["color"] = "black"
 
@@ -613,17 +607,6 @@ class Comparer:
     def time(self) -> pd.DatetimeIndex:
         """time of compared data as pandas DatetimeIndex"""
         return self.data.time.to_index()
-
-    # TODO: Should we keep these? (renamed to start_time and end_time)
-    # @property
-    # def start(self) -> pd.Timestamp:
-    #     """start pd.Timestamp of compared data"""
-    #     return self.time[0]
-
-    # @property
-    # def end(self) -> pd.Timestamp:
-    #     """end pd.Timestamp of compared data"""
-    #     return self.time[-1]
 
     @property
     def x(self) -> Any:

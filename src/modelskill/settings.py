@@ -192,19 +192,6 @@ def _describe_option_short(pat: str = "", _print_desc: bool = True) -> str | Non
     return s
 
 
-def _describe_option(pat: str = "", _print_desc: bool = True) -> str | None:
-    keys = _select_options(pat)
-    if len(keys) == 0:
-        raise OptionError("No such keys(s)")
-
-    s = "\n".join([_build_option_description(k) for k in keys])
-
-    if _print_desc:
-        print(s)
-        return None
-    return s
-
-
 def reset_option(pat: str = "", silent: bool = False) -> None:
     """Reset one or more options (matching a pattern) to the default value
 
@@ -337,11 +324,6 @@ def _build_option_description(k: str) -> str:
     return s
 
 
-# temporary disabled
-# get_option = _get_option
-# set_option = _set_option
-# reset_option = _reset_option
-# describe_option = _describe_option
 options = OptionsContainer(_global_settings)
 
 
@@ -453,20 +435,9 @@ is_tuple_list_or_str = is_instance_factory(
 )  # a list can be used as a tuple
 
 
-def is_callable(obj) -> bool:
-    if not callable(obj):
-        raise ValueError("Value must be a callable")
-    return True
-
-
 def is_positive(value) -> None:
     if not (np.isreal(value) and value > 0):
         raise ValueError("Value must be a number greater than 0")
-
-
-def is_nonnegative(value) -> None:
-    if not (np.isreal(value) and value >= 0):
-        raise ValueError("Value must be a non-negative number")
 
 
 def is_between_0_and_1(value) -> None:

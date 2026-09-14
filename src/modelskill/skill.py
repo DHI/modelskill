@@ -56,21 +56,6 @@ class SkillArrayPlotter:
             df = ser.to_frame()
         return df
 
-    # TODO hide this for now until we are certain about the API
-    # def map(self, **kwargs):
-    #     if "model" in self.skillarray.data.index.names:
-    #         n_models = len(self.skillarray.data.reset_index().model.unique())
-    #         if n_models > 1:
-    #             raise ValueError(
-    #                 "map() is only possible for single model skill. Use .sel(model=...) to select a single model."
-    #             )
-
-    #     gdf = self.skillarray.to_geodataframe()
-    #     column = self.skillarray.name
-    #     kwargs = {"marker_kwds": {"radius": 10}} | kwargs
-
-    #     return gdf.explore(column=column, **kwargs)
-
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         raise NotImplementedError(
             "It is not possible to call plot directly (has no default)! Use one of the plot methods explicitly e.g. plot.line() or plot.bar()"
