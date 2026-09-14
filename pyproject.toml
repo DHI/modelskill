@@ -71,10 +71,17 @@ networks = ["mikeio1d>=1.2.1", "networkx"]
 
 [tool.ruff]
 extend-exclude = ["notebooks"]
+# PLC2701 (no private imports from other packages) is still a preview rule
+preview = true
 
 [tool.ruff.lint]
 ignore = ["E501"]
-select = ["E4", "E7", "E9", "F", "D200", "D205"]
+select = ["E4", "E7", "E9", "F", "D200", "D205", "PLC2701"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests import modelskill by absolute path, so its own private modules count as
+# "external" to this rule. Reaching into them from tests is a separate problem.
+"tests/**" = ["PLC2701"]
 
 [tool.mypy]
 python_version = "3.12"
