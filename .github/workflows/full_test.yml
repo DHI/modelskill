@@ -14,10 +14,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: astral-sh/ruff-action@v2
+
+      - uses: extractions/setup-just@v3
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: 0.6.2
-          src: src
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Lint
+        run: just lint
+
+      - name: Check for private attribute access on third-party objects
+        run: just private-access
 
   build:
     runs-on: ubuntu-latest
