@@ -100,10 +100,8 @@ def main() -> int:
         if member in ours:
             continue
         path = Path(hit["filename"])
-        try:
+        if path.is_relative_to(root):
             path = path.relative_to(root)
-        except ValueError:
-            pass
         reported.append((path, hit["location"]["row"], member))
 
     if not reported:
