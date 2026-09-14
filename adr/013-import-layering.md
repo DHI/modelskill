@@ -20,6 +20,41 @@ Modules may import downward and never upward. Modules sharing a layer may import
 
 ```mermaid
 flowchart TD
+    subgraph L1["Entry points"]
+        configuration
+        data
+    end
+    subgraph L2["Matching"]
+        matching
+    end
+    subgraph L3["Comparison"]
+        comparison
+    end
+    subgraph L4["Skill tables"]
+        skill
+        skill_grid
+        skill_profile
+    end
+    subgraph L5["Plotting"]
+        plotting
+    end
+    subgraph L6["Model results"]
+        model
+        network
+    end
+    subgraph L7["Observations"]
+        obs
+    end
+    subgraph L8["Time series"]
+        timeseries
+    end
+    subgraph L9["Foundations"]
+        metrics
+        quantity
+        settings
+        types
+        utils
+    end
     configuration --> matching
     data --> comparison
     matching --> comparison
@@ -39,7 +74,7 @@ flowchart TD
     plotting -. "scatter(skill_table=True)" .-> matching
 ```
 
-Arrows point from importer to imported; transitively implied edges are omitted. The dotted arrow is the one accepted violation.
+Each box is a layer, named for what it contributes; modules inside a layer may import each other. Arrows point from importer to imported, and transitively implied edges are omitted. The dotted arrow is the one accepted violation.
 
 Three imports are ignored, each with its reason in the config. Two are reads of `__version__`, which lives in `__init__.py` and so pulls in the package. The third is the `plotting` → `matching` call above.
 
