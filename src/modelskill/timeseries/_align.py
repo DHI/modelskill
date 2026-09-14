@@ -4,8 +4,10 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import xarray as xr
-from typing import Any
-from ..obs import Observation
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..obs import Observation
 
 
 def _get_valid_times(

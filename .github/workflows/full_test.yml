@@ -51,6 +51,9 @@ jobs:
       - name: Show pandas version
         run: uv run python -c "import pandas; print(f'pandas {pandas.__version__}')"
 
+      - name: Check import layering
+        run: just layers
+
       - name: Type check
         run: just typecheck
 

@@ -58,6 +58,7 @@ test = [
     "mypy==1.19.1",
     "types-PyYAML",
     "geopandas",
+    "import-linter",
 ]
 
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]

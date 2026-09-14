@@ -1,0 +1,27 @@
+[importlinter]
+root_package = modelskill
+# Type-only imports do not couple the modules at runtime.
+exclude_type_checking_imports = True
+
+[importlinter:contract:layers]
+name = ModelSkill layers
+type = layers
+layers =
+    modelskill.configuration : modelskill.data
+    modelskill.matching
+    modelskill.comparison
+    modelskill.skill : modelskill.skill_grid : modelskill.skill_profile
+    modelskill.plotting
+    modelskill.model : modelskill.network
+    modelskill.obs
+    modelskill.timeseries
+    modelskill.metrics : modelskill.quantity : modelskill.settings : modelskill.types : modelskill.utils
+ignore_imports =
+    # __version__ is defined in modelskill/__init__.py, so reading it pulls in
+    # the whole package. Moving it to its own module would remove these.
+    modelskill.comparison._comparison -> modelskill
+    modelskill.timeseries._timeseries -> modelskill
+    # plot.scatter(skill_table=True) builds a Comparer to compute the table,
+    # so plotting reaches up into matching. Deferred to a function body to keep
+    # it importable. This is the one real layering violation.
+    modelskill.plotting._scatter -> modelskill

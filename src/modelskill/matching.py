@@ -21,7 +21,7 @@ import xarray as xr
 
 from modelskill.model.point import PointModelResult
 
-from . import Quantity
+from .quantity import Quantity
 from .comparison import Comparer, ComparerCollection
 from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult

@@ -24,7 +24,7 @@ from ..model.network import NodeModelResult
 
 
 from .. import metrics as mtr
-from .. import Quantity
+from ..quantity import Quantity
 from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation, NodeObservation
 from ..model import PointModelResult, TrackModelResult, VerticalModelResult
