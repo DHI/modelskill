@@ -907,17 +907,25 @@ class Comparer:
                 k: v.sel(time=slice(start, end)) for k, v in raw_mod_data.items()
             }  # type: ignore
         if time is not None:
-            d = d.sel(time=time)
+            try:
+                d = d.sel(time=time)
+            except KeyError:
+                d = d.isel(time=slice(0, 0))  # No data for this time, return empty
+            else:
+                if "time" not in d.dims:
+                    # Exact timestamp match returns 0-dimensional dataset; expand back to 1D
+                    d = d.expand_dims("time")
             raw_mod = {}
             # Nearest time selection for raw_mod_data,
             # as it may not have the same time points as the matched data
             if isinstance(time, slice):
                 raw_mod_data = {k: v.sel(time=time) for k, v in raw_mod_data.items()}  # type: ignore
             else:
-                for k, v in raw_mod_data.items():
-                    time_vals = v.time.values
-                    idx = np.abs(time_vals - np.datetime64(time)).argmin()
-                    raw_mod[k] = v.sel(time=time_vals[idx])
+                if len(d.time) > 0:
+                    for k, v in raw_mod_data.items():
+                        time_vals = v.time.values
+                        idx = np.abs(time_vals - np.datetime64(time)).argmin()
+                        raw_mod[k] = v.sel(time=time_vals[idx])
                 raw_mod_data = raw_mod
         if area is not None:
             if _area_is_bbox(area):

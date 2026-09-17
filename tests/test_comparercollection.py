@@ -140,16 +140,21 @@ def test_cc_sel_model_last(cc):
     assert cc2.mod_names == ["m3"]
 
 
-# TODO: FAILS
-# def test_cc_sel_time_single(cc):
-#     cc1 = cc.sel(time="2019-01-03")
-#     assert cc1.n_comparers == 2
-#     assert cc1.n_models == 3
-#     assert cc1.n_points == 6
-#     assert cc1.start == pd.Timestamp("2019-01-03")
-#     assert cc1.end == pd.Timestamp("2019-01-05")
-#     assert cc1.obs_names == ["fake point obs", "fake track obs"]
-#     assert cc1.mod_names == ["m1", "m2", "m3"]
+def test_cc_sel_time_string(cc):
+    """Selecting a date string where both comparers have data should include both."""
+    # pc has data from 2019-01-01, tc starts from 2019-01-03 - both have data on Jan 3
+    cc1 = cc.sel(time="2019-01-03")
+    assert len(cc1) == 2
+    assert cc1.obs_names == ["fake point obs", "fake track obs"]
+
+
+def test_cc_sel_time_string_no_overlap(cc):
+    """Selecting a date string where one comparer has no data should exclude that comparer."""
+    # pc has data from 2019-01-01, tc starts from 2019-01-03
+    # Selecting 2019-01-01 should return only pc
+    cc1 = cc.sel(time="2019-01-01")
+    assert len(cc1) == 1
+    assert cc1.obs_names == ["fake point obs"]
 
 
 def test_cc_sel_time(cc):
