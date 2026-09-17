@@ -1,0 +1,147 @@
+---
+title: Forecast skill by lead time
+jupyter: python3
+---
+
+A forecast issued 6 hours ahead is usually better than one issued 48 hours ahead. This example
+quantifies that degradation using real water level forecasts from the NOAA Delaware Bay
+Operational Forecast System (DBOFS) at Lewes, Delaware.
+
+A forecast dataset needs **two** time dimensions: the time the forecast is *for* (the valid time)
+and how far ahead it was issued (the lead time). ModelSkill carries the lead time as an auxiliary
+variable, which can then be used for grouping.
+
+```{python}
+import matplotlib.pyplot as plt
+import pandas as pd
+import modelskill as ms
+```
+
+## The data
+
+Each row is one forecast: issued at `reference_time`, valid at `valid_time`, at a horizon of
+`lead_time` hours. The model runs four times a day out to 48 hours, so successive runs overlap —
+the same valid time is forecast repeatedly, at a shorter lead time each run.
+
+```{python}
+df = pd.read_csv(
+    "../data/forecast_lewes/lewes_dbofs_forecast.csv",
+    parse_dates=["reference_time", "valid_time"],
+)
+df.head()
+```
+
+The `tide` column is the harmonic tide prediction for the same station. It is not initialised from
+recent conditions, so its error *must* be independent of lead time. That makes it a control: if
+the tide curve is not flat, the verification is at fault, not the tide.
+
+## Matching
+
+```{python}
+cmp = ms.from_matched(
+    df.set_index("valid_time").drop(columns="reference_time"),
+    obs_item="observed",
+    mod_items=["dbofs", "tide"],
+    aux_items=["lead_time"],
+    quantity=ms.Quantity("Water Level", "m"),
+)
+cmp
+```
+
+## A first look
+
+```{python}
+sk = cmp.skill(by=["model", "lead_time"], metrics=["bias", "rmse"])
+
+_, ax = plt.subplots()
+sk.rmse.plot.line(ax=ax)
+ax.set_xticks(range(0, 49, 6))  # lead time is plotted as a category, so thin the ticks
+ax.set_xlabel("Lead time [hours]")
+ax.set_ylabel("RMSE [m]")
+ax.set_title("Skill by lead time — before aligning verification times");
+```
+
+The forecast error grows with the horizon, as expected. But the tide reference *falls* from 0.26 m
+to 0.24 m, which is impossible — so the verification needs fixing first.
+
+## The verification window slides
+
+A forecast at lead time 48 h can only verify against times at least 48 h after the first model
+run, so each lead time is scored over a different period:
+
+```{python}
+for lead in [0, 24, 48]:
+    d = df[df.lead_time == lead]
+    print(f"lead {lead:2d} h: {d.valid_time.min().date()} to {d.valid_time.max().date()}")
+```
+
+And the days are not equally easy — the tide alone fits better late in this record:
+
+```{python}
+unique_times = df.drop_duplicates("valid_time")
+unique_times.assign(day=unique_times.valid_time.dt.date).groupby("day").apply(
+    lambda d: ((d.tide - d["observed"]) ** 2).mean() ** 0.5, include_groups=False
+).round(3)
+```
+
+Longer lead times slide into the easier days, so skill differences between horizons are confounded
+with differences between periods.
+
+## Holding the verification times fixed
+
+Keep lead times on the model's 6-hourly cycle spacing so all of them sample the same hours of the
+day, then restrict to the valid times they share.
+
+```{python}
+on_cycle = df[df.lead_time % 6 == 0]
+shared = set.intersection(*[set(g.valid_time) for _, g in on_cycle.groupby("lead_time")])
+aligned = on_cycle[on_cycle.valid_time.isin(shared)]
+
+cmp_aligned = ms.from_matched(
+    aligned.set_index("valid_time").drop(columns="reference_time"),
+    obs_item="observed",
+    mod_items=["dbofs", "tide"],
+    aux_items=["lead_time"],
+    quantity=ms.Quantity("Water Level", "m"),
+)
+cmp_aligned.skill(by=["model", "lead_time"], metrics=["bias", "rmse"]).round(3)
+```
+
+The tide is now flat at 0.260 m, and the forecast rises 0.106 → 0.132 m — a steeper degradation
+than the first plot showed. The cost is sample size: 20 verification times per lead instead of 28.
+
+## Removing the datum offset
+
+Both series carry a large constant bias, about -0.08 m for the forecast and -0.26 m for the tide.
+Errors that size at lead time 0 indicate reference levels, not forecast quality. `remove_bias()`
+subtracts each model's mean residual, leaving the time-varying error untouched.
+
+```{python}
+unbiased = cmp_aligned.remove_bias()
+sk_unbiased = unbiased.skill(by=["model", "lead_time"], metrics=["bias", "rmse"])
+
+_, ax = plt.subplots()
+sk_unbiased.rmse.plot.line(ax=ax)
+ax.set_xlabel("Lead time [hours]")
+ax.set_ylabel("RMSE [m]")
+ax.set_title("Skill by lead time — datum offsets removed");
+```
+
+This reverses the ranking. The tide sits flat at 0.047 m, well below the forecast's 0.092–0.104 m;
+the earlier impression that the forecast beat the tide table was the tide's datum offset, not
+skill. Lewes is strongly tide-dominated and this week has no storm surge, which is exactly when
+harmonic prediction is hard to beat.
+
+The lead-time signal survives and is cleaner: error grows 0.092 → 0.104 m, and residual bias
+drifts from +0.020 m to -0.005 m, while the reference stays flat.
+
+## Selecting a single horizon
+
+Lead time is an ordinary auxiliary variable, so `where()` isolates one horizon and everything else
+behaves normally.
+
+```{python}
+unbiased.where(unbiased.data["lead_time"] == 48).plot.scatter();
+```
+
+See `data/forecast_lewes/README.md` for provenance and known limitations.
