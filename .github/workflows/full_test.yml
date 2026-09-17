@@ -21,6 +21,10 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    # Without this, `uv run` re-syncs the environment from the lockfile and
+    # silently undoes the pandas version installed below.
+    env:
+      UV_NO_SYNC: "1"
     strategy:
       matrix:
         python-version: ["3.12", "3.14"]
@@ -42,14 +46,16 @@ jobs:
 
       - name: Install pandas 2.x
         if: matrix.pandas-version == 'pandas2'
-        run: uv run pip install "pandas>=2.0,<3.0"
+        run: uv pip install "pandas>=2.0,<3.0"
 
       - name: Install pandas 3.x
         if: matrix.pandas-version == 'pandas3'
-        run: uv run pip install "pandas>=3.0,<4.0"
+        run: uv pip install "pandas>=3.0,<4.0"
 
-      - name: Show pandas version
-        run: uv run python -c "import pandas; print(f'pandas {pandas.__version__}')"
+      - name: Check pandas version
+        env:
+          EXPECTED_MAJOR: ${{ matrix.pandas-version == 'pandas3' && '3' || '2' }}
+        run: uv run python -c "import os, pandas; v = pandas.__version__; print('pandas', v); assert v.split('.')[0] == os.environ['EXPECTED_MAJOR'], v"
 
       - name: Type check
         run: just typecheck

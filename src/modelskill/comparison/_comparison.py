@@ -495,7 +495,7 @@ class Comparer:
             else {
                 # key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)
                 str(key): PointModelResult(self.data[[str(key)]], name=str(key))
-                for key, value in matched_data.data_vars.items()
+                for key, value in self.data.data_vars.items()
                 if value.attrs["kind"] == "model"
             }
         )
