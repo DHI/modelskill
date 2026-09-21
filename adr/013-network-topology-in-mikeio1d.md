@@ -21,7 +21,7 @@ mikeio1d gains an optional network module that builds and owns `Network`. models
 | Owner | Pieces |
 |---|---|
 | mikeio1d | abstract types and `BasicNode`/`BasicReach`, the `Res1D` adapter, `Network.open`, the `.resx` and `.inp` companions, the extension policy tables, graph construction with its length and boundary semantics, the alias map, `find`, `recall`, `to_dataframe`, `to_dataset` |
-| modelskill | `NetworkModelResult`, `NodeModelResult`, `NodeObservation`, `ReachObservation`, matching |
+| modelskill | `NetworkModelResult`, `NodeModelResult`, `NodeObservation`, `ReachObservation`, matching, the MIKE+ station resolver |
 
 `NetworkModelResult` takes a `Network` the upstream module built, or a path it hands to that module. The module is an extra there, carrying networkx and xarray, so `to_dataset()` ships with the class.
 modelskill's `network` extra requires a mikeio1d release new enough to contain it.
