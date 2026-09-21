@@ -224,14 +224,16 @@ class NetworkModelResult:
         self.sel_items = sel_items
 
         if quantity is None:
-            da = self.data[sel_items.values]
-            quantity = Quantity.from_cf_attrs(da.attrs)
-            if quantity == Quantity.undefined():
-                # A result file names its quantity but carries no unit, and
-                # Quantity.from_cf_attrs needs both. Fall back to the name alone
-                # rather than reporting nothing at all.
-                name = da.attrs.get("long_name") or str(sel_items.values)
-                quantity = Quantity(name=name, unit="")
+            # Read straight off the attributes rather than through
+            # Quantity.from_cf_attrs, which needs a unit as well as a name and
+            # reports neither without both: a result file names its quantity and
+            # carries no unit for it, so that would report nothing at all. A unit
+            # is still used if one ever travels with the data.
+            attrs = self.data[sel_items.values].attrs
+            quantity = Quantity(
+                name=attrs.get("long_name") or str(sel_items.values),
+                unit=attrs.get("units", ""),
+            )
         self.quantity = quantity
 
         # Mark data variables as model data
