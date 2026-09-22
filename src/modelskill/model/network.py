@@ -74,6 +74,10 @@ class NodeModelResult(TimeSeries):
                 "'reach' coordinate for a reach or a break point. A model result "
                 "for a network location comes from NetworkModelResult.extract()."
             )
+        # Mark the kind on our own copy. The dataset handed in may belong to an
+        # observation, and a shallow copy rebuilds each variable's attrs, so
+        # reading it here does not turn that observation into a model result.
+        data = data.copy()
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)

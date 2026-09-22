@@ -206,6 +206,16 @@ class TestNodeModelResult:
         assert rebuilt.node == "123"
         assert rebuilt.data["Network_Model"].attrs["kind"] == "model"
 
+    def test_reading_an_observations_data_leaves_the_observation_alone(
+        self, sample_node_data
+    ):
+        """A result marks its own copy, so the observation stays an observation."""
+        obs = NodeObservation(sample_node_data, at="123", item="WaterLevel")
+
+        NodeModelResult(obs.data)
+
+        assert obs.data["WaterLevel"].attrs["kind"] == "observation"
+
     def test_an_extracted_result_records_the_graph_integer(
         self, sample_network, sample_node_data
     ):
