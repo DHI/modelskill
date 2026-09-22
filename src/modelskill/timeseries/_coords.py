@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import numpy as np
@@ -95,3 +96,62 @@ def network_location(ds: xr.Dataset) -> Any:
 def _network_scalar(ds: xr.Dataset, name: str) -> Any:
     value = _coordinate_values(ds, name)
     return value.item() if hasattr(value, "item") else value
+
+
+def _reject_conflicting_location(ds: xr.Dataset, named: Any, *, argument: str) -> None:
+    """Raise when data that already knows where it sits is given another location.
+
+    A dataset that has been through modelskill carries its own location
+    coordinates, and the constructors cannot re-apply them, so a location named
+    alongside it would be dropped without a word.
+
+    The comparison is a plain one rather than a lookup: an observation has no
+    network when it is built, so it cannot snap a near-miss distance the way
+    :meth:`~modelskill.model.network.NetworkModelResult.extract` does.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Data that has already been through modelskill, and so carries its own
+        location coordinates.
+    named : str or tuple of (str, float)
+        The location the caller named: a node name, a reach name, or a
+        ``(reach, distance)`` break point.
+    argument : str
+        Name of the keyword the location came from, for the error message.
+
+    Raises
+    ------
+    ValueError
+        If the data carries no network location, or carries a different one.
+    """
+    carried = network_location(ds)
+    if carried is None:
+        raise ValueError(
+            f"The data has been through modelskill but carries no network "
+            f"location, so {argument!r} ({named!r}) has nothing to agree with. "
+            "Build the observation from a DataFrame instead."
+        )
+    if not _same_location(carried, named):
+        raise ValueError(
+            f"The data already sits at {carried!r}, but {argument!r} says "
+            f"{named!r}. A dataset that has been through modelskill carries its "
+            f"own location: pass {argument}={carried!r}, or build the observation "
+            "from a DataFrame to place it somewhere else."
+        )
+
+
+def _same_location(carried: Any, named: Any) -> bool:
+    """Whether two network locations name the same place.
+
+    Break point distances are compared closely rather than exactly, so that a
+    location read off a dataset and handed straight back still agrees with
+    itself.
+    """
+    if isinstance(carried, tuple) != isinstance(named, tuple):
+        return False
+    if isinstance(carried, tuple):
+        return str(carried[0]) == str(named[0]) and math.isclose(
+            float(carried[1]), float(named[1])
+        )
+    return str(carried) == str(named)

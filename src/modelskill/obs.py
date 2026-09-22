@@ -36,7 +36,7 @@ from .timeseries import (
     _parse_network_node_input,
     _parse_network_breakpoint_input,
 )
-from .timeseries._coords import network_location
+from .timeseries._coords import _reject_conflicting_location, network_location
 
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
@@ -582,28 +582,31 @@ class NodeObservation(Observation):
                 "The integers a Network hands out are an internal index; "
                 "network.recall(<int>) gives the name back."
             )
-        if isinstance(at, tuple):
-            reach, distance = str(at[0]), float(at[1])
-            if not self._is_input_validated(data):
-                data = _parse_network_breakpoint_input(
-                    data,
-                    name=name,
-                    item=item,
-                    quantity=quantity,
-                    aux_items=aux_items,
-                    reach=reach,
-                    distance=distance,
-                )
+        location: str | tuple[str, float] = (
+            (str(at[0]), float(at[1])) if isinstance(at, tuple) else at
+        )
+        if self._is_input_validated(data):
+            assert isinstance(data, xr.Dataset)
+            _reject_conflicting_location(data, location, argument="at")
+        elif isinstance(location, tuple):
+            data = _parse_network_breakpoint_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                reach=location[0],
+                distance=location[1],
+            )
         else:
-            if not self._is_input_validated(data):
-                data = _parse_network_node_input(
-                    data,
-                    name=name,
-                    item=item,
-                    quantity=quantity,
-                    node=at,
-                    aux_items=aux_items,
-                )
+            data = _parse_network_node_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                node=location,
+                aux_items=aux_items,
+            )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
 

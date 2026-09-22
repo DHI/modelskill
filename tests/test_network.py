@@ -931,6 +931,49 @@ class TestNodeObservationAliases:
         assert len(trimmed) == len(obs) - 1
 
 
+class TestReuseOfAValidatedDataset:
+    """Data that has been through modelskill already knows where it sits.
+
+    The constructors cannot re-place it, so a location that disagrees with the
+    one the data carries is refused rather than dropped.
+    """
+
+    def test_the_location_the_data_carries_is_accepted(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at="123", item="WaterLevel")
+
+        rebuilt = NodeObservation(obs.data, at="123")
+
+        assert rebuilt.at == "123"
+
+    def test_a_conflicting_node_is_refused(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at="123", item="WaterLevel")
+
+        with pytest.raises(ValueError, match="already sits at"):
+            NodeObservation(obs.data, at="456")
+
+    def test_a_break_point_rebuilt_at_its_own_distance_is_accepted(
+        self, sample_node_data
+    ):
+        obs = NodeObservation(sample_node_data, at=("r1", 50.0), item="WaterLevel")
+
+        rebuilt = NodeObservation(obs.data, at=("r1", 50.0))
+
+        assert rebuilt.at == ("r1", 50.0)
+
+    def test_a_conflicting_break_point_is_refused(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at=("r1", 50.0), item="WaterLevel")
+
+        with pytest.raises(ValueError, match="already sits at"):
+            NodeObservation(obs.data, at=("r1", 75.0))
+
+    def test_data_with_no_network_location_is_refused(self, sample_node_data):
+        """A point observation knows where it sits, but not as a network does."""
+        obs = ms.PointObservation(sample_node_data, x=0.0, y=0.0, item="WaterLevel")
+
+        with pytest.raises(ValueError, match="no network location"):
+            NodeObservation(obs.data, at="123")
+
+
 # ---------------------------------------------------------------------------
 # NetworkModelResult — alias resolution in extract()
 # ---------------------------------------------------------------------------
