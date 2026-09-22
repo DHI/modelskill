@@ -45,7 +45,7 @@ classifiers = [
 [project.optional-dependencies]
 # networkx and xarray arrive through mikeio1d's own network extra, which
 # carries the topology layer this package builds on (ADR-013).
-network = ["mikeio1d[network]"]
+network = ["mikeio1d[network]==1.3.2a1"]
 
 [dependency-groups]
 dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2", "netCDF4", "dask"]
