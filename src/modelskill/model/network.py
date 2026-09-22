@@ -16,7 +16,7 @@ from ._base import SelectedItems
 from ..obs import NodeObservation, ReachObservation
 from ..timeseries._coords import network_location
 from ..quantity import Quantity
-from ..types import GeometryType, PointType
+from ..types import GeometryType
 
 if TYPE_CHECKING:
     from mikeio1d.network import Network
@@ -36,90 +36,106 @@ def _network_class() -> type[Network]:
 
 
 class NodeModelResult(TimeSeries):
-    """Model result for a single network node.
+    """Model result at one network location.
 
-    Construct a NodeModelResult from timeseries data for a specific node.
-    This is a simple timeseries class designed for network node data.
+    What :meth:`NetworkModelResult.extract` returns: the timeseries of a single
+    node or break point, carrying in its coordinates the location it was taken
+    from. Extract one from a :class:`NetworkModelResult` rather than building it
+    directly, since a location is named by the network it belongs to.
 
     Parameters
     ----------
-    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
-        filename (.dfs0 or .nc) or object with the data
-    name : str, optional
-        The name of the model result,
-        by default None (will be set to file name or item name)
-    node : str or tuple[str, float], optional
-        Where the data sits: a node name, or a break point as
-        ``(reach_id, distance)``. By default None, which requires data that
-        already carries a ``node`` or ``reach`` coordinate.
-    node_index : int, optional
-        The integer the network used for this location, recorded as provenance.
-        Nothing reads it back, by default None
-    item : str | int | None, optional
-        If multiple items/arrays are present in the input an item
-        must be given (as either an index or a string), by default None
-    quantity : Quantity, optional
-        Model quantity, for MIKE files this is inferred from the EUM information
-    aux_items : list[int | str], optional
-        Auxiliary items, by default None
+    data : xr.Dataset
+        Timeseries for one location, carrying a ``node`` coordinate, or a
+        ``reach`` coordinate with ``distance`` for a break point.
 
-    Examples
+    Raises
+    ------
+    TypeError
+        If data is not an xarray.Dataset.
+    ValueError
+        If data carries no network location.
+
+    See Also
     --------
-    >>> import modelskill as ms
-    >>> mr = ms.NodeModelResult(data, node="123", name="Node_123")
-    >>> mr2 = ms.NodeModelResult(df, item="Water Level", node=("r1", 24.5))
+    NetworkModelResult.extract : Extract a model result at a node or a reach.
     """
 
-    def __init__(
-        self,
-        data: PointType,
-        node: str | tuple[str, float | None] | None = None,
+    def __init__(self, data: xr.Dataset) -> None:
+        if not isinstance(data, xr.Dataset):
+            raise TypeError(
+                "'NodeModelResult' takes an xarray.Dataset carrying its own "
+                f"location, got {type(data).__name__}. A model result for a "
+                "network location comes from NetworkModelResult.extract()."
+            )
+        if GeometryType.from_network_coords(data) is None:
+            raise ValueError(
+                "'NodeModelResult' needs data carrying a 'node' coordinate, or a "
+                "'reach' coordinate for a reach or a break point. A model result "
+                "for a network location comes from NetworkModelResult.extract()."
+            )
+        data_var = str(list(data.data_vars)[0])
+        data[data_var].attrs["kind"] = "model"
+        super().__init__(data=data)
+
+    @classmethod
+    def _from_network(
+        cls,
+        data: xr.Dataset,
         *,
-        node_index: int | None = None,
+        location: str | tuple[str, float | None],
+        node_index: int,
         name: str | None = None,
         item: str | int | None = None,
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
-    ):
-        if not self._is_input_validated(data):
-            if isinstance(node, tuple):
-                reach, distance = node
-                data = _parse_network_breakpoint_input(
-                    data,
-                    name=name,
-                    item=item,
-                    quantity=quantity,
-                    aux_items=aux_items,
-                    reach=reach,
-                    distance=distance,
-                )
-            elif node is not None:
-                data = _parse_network_node_input(
-                    data,
-                    name=name,
-                    item=item,
-                    quantity=quantity,
-                    node=node,
-                    aux_items=aux_items,
-                )
-            else:
-                raise ValueError(
-                    "'NodeModelResult' needs a node name or a (reach, distance) "
-                    "pair when the data does not already carry its location"
-                )
+    ) -> NodeModelResult:
+        """Build a result from the data a network keeps at one location.
 
-        if not isinstance(data, xr.Dataset):
-            raise ValueError("'NodeModelResult' requires xarray.Dataset")
-        if GeometryType.from_network_coords(data) is None:
-            raise ValueError(
-                "'NodeModelResult' needs a node name, a (reach, distance) pair, or "
-                "data that already carries a 'node' or 'reach' coordinate"
+        Parameters
+        ----------
+        data : xr.Dataset
+            Timeseries for one location, as the network stored it.
+        location : str or tuple of (str, float or None)
+            A node name, or a break point as ``(reach_id, distance)``.
+        node_index : int
+            The integer the network used for this location, recorded as
+            provenance. Nothing reads it back.
+        name : str, optional
+            The name of the model result, by default None (taken from the item)
+        item : str or int, optional
+            Item to take when the data holds more than one, by default None
+        quantity : Quantity, optional
+            Model quantity, by default None (inferred from the data)
+        aux_items : sequence of int or str, optional
+            Auxiliary items, by default None
+
+        Returns
+        -------
+        NodeModelResult
+            the result at that location
+        """
+        if isinstance(location, tuple):
+            reach, distance = location
+            ds = _parse_network_breakpoint_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                reach=str(reach),
+                distance=distance,
             )
-        if node_index is not None:
-            data = data.assign_coords(node_index=int(node_index))
-        data_var = str(list(data.data_vars)[0])
-        data[data_var].attrs["kind"] = "model"
-        super().__init__(data=data)
+        else:
+            ds = _parse_network_node_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                node=location,
+                aux_items=aux_items,
+            )
+        return cls(ds.assign_coords(node_index=int(node_index)))
 
     @property
     def node(self) -> Any:
@@ -363,9 +379,9 @@ class NetworkModelResult:
         data = self.data.sel(node=node_id).drop_vars(
             ("node", *self._UPSTREAM_IDENTITY_COORDS), errors="ignore"
         )
-        return NodeModelResult(
-            data=data,
-            node=location,
+        return NodeModelResult._from_network(
+            data,
+            location=location,
             node_index=int(node_id),
             name=self.name,
             item=self.sel_items.values,
