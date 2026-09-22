@@ -346,18 +346,19 @@ class NetworkModelResult:
         return self._as_node_result(int(candidates["node"].values[order[0]]))
 
     def _explain_no_reach_data(self, reach_id: str, item: str) -> str:
-        # Whether the reach has no such data at all, or has it at breakpoints this
-        # model result did not load, is a distinction only the network can make.
+        # Whether the reach names the quantity at all is a distinction only the
+        # network can make: its breakpoints say which columns they were read for,
+        # where the dataset shows only that the values are missing.
         has_source_data = any(
             breakpoint.data is not None and item in breakpoint.data.columns
             for breakpoint in self.network.reaches[reach_id].breakpoints
         )
         if has_source_data:
             return (
-                f"Reach '{reach_id}' has breakpoint data for quantity "
-                f"'{item}', but matching breakpoint nodes are "
-                "missing from the model dataset. Re-create the NetworkModelResult "
-                "with the relevant reaches populated."
+                f"Reach '{reach_id}' has breakpoints that name quantity "
+                f"'{item}', but none of them carry values for it in this model "
+                "result. Re-create the NetworkModelResult with the relevant "
+                "reaches populated."
             )
         return (
             f"Reach '{reach_id}' was found in the network but none of its "

@@ -825,6 +825,25 @@ def test_extract_reach_observation_non_equivalent_breakpoints_raises(sample_node
         nmr.extract(obs)
 
 
+def test_extract_reach_whose_breakpoints_carry_no_values_raises_valueerror(
+    sample_node_data,
+):
+    """A break point can name a quantity and hold nothing for it.
+
+    The sibling case, a reach whose break points never named the quantity, is
+    covered by the test below; the network is what tells the two apart.
+    """
+    time = sample_node_data.index
+    no_values = pd.DataFrame({"WaterLevel": np.full(len(time), np.nan)}, index=time)
+    nmr = NetworkModelResult(
+        make_breakpoint_network("r1", 50.0, no_values), item="WaterLevel"
+    )
+    obs = ms.ReachObservation(sample_node_data, reach="r1", item="WaterLevel")
+
+    with pytest.raises(ValueError, match="none of them carry values for it"):
+        nmr.extract(obs)
+
+
 @pytest.mark.skipif(
     sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
 )
