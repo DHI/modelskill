@@ -336,7 +336,7 @@ class TestVerticalObservation:
 @pytest.fixture
 def network():
     """Network fixture with 3 nodes"""
-    pytest.importorskip("networkx")
+    pytest.importorskip("mikeio1d.network")
     from tests.network_helpers import make_network
 
     time = pd.date_range("2017-10-27", periods=20, freq="h")
@@ -348,7 +348,7 @@ def network():
 @pytest.fixture
 def network2():
     """Second network fixture with offset data for multi-model tests"""
-    pytest.importorskip("networkx")
+    pytest.importorskip("mikeio1d.network")
     from tests.network_helpers import make_network
 
     time = pd.date_range("2017-10-27", periods=20, freq="h")
