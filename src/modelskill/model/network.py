@@ -157,10 +157,6 @@ class NodeModelResult(TimeSeries):
             return None
         return int(np.atleast_1d(self.data.coords["node_index"].values)[0])
 
-    def _create_new_instance(self, data: xr.Dataset) -> NodeModelResult:
-        """Create a new instance; the location already travels in the coords."""
-        return self.__class__(data)
-
 
 class NetworkModelResult:
     """Model result for network data with time and node dimensions.
