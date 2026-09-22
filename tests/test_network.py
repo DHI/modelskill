@@ -597,7 +597,7 @@ class TestValuesReachTheComparer:
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
 )
 def test_a_model_result_built_from_a_file_carries_the_files_own_values():
     """Checked against mikeio1d's own read of the file.
@@ -618,7 +618,7 @@ def test_a_model_result_built_from_a_file_carries_the_files_own_values():
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
 )
 def test_a_model_result_can_be_built_from_a_result_file():
     mr = NetworkModelResult("./tests/testdata/network.res1d", item="WaterLevel")
@@ -628,7 +628,7 @@ def test_a_model_result_can_be_built_from_a_result_file():
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
 )
 def test_extract_reach_observation_happy_path(sample_node_data):
     path_to_file = "./tests/testdata/network.res1d"
@@ -645,7 +645,7 @@ def test_extract_reach_observation_happy_path(sample_node_data):
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
 )
 def test_extract_reach_observation_non_equivalent_breakpoints_raises(sample_node_data):
     path_to_file = "./tests/testdata/network.res1d"
@@ -659,7 +659,7 @@ def test_extract_reach_observation_non_equivalent_breakpoints_raises(sample_node
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
 )
 def test_extract_reach_observation_with_reaches_not_populated_raises_valueerror(
     sample_node_data,
@@ -674,7 +674,7 @@ def test_extract_reach_observation_with_reaches_not_populated_raises_valueerror(
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
 )
 def test_extract_breakpoint_without_data_for_the_quantity_raises_valueerror(
     sample_node_data,
