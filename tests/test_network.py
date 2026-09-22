@@ -2,6 +2,8 @@
 
 # ruff: noqa: E402
 import sys
+from dataclasses import dataclass
+
 import pytest
 
 pytest.importorskip("mikeio1d.network")
@@ -650,52 +652,112 @@ class TestValuesReachTheComparer:
         assert cmp.score()["Network_Model"] == pytest.approx(0.0)
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
-)
-def test_a_model_result_built_from_a_file_carries_the_files_own_values():
-    """Checked against mikeio1d's own read of the file.
+@dataclass(frozen=True)
+class ResultFile:
+    """A result file, and locations in it worth scoring.
 
-    That read goes straight to the result file, not through the Network the
-    model result is built on, so the two agreeing pins the whole way in.
+    A named node carries `node_item`; `reach` carries `reach_item` along its
+    break points, one of which sits at `distance`.
     """
-    path = "./tests/testdata/network.res1d"
-    expected = mikeio1d.open(path).nodes.read()["WaterLevel:1"]
-    mr = NetworkModelResult(path, item="WaterLevel", name="Network_Model")
-    obs = NodeObservation(expected, at="1", name="Node_1_Obs")
 
-    extracted = mr.extract(obs)
-
-    assert extracted.to_dataframe()["Network_Model"].to_numpy() == pytest.approx(
-        expected.to_numpy()
-    )
+    path: str
+    node_item: str
+    node: str
+    reach_item: str
+    reach: str
+    distance: float
 
 
 @pytest.mark.skipif(
     sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
 )
-def test_a_model_result_can_be_built_from_a_result_file():
-    mr = NetworkModelResult("./tests/testdata/network.res1d", item="WaterLevel")
-
-    assert mr.quantity.name == "WaterLevel"
-    assert len(mr.time) > 0
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
+@pytest.mark.parametrize(
+    "case",
+    [
+        ResultFile(
+            path="./tests/testdata/network.res1d",
+            node_item="WaterLevel",
+            node="1",
+            reach_item="Discharge",
+            reach="100l1",
+            distance=23.8413574216414,
+        ),
+        # EPANET results are read together with the .inp and .resx companions
+        # sitting beside them, which mikeio1d finds from the .res path itself.
+        ResultFile(
+            path="./tests/testdata/epanet.res",
+            node_item="Head",
+            node="10",
+            reach_item="Flow",
+            reach="10",
+            distance=0.0,
+        ),
+    ],
+    ids=["res1d", "epanet"],
 )
-def test_extract_reach_observation_happy_path(sample_node_data):
-    path_to_file = "./tests/testdata/network.res1d"
-    network = Network.open(path_to_file)
-    nmr = NetworkModelResult(network, item="Discharge", name="network_model")
-    obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
-    obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
+class TestResultFile:
+    """The formats NetworkModelResult claims to open, opened."""
 
-    extracted = nmr.extract(obs)
+    @staticmethod
+    def _observation_for(mr, item):
+        """Data shaped for `mr`, to name a location with. Its values go unused."""
+        return pd.DataFrame({item: np.arange(len(mr.time), dtype=float)}, index=mr.time)
 
-    assert extracted.name == "network_model"
-    reach, _ = extracted.node
-    assert reach == "100l1"
+    def test_a_model_result_can_be_built_from_a_result_file(self, case):
+        mr = NetworkModelResult(case.path, item=case.node_item)
+
+        assert mr.quantity.name == case.node_item
+        assert len(mr.time) > 0
+
+    def test_a_model_result_carries_the_files_own_values(self, case):
+        """Checked against mikeio1d's own read of the file.
+
+        That read goes straight to the result file, not through the Network the
+        model result is built on, so the two agreeing pins the whole way in.
+        """
+        expected = mikeio1d.open(case.path).nodes.read()[
+            f"{case.node_item}:{case.node}"
+        ]
+        mr = NetworkModelResult(case.path, item=case.node_item, name="Network_Model")
+        obs = NodeObservation(expected, at=case.node, name="Node_Obs")
+
+        extracted = mr.extract(obs)
+
+        assert extracted.to_dataframe()["Network_Model"].to_numpy() == pytest.approx(
+            expected.to_numpy()
+        )
+
+    def test_a_named_node_extracts_and_records_its_graph_integer(self, case):
+        mr = NetworkModelResult(case.path, item=case.node_item)
+        obs = NodeObservation(self._observation_for(mr, case.node_item), at=case.node)
+
+        extracted = mr.extract(obs)
+
+        assert extracted.node == case.node
+        assert extracted.node_index == mr.network.find(node=case.node)
+
+    def test_a_break_point_extracts_at_the_networks_own_distance(self, case):
+        mr = NetworkModelResult(case.path, item=case.reach_item)
+        obs = NodeObservation(
+            self._observation_for(mr, case.reach_item), at=(case.reach, case.distance)
+        )
+
+        extracted = mr.extract(obs)
+
+        assert extracted.node == (case.reach, case.distance)
+
+    def test_a_reach_extracts_to_one_of_its_break_points(self, case):
+        mr = NetworkModelResult(case.path, item=case.reach_item, name="network_model")
+        obs = ms.ReachObservation(
+            self._observation_for(mr, case.reach_item), reach=case.reach
+        )
+
+        extracted = mr.extract(obs)
+
+        assert extracted.name == "network_model"
+        reach, distance = extracted.node
+        assert reach == case.reach
+        assert distance == pytest.approx(case.distance)
 
 
 @pytest.mark.skipif(
