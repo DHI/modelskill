@@ -19,6 +19,8 @@ from modelskill import (
     ReachObservation,
 )
 
+from modelskill.model.network import NodeModelResult
+
 from tests.network_helpers import make_breakpoint_network, make_network, node_series
 
 
@@ -172,6 +174,58 @@ class TestNetworkModelResult:
             match="NetworkModelResult supports NodeObservation and ReachObservation",
         ):
             nmr.extract(obs)
+
+
+class TestNodeModelResult:
+    """A model result at one network location, as extract() hands it back."""
+
+    def test_a_dataframe_is_refused(self, sample_node_data):
+        with pytest.raises(TypeError, match="takes an xarray.Dataset"):
+            NodeModelResult(sample_node_data)
+
+    def test_data_located_by_x_and_y_is_refused(self, sample_node_data):
+        ds = xr.Dataset(
+            {"WaterLevel": ("time", sample_node_data["WaterLevel"].to_numpy())},
+            coords={"time": sample_node_data.index, "x": 0.0, "y": 0.0},
+        )
+
+        with pytest.raises(ValueError, match="needs data carrying a 'node' coordinate"):
+            NodeModelResult(ds)
+
+    def test_a_dataset_carrying_a_node_is_accepted(
+        self, sample_network, sample_node_data
+    ):
+        extracted = NetworkModelResult(sample_network, name="Network_Model").extract(
+            NodeObservation(sample_node_data, at="123")
+        )
+
+        rebuilt = NodeModelResult(extracted.data)
+
+        assert rebuilt.node == "123"
+        assert rebuilt.data["Network_Model"].attrs["kind"] == "model"
+
+    def test_an_extracted_result_records_the_graph_integer(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network)
+        obs = NodeObservation(sample_node_data, at="123")
+
+        extracted = nmr.extract(obs)
+
+        assert extracted.node_index == sample_network.find(node="123")
+
+    def test_a_result_built_without_the_graph_integer_has_none(
+        self, sample_network, sample_node_data
+    ):
+        """node_index is provenance: a result identifies itself by node without it."""
+        extracted = NetworkModelResult(sample_network).extract(
+            NodeObservation(sample_node_data, at="123")
+        )
+
+        rebuilt = NodeModelResult(extracted.data.drop_vars("node_index"))
+
+        assert rebuilt.node_index is None
+        assert rebuilt.node == "123"
 
 
 class TestNodeObservation:
