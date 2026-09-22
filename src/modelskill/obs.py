@@ -791,7 +791,17 @@ class ReachObservation(Observation):
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
     ) -> None:
-        if not self._is_input_validated(data):
+        if self._is_input_validated(data):
+            assert isinstance(data, xr.Dataset)
+            carried = network_location(data)
+            if isinstance(carried, tuple):
+                raise ValueError(
+                    f"The data sits at break point {carried!r}, a specific "
+                    "chainage rather than the whole reach. Use "
+                    f"NodeObservation(data, at={carried!r}) for a break point."
+                )
+            _reject_conflicting_location(data, reach, argument="reach")
+        else:
             data = _parse_network_breakpoint_input(
                 data,
                 name=name,

@@ -973,6 +973,26 @@ class TestReuseOfAValidatedDataset:
         with pytest.raises(ValueError, match="no network location"):
             NodeObservation(obs.data, at="123")
 
+    def test_the_reach_the_data_carries_is_accepted(self, sample_node_data):
+        obs = ReachObservation(sample_node_data, reach="r1", item="WaterLevel")
+
+        rebuilt = ReachObservation(obs.data, reach="r1")
+
+        assert rebuilt.reach == "r1"
+
+    def test_a_conflicting_reach_is_refused(self, sample_node_data):
+        obs = ReachObservation(sample_node_data, reach="r1", item="WaterLevel")
+
+        with pytest.raises(ValueError, match="already sits at"):
+            ReachObservation(obs.data, reach="r2")
+
+    def test_a_break_points_data_is_not_reach_level(self, sample_node_data):
+        """A chainage is a narrower claim than the reach it lies on."""
+        obs = NodeObservation(sample_node_data, at=("r1", 50.0), item="WaterLevel")
+
+        with pytest.raises(ValueError, match="chainage"):
+            ReachObservation(obs.data, reach="r1")
+
 
 # ---------------------------------------------------------------------------
 # NetworkModelResult — alias resolution in extract()
