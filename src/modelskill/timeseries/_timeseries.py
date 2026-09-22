@@ -10,7 +10,7 @@ import xarray as xr
 
 from ..types import GeometryType
 from ..quantity import Quantity
-from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
+from ._plotter import TimeSeriesPlotter
 from .. import __version__
 
 T = TypeVar("T", bound="TimeSeries")
@@ -170,7 +170,7 @@ class TimeSeries:
     """Time series data"""
 
     data: xr.Dataset
-    plotter: ClassVar = MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
+    plotter: ClassVar = TimeSeriesPlotter
 
     def __init__(self, data: xr.Dataset) -> None:
         self.data = data if self._is_input_validated(data) else _validate_dataset(data)

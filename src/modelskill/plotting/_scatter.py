@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Literal, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
+from typing import Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -17,7 +17,22 @@ import modelskill.settings as settings
 from modelskill.settings import options
 
 from ..metrics import _linear_regression
-from ._misc import quantiles_xy, sample_points, format_skill_table, _get_fig_ax
+from ._backend import (
+    Backend,
+    PlotResult,
+    reject_matplotlib_axes,
+    validate_backend,
+)
+from ._plotly import scatter as _scatter_plotly
+from ._misc import (
+    quantiles_xy,
+    reglabel,
+    sample_points,
+    format_skill_table,
+    _get_fig_ax,
+    _xtick_directional,
+    _ytick_directional,
+)
 
 
 def scatter(
@@ -31,7 +46,7 @@ def scatter(
     show_hist: bool | None = None,
     show_density: bool | None = None,
     norm: colors.Normalize | None = None,
-    backend: Literal["matplotlib", "plotly"] = "matplotlib",
+    backend: Backend = "matplotlib",
     figsize: Tuple[float, float] = (8, 8),
     xlim: Tuple[float, float] | None = None,
     ylim: Tuple[float, float] | None = None,
@@ -43,8 +58,9 @@ def scatter(
     skill_scores: Mapping[str, float] | None = None,
     skill_score_unit: str | None = "",
     ax: Axes | None = None,
+    directional: bool = False,
     **kwargs,
-) -> Axes:
+) -> PlotResult:
     """Scatter plot tailored for model skill comparison.
 
     Scatter plot showing compared data: observation vs modelled
@@ -86,9 +102,9 @@ def scatter(
         colormap normalization
         If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
     backend : str, optional
-        use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
+        "matplotlib" (static) or "plotly" (interactive), by default "matplotlib"
     figsize : tuple, optional
-        width and height of the figure, by default (8, 8)
+        width and height of the figure in inches, by default (8, 8)
     xlim : tuple, optional
         plot range for the observation (xmin, xmax), by default None
     ylim : tuple, optional
@@ -119,12 +135,18 @@ def scatter(
         unit for skill_scores, by default None
     ax : matplotlib.axes.Axes, optional
         axes to plot on, by default None
+    directional : bool, optional
+        draw the axes as a 0-360 degree compass, for directional quantities,
+        by default False
     **kwargs
+        other keyword arguments to plt.scatter() (matplotlib backend) or
+        fig.update_layout() (plotly backend)
 
     Returns
     -------
-    matplotlib.axes.Axes
-        The axes on which the scatter plot was drawn.
+    matplotlib.axes.Axes or plotly.graph_objects.Figure
+        The axes the scatter plot was drawn on (matplotlib backend) or the
+        figure (plotly backend).
 
     Examples
     --------
@@ -169,6 +191,11 @@ def scatter(
 
     nbins_hist, binsize = _get_bins(bins, xymin=xymin, xymax=xymax)
 
+    if directional:
+        # a directional axis spans the full compass unless the user says otherwise
+        xlim = (0.0, 360.0) if xlim is None else xlim
+        ylim = (0.0, 360.0) if ylim is None else ylim
+
     if xlim is None:
         xlim = (xymin - binsize, xymax + binsize)
 
@@ -208,8 +235,8 @@ def scatter(
         "plotly": _scatter_plotly,
     }
 
-    if backend not in PLOTTING_BACKENDS:
-        raise ValueError(f"backend must be one of {list(PLOTTING_BACKENDS.keys())}")
+    validate_backend(backend)
+    reject_matplotlib_axes(ax, backend)
 
     if skill_table:
         from modelskill import from_matched
@@ -223,6 +250,10 @@ def scatter(
         metrics = None if skill_table is True else skill_table
         skill = cmp.skill(metrics=metrics)
         skill_scores = skill.to_dict("records")[0]
+
+    backend_kwargs = dict(kwargs)
+    if backend == "matplotlib":
+        backend_kwargs["ax"] = ax
 
     return PLOTTING_BACKENDS[backend](
         x=x,
@@ -248,8 +279,8 @@ def scatter(
         skill_scores=skill_scores,
         skill_score_unit=skill_score_unit,
         fit_to_quantiles=fit_to_quantiles,
-        ax=ax,
-        **kwargs,
+        directional=directional,
+        **backend_kwargs,
     )
 
 
@@ -278,6 +309,7 @@ def _scatter_matplotlib(
     skill_scores,
     skill_score_unit,
     fit_to_quantiles,
+    directional,
     ax,
     cmap=None,
     **kwargs,
@@ -343,7 +375,7 @@ def _scatter_matplotlib(
             x_trend,
             intercept + slope * x_trend,
             **settings.get_option("plot.scatter.reg_line.kwargs"),
-            label=_reglabel(
+            label=reglabel(
                 slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
             ),
             zorder=2,
@@ -412,165 +444,11 @@ def _scatter_matplotlib(
 
     ax.set_title(title)
 
+    if directional:
+        _xtick_directional(ax, xlim)
+        _ytick_directional(ax, ylim)
+
     return ax
-
-
-def _scatter_plotly(
-    *,
-    x,
-    y,
-    x_sample,
-    y_sample,
-    z,
-    xq,
-    yq,
-    x_trend,
-    show_density,
-    show_points,
-    norm,  # TODO not used by plotly, remove or keep for consistency?
-    show_hist,
-    nbins_hist,
-    reg_method,
-    xlabel,
-    ylabel,
-    figsize,  # TODO not used by plotly, remove or keep for consistency?
-    xlim,
-    ylim,
-    title,
-    skill_scores,
-    skill_score_unit,
-    fit_to_quantiles,
-    **kwargs,
-):
-    import plotly.graph_objects as go
-
-    if "ax" in kwargs:
-        ax = kwargs.pop("ax")
-        if ax is not None:
-            raise ValueError("Cannot pass matplotlib axes to plotly backend.")
-
-    data = [
-        go.Scatter(x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")),
-    ]
-
-    if reg_method:
-        if fit_to_quantiles:
-            slope, intercept = _linear_regression(
-                obs=xq, model=yq, reg_method=reg_method
-            )
-        else:
-            slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
-
-        regression_line = go.Scatter(
-            x=x_trend,
-            y=intercept + slope * x_trend,
-            name=_reglabel(
-                slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
-            ),
-            mode="lines",
-            line=dict(color="red"),
-        )
-        data.append(regression_line)
-
-    if show_hist:
-        data.append(
-            go.Histogram2d(
-                x=x,
-                y=y,
-                nbinsx=nbins_hist,
-                nbinsy=nbins_hist,
-                colorscale=[
-                    [0.0, "rgba(0,0,0,0)"],
-                    [0.1, "purple"],
-                    [0.5, "green"],
-                    [1.0, "yellow"],
-                ],
-                colorbar=dict(title="# of points"),
-            )
-        )
-
-    if show_points is None or show_points:
-        if show_density:
-            c = z
-            cbar = dict(thickness=20, title="# of points")
-        else:
-            c = "black"
-            cbar = None
-        data.append(
-            go.Scatter(
-                x=x_sample,
-                y=y_sample,
-                mode="markers",
-                name="Data",
-                marker=dict(color=c, opacity=0.5, size=3.0, colorbar=cbar),
-            )
-        )
-    if len(xq) > 0:
-        data.append(
-            go.Scatter(
-                x=xq,
-                y=yq,
-                name=options.plot.scatter.quantiles.label,
-                mode="markers",
-                marker_symbol="x",
-                marker_color=options.plot.scatter.quantiles.color,
-                marker_line_color="midnightblue",
-                marker_line_width=0.6,
-            )
-        )
-
-    defaults = {"width": 600, "height": 600}
-    defaults = {**defaults, **kwargs}
-
-    layout = layout = go.Layout(
-        legend=dict(x=0.01, y=0.99),
-        yaxis=dict(scaleanchor="x", scaleratio=1),
-        title=dict(text=title, xanchor="center", yanchor="top", x=0.5, y=0.9),
-        yaxis_title=ylabel,
-        xaxis_title=xlabel,
-        **defaults,
-    )
-
-    fig = go.Figure(data=data, layout=layout)
-    fig.update_xaxes(range=xlim, nticks=10)
-    fig.update_yaxes(range=ylim, nticks=10)
-
-    if skill_scores is not None:
-        table = format_skill_table(
-            skill_scores=skill_scores,
-            unit=skill_score_unit,
-        )
-        lines = [
-            f"{row['name']:<6} {row['sep']} {row['value']:<6}"
-            for _, row in table.iterrows()
-        ]
-
-        # add text box
-        fig.add_annotation(
-            x=0.99,
-            y=0.01,
-            xref="paper",
-            yref="paper",
-            text="<br>".join(lines),
-            showarrow=False,
-            align="left",
-            bordercolor="black",
-            borderwidth=1,
-            borderpad=4,
-            bgcolor="white",
-            font=dict(family="Consolas, 'Liberation Mono', monospace"),
-        )
-
-    fig.show()  # Should this be here
-
-
-def _reglabel(slope: float, intercept: float, fit_to_quantiles: bool) -> str:
-    sign = "" if intercept < 0 else "+"
-    if fit_to_quantiles:
-        fit = "QQ fit"
-    else:
-        fit = "Fit"
-    return f"{fit}: y={slope:.2f}x{sign}{intercept:.2f}"
 
 
 def _get_bins(bins: int | float, xymin, xymax) -> Tuple[int, float]:

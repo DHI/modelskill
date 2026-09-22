@@ -3,7 +3,6 @@ import xarray as xr
 import numpy as np
 import pandas as pd
 from modelskill.timeseries import TimeSeries
-from modelskill.timeseries._plotter import MatplotlibTimeSeriesPlotter
 import matplotlib.pyplot as plt
 
 
@@ -31,8 +30,7 @@ def timeseries():
 
 @pytest.fixture(params=["hist", "timeseries"])
 def matplotlib_timeseries_plotting_function(request, timeseries):
-    plotter = MatplotlibTimeSeriesPlotter(timeseries)
-    return getattr(plotter, request.param)
+    return getattr(timeseries.plot, request.param)
 
 
 def test_matplotlib_timeseries_basic_plots_work(

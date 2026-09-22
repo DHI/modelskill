@@ -1,5 +1,22 @@
 # Plotting
 
+## Backends
+
+Every plot can be rendered by either of two backends, selected with the `backend` argument:
+
+* `"matplotlib"` (the default) - static, report-friendly figures, returns a `matplotlib.axes.Axes` (or a `Figure` for `taylor`)
+* `"plotly"` - [interactive](https://plotly.com/python/) figures with zoom and hover, returns a `plotly.graph_objects.Figure`
+
+The plotly backend requires an optional dependency:
+
+```bash
+pip install "modelskill[plotly]"
+```
+
+Both backends take the same arguments — `title`, `figsize` (in inches for both), `xlim`, `ylim` and so on. Extra `**kwargs` go to the underlying matplotlib call, or to plotly's [`Figure.update_layout`](https://plotly.com/python/reference/layout/) respectively, so a matplotlib-only argument such as `cmap` is rejected by the plotly backend. `ax` is matplotlib-only; the plotly backend always returns a new figure.
+
+Both backends return the figure rather than showing it, so in a script you need `.show()` (or `fig.write_html(...)`).
+
 ## Plotting observations and model results
 
 [](`~modelskill.PointObservation`)s and [](`~modelskill.PointModelResult`)s can be plotted using their `plot` accessor:
@@ -15,6 +32,10 @@ mr = ms.PointModelResult('../data/SW/ts_storm_4.dfs0', item=0) # TODO coords
 
 ```{python}
 o.plot.timeseries();
+```
+
+```{python}
+o.plot.timeseries(backend="plotly")
 ```
 
 ```{python}
@@ -69,6 +90,12 @@ cmp.plot.timeseries();
 
 ```{python}
 cmp.plot.scatter();
+```
+
+The same plot with the interactive backend:
+
+```{python}
+cmp.plot.scatter(backend="plotly")
 ```
 
 
