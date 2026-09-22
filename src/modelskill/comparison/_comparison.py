@@ -1450,9 +1450,9 @@ class Comparer:
                     )
                     ts: PointModelResult | NodeModelResult
                     if data.gtype in ("node", "reach"):
-                        ts = NodeModelResult(data=ds, name=new_key)
+                        ts = NodeModelResult(data=ds)
                     else:
-                        ts = PointModelResult(data=ds, name=new_key)
+                        ts = PointModelResult(data=ds)
 
                     raw_mod_data[new_key] = ts
 
