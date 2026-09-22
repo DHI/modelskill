@@ -22,6 +22,8 @@ COLLECTION_PLOT_KINDS = ["scatter", "hist", "kde", "qq", "box", "residual_hist"]
 @pytest.fixture(autouse=True)
 def use_non_interactive_matplotlib():
     matplotlib.use("Agg")
+    yield
+    matplotlib.pyplot.close("all")
 
 
 @pytest.fixture
@@ -294,6 +296,29 @@ def test_spatial_overview_track_observations_are_drawn_as_points(o1, mr1):
     assert len(c2.x) == track.n_points
 
 
+def test_spatial_overview_drops_an_oversized_track_on_both_backends(o1, mr1, capsys):
+    import pandas as pd
+
+    from modelskill.plotting._spatial_overview import MAX_TRACK_POINTS
+
+    n = MAX_TRACK_POINTS + 1
+    df = pd.DataFrame(
+        {
+            "x": np.linspace(3.0, 5.0, n),
+            "y": np.linspace(52.0, 53.0, n),
+            "Hm0": np.ones(n),
+        },
+        index=pd.date_range("2017-10-27", periods=n, freq="s"),
+    )
+    track = ms.TrackObservation(df, item="Hm0", name="huge")
+
+    fig = ms.plotting.spatial_overview([o1, track], mr1, backend="plotly")
+    ms.plotting.spatial_overview([o1, track], mr1)
+
+    assert "huge" not in [t.name for t in fig.data]
+    assert capsys.readouterr().out.count("Too many points to plot") == 2
+
+
 @pytest.mark.parametrize("backend", ["matplotlib", "plotly"])
 def test_spatial_overview_rejects_an_unsupported_observation(o1, mr1, backend):
     class NotAnObservation:
@@ -367,3 +392,64 @@ def test_missing_plotly_gives_an_actionable_error(cmp, monkeypatch):
 
     with pytest.raises(ImportError, match=r'pip install "modelskill\[plotly\]"'):
         cmp.plot.hist(backend="plotly")
+
+
+@pytest.mark.parametrize("kind", PLOT_KINDS)
+def test_layout_argument_overrides_the_renderer_default(cmp, kind):
+    fig = getattr(cmp.plot, kind)(backend="plotly", title="mine", showlegend=False)
+
+    assert fig.layout.title.text == "mine"
+    assert fig.layout.showlegend is False
+
+
+def test_yaxis_can_be_overridden_on_a_plot_that_sets_it(cmp):
+    fig = cmp.plot.qq(backend="plotly", yaxis=dict(type="log"))
+
+    assert fig.layout.yaxis.type == "log"
+
+
+def test_timeseries_color_is_honoured(cmp):
+    ax = cmp.plot.timeseries(color="green")
+
+    assert ax.get_lines()[0].get_color() == "green"
+
+
+@pytest.mark.parametrize("kind", PLOT_KINDS)
+def test_directional_can_be_forced_on_a_non_directional_quantity(cmp, kind):
+    fig = getattr(cmp.plot, kind)(backend="plotly", directional=True)
+    ax = getattr(cmp.plot, kind)(directional=True)
+
+    assert isinstance(fig, go.Figure)
+    assert isinstance(ax, Axes)
+
+
+def test_plotly_scatter_honours_the_scatter_styling_options(cmp):
+    ms.set_option("plot.scatter.oneone_line.label", "one to one")
+    ms.set_option("plot.scatter.oneone_line.color", "g")
+    try:
+        fig = cmp.plot.scatter(backend="plotly")
+    finally:
+        ms.reset_option("plot.scatter.oneone_line.label")
+        ms.reset_option("plot.scatter.oneone_line.color")
+
+    oneone = next(t for t in fig.data if t.name == "one to one")
+    assert oneone.line.color == "rgba(0,128,0,1)"
+
+
+def test_kde_curve_matches_the_matplotlib_backend(cmp):
+    fig = cmp.plot.kde(backend="plotly")
+    ax = cmp.plot.kde()
+
+    mpl_x, mpl_y = ax.get_lines()[0].get_data()
+    assert len(fig.data[0].x) == len(mpl_x)
+    assert fig.data[0].x[0] == pytest.approx(mpl_x[0])
+    assert fig.data[0].x[-1] == pytest.approx(mpl_x[-1])
+    assert np.allclose(fig.data[0].y, mpl_y)
+
+
+def test_taylor_warns_about_a_non_square_figsize_on_both_backends(cc):
+    with pytest.warns(UserWarning, match="aspect ratio"):
+        cc.plot.taylor(backend="plotly", figsize=(10, 4))
+
+    with pytest.warns(UserWarning, match="aspect ratio"):
+        cc.plot.taylor(figsize=(10, 4))

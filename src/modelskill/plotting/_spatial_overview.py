@@ -16,6 +16,11 @@ from ._backend import (
     validate_backend,
 )
 from ._misc import _get_ax
+from . import _plotly
+
+# a track with more points than this is dropped rather than drawn; a
+# multi-million-point altimetry track is unreadable and slow on either backend
+MAX_TRACK_POINTS = 10000
 
 
 def spatial_overview(
@@ -81,14 +86,8 @@ def spatial_overview(
     points, tracks = _classify_observations(obs)
 
     if backend == "plotly":
-        from . import _plotly
-
         return _plotly.spatial_overview(
-            outlines=[
-                polygon.xy
-                for g in geometries
-                for polygon in g.boundary_polygons.exteriors
-            ],
+            outlines=_domain_outlines(geometries),
             points=points,
             tracks=tracks,
             title=title,
@@ -103,12 +102,8 @@ def spatial_overview(
     for _, x, y in points:
         ax.scatter(x=x, y=y, marker="x")
 
-    for name, x, y in tracks:
-        if len(x) < 10000:
-            ax.scatter(x=x, y=y, marker=".")
-        else:
-            print(f"{name}: Too many points to plot")
-            # TODO: group by lonlat bin or sample randomly
+    for _, x, y in tracks:
+        ax.scatter(x=x, y=y, marker=".")
 
     xlim = ax.get_xlim()
     offset_x = 0.02 * (xlim[1] - xlim[0])
@@ -138,12 +133,27 @@ def _classify_observations(obs):
         if isinstance(o, (PointObservation, VerticalObservation)):
             points.append((o.name, o.x, o.y))
         elif isinstance(o, TrackObservation):
-            tracks.append((o.name, o.x, o.y))
+            if len(o.x) < MAX_TRACK_POINTS:
+                tracks.append((o.name, o.x, o.y))
+            else:
+                # TODO: group by lonlat bin or sample randomly
+                print(f"{o.name}: Too many points to plot")
         else:
             raise ValueError(
                 f"Could not show observation {o}. Only PointObservation and TrackObservation supported."
             )
     return points, tracks
+
+
+def _domain_outlines(geometries):
+    """Boundary polygons of the model domains, islands included"""
+    return [
+        polygon.xy
+        for g in geometries
+        for polygon in (
+            list(g.boundary_polygons.exteriors) + list(g.boundary_polygons.interiors)
+        )
+    ]
 
 
 def _model_geometry(m):

@@ -11,6 +11,7 @@ from ._backend import (
     validate_backend,
 )
 from ._misc import _get_fig_ax
+from . import _plotly
 
 
 def temporal_coverage(
@@ -88,8 +89,6 @@ def temporal_coverage(
         figsize = (7, max(2.0, 0.45 * n_lines))
 
     if backend == "plotly":
-        from . import _plotly
-
         # models first, so that the rows match the matplotlib backend
         lines = [(mr.name, mr.time, True) for mr in mod]
         lines += [(o.name, o.time, False) for o in obs]

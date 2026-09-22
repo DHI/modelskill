@@ -82,6 +82,7 @@ class ComparerCollectionPlotter:
         ylabel: str | None = None,
         skill_table: Union[str, List[str], Mapping[str, str], bool] | None = None,
         ax: Axes | None = None,
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult | list[PlotResult]:
         """Scatter plot tailored for comparing model output with observations.
@@ -124,6 +125,9 @@ class ComparerCollectionPlotter:
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend,
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         figsize : tuple, optional
             width and height of the figure, by default (8, 8)
         xlim : tuple, optional
@@ -164,6 +168,7 @@ class ComparerCollectionPlotter:
 
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         cc = self.cc
 
@@ -189,6 +194,7 @@ class ComparerCollectionPlotter:
                 ylabel=ylabel,
                 skill_table=skill_table,
                 ax=ax,
+                directional=directional,
                 **kwargs,
             )
             axes.append(ax_mod)
@@ -214,6 +220,7 @@ class ComparerCollectionPlotter:
         ylabel: str | None,
         skill_table: Union[str, List[str], Mapping[str, str], bool] | None,
         ax,
+        directional: bool = False,
         **kwargs,
     ) -> PlotResult:
         assert (
@@ -253,7 +260,7 @@ class ComparerCollectionPlotter:
             except IndexError:
                 skill_score_unit = ""  # Dimensionless
 
-        if self.is_directional:
+        if directional:
             # hide quantiles and regression line
             quantiles = 0
             reg_method = False
@@ -280,7 +287,7 @@ class ComparerCollectionPlotter:
             skill_scores=skill_scores,
             skill_score_unit=skill_score_unit,
             ax=ax,
-            directional=self.is_directional,
+            directional=directional,
             **kwargs,
         )
 
@@ -293,6 +300,7 @@ class ComparerCollectionPlotter:
         figsize=None,
         title=None,
         backend: Backend = "matplotlib",
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult:
         """Plot kernel density estimate of observation and model data.
@@ -308,6 +316,9 @@ class ComparerCollectionPlotter:
         backend : str, optional
             "matplotlib" (static) or "plotly" (interactive),
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         **kwargs
             passed to pandas.DataFrame.plot.kde() (matplotlib backend) or
             fig.update_layout() (plotly backend); `bw_method` is passed to
@@ -326,6 +337,7 @@ class ComparerCollectionPlotter:
         """
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         df = self.cc._to_long_dataframe()
         title = (
@@ -344,7 +356,7 @@ class ComparerCollectionPlotter:
                 title=title,
                 xlabel=self.cc._unit_text,
                 figsize=figsize,
-                directional=self.is_directional,
+                directional=directional,
                 **kwargs,
             )
 
@@ -373,7 +385,7 @@ class ComparerCollectionPlotter:
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
 
-        if self.is_directional:
+        if directional:
             _xtick_directional(ax)
 
         return ax
@@ -389,6 +401,7 @@ class ComparerCollectionPlotter:
         ax=None,
         figsize: Tuple[float, float] | None = None,
         backend: Backend = "matplotlib",
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult | list[PlotResult]:
         """Plot histogram of specific model and all observations.
@@ -410,6 +423,9 @@ class ComparerCollectionPlotter:
         backend : str, optional
             "matplotlib" (static) or "plotly" (interactive),
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         **kwargs
             other keyword arguments to df.hist() (matplotlib backend) or
             fig.update_layout() (plotly backend)
@@ -431,6 +447,7 @@ class ComparerCollectionPlotter:
         """
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         figs = []
         for mod_name in self.cc.mod_names:
@@ -444,6 +461,7 @@ class ComparerCollectionPlotter:
                     ax=ax,
                     figsize=figsize,
                     backend=backend,
+                    directional=directional,
                     **kwargs,
                 )
             )
@@ -460,6 +478,7 @@ class ComparerCollectionPlotter:
         ax,
         figsize: Tuple[float, float] | None,
         backend: Backend = "matplotlib",
+        directional: bool = False,
         **kwargs,
     ) -> PlotResult:
         from ._comparison import MOD_COLORS
@@ -490,7 +509,7 @@ class ComparerCollectionPlotter:
                 title=title,
                 xlabel=xlabel,
                 figsize=figsize,
-                directional=self.is_directional,
+                directional=directional,
                 **kwargs,
             )
 
@@ -510,7 +529,7 @@ class ComparerCollectionPlotter:
         else:
             ax.set_ylabel("count")
 
-        if self.is_directional:
+        if directional:
             _xtick_directional(ax)
 
         return ax
@@ -614,6 +633,7 @@ class ComparerCollectionPlotter:
         figsize=None,
         title=None,
         backend: Backend = "matplotlib",
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult:
         """Plot box plot of observations and model data.
@@ -629,6 +649,9 @@ class ComparerCollectionPlotter:
         backend : str, optional
             "matplotlib" (static) or "plotly" (interactive),
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         **kwargs
             passed to pandas.DataFrame.plot.box() (matplotlib backend) or
             fig.update_layout() (plotly backend)
@@ -645,6 +668,7 @@ class ComparerCollectionPlotter:
         """
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         df = self.cc._to_long_dataframe()
 
@@ -667,7 +691,7 @@ class ComparerCollectionPlotter:
                 title=title,
                 ylabel=f"{self.cc._unit_text}",
                 figsize=figsize,
-                directional=self.is_directional,
+                directional=directional,
                 **kwargs,
             )
 
@@ -684,7 +708,7 @@ class ComparerCollectionPlotter:
         ax.set_ylabel(f"{self.cc._unit_text}")
         ax.set_title(title)
 
-        if self.is_directional:
+        if directional:
             _ytick_directional(ax)
 
         return ax
@@ -697,6 +721,7 @@ class ComparerCollectionPlotter:
         ax=None,
         figsize=None,
         backend: Backend = "matplotlib",
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult:
         """Make quantile-quantile (q-q) plot of model data and observations.
@@ -718,6 +743,9 @@ class ComparerCollectionPlotter:
         backend : str, optional
             "matplotlib" (static) or "plotly" (interactive),
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         **kwargs
             other keyword arguments to plt.plot() (matplotlib backend) or
             fig.update_layout() (plotly backend)
@@ -733,6 +761,7 @@ class ComparerCollectionPlotter:
         """
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         cc = self.cc
         df = cc._to_long_dataframe()
@@ -755,7 +784,7 @@ class ComparerCollectionPlotter:
                 xlabel="Observation, " + cc._unit_text,
                 ylabel="Model, " + cc._unit_text,
                 figsize=figsize,
-                directional=self.is_directional,
+                directional=directional,
                 **kwargs,
             )
 
@@ -797,7 +826,7 @@ class ComparerCollectionPlotter:
         ax.set_ylabel("Model, " + cc._unit_text)
         ax.set_title(title)
 
-        if self.is_directional:
+        if directional:
             _xtick_directional(ax)
             _ytick_directional(ax)
 
@@ -811,6 +840,7 @@ class ComparerCollectionPlotter:
         figsize=None,
         ax=None,
         backend: Backend = "matplotlib",
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult | list[PlotResult]:
         """plot histogram of residual values
@@ -830,6 +860,9 @@ class ComparerCollectionPlotter:
         backend : str, optional
             "matplotlib" (static) or "plotly" (interactive),
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         **kwargs
             other keyword arguments to plt.hist() (matplotlib backend) or
             fig.update_layout() (plotly backend)
@@ -841,6 +874,7 @@ class ComparerCollectionPlotter:
         """
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         cc = self.cc
 
@@ -853,6 +887,7 @@ class ComparerCollectionPlotter:
                 ax=ax,
                 mod_name=cc.mod_names[0],
                 backend=backend,
+                directional=directional,
                 **kwargs,
             )
 
@@ -870,6 +905,7 @@ class ComparerCollectionPlotter:
                 figsize=figsize,
                 ax=axs[i],
                 backend=backend,
+                directional=directional,
                 **kwargs,
             )
             axs[i] = ax_mod
@@ -885,6 +921,7 @@ class ComparerCollectionPlotter:
         ax=None,
         mod_name=None,
         backend: Backend = "matplotlib",
+        directional: bool = False,
         **kwargs,
     ) -> PlotResult:
         """Residual histogram for one model only"""
@@ -906,7 +943,7 @@ class ComparerCollectionPlotter:
                 title=title,
                 xlabel=xlabel,
                 figsize=figsize,
-                directional=self.is_directional,
+                directional=directional,
                 **kwargs,
             )
 
@@ -917,7 +954,7 @@ class ComparerCollectionPlotter:
         ax.set_title(title)
         ax.set_xlabel(xlabel)
 
-        if self.is_directional:
+        if directional:
             ticks = np.linspace(-180, 180, 9)
             ax.set_xticks(ticks)
             ax.set_xlim(-180, 180)

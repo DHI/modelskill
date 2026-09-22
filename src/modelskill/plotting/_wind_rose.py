@@ -16,6 +16,7 @@ from ._backend import (
     reject_matplotlib_axes,
     validate_backend,
 )
+from . import _plotly
 
 
 @dataclass
@@ -269,8 +270,6 @@ def wind_rose(
         calm = calm_size
 
     if backend == "plotly":
-        from . import _plotly
-
         return _plotly.wind_rose(
             dir_centers=dh.dir_centers,
             dir_step=dir_step,

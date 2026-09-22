@@ -166,8 +166,3 @@ class TimeSeriesPlotter:
         ax.set_title(title)
         ax.set_xlabel(str(ts.quantity))
         return ax
-
-
-# kept as an alias: the plotter used to be selected by class, it is now
-# selected by the `backend` argument on each plot method
-MatplotlibTimeSeriesPlotter = TimeSeriesPlotter

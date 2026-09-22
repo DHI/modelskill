@@ -17,10 +17,10 @@ import pandas as pd
 if TYPE_CHECKING:
     import plotly.graph_objects as go
 
+from .. import settings
 from ..metrics import _linear_regression
 from ..settings import options
-from ._backend import directional_ticks
-from ._misc import RESIDUAL_COLOR, format_skill_table, reglabel, series_range
+from ._misc import RESIDUAL_COLOR, _xyticks, format_skill_table, reglabel
 
 # plotly sizes are in pixels, matplotlib figsize is in inches
 PIXELS_PER_INCH = 100
@@ -72,20 +72,24 @@ def figsize_to_layout(figsize: Tuple[float, float] | None) -> Dict[str, float]:
 
 def apply_layout(
     fig: Any,
+    defaults: Mapping[str, Any] | None = None,
     *,
     figsize: Tuple[float, float] | None = None,
     **kwargs: Any,
 ) -> Any:
     """Apply modelskill and user layout arguments to a plotly figure.
 
-    ``figsize`` is translated to plotly's ``width``/``height``; an explicit
-    ``width``/``height`` in ``kwargs`` wins. Remaining ``kwargs`` are passed
-    to ``fig.update_layout``.
+    ``figsize`` is translated to plotly's ``width``/``height``. The renderer's
+    own layout properties go in ``defaults``, where a ``None`` value means
+    "unset, leave it to plotly"; user ``kwargs`` override them and are passed
+    through verbatim, so ``barmode=None`` reaches plotly and resets it.
 
     Parameters
     ----------
     fig : plotly.graph_objects.Figure
         figure to update
+    defaults : Mapping[str, Any], optional
+        layout properties contributed by the renderer, by default None
     figsize : (float, float), optional
         width and height in inches, by default None
     **kwargs
@@ -101,8 +105,8 @@ def apply_layout(
     ValueError
         if a keyword argument is not a valid plotly layout property
     """
-    layout = {**figsize_to_layout(figsize), **kwargs}
-    layout = {k: v for k, v in layout.items() if v is not None}
+    contributed = {k: v for k, v in (defaults or {}).items() if v is not None}
+    layout = {**figsize_to_layout(figsize), **contributed, **kwargs}
     try:
         fig.update_layout(**layout)
     except ValueError as e:
@@ -147,7 +151,7 @@ def directional_axis(
     lim : (float, float), optional
         axis range, by default None which means (0, 360)
     """
-    ticks = directional_ticks(lim)
+    ticks = _xyticks(lim=lim)
     update = fig.update_xaxes if axis == "x" else fig.update_yaxes
     if len(ticks) > 2:
         update(tickmode="array", tickvals=ticks)
@@ -190,7 +194,7 @@ def timeseries(
     )
 
     fig = go.Figure(traces)
-    apply_layout(fig, figsize=figsize, title=title, yaxis_title=ylabel, **kwargs)
+    apply_layout(fig, dict(title=title, yaxis_title=ylabel), figsize=figsize, **kwargs)
     if directional:
         directional_axis(fig, "y", ylim)
     else:
@@ -218,7 +222,7 @@ def line(
             line=dict(color=color),
         )
     )
-    apply_layout(fig, figsize=figsize, title=title, yaxis_title=ylabel, **kwargs)
+    apply_layout(fig, dict(title=title, yaxis_title=ylabel), figsize=figsize, **kwargs)
     return fig
 
 
@@ -257,11 +261,13 @@ def histogram(
     fig = go.Figure(traces)
     apply_layout(
         fig,
+        dict(
+            title=title,
+            xaxis_title=xlabel,
+            yaxis_title="density" if density else "count",
+            barmode="overlay",
+        ),
         figsize=figsize,
-        title=title,
-        xaxis_title=xlabel,
-        yaxis_title="density" if density else "count",
-        barmode="overlay",
         **kwargs,
     )
     if directional:
@@ -298,7 +304,6 @@ def kde(
     figsize: Tuple[float, float] | None = None,
     directional: bool = False,
     bw_method: Any = None,
-    n_points: int = 200,
     **kwargs: Any,
 ) -> go.Figure:
     """Kernel density estimates of the given named data series.
@@ -309,13 +314,11 @@ def kde(
     go = import_plotly_go()
     from scipy.stats import gaussian_kde
 
-    xmin, xmax = series_range(list(series.values()))
-    span = xmax - xmin
-    grid = np.linspace(xmin - 0.1 * span, xmax + 0.1 * span, n_points)
-
     traces = []
     for i, (name, values) in enumerate(series.items()):
-        density = gaussian_kde(np.asarray(values, dtype=float), bw_method=bw_method)
+        v = np.asarray(values, dtype=float)
+        density = gaussian_kde(v, bw_method=bw_method)
+        grid = _kde_grid(v)
         traces.append(
             go.Scatter(
                 x=grid,
@@ -327,12 +330,29 @@ def kde(
         )
 
     fig = go.Figure(traces)
-    apply_layout(fig, figsize=figsize, title=title, xaxis_title=xlabel, **kwargs)
+    apply_layout(fig, dict(title=title, xaxis_title=xlabel), figsize=figsize, **kwargs)
     # the density scale carries no information the user needs, as in matplotlib
     fig.update_yaxes(visible=False)
     if directional:
         directional_axis(fig, "x")
     return fig
+
+
+def _series_range(series: Sequence) -> Tuple[float, float]:
+    """Combined min/max across a sequence of arrays, ignoring NaN"""
+    values = np.concatenate([np.asarray(s, dtype=float).ravel() for s in series])
+    return float(np.nanmin(values)), float(np.nanmax(values))
+
+
+def _kde_grid(values: np.ndarray) -> np.ndarray:
+    """Evaluation grid for a kernel density estimate.
+
+    1000 points spanning half the data range beyond either end, which is what
+    ``pandas.Series.plot.kde`` uses, so the two backends draw the same curve.
+    """
+    lo, hi = float(np.nanmin(values)), float(np.nanmax(values))
+    margin = 0.5 * (hi - lo)
+    return np.linspace(lo - margin, hi + margin, 1000)
 
 
 def qq(
@@ -349,7 +369,7 @@ def qq(
     go = import_plotly_go()
 
     all_values = [v for pair in quantiles.values() for v in pair]
-    xymin, xymax = series_range(all_values)
+    xymin, xymax = _series_range(all_values)
 
     traces = [
         go.Scatter(
@@ -368,11 +388,13 @@ def qq(
     fig = go.Figure(traces)
     apply_layout(
         fig,
+        dict(
+            title=title,
+            xaxis_title=xlabel,
+            yaxis_title=ylabel,
+            yaxis=dict(scaleanchor="x", scaleratio=1),
+        ),
         figsize=figsize,
-        title=title,
-        xaxis_title=xlabel,
-        yaxis_title=ylabel,
-        yaxis=dict(scaleanchor="x", scaleratio=1),
         **kwargs,
     )
     if directional:
@@ -404,10 +426,8 @@ def box(
     fig = go.Figure(traces)
     apply_layout(
         fig,
+        dict(title=title, yaxis_title=ylabel, showlegend=False),
         figsize=figsize,
-        title=title,
-        yaxis_title=ylabel,
-        showlegend=False,
         **kwargs,
     )
     if directional:
@@ -441,11 +461,13 @@ def residual_hist(
     )
     apply_layout(
         fig,
+        dict(
+            title=title,
+            xaxis_title=xlabel,
+            yaxis_title="count",
+            showlegend=False,
+        ),
         figsize=figsize,
-        title=title,
-        xaxis_title=xlabel,
-        yaxis_title="count",
-        showlegend=False,
         **kwargs,
     )
     if directional:
@@ -487,7 +509,13 @@ def scatter(
     go = import_plotly_go()
 
     data = [
-        go.Scatter(x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")),
+        go.Scatter(
+            x=xlim,
+            y=xlim,
+            name=options.plot.scatter.oneone_line.label,
+            mode="lines",
+            line=dict(color=_css_color(options.plot.scatter.oneone_line.color)),
+        ),
     ]
 
     if reg_method:
@@ -505,7 +533,7 @@ def scatter(
                 slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
             ),
             mode="lines",
-            line=dict(color="red"),
+            line=dict(color=_css_color(_reg_line_color())),
         )
         data.append(regression_line)
 
@@ -550,21 +578,26 @@ def scatter(
                 name=options.plot.scatter.quantiles.label,
                 mode="markers",
                 marker_symbol="x",
-                marker_color=options.plot.scatter.quantiles.color,
-                marker_line_color="midnightblue",
-                marker_line_width=0.6,
+                marker_color=_css_color(options.plot.scatter.quantiles.color),
+                marker_size=options.plot.scatter.quantiles.markersize,
+                marker_line_color=_css_color(
+                    options.plot.scatter.quantiles.markeredgecolor
+                ),
+                marker_line_width=options.plot.scatter.quantiles.markeredgewidth,
             )
         )
 
     fig = go.Figure(data=data)
     apply_layout(
         fig,
+        dict(
+            legend=dict(x=0.01, y=0.99),
+            yaxis=dict(scaleanchor="x", scaleratio=1),
+            title=dict(text=title, xanchor="center", yanchor="top", x=0.5, y=0.9),
+            yaxis_title=ylabel,
+            xaxis_title=xlabel,
+        ),
         figsize=figsize,
-        legend=dict(x=0.01, y=0.99),
-        yaxis=dict(scaleanchor="x", scaleratio=1),
-        title=dict(text=title, xanchor="center", yanchor="top", x=0.5, y=0.9),
-        yaxis_title=ylabel,
-        xaxis_title=xlabel,
         **kwargs,
     )
     if directional:
@@ -578,6 +611,27 @@ def scatter(
         _add_skill_table(fig, skill_scores=skill_scores, unit=skill_score_unit)
 
     return fig
+
+
+def _reg_line_color() -> str:
+    """Regression line color from the shared scatter options"""
+    kwargs = settings.get_option("plot.scatter.reg_line.kwargs")
+    return kwargs.get("color", kwargs.get("c", "red"))
+
+
+def _css_color(color: Any) -> Any:
+    """Normalize a matplotlib color spec to an rgba string plotly understands.
+
+    The shared scatter options are written for matplotlib, so they may hold
+    short codes such as ``"r"`` or RGBA tuples that plotly rejects.
+    """
+    import matplotlib.colors as mcolors
+
+    try:
+        r, g, b, a = mcolors.to_rgba(color)
+    except ValueError:
+        return color
+    return f"rgba({r * 255:.0f},{g * 255:.0f},{b * 255:.0f},{a:.3g})"
 
 
 def _add_skill_table(fig: Any, *, skill_scores: Mapping[str, float], unit: str) -> None:
@@ -687,7 +741,7 @@ def taylor(
             ),
         )
     )
-    apply_layout(fig, figsize=figsize, title=title, **kwargs)
+    apply_layout(fig, dict(title=title), figsize=figsize, **kwargs)
     return fig
 
 
@@ -763,10 +817,8 @@ def temporal_coverage(
     fig = go.Figure(traces)
     apply_layout(
         fig,
+        dict(title=title, showlegend=False, yaxis=dict(type="category")),
         figsize=figsize,
-        title=title,
-        showlegend=False,
-        yaxis=dict(type="category"),
         **kwargs,
     )
     if xlim is not None:
@@ -835,9 +887,11 @@ def spatial_overview(
     fig = go.Figure(traces)
     apply_layout(
         fig,
+        dict(
+            title=title if title else "Spatial coverage",
+            yaxis=dict(scaleanchor="x", scaleratio=1),
+        ),
         figsize=figsize,
-        title=title if title else "Spatial coverage",
-        yaxis=dict(scaleanchor="x", scaleratio=1),
         **kwargs,
     )
     return fig
@@ -965,7 +1019,7 @@ def wind_rose(
         fig.add_annotation(
             x=0.5, y=0.5, xref="paper", yref="paper", text=calm_text, showarrow=False
         )
-    apply_layout(fig, figsize=figsize, title=title, showlegend=legend, **kwargs)
+    apply_layout(fig, dict(title=title, showlegend=legend), figsize=figsize, **kwargs)
     return fig
 
 

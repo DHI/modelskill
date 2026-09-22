@@ -68,6 +68,7 @@ class ComparerPlotter:
         ax=None,
         figsize: Tuple[float, float] | None = None,
         backend: Backend = "matplotlib",
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult:
         """Timeseries plot showing compared data: observation vs modelled
@@ -85,6 +86,9 @@ class ComparerPlotter:
         backend : str, optional
             "matplotlib" (static) or "plotly" (interactive),
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         **kwargs
             other keyword arguments to pandas.Series.plot() (matplotlib
             backend) or fig.update_layout() (plotly backend)
@@ -102,6 +106,7 @@ class ComparerPlotter:
 
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         cmp = self.comparer
         title = cmp.name if title is None else title
@@ -116,7 +121,7 @@ class ComparerPlotter:
                 ylabel=cmp._unit_text,
                 ylim=ylim,
                 figsize=figsize,
-                directional=self.is_directional,
+                directional=directional,
                 **kwargs,
             )
 
@@ -124,7 +129,8 @@ class ComparerPlotter:
         for j in range(cmp.n_models):
             key = cmp.mod_names[j]
             mod = cmp.raw_mod_data[key]._values_as_series
-            mod.plot(ax=ax, color=MOD_COLORS[j], **kwargs)
+            # a user-supplied color beats the per-model default
+            mod.plot(ax=ax, **{"color": MOD_COLORS[j], **kwargs})
 
         ax.scatter(
             cmp.time,
@@ -135,7 +141,7 @@ class ComparerPlotter:
         ax.set_ylabel(cmp._unit_text)
         ax.legend([*cmp.mod_names, cmp._obs_name])
         ax.set_ylim(ylim)
-        if self.is_directional:
+        if directional:
             _ytick_directional(ax, ylim)
         ax.set_title(title)
         return ax
@@ -158,6 +164,7 @@ class ComparerPlotter:
         density: bool = True,
         alpha: float = 0.5,
         backend: Backend = "matplotlib",
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult | list[PlotResult]:
         """Plot histogram of model data and observations.
@@ -179,6 +186,9 @@ class ComparerPlotter:
         backend : str, optional
             "matplotlib" (static) or "plotly" (interactive),
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         **kwargs
             other keyword arguments to df.plot.hist() (matplotlib backend)
             or fig.update_layout() (plotly backend)
@@ -195,6 +205,7 @@ class ComparerPlotter:
         """
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         cmp = self.comparer
 
@@ -210,6 +221,7 @@ class ComparerPlotter:
                     density=density,
                     alpha=alpha,
                     backend=backend,
+                    directional=directional,
                     **kwargs,
                 )
             )
@@ -227,6 +239,7 @@ class ComparerPlotter:
         density: bool | None,
         alpha: float | None,
         backend: Backend = "matplotlib",
+        directional: bool = False,
         **kwargs,
     ) -> PlotResult:
         from ._comparison import MOD_COLORS  # TODO move to here
@@ -251,7 +264,7 @@ class ComparerPlotter:
                 title=title,
                 xlabel=cmp._unit_text,
                 figsize=figsize,
-                directional=self.is_directional,
+                directional=directional,
                 **kwargs,
             )
 
@@ -276,7 +289,7 @@ class ComparerPlotter:
         else:
             ax.set_ylabel("count")
 
-        if self.is_directional:
+        if directional:
             _xtick_directional(ax)
 
         return ax
@@ -287,6 +300,7 @@ class ComparerPlotter:
         title=None,
         figsize=None,
         backend: Backend = "matplotlib",
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult:
         """Plot kde (kernel density estimates of distributions) of model data and observations.
@@ -302,6 +316,9 @@ class ComparerPlotter:
         backend : str, optional
             "matplotlib" (static) or "plotly" (interactive),
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         **kwargs
             other keyword arguments to df.plot.kde() (matplotlib backend)
             or fig.update_layout() (plotly backend); `bw_method` is passed
@@ -324,6 +341,7 @@ class ComparerPlotter:
         """
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         cmp = self.comparer
         title = f"KDE plot for {cmp.name}" if title is None else title
@@ -336,7 +354,7 @@ class ComparerPlotter:
                 title=title,
                 xlabel=cmp._unit_text,
                 figsize=figsize,
-                directional=self.is_directional,
+                directional=directional,
                 **kwargs,
             )
 
@@ -364,7 +382,7 @@ class ComparerPlotter:
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
 
-        if self.is_directional:
+        if directional:
             _xtick_directional(ax)
 
         return ax
@@ -377,6 +395,7 @@ class ComparerPlotter:
         ax=None,
         figsize=None,
         backend: Backend = "matplotlib",
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult:
         """Make quantile-quantile (q-q) plot of model data and observations.
@@ -398,6 +417,9 @@ class ComparerPlotter:
         backend : str, optional
             "matplotlib" (static) or "plotly" (interactive),
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         **kwargs
             other keyword arguments to plt.plot() (matplotlib backend) or
             fig.update_layout() (plotly backend)
@@ -413,6 +435,7 @@ class ComparerPlotter:
         """
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         cmp = self.comparer
         title = f"Q-Q plot for {cmp.name}" if title is None else title
@@ -428,7 +451,7 @@ class ComparerPlotter:
                 xlabel="Observation, " + cmp._unit_text,
                 ylabel="Model, " + cmp._unit_text,
                 figsize=figsize,
-                directional=self.is_directional,
+                directional=directional,
                 **kwargs,
             )
 
@@ -474,7 +497,7 @@ class ComparerPlotter:
         ax.set_ylabel("Model, " + cmp._unit_text)
         ax.set_title(title)
 
-        if self.is_directional:
+        if directional:
             _xtick_directional(ax)
             _ytick_directional(ax)
 
@@ -487,6 +510,7 @@ class ComparerPlotter:
         title=None,
         figsize=None,
         backend: Backend = "matplotlib",
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult:
         """Make a box plot of model data and observations.
@@ -502,6 +526,9 @@ class ComparerPlotter:
         backend : str, optional
             "matplotlib" (static) or "plotly" (interactive),
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         **kwargs
             other keyword arguments to df.boxplot() (matplotlib backend) or
             fig.update_layout() (plotly backend)
@@ -523,6 +550,7 @@ class ComparerPlotter:
         """
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         cmp = self.comparer
         title = cmp.name if title is None else title
@@ -534,7 +562,7 @@ class ComparerPlotter:
                 title=title,
                 ylabel=cmp._unit_text,
                 figsize=figsize,
-                directional=self.is_directional,
+                directional=directional,
                 **kwargs,
             )
 
@@ -545,7 +573,7 @@ class ComparerPlotter:
         ax.set_ylabel(cmp._unit_text)
         ax.set_title(title)
 
-        if self.is_directional:
+        if directional:
             _ytick_directional(ax)
 
         return ax
@@ -571,6 +599,7 @@ class ComparerPlotter:
         ylabel: str | None = None,
         skill_table: Union[str, List[str], Mapping[str, str], bool] | None = None,
         ax: matplotlib.axes.Axes | None = None,
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult | list[PlotResult]:
         """Scatter plot tailored for model-observation comparison.
@@ -613,6 +642,9 @@ class ComparerPlotter:
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend,
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         figsize : tuple, optional
             width and height of the figure, by default (8, 8)
         xlim : tuple, optional
@@ -649,6 +681,7 @@ class ComparerPlotter:
         >>> cmp.plot.scatter(xlabel='all observations', ylabel='my model')
         >>> cmp.sel(model='HKZN_v2').plot.scatter(figsize=(10, 10))
         """
+        directional = self.is_directional if directional is None else directional
 
         cmp = self.comparer
 
@@ -675,6 +708,7 @@ class ComparerPlotter:
                 ylabel=ylabel,
                 skill_table=skill_table,
                 ax=ax,
+                directional=directional,
                 **kwargs,
             )
             axes.append(ax_mod)
@@ -700,6 +734,7 @@ class ComparerPlotter:
         xlabel: str | None,
         ylabel: str | None,
         skill_table: Union[str, List[str], Mapping[str, str], bool] | None,
+        directional: bool = False,
         **kwargs,
     ) -> PlotResult:
         """Scatter plot for one model only"""
@@ -733,7 +768,7 @@ class ComparerPlotter:
             except IndexError:
                 skill_score_unit = ""  # Dimensionless
 
-        if self.is_directional:
+        if directional:
             # hide quantiles and regression line
             quantiles = 0
             reg_method = False
@@ -760,7 +795,7 @@ class ComparerPlotter:
             ylabel=ylabel,
             skill_scores=skill_scores,
             skill_score_unit=skill_score_unit,
-            directional=self.is_directional,
+            directional=directional,
             **kwargs,
         )
 
@@ -871,6 +906,7 @@ class ComparerPlotter:
         figsize=None,
         ax=None,
         backend: Backend = "matplotlib",
+        directional: bool | None = None,
         **kwargs,
     ) -> PlotResult | list[PlotResult]:
         """plot histogram of residual values
@@ -890,6 +926,9 @@ class ComparerPlotter:
         backend : str, optional
             "matplotlib" (static) or "plotly" (interactive),
             by default "matplotlib"
+        directional : bool, optional
+            draw a 0-360 compass axis, by default None meaning the
+            quantity decides
         **kwargs
             other keyword arguments to plt.hist() (matplotlib backend) or
             fig.update_layout() (plotly backend)
@@ -901,6 +940,7 @@ class ComparerPlotter:
         """
         validate_backend(backend)
         reject_matplotlib_axes(ax, backend)
+        directional = self.is_directional if directional is None else directional
 
         cmp = self.comparer
 
@@ -913,6 +953,7 @@ class ComparerPlotter:
                 ax=ax,
                 mod_name=cmp.mod_names[0],
                 backend=backend,
+                directional=directional,
                 **kwargs,
             )
 
@@ -930,6 +971,7 @@ class ComparerPlotter:
                 figsize=figsize,
                 ax=axs[i],
                 backend=backend,
+                directional=directional,
                 **kwargs,
             )
             axs[i] = ax_mod
@@ -945,6 +987,7 @@ class ComparerPlotter:
         ax=None,
         mod_name=None,
         backend: Backend = "matplotlib",
+        directional: bool = False,
         **kwargs,
     ) -> PlotResult:
         """Residual histogram for one model only"""
@@ -964,7 +1007,7 @@ class ComparerPlotter:
                 title=title,
                 xlabel=xlabel,
                 figsize=figsize,
-                directional=self.is_directional,
+                directional=directional,
                 **kwargs,
             )
 
@@ -975,7 +1018,7 @@ class ComparerPlotter:
         ax.set_title(title)
         ax.set_xlabel(xlabel)
 
-        if self.is_directional:
+        if directional:
             ticks = np.linspace(-180, 180, 9)
             ax.set_xticks(ticks)
             ax.set_xlim(-180, 180)

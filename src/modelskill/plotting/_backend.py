@@ -22,7 +22,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, Tuple
 
-import numpy as np
 from typing_extensions import TypeAlias
 
 if TYPE_CHECKING:
@@ -85,26 +84,3 @@ def reject_matplotlib_axes(ax: Any, backend: str) -> None:
             f"Cannot pass matplotlib axes to the '{backend}' backend. "
             f"The '{backend}' backend returns a new figure."
         )
-
-
-def directional_ticks(
-    lim: Tuple[float, float] | None = None, n_sectors: int = 8
-) -> np.ndarray:
-    """Tick values for a directional (0-360 degrees) axis.
-
-    Parameters
-    ----------
-    lim : (float, float), optional
-        axis limits to clip the ticks to, by default None
-    n_sectors : int, optional
-        number of sectors, by default 8
-
-    Returns
-    -------
-    np.ndarray
-        tick values
-    """
-    ticks = np.linspace(0, 360, n_sectors + 1)
-    if lim is not None:
-        ticks = ticks[(ticks >= lim[0]) & (ticks <= lim[1])]
-    return ticks

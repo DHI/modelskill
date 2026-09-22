@@ -13,6 +13,7 @@ from ._backend import (
     validate_backend,
 )
 from ._taylor_diagram_external import TaylorDiagram
+from . import _plotly
 
 
 @dataclass
@@ -66,9 +67,12 @@ def taylor_diagram(
     if isinstance(points, TaylorPoint):
         points = [points]
 
-    if backend == "plotly":
-        from . import _plotly
+    if figsize[0] != figsize[1]:
+        warnings.warn(
+            "It is strongly recommended that the aspect ratio is 1:1 for Taylor diagrams"
+        )
 
+    if backend == "plotly":
         return _plotly.taylor(
             points=list(points),
             obs_std=obs_std,
@@ -78,10 +82,6 @@ def taylor_diagram(
             figsize=figsize,
         )
 
-    if figsize[0] != figsize[1]:
-        warnings.warn(
-            "It is strongly recommended that the aspect ratio is 1:1 for Taylor diagrams"
-        )
     fig = plt.figure(figsize=figsize)
 
     # srange=(0, 1.5),

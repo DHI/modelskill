@@ -14,23 +14,6 @@ from ..obs import unit_display_name
 RESIDUAL_COLOR = "#8B8D8E"
 
 
-def series_range(series: Sequence) -> Tuple[float, float]:
-    """Combined min/max across a sequence of arrays, ignoring NaN.
-
-    Parameters
-    ----------
-    series : Sequence
-        arrays to take the range over
-
-    Returns
-    -------
-    (float, float)
-        overall minimum and maximum
-    """
-    values = np.concatenate([np.asarray(s, dtype=float).ravel() for s in series])
-    return float(np.nanmin(values)), float(np.nanmax(values))
-
-
 def reglabel(slope: float, intercept: float, fit_to_quantiles: bool) -> str:
     """Legend label for a regression line.
 
