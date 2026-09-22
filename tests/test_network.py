@@ -631,6 +631,57 @@ class TestValuesReachTheComparer:
 
         assert cmp.score()["Network_Model"] == pytest.approx(0.0)
 
+    def test_an_observations_aux_item_brings_its_own_values(self, sample_network):
+        """An auxiliary column of the observation reaches the comparer intact."""
+        water_level = node_series(sample_network)
+        nmr = NetworkModelResult(sample_network, name="Network_Model")
+        sensor = pd.DataFrame(
+            {
+                "WaterLevel": water_level["123"],
+                "battery": np.arange(len(water_level), dtype=float),
+            }
+        )
+        obs = NodeObservation(
+            sensor, at="123", item="WaterLevel", aux_items=["battery"], name="Node_123"
+        )
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.data["battery"].attrs["kind"] == "aux"
+        assert cmp.data["battery"].to_numpy() == pytest.approx(
+            sensor["battery"].to_numpy()
+        )
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+    def test_a_reach_observations_aux_item_brings_its_own_values(
+        self, breakpoint_network
+    ):
+        """The break point path carries the observation's auxiliaries too."""
+        nmr = NetworkModelResult(breakpoint_network, name="Network_Model")
+        model = nmr.data["WaterLevel"].isel(node=0).to_series()
+        sensor = pd.DataFrame(
+            {
+                "WaterLevel": model.to_numpy(),
+                "battery": np.arange(len(model), dtype=float),
+            },
+            index=model.index,
+        )
+        obs = ms.ReachObservation(
+            sensor,
+            reach="r1",
+            item="WaterLevel",
+            aux_items=["battery"],
+            name="Reach_r1",
+        )
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.data["battery"].attrs["kind"] == "aux"
+        assert cmp.data["battery"].to_numpy() == pytest.approx(
+            sensor["battery"].to_numpy()
+        )
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
     def test_an_aux_item_brings_its_own_values(self, sample_network_multivars):
         """The aux item rides alongside the scored one, and holds its own series."""
         water_level = node_series(sample_network_multivars)
