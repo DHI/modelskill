@@ -1,65 +1,79 @@
-"""Helpers shared by the tests that build networks by hand.
+"""Helpers shared by the tests that score a network model result.
 
-Importing this module needs mikeio1d, which is an optional dependency (ADR-010),
-so guard the import with ``pytest.importorskip("mikeio1d.network")`` first.
+A Network comes from a result file and from nothing else, so these open the test
+data rather than building a topology by hand. Importing this module needs
+mikeio1d, which is an optional dependency (ADR-010), so guard the import with
+``pytest.importorskip("mikeio1d.network")`` first.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
-from mikeio1d.network import Network, BasicNode, BasicReach, ReachBreakPoint
+from mikeio1d import Res1D
+from mikeio1d.network import Network
+
+_TESTDATA = Path(__file__).parent / "testdata"
+
+RES1D = str(_TESTDATA / "network.res1d")
+"""A MIKE urban result: WaterLevel on every node, Discharge on one gridpoint per reach."""
+
+EPANET = str(_TESTDATA / "epanet.res")
+"""A link-node result, read with the .inp and .resx beside it.
+
+Its nodes each carry several quantities, which no node of RES1D does.
+"""
+
+NODE_IDS = ["1", "2", "3"]
+"""Three nodes of RES1D, each carrying a WaterLevel series of its own."""
+
+EPANET_NODES = ["11", "12"]
+"""Two nodes of EPANET. Not '10', which is also the id of a reach there."""
+
+REACH = "100l1"
+REACH_ITEM = "Discharge"
+DISTANCE = 23.8413574216414
+"""Where REACH keeps its one REACH_ITEM gridpoint; its neighbours carry WaterLevel."""
+
+BREAKPOINT = (REACH, DISTANCE)
 
 
-class BreakPoint(ReachBreakPoint):
-    """A break point at a known distance along a reach."""
-
-    def __init__(self, reach, distance, data):
-        self._id = (reach, distance)
-        self._data = data
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def data(self):
-        return self._data
+def open_network(path: str = RES1D, **kwargs) -> Network:
+    """The test data as a Network."""
+    return Network.open(path, **kwargs)
 
 
-def make_network(node_ids, time, data, quantity="WaterLevel"):
-    """A chain of nodes, each carrying one quantity, joined by unit reaches."""
-    nodes = [
-        BasicNode(node_id, pd.DataFrame({quantity: data[:, i]}, index=time))
-        for i, node_id in enumerate(node_ids)
-    ]
-    reaches = [
-        BasicReach(f"r{i}", nodes[i], nodes[i + 1], length=100.0)
-        for i in range(len(nodes) - 1)
-    ]
-    return Network(reaches)
+def modified_network(
+    tmp_path, *, offset: float = 0.0, blank: bool = False, path: str = RES1D, **kwargs
+) -> Network:
+    """A copy of `path` with every value shifted by `offset`, or blanked to NaN.
+
+    Two model results have to differ before a crossed model column can show, and
+    a break point that names a quantity while holding nothing for it is a state
+    no fixture file is in. Both are written out rather than assembled in memory,
+    since a Network comes from a file and from nothing else.
+    """
+    out = Path(tmp_path) / "modified.res1d"
+    res = Res1D(path)
+    values = res.read(column_mode="all")
+    res.modify(values * np.nan if blank else values + offset)
+    res.save(str(out))
+    return Network.open(str(out), **kwargs)
 
 
-def make_breakpoint_network(reach_id, distance, data):
-    """A one-reach network whose data sits on a break point, not on its nodes."""
-    empty = pd.DataFrame()
-    reach = BasicReach(
-        reach_id,
-        BasicNode("start", empty),
-        BasicNode("end", empty),
-        length=100.0,
-        breakpoints=[BreakPoint(reach_id, distance, data)],
-    )
-    return Network([reach])
-
-
-def node_series(network, quantity="WaterLevel"):
+def node_series(network, quantity="WaterLevel", nodes=None) -> pd.DataFrame:
     """Each node's own series for `quantity`, keyed by node id, read off the reaches.
 
-    The three nodes of `sample_network` carry three different series, so a
-    comparer built from one of them cannot be satisfied by any of the others.
+    Restricted to `nodes` when given, since a result file holds more of them than
+    a test wants to reason about, and the order is the one asked for.
     """
-    nodes = {}
+    found = {}
     for reach in network.reaches.values():
         for node in (reach.start, reach.end):
-            nodes[node.id] = node.data[quantity]
-    return pd.DataFrame(nodes)
+            if quantity in node.data.columns:
+                found[node.id] = node.data[quantity]
+    if nodes is None:
+        return pd.DataFrame(found)
+    return pd.DataFrame({node_id: found[node_id] for node_id in nodes})

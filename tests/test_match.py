@@ -335,26 +335,23 @@ class TestVerticalObservation:
 # Network-related fixtures
 @pytest.fixture
 def network():
-    """Network fixture with 3 nodes"""
+    """A MIKE urban result, narrowed to the quantity its nodes carry."""
     pytest.importorskip("mikeio1d.network")
-    from tests.network_helpers import make_network
+    from tests.network_helpers import open_network
 
-    time = pd.date_range("2017-10-27", periods=20, freq="h")
-    np.random.seed(42)
-    data = np.random.normal(1.5, 0.3, (20, 3))
-    return make_network(["100", "200", "300"], time, data)
+    return open_network(quantities="WaterLevel")
 
 
 @pytest.fixture
-def network2():
-    """Second network fixture with offset data for multi-model tests"""
-    pytest.importorskip("mikeio1d.network")
-    from tests.network_helpers import make_network
+def network2(tmp_path):
+    """The same result shifted by 0.1, for the multi-model tests.
 
-    time = pd.date_range("2017-10-27", periods=20, freq="h")
-    np.random.seed(42)
-    data = np.random.normal(1.5, 0.3, (20, 3)) + 0.1
-    return make_network(["100", "200", "300"], time, data)
+    Two model results have to differ before a crossed model column can show.
+    """
+    pytest.importorskip("mikeio1d.network")
+    from tests.network_helpers import modified_network
+
+    return modified_network(tmp_path, offset=0.1, quantities="WaterLevel")
 
 
 @pytest.fixture
@@ -367,7 +364,9 @@ def network_mr(network):
 def node_obs1(network):
     """NodeObservation for node '100'"""
     node_id = "100"
-    time = pd.date_range("2017-10-27", periods=18, freq="h")
+    # On the model's own time axis, trimmed: an observation is matched only
+    # where it overlaps the model.
+    time = network.to_dataframe().index[:18]
     # Add some noise to make it different from model
     np.random.seed(123)
     data = np.random.normal(1.4, 0.2, len(time))
@@ -377,9 +376,9 @@ def node_obs1(network):
 
 @pytest.fixture
 def node_obs2(network):
-    """NodeObservation for node '200'"""
-    node_id = "200"
-    time = pd.date_range("2017-10-27", periods=15, freq="h")
+    """NodeObservation for node '101'"""
+    node_id = "101"
+    time = network.to_dataframe().index[:15]
     np.random.seed(456)
     data = np.random.normal(1.6, 0.25, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
@@ -389,7 +388,7 @@ def node_obs2(network):
 @pytest.fixture
 def node_obs_invalid(network):
     """NodeObservation for a node that doesn't exist in the network"""
-    time = pd.date_range("2017-10-27", periods=10, freq="h")
+    time = network.to_dataframe().index[:10]
     data = np.random.normal(1.5, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
     return ms.NodeObservation(df, at="999", name="Node_999_Obs")
@@ -411,7 +410,7 @@ def network_mr2(network2):
 def node_obs_gaps(network):
     """NodeObservation with time gaps"""
     node_id = "100"
-    time = pd.date_range("2017-10-27", periods=10, freq="2h")  # Different frequency
+    time = network.to_dataframe().index[::2][:10]  # Every other step of the model's
     data = np.random.normal(1.5, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
     return ms.NodeObservation(df, at=node_id, name="Node_100_Gaps")
@@ -1010,31 +1009,27 @@ def test_match_node_obs_with_network_model(node_obs1, network_mr):
 def test_match_reach_obs_with_network_model():
     """A reach observation matches any breakpoint along the reach."""
     pytest.importorskip("mikeio1d.network")
-    from tests.network_helpers import make_breakpoint_network
+    from tests.network_helpers import REACH, REACH_ITEM, open_network
 
-    time = pd.date_range("2017-10-27", periods=20, freq="h")
-    np.random.seed(42)
-    model_data = pd.DataFrame(
-        {"WaterLevel": np.random.normal(1.5, 0.3, len(time))}, index=time
-    )
-    network_mr = ms.NetworkModelResult(
-        make_breakpoint_network("r0", 50.0, model_data), name="Network_Model"
-    )
+    # Narrowed to the quantity a MIKE reach keeps on its interior gridpoint, so
+    # every break point that carries it agrees and the reach has one series.
+    network = open_network(quantities=REACH_ITEM)
+    network_mr = ms.NetworkModelResult(network, name="Network_Model")
 
     np.random.seed(123)
-    obs_time = time[:18]
+    obs_time = network.to_dataframe().index[:18]
     df = pd.DataFrame(
-        {"WaterLevel": np.random.normal(1.4, 0.2, len(obs_time))}, index=obs_time
+        {REACH_ITEM: np.random.normal(1.4, 0.2, len(obs_time))}, index=obs_time
     )
-    obs = ms.ReachObservation(df, reach="r0", name="Reach_r0")
+    obs = ms.ReachObservation(df, reach=REACH, name="Reach_Obs")
 
     cmp = ms.match(obs, network_mr)
 
     assert cmp.n_models == 1
     assert cmp.n_points == 18
-    assert cmp.name == "Reach_r0"
+    assert cmp.name == "Reach_Obs"
     assert cmp.gtype == "reach"
-    assert cmp.reach == "r0"
+    assert cmp.reach == REACH
     assert cmp.mod_names == ["Network_Model"]
 
 

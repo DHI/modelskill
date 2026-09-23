@@ -455,22 +455,14 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
 def node_comparer() -> modelskill.comparison.Comparer:
     """A comparer built by matching a NodeObservation against a NetworkModelResult (node gtype)."""
     pytest.importorskip("mikeio1d.network")
-    from mikeio1d.network import Network, BasicNode, BasicReach
+    from tests.network_helpers import NODE_IDS, node_series, open_network
 
-    time = pd.date_range("2019-01-01", periods=6, freq="D")
-    node_a_data = pd.DataFrame(
-        {"WaterLevel": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]}, index=time
-    )
-    node_b_data = pd.DataFrame(
-        {"WaterLevel": [1.1, 2.2, 3.3, 4.4, 5.5, 6.6]}, index=time
-    )
-    reach = BasicReach(
-        "r1", BasicNode("123", node_a_data), BasicNode("456", node_b_data), length=100.0
-    )
-    network = Network([reach])
+    network = open_network(quantities="WaterLevel")
+    node_id = NODE_IDS[0]
+    values = node_series(network, nodes=NODE_IDS)[[node_id]]
 
     nmr = ms.NetworkModelResult(network, name="Network_Model")
-    obs = ms.NodeObservation(node_a_data, at="123", name="Node_123_Obs")
+    obs = ms.NodeObservation(values, at=node_id, item=node_id, name="Node_Obs")
 
     return ms.match(obs, nmr)
 
@@ -479,15 +471,14 @@ def node_comparer() -> modelskill.comparison.Comparer:
 def reach_comparer() -> modelskill.comparison.Comparer:
     """A comparer built by matching a ReachObservation (reach gtype)."""
     pytest.importorskip("mikeio1d.network")
-    from tests.network_helpers import make_breakpoint_network
+    from tests.network_helpers import BREAKPOINT, REACH, REACH_ITEM, open_network
 
-    time = pd.date_range("2019-01-01", periods=6, freq="D")
-    values = pd.DataFrame({"WaterLevel": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]}, index=time)
+    network = open_network(quantities=REACH_ITEM)
+    values = network.read([(BREAKPOINT, REACH_ITEM)])
+    values.columns = [REACH_ITEM]
 
-    nmr = ms.NetworkModelResult(
-        make_breakpoint_network("r1", 50.0, values), name="Network_Model"
-    )
-    obs = ms.ReachObservation(values, reach="r1", name="Reach_r1_Obs")
+    nmr = ms.NetworkModelResult(network, name="Network_Model")
+    obs = ms.ReachObservation(values, reach=REACH, name="Reach_Obs")
 
     return ms.match(obs, nmr)
 
@@ -506,8 +497,8 @@ def test_save_and_load_round_trips_node_gtype_raw_data(node_comparer, tmp_path):
     )
     # The node was addressed by name, and the name is what comes back: reloading
     # must not depend on the integer the network happened to hand out.
-    assert cc2[0].node == "123"
-    assert cc2[0].raw_mod_data["Network_Model"].node == "123"
+    assert cc2[0].node == node_comparer.node
+    assert cc2[0].raw_mod_data["Network_Model"].node == node_comparer.node
 
 
 def test_a_comparer_saved_by_1_4_0a3_still_loads():
@@ -533,7 +524,7 @@ def test_save_and_load_round_trips_reach_gtype_raw_data(reach_comparer, tmp_path
     cc2 = ms.load(fn)
 
     assert cc2[0].gtype == "reach"
-    assert cc2[0].reach == "r1"
+    assert cc2[0].reach == reach_comparer.reach
     assert len(cc2[0].raw_mod_data["Network_Model"]) == len(
         reach_comparer.raw_mod_data["Network_Model"]
     )
@@ -558,7 +549,7 @@ def test_skill_on_a_node_comparer(node_comparer):
     sk = node_comparer.skill()
 
     assert sk.to_dataframe().shape[0] == 1
-    assert "Node_123_Obs" in sk.index
+    assert "Node_Obs" in sk.index
 
 
 def test_plot_a_node_comparer(node_comparer):
