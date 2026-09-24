@@ -580,7 +580,7 @@ class NodeObservation(Observation):
             raise TypeError(
                 "'at' takes a node name or a (reach, distance) pair, not an integer. "
                 "The integers a Network hands out are an internal index; "
-                "network.recall(<int>) gives the name back."
+                'network.graph.nodes[<int>]["alias"] gives the name back.'
             )
         location: str | tuple[str, float] = (
             (str(at[0]), float(at[1])) if isinstance(at, tuple) else at
