@@ -48,8 +48,8 @@ Reading the file and building the graph is [mikeio1d](https://github.com/DHI/mik
 job, not modelskill's. `Network.open` reads MIKE 1D (`.res1d`), MIKE 11 (`.res11`)
 and EPANET (`.res`) results, finds the EPANET companion files, and says so when a
 format cannot be turned into a network. See its documentation for the companions,
-for loading only part of a large file, and for `find`/`recall` between the names the
-model uses and the graph's own integers.
+and for `resolve` and each graph node's `alias`, which translate between the names
+the model uses and the graph's own integers.
 
 modelskill takes the file path directly, and opens it for you:
 
@@ -60,13 +60,17 @@ mr = ms.NetworkModelResult(path_to_res1d, name="MyModel", item="WaterLevel")
 mr
 ```
 
-Open the network yourself when you need to name EPANET companion files, or to keep
-memory down on a large model by reading only the locations you will score:
+A model result reads no timeseries when it is built. Each observation's location is
+read when it is matched, and only that location, so scoring a few sensors against a
+large model reads a few series.
+
+Open the network yourself when you need to name EPANET companion files, or to build
+model results for several quantities over one network:
 
 ```{python}
 from mikeio1d.network import Network
 
-network = Network.open(path_to_res1d, nodes=["78", "46"], reaches=["94l1"])
+network = Network.open(path_to_res1d)
 ms.NetworkModelResult(network, name="MyModel", item="WaterLevel")
 ```
 
@@ -74,8 +78,8 @@ ms.NetworkModelResult(network, name="MyModel", item="WaterLevel")
 
 ### 1. The model result
 
-`mr` above is the model side of the comparison, holding one quantity over every
-location the file was read for.
+`mr` above is the model side of the comparison, for one quantity. It reads a
+location when an observation is matched there.
 
 ### 2. Create NodeObservations and compute skill
 
@@ -101,7 +105,7 @@ cc.skill()
 ```
 
 ::: {.callout-note}
-Resolution happens inside `ms.match()`.  A name the network does not hold raises a `ValueError` that names the near misses.
+Resolution happens inside `ms.match()`.  A name the network does not hold raises a `ValueError`.
 :::
 
 #### Option B — breakpoint by `(reach, distance)` tuple
@@ -115,12 +119,12 @@ cc = ms.match(obs=obs_bp, mod=mr)
 cc.skill()
 ```
 
-The tuple form is equivalent to calling `network.find(reach="94l1", distance=42.57)` beforehand, and is resolved during matching.
+The tuple form is resolved during matching, as `network.resolve(("94l1", 42.57))` would resolve it.
 
 ::: {.callout-note}
 ## Chainage tolerance
 
-Break point distances are matched within the tolerance mikeio1d uses to decide two chainages are the same place, so small floating-point discrepancies between the distance you type and the value stored in the network are handled gracefully.  If no break point falls within it, a `ValueError` is raised, as it is when the break point exists but carries no data for the quantity you are scoring - MIKE 1D stores water level and discharge at alternating grid points along a reach.
+Break point distances are matched within the tolerance mikeio1d uses to decide two chainages are the same place, so small floating-point discrepancies between the distance you type and the value stored in the network are handled gracefully.  If no break point falls within it, a `ValueError` names the break points of that reach nearest to the distance given, and one is raised too when the break point exists but carries no data for the quantity you are scoring - MIKE 1D stores water level and discharge at alternating grid points along a reach.
 :::
 
 ### 3. Using ReachObservation for reach-uniform quantities
