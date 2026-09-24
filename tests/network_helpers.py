@@ -40,13 +40,13 @@ DISTANCE = 23.8413574216414
 BREAKPOINT = (REACH, DISTANCE)
 
 
-def open_network(path: str = RES1D, **kwargs) -> Network:
+def open_network(path: str = RES1D) -> Network:
     """The test data as a Network."""
-    return Network.open(path, **kwargs)
+    return Network.open(path)
 
 
 def modified_network(
-    tmp_path, *, offset: float = 0.0, blank: bool = False, path: str = RES1D, **kwargs
+    tmp_path, *, offset: float = 0.0, blank: bool = False, path: str = RES1D
 ) -> Network:
     """A copy of `path` with every value shifted by `offset`, or blanked to NaN.
 
@@ -60,20 +60,34 @@ def modified_network(
     values = res.read(column_mode="all")
     res.modify(values * np.nan if blank else values + offset)
     res.save(str(out))
-    return Network.open(str(out), **kwargs)
+    return Network.open(str(out))
 
 
 def node_series(network, quantity="WaterLevel", nodes=None) -> pd.DataFrame:
-    """Each node's own series for `quantity`, keyed by node id, read off the reaches.
+    """Each node's own series for `quantity`, keyed by node id.
 
     Restricted to `nodes` when given, since a result file holds more of them than
-    a test wants to reason about, and the order is the one asked for.
+    a test wants to reason about, and the order is the one asked for. Otherwise
+    every reach end carrying the quantity, in the order the reaches list them.
     """
-    found = {}
-    for reach in network.reaches.values():
-        for node in (reach.start, reach.end):
-            if quantity in node.data.columns:
-                found[node.id] = node.data[quantity]
     if nodes is None:
-        return pd.DataFrame(found)
-    return pd.DataFrame({node_id: found[node_id] for node_id in nodes})
+        ends = (
+            node.id
+            for reach in network.reaches.values()
+            for node in (reach.start, reach.end)
+        )
+        nodes = [
+            node_id
+            for node_id in dict.fromkeys(ends)
+            if quantity in network.resolve(node_id)["quantities"]
+        ]
+    df = network.read([(node_id, quantity) for node_id in nodes])
+    df.columns = list(nodes)
+    return df
+
+
+def breakpoint_series(network, address=BREAKPOINT, quantity=REACH_ITEM) -> pd.DataFrame:
+    """The series of one break point, in a column named for its quantity."""
+    df = network.read([(address, quantity)])
+    df.columns = [quantity]
+    return df

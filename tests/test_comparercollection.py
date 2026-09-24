@@ -457,11 +457,11 @@ def node_comparer() -> modelskill.comparison.Comparer:
     pytest.importorskip("mikeio1d.network")
     from tests.network_helpers import NODE_IDS, node_series, open_network
 
-    network = open_network(quantities="WaterLevel")
+    network = open_network()
     node_id = NODE_IDS[0]
     values = node_series(network, nodes=NODE_IDS)[[node_id]]
 
-    nmr = ms.NetworkModelResult(network, name="Network_Model")
+    nmr = ms.NetworkModelResult(network, item="WaterLevel", name="Network_Model")
     obs = ms.NodeObservation(values, at=node_id, item=node_id, name="Node_Obs")
 
     return ms.match(obs, nmr)
@@ -471,13 +471,12 @@ def node_comparer() -> modelskill.comparison.Comparer:
 def reach_comparer() -> modelskill.comparison.Comparer:
     """A comparer built by matching a ReachObservation (reach gtype)."""
     pytest.importorskip("mikeio1d.network")
-    from tests.network_helpers import BREAKPOINT, REACH, REACH_ITEM, open_network
+    from tests.network_helpers import REACH, REACH_ITEM, breakpoint_series, open_network
 
-    network = open_network(quantities=REACH_ITEM)
-    values = network.read([(BREAKPOINT, REACH_ITEM)])
-    values.columns = [REACH_ITEM]
+    network = open_network()
+    values = breakpoint_series(network)
 
-    nmr = ms.NetworkModelResult(network, name="Network_Model")
+    nmr = ms.NetworkModelResult(network, item=REACH_ITEM, name="Network_Model")
     obs = ms.ReachObservation(values, reach=REACH, name="Reach_Obs")
 
     return ms.match(obs, nmr)
