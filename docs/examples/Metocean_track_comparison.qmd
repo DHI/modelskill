@@ -36,7 +36,7 @@ Csv files have no metadata on which quantity it contains, we add this manually, 
 
 ```{python}
 o1 = ms.TrackObservation(df, item="surface_elevation", name='alti',
-                         quantity=ms.Quantity(name="Surface Elevation", unit="meter")) 
+                         quantity=ms.Quantity(name="Surface Elevation", unit="m")) 
 o1
 ```
 
@@ -67,7 +67,7 @@ mr
 df = pd.read_csv('../data/altimetry_NorthSea_20171027.csv',
                   index_col=0, parse_dates=True)
 o1 = ms.TrackObservation(df, item=2, name='alti',
-                         quantity=ms.Quantity(name="Surface Elevation", unit="meter"))
+                         quantity=ms.Quantity(name="Surface Elevation", unit="m"))
 o1
 ```
 
@@ -91,7 +91,7 @@ mr = ms.model_result('../data/NorthSeaHD_and_windspeed.dfsu',
 df = pd.read_csv('../data/altimetry_NorthSea_20171027.csv',
                  index_col=0, parse_dates=True)
 o1 = ms.TrackObservation(df, item=2, name='alti',
-                         quantity=ms.Quantity(name="Surface Elevation", unit="meter"))
+                         quantity=ms.Quantity(name="Surface Elevation", unit="m"))
 cmp = ms.match(o1, mr)
 cmp
 ```
