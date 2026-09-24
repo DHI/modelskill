@@ -1101,7 +1101,7 @@ def wl_obs_discharge_model():
 def test_match_raises_on_incompatible_quantity(wl_obs_discharge_model):
     obs, mod = wl_obs_discharge_model
     with pytest.raises(ValueError, match="not compatible"):
-        ms.match(obs, mod)
+        ms.match(obs, mod, check_quantity="error")
 
 
 def test_match_check_quantity_ignore(wl_obs_discharge_model):

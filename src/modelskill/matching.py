@@ -204,7 +204,7 @@ def match(
     spatial_method: str | None = None,
     spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
-    check_quantity: Literal["error", "ignore"] = "error",
+    check_quantity: Literal["error", "ignore"] = "ignore",
 ) -> Comparer: ...
 
 
@@ -217,7 +217,7 @@ def match(
     spatial_method: str | None = None,
     spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
-    check_quantity: Literal["error", "ignore"] = "error",
+    check_quantity: Literal["error", "ignore"] = "ignore",
 ) -> ComparerCollection: ...
 
 
@@ -229,7 +229,7 @@ def match(
     spatial_method: str | None = None,
     spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
-    check_quantity: Literal["error", "ignore"] = "error",
+    check_quantity: Literal["error", "ignore"] = "ignore",
 ):
     """Match observation and model result data in space and time
 
@@ -266,7 +266,7 @@ def match(
     check_quantity: str, optional
         How to handle a model result whose unit differs from the observation's,
         see [](`~modelskill.Quantity.is_compatible`). One of: 'error', 'ignore',
-        by default 'error'.
+        by default 'ignore'.
 
     Returns
     -------
@@ -385,7 +385,7 @@ def _match_single_obs(
             raise ValueError(
                 f"Model result '{m.name}' has quantity {matching_obs.quantity}, "
                 f"which is not compatible with {obs.quantity} of observation "
-                f"'{obs.name}'. Pass check_quantity='ignore' to match anyway."
+                f"'{obs.name}'."
             )
         raw_mod_data[m.name] = matching_obs
 
