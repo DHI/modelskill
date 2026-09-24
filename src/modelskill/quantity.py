@@ -58,29 +58,33 @@ class Quantity:
             # hide is_directional if False to avoid clutter
             return f"Quantity(name='{self.name}', unit='{self.unit}')"
 
-    def is_compatible(self, other) -> bool:
+    def is_compatible(self, other: "Quantity") -> bool:
         """Check if the quantity is compatible with another quantity
+
+        Two quantities are compatible when their units agree. Names are not
+        compared, since the same physical quantity is often named differently
+        in observation and model, e.g. "Water Level" and "Surface Elevation".
+        Units are compared as written, so "meter" and "m" differ. An undefined
+        quantity, or one without a unit, is compatible with any other.
 
         Examples
         --------
         ```{python}
-        wl = Quantity(name="Water Level", unit="meter")
-        ws = Quantity(name="Wind Speed", unit="meter per second")
+        wl = Quantity(name="Water Level", unit="m")
+        ws = Quantity(name="Wind Speed", unit="m/s")
         wl.is_compatible(ws)
         ```
         ```{python}
-        uq = Quantity(name="Undefined", unit="Undefined")
-        wl.is_compatible(uq)
+        wl.is_compatible(Quantity(name="Surface Elevation", unit="m"))
+        ```
+        ```{python}
+        wl.is_compatible(Quantity.undefined())
         ```
         """
-
-        if self == other:
+        if _is_undefined_unit(self.unit) or _is_undefined_unit(other.unit):
             return True
 
-        if (self.name == "Undefined") or (other.name == "Undefined"):
-            return True
-
-        return False
+        return self.unit == other.unit
 
     @staticmethod
     def undefined() -> "Quantity":
@@ -185,7 +189,14 @@ class Quantity:
                 raise ValueError(
                     f"{type_name=} is not recognized as a known type. Please create a Quantity(name='{type_name}' unit='<FILL IN UNIT>')"
                 )
-        unit = etype.units[0].name
+        unit = etype.units[0].short_name
         is_directional = unit == "degree"
         warnings.warn(f"{unit=} was automatically set for {type_name=}")
         return Quantity(name=type_name, unit=unit, is_directional=is_directional)
+
+
+def _is_undefined_unit(unit: str) -> bool:
+    # "" from Quantity.undefined() and from res1d/EPANET results, which carry no
+    # unit; "undefined" from mikeio items of EUM type Undefined; "Undefined" from
+    # earlier modelskill versions
+    return unit in ("", "undefined", "Undefined")

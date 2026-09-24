@@ -204,6 +204,7 @@ def match(
     spatial_method: str | None = None,
     spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
+    check_quantity: Literal["error", "ignore"] = "ignore",
 ) -> Comparer: ...
 
 
@@ -216,6 +217,7 @@ def match(
     spatial_method: str | None = None,
     spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
+    check_quantity: Literal["error", "ignore"] = "ignore",
 ) -> ComparerCollection: ...
 
 
@@ -227,6 +229,7 @@ def match(
     spatial_method: str | None = None,
     spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
+    check_quantity: Literal["error", "ignore"] = "ignore",
 ):
     """Match observation and model result data in space and time
 
@@ -260,6 +263,10 @@ def match(
         and TrackObservation, by default 1e-3.
     obs_no_overlap: str, optional
         How to handle observations with no overlap with model results. One of: 'ignore', 'error', 'warn', by default 'error'.
+    check_quantity: str, optional
+        How to handle a model result whose unit differs from the observation's,
+        see [](`~modelskill.Quantity.is_compatible`). One of: 'error', 'ignore',
+        by default 'ignore'.
 
     Returns
     -------
@@ -273,6 +280,11 @@ def match(
     from_matched - Create a Comparer from observation and model results that are already matched
     """
 
+    if check_quantity not in ("error", "ignore"):
+        raise ValueError(
+            f"check_quantity must be 'error' or 'ignore', not {check_quantity!r}"
+        )
+
     if isinstance(obs, get_args(ObsInputType)):
         return _match_single_obs(
             obs,
@@ -281,6 +293,7 @@ def match(
             spatial_method=spatial_method,
             spatial_tolerance=spatial_tolerance,
             obs_no_overlap=obs_no_overlap,
+            check_quantity=check_quantity,
         )
 
     if isinstance(obs, Collection):
@@ -322,6 +335,7 @@ def match(
             spatial_method=spatial_method,
             spatial_tolerance=spatial_tolerance,
             obs_no_overlap=obs_no_overlap,
+            check_quantity=check_quantity,
         )
         for o in obs
     ]
@@ -339,6 +353,7 @@ def _match_single_obs(
     spatial_method: str | None,
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
+    check_quantity: Literal["error", "ignore"],
 ) -> Comparer | None:
     if isinstance(mod, get_args(MRInputType)):
         models: list = [mod]
@@ -364,6 +379,14 @@ def _match_single_obs(
         else:
             matching_obs = m
 
+        if check_quantity == "error" and not obs.quantity.is_compatible(
+            matching_obs.quantity
+        ):
+            raise ValueError(
+                f"Model result '{m.name}' has quantity {matching_obs.quantity}, "
+                f"which is not compatible with {obs.quantity} of observation "
+                f"'{obs.name}'."
+            )
         raw_mod_data[m.name] = matching_obs
 
     matched_data = _match_space_time(

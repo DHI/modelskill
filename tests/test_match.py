@@ -7,6 +7,7 @@ import mikeio
 import modelskill as ms
 from modelskill.comparison._comparison import ItemSelection
 from modelskill.model.dfsu import DfsuModelResult
+
 try:
     from modelskill.network import _make_basic_network
 except ImportError:
@@ -1064,7 +1065,8 @@ def test_network_match_multi_obs_multi_model_comprehensive(
 def test_network_match_error_non_node_observation(network_mr, point_obs_error):
     """Test that non-NodeObservation raises appropriate error"""
     with pytest.raises(
-        TypeError, match="NetworkModelResult supports NodeObservation and ReachObservation"
+        TypeError,
+        match="NetworkModelResult supports NodeObservation and ReachObservation",
     ):
         ms.match(point_obs_error, network_mr)
 
@@ -1076,3 +1078,39 @@ def test_match_nodeobs_with_other_result(node_obs1, mr1):
         match="Extraction from .* to <class 'modelskill.obs.NodeObservation'> is not implemented.",
     ):
         ms.match(node_obs1, mr1)
+
+
+@pytest.fixture
+def wl_obs_discharge_model():
+    time = pd.date_range("2020-01-01", periods=5, freq="h")
+    obs = ms.PointObservation(
+        pd.Series(np.arange(5.0), index=time, name="obs"),
+        x=0.0,
+        y=0.0,
+        quantity=ms.Quantity(name="Water Level", unit="m"),
+    )
+    mod = ms.PointModelResult(
+        pd.Series(np.arange(5.0), index=time, name="mod"),
+        x=0.0,
+        y=0.0,
+        quantity=ms.Quantity(name="Discharge", unit="m^3/s"),
+    )
+    return obs, mod
+
+
+def test_match_raises_on_incompatible_quantity(wl_obs_discharge_model):
+    obs, mod = wl_obs_discharge_model
+    with pytest.raises(ValueError, match="not compatible"):
+        ms.match(obs, mod, check_quantity="error")
+
+
+def test_match_check_quantity_ignore(wl_obs_discharge_model):
+    obs, mod = wl_obs_discharge_model
+    cmp = ms.match(obs, mod, check_quantity="ignore")
+    assert cmp.n_points == 5
+
+
+def test_match_check_quantity_invalid_value(wl_obs_discharge_model):
+    obs, mod = wl_obs_discharge_model
+    with pytest.raises(ValueError, match="check_quantity"):
+        ms.match(obs, mod, check_quantity="warn")

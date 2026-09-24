@@ -22,7 +22,7 @@ def drogden():
         item=0,
         x=355568.0,
         y=6156863.0,
-        quantity=ms.Quantity("Water Level", unit="meter"),
+        quantity=ms.Quantity("Water Level", unit="m"),
     )
 
 
@@ -149,7 +149,7 @@ def test_weighted_score(modelresult_oresund_WL):
         x=355568.0,
         y=6156863.0,
         quantity=ms.Quantity(
-            "Water Level", unit="meter"
+            "Water Level", unit="m"
         ),  # not sure if this is relevant in this test
     )
 
@@ -176,7 +176,7 @@ def test_weighted_score(modelresult_oresund_WL):
         x=355568.0,
         y=6156863.0,
         quantity=ms.Quantity(
-            "Water Level", unit="meter"
+            "Water Level", unit="m"
         ),  # not sure if this is relevant in this test
         weight=0.1,
     )
