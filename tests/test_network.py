@@ -856,6 +856,16 @@ def test_extract_reach_whose_breakpoints_do_not_carry_the_quantity_raises_valuee
         nmr.extract(obs)
 
 
+def test_extract_reach_not_in_the_network_raises_keyerror(
+    sample_network, sample_node_data
+):
+    nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
+    obs = ms.ReachObservation(sample_node_data, reach="no_such_reach")
+
+    with pytest.raises(KeyError, match="no_such_reach"):
+        nmr.extract(obs)
+
+
 @pytest.mark.skipif(
     sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
 )

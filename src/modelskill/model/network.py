@@ -16,7 +16,7 @@ from ..quantity import Quantity
 from ..types import GeometryType
 
 if TYPE_CHECKING:
-    from mikeio1d.network import Location, Network
+    from mikeio1d.network import Address, Location, Network
 
 
 def _network_class() -> type[Network]:
@@ -220,7 +220,8 @@ class NetworkModelResult:
                     "network.locations() lists the nodes and break points it has, "
                     "and locations(reach=...) the break points along one reach."
                 )
-            return self._read_at(found)
+            [df] = self._read([found])
+            return self._to_result(found.address, df)
         elif isinstance(observation, ReachObservation):
             return self._extract_reach(observation)
         else:
@@ -231,32 +232,36 @@ class NetworkModelResult:
     def _extract_reach(self, observation: ReachObservation) -> NodeModelResult:
         # A reach observation matches any breakpoint along the reach, so long as
         # they agree. The network says which breakpoints carry the quantity, and
-        # only those are read.
+        # only those are read, all in one read.
         item = self.sel_items.values
         reach_id = observation.reach
 
-        if reach_id not in self.network.reaches:
-            raise ValueError(f"Reach {reach_id} not found in network.")
-
-        points = self.network.locations(reach=reach_id, quantity=item)
-        if not points:
+        # locations() raises a KeyError naming the reach if the network has none
+        # such, and every point it gives resolves.
+        found = [
+            self.network.resolve(point)
+            for point in self.network.locations(reach=reach_id, quantity=item)
+        ]
+        if not found:
             raise ValueError(
                 f"Reach '{reach_id}' was found in the network but none of its "
                 f"breakpoints carry quantity '{item}'. Choose a reach that has "
                 "this quantity, or a model result for a quantity this reach has."
             )
 
-        values = self.network.read([(point, item) for point in points])
         # A breakpoint can name a quantity and hold nothing for it.
-        with_data = values.notna().any().to_numpy()
-        if not with_data.any():
+        with_data = [
+            (location, df)
+            for location, df in zip(found, self._read(found))
+            if df[item].notna().any()
+        ]
+        if not with_data:
             raise ValueError(
                 f"Reach '{reach_id}' has breakpoints that name quantity "
                 f"'{item}', but none of them carry values for it in this model "
                 "result."
             )
-        points = [point for point, kept in zip(points, with_data) if kept]
-        values = values.loc[:, with_data].to_numpy()
+        values = np.column_stack([df[item].to_numpy() for _, df in with_data])
         if not np.allclose(values, values[:, :1], equal_nan=True):
             raise ValueError(
                 "Not all data in breakpoints are equivalent. "
@@ -265,22 +270,30 @@ class NetworkModelResult:
 
         # Lowest distance first, so the breakpoint chosen does not depend on the
         # order the network happened to list them in.
-        found = self.network.resolve(min(points, key=lambda p: p[1]))
-        assert found is not None  # a point locations() gave always resolves
-        return self._read_at(found)
+        location, df = min(with_data, key=lambda pair: pair[0].address[1])
+        return self._to_result(location.address, df)
 
-    def _read_at(self, found: Location) -> NodeModelResult:
-        # The location is the network's own spelling of it rather than the
-        # observation's, so a distance given as 24.5001 is recorded as 24.5.
-        address = found.address
-        item = self.sel_items.values
-
-        readable = [q for q in self.sel_items.all if q in found.quantities]
-        df = self.network.read([(address, q) for q in readable])
-        df.columns = pd.Index(readable)
-        # An auxiliary item this location does not carry is missing here, as it
+    def _read(self, found: Sequence[Location]) -> list[pd.DataFrame]:
+        # One read for every location, each giving a frame of the selected items.
+        # An auxiliary item a location does not carry is missing there, as it
         # would be anywhere else it is not measured.
-        df = df.reindex(columns=self.sel_items.all).rename_axis("time")
+        keys = [
+            (n, q)
+            for n, location in enumerate(found)
+            for q in self.sel_items.all
+            if q in location.quantities
+        ]
+        df = self.network.read([(found[n].address, q) for n, q in keys])
+        df.columns = pd.MultiIndex.from_tuples(keys, names=[None, None])
+        df = df.reindex(
+            columns=pd.MultiIndex.from_product([range(len(found)), self.sel_items.all])
+        ).rename_axis("time")
+        return [df[n] for n in range(len(found))]
+
+    def _to_result(self, address: Address, df: pd.DataFrame) -> NodeModelResult:
+        # The address is the network's own spelling of it rather than the
+        # observation's, so a distance given as 24.5001 is recorded as 24.5.
+        item = self.sel_items.values
         # MIKE 1D stores quantities at different grid points, so a breakpoint
         # carrying Discharge may carry no WaterLevel; and a location can name a
         # quantity and hold nothing for it.
