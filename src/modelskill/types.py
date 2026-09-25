@@ -17,6 +17,7 @@ class GeometryType(Enum):
     VERTICAL = "vertical"
     NODE = "node"
     REACH = "reach"
+    NETWORK = "network"
 
     def __str__(self) -> str:
         return self.name.lower()
@@ -44,6 +45,8 @@ class GeometryType(Enum):
         <GeometryType.VERTICAL: 'vertical'>
         >>> GeometryType.from_string("node")
         <GeometryType.NODE: 'node'>
+        >>> GeometryType.from_string("network")
+        <GeometryType.NETWORK: 'network'>
         """
 
         try:

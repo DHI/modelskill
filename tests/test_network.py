@@ -780,6 +780,11 @@ class TestResultFile:
         assert mr.quantity.name == case.node_item
         assert mr.period[0] < mr.period[1]
 
+    def test_model_result_recognises_the_result_file(self, case):
+        mr = ms.model_result(case.path, item=case.node_item)
+
+        assert isinstance(mr, NetworkModelResult)
+
     def test_a_model_result_carries_the_files_own_values(self, case):
         """Checked against mikeio1d's own read of the file.
 
@@ -1183,6 +1188,20 @@ class TestObservationFactory:
         obs = ms.observation(sample_node_data, gtype=gtype, item="WaterLevel", **kwargs)
 
         assert isinstance(obs, expected)
+
+
+class TestModelResultFactory:
+    """ms.model_result() builds a NetworkModelResult from a Network."""
+
+    def test_a_network_gives_a_network_model_result(self, sample_network):
+        mr = ms.model_result(sample_network, item="WaterLevel")
+
+        assert isinstance(mr, NetworkModelResult)
+
+    def test_gtype_can_be_named_outright(self, sample_network):
+        mr = ms.model_result(sample_network, gtype="network", item="WaterLevel")
+
+        assert isinstance(mr, NetworkModelResult)
 
 
 def test_a_reach_observation_keeps_its_weight_and_attrs(sample_node_data):
