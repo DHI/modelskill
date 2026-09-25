@@ -31,12 +31,12 @@ from ..obs import (
     TrackObservation,
     NodeObservation,
     ReachObservation,
+    _at_from_coords,
 )
 from ..model import PointModelResult, TrackModelResult, VerticalModelResult
 from ..timeseries._coords import (
     NETWORK_LOCATION_COORDS,
     _coordinate_values,
-    network_location,
 )
 from ..timeseries._timeseries import (
     _normalize_time_to_ns,
@@ -667,11 +667,6 @@ class Comparer:
         """along-reach distance of a breakpoint"""
         return self._coordinate_values("distance")
 
-    @property
-    def _at(self) -> Any:
-        """Where this comparer sits, in the form NodeObservation.at takes"""
-        return network_location(self.data)
-
     def _coordinate_values(self, coord: str) -> Any:
         """Get coordinate values if they exist, otherwise return None"""
         return _coordinate_values(self.data, coord)
@@ -830,7 +825,7 @@ class Comparer:
             return NodeObservation(
                 data=df,
                 name=self.name,
-                at=self._at,
+                at=_at_from_coords(self.data),
                 quantity=self.quantity,
                 # TODO: add attrs
             )
