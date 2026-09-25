@@ -14,8 +14,7 @@ from modelskill.timeseries import (
     _parse_network_node_input,
 )
 from ._base import SelectedItems
-from ..obs import NodeObservation, ReachObservation
-from ..timeseries._coords import network_location
+from ..obs import NodeObservation, ReachObservation, _at_from_coords
 from ..quantity import Quantity
 from ..types import GeometryType
 
@@ -143,12 +142,17 @@ class NodeModelResult(TimeSeries):
         return cls(ds.assign_coords(node_index=int(node_index)))
 
     @property
+    def at(self) -> str | tuple[str, float]:
+        """Where this result was extracted: a node name, or a ``(reach_id, distance)`` breakpoint."""
+        return _at_from_coords(self.data)
+
+    @property
     def node(self) -> Any:
-        """Where this result was extracted, as its network named it."""
-        return network_location(self.data)
+        """Name of the node this result was extracted at, or None for a break point."""
+        return self._coordinate_values("node")
 
     def _location_repr(self) -> str | None:
-        return f"Location: {self.node}"
+        return f"Location: {self.at}"
 
     @property
     def node_index(self) -> int | None:
@@ -156,7 +160,7 @@ class NodeModelResult(TimeSeries):
 
         Provenance only. Nothing reads it back: the numbering belongs to one
         network built by one version, so a saved result is identified by
-        :attr:`node` instead.
+        :attr:`at` instead.
         """
         if "node_index" not in self.data.coords:
             return None

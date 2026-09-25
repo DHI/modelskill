@@ -820,7 +820,7 @@ class TestResultFile:
 
         extracted = mr.extract(obs)
 
-        assert extracted.node == (case.reach, case.distance)
+        assert extracted.at == (case.reach, case.distance)
 
     def test_a_reach_extracts_to_one_of_its_break_points(self, case):
         mr = NetworkModelResult(case.path, item=case.reach_item, name="network_model")
@@ -831,7 +831,7 @@ class TestResultFile:
         extracted = mr.extract(obs)
 
         assert extracted.name == "network_model"
-        reach, distance = extracted.node
+        reach, distance = extracted.at
         assert reach == case.reach
         assert distance == pytest.approx(case.distance)
 
@@ -1050,7 +1050,7 @@ class TestNetworkModelResultAliasResolution:
 
         extracted = nmr.extract(obs)
 
-        assert extracted.node == BREAKPOINT
+        assert extracted.at == BREAKPOINT
 
     def test_extract_with_tuple_breakpoint_tolerance(
         self, sample_network, sample_node_data
@@ -1061,7 +1061,7 @@ class TestNetworkModelResultAliasResolution:
         extracted = nmr.extract(obs)
 
         # The distance recorded is the network's own, not the one typed.
-        assert extracted.node == BREAKPOINT
+        assert extracted.at == BREAKPOINT
 
     def test_extract_with_tuple_breakpoint_outside_tolerance_raises(
         self, sample_network, sample_node_data
