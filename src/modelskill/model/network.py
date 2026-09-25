@@ -79,46 +79,6 @@ class NodeModelResult(TimeSeries):
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
 
-    @classmethod
-    def _from_network(
-        cls,
-        data: xr.Dataset,
-        *,
-        location: str | tuple[str, float | None],
-        name: str | None = None,
-        item: str | int | None = None,
-        quantity: Quantity | None = None,
-        aux_items: Sequence[int | str] | None = None,
-    ) -> NodeModelResult:
-        """Build a result from the data a network keeps at one location.
-
-        Parameters
-        ----------
-        data : xr.Dataset
-            Timeseries for one location, as the network stored it.
-        location : str or tuple of (str, float or None)
-            A node name, or a break point as ``(reach_id, distance)``.
-        name : str, optional
-            The name of the model result, by default None (taken from the item)
-        item : str or int, optional
-            Item to take when the data holds more than one, by default None
-        quantity : Quantity, optional
-            Model quantity, by default None (inferred from the data)
-        aux_items : sequence of int or str, optional
-            Auxiliary items, by default None
-
-        Returns
-        -------
-        NodeModelResult
-            the result at that location
-        """
-        if isinstance(location, tuple):
-            location = (str(location[0]), location[1])
-        ds = _parse_point_input(
-            data, name, item, quantity, aux_items, coords=NetworkCoords(location)
-        )
-        return cls(ds)
-
     @property
     def at(self) -> str | tuple[str, float]:
         """Where this result was extracted: a node name, or a ``(reach_id, distance)`` breakpoint."""
@@ -346,11 +306,14 @@ class NetworkModelResult:
                 "model result for a quantity this location has."
             )
 
-        return NodeModelResult._from_network(
+        if isinstance(address, tuple):
+            address = (str(address[0]), address[1])
+        ds = _parse_point_input(
             xr.Dataset.from_dataframe(df),
-            location=address,
-            name=self.name,
-            item=item,
-            quantity=self.quantity,
-            aux_items=self.sel_items.aux,
+            self.name,
+            item,
+            self.quantity,
+            self.sel_items.aux,
+            coords=NetworkCoords(address),
         )
+        return NodeModelResult(ds)
