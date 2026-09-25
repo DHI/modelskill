@@ -1126,6 +1126,23 @@ class TestLocationIdentity:
         assert trimmed.node == extracted.node
         assert len(trimmed) == len(extracted) - 1
 
+    @pytest.mark.parametrize(
+        "at, item, node",
+        [("1", "WaterLevel", "1"), (BREAKPOINT, REACH_ITEM, None)],
+        ids=["named node", "break point"],
+    )
+    def test_observation_model_result_and_comparer_agree_on_location(
+        self, sample_network, sample_node_data, at, item, node
+    ):
+        nmr = NetworkModelResult(sample_network, item=item, name="Network_Model")
+        obs = ms.NodeObservation(sample_node_data, at=at, name="Obs")
+
+        cmp = ms.match(obs, nmr)
+        mod = cmp.raw_mod_data["Network_Model"]
+
+        assert obs.at == mod.at == cmp.at == at
+        assert obs.node == mod.node == cmp.node == node
+
     def test_a_matched_breakpoint_records_its_chainage(
         self, sample_network, sample_node_data
     ):

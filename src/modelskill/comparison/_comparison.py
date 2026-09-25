@@ -653,8 +653,16 @@ class Comparer:
         return self._coordinate_values("z")
 
     @property
+    def at(self) -> str | tuple[str, float] | None:
+        """Where a node comparer sits: a node name, or a ``(reach_id, distance)`` breakpoint.
+
+        None for a comparer that is not at a network node.
+        """
+        return _at_from_coords(self.data) if self.gtype == "node" else None
+
+    @property
     def node(self) -> Any:
-        """Name of the node this comparer sits at"""
+        """Name of the node this comparer sits at, or None for a break point"""
         return self._coordinate_values("node")
 
     @property
