@@ -27,7 +27,7 @@ mikeio1d gains an optional network module that builds and owns `Network`. models
 modelskill's `network` extra requires a mikeio1d release new enough to contain it.
 
 Original IDs become the only identifier a user handles: `NodeObservation.at` takes a node name or a `(reach, distance)` pair, and no longer an integer. The alias integers stay an internal index,
-because the ID space mixes names and break points and a tuple cannot be an xarray coordinate value. A saved comparer records the original ID with the integer beside it as `node_index`, so reloading
+because the ID space mixes names and break points and a tuple cannot be an xarray coordinate value. A saved comparer records only the original ID, so reloading
 does not depend on the numbering the installed mikeio1d handed out.
 
 The loader's output over six fixture loads was recorded before anything moved — graph edges with their lengths and boundary flags, the alias map, the dataframe, and every answer `find` and `recall`

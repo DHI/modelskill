@@ -215,29 +215,6 @@ class TestNodeModelResult:
 
         assert obs.data["WaterLevel"].attrs["kind"] == "observation"
 
-    def test_an_extracted_result_records_the_graph_integer(
-        self, sample_network, sample_node_data
-    ):
-        nmr = NetworkModelResult(sample_network, item="WaterLevel")
-        obs = NodeObservation(sample_node_data, at="1")
-
-        extracted = nmr.extract(obs)
-
-        assert extracted.node_index == sample_network.resolve("1").node
-
-    def test_a_result_built_without_the_graph_integer_has_none(
-        self, sample_network, sample_node_data
-    ):
-        """node_index is provenance: a result identifies itself by node without it."""
-        extracted = NetworkModelResult(sample_network, item="WaterLevel").extract(
-            NodeObservation(sample_node_data, at="1")
-        )
-
-        rebuilt = NodeModelResult(extracted.data.drop_vars("node_index"))
-
-        assert rebuilt.node_index is None
-        assert rebuilt.node == "1"
-
 
 class TestNodeObservation:
     """Test NodeObservation class"""
@@ -803,14 +780,13 @@ class TestResultFile:
             expected.to_numpy()
         )
 
-    def test_a_named_node_extracts_and_records_its_graph_integer(self, case):
+    def test_a_named_node_extracts_at_that_node(self, case):
         mr = NetworkModelResult(case.path, item=case.node_item)
         obs = NodeObservation(self._observation_for(mr, case.node_item), at=case.node)
 
         extracted = mr.extract(obs)
 
         assert extracted.node == case.node
-        assert extracted.node_index == mr.network.resolve(case.node).node
 
     def test_a_break_point_extracts_at_the_networks_own_distance(self, case):
         mr = NetworkModelResult(case.path, item=case.reach_item)

@@ -70,7 +70,7 @@ def _coordinate_values(ds: xr.Dataset, coord: str) -> Any:
 #: Scalar coordinates that say where a network timeseries sits, rather than what
 #: it holds. They are dropped on the way to a dataframe, where they would
 #: otherwise become columns.
-NETWORK_LOCATION_COORDS = ("node", "node_index", "reach", "distance")
+NETWORK_LOCATION_COORDS = ("node", "reach", "distance")
 
 
 def network_location(ds: xr.Dataset) -> Any:

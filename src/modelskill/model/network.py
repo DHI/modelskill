@@ -85,7 +85,6 @@ class NodeModelResult(TimeSeries):
         data: xr.Dataset,
         *,
         location: str | tuple[str, float | None],
-        node_index: int,
         name: str | None = None,
         item: str | int | None = None,
         quantity: Quantity | None = None,
@@ -99,9 +98,6 @@ class NodeModelResult(TimeSeries):
             Timeseries for one location, as the network stored it.
         location : str or tuple of (str, float or None)
             A node name, or a break point as ``(reach_id, distance)``.
-        node_index : int
-            The integer the network used for this location, recorded as
-            provenance. Nothing reads it back.
         name : str, optional
             The name of the model result, by default None (taken from the item)
         item : str or int, optional
@@ -121,7 +117,7 @@ class NodeModelResult(TimeSeries):
         ds = _parse_point_input(
             data, name, item, quantity, aux_items, coords=NetworkCoords(location)
         )
-        return cls(ds.assign_coords(node_index=int(node_index)))
+        return cls(ds)
 
     @property
     def at(self) -> str | tuple[str, float]:
@@ -135,18 +131,6 @@ class NodeModelResult(TimeSeries):
 
     def _location_repr(self) -> str | None:
         return f"Location: {self.at}"
-
-    @property
-    def node_index(self) -> int | None:
-        """Graph integer this location had in the network it came from, if recorded.
-
-        Provenance only. Nothing reads it back: the numbering belongs to one
-        network built by one version, so a saved result is identified by
-        :attr:`at` instead.
-        """
-        if "node_index" not in self.data.coords:
-            return None
-        return int(np.atleast_1d(self.data.coords["node_index"].values)[0])
 
 
 class NetworkModelResult:
@@ -365,7 +349,6 @@ class NetworkModelResult:
         return NodeModelResult._from_network(
             xr.Dataset.from_dataframe(df),
             location=address,
-            node_index=found.node,
             name=self.name,
             item=item,
             quantity=self.quantity,
