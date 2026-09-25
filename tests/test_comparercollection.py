@@ -514,6 +514,14 @@ def test_a_comparer_saved_by_1_4_0a3_still_loads():
     assert cmp.skill().to_dataframe().shape[0] == 1
 
 
+def test_a_comparer_saved_by_1_4_0a3_plots_its_temporal_coverage():
+    """The plot rebuilds an observation, so the stored integer has to pass as a node name."""
+    cmp = ms.load("tests/testdata/node_comparer_1.4.0a3.nc")
+    cc = ms.ComparerCollection([cmp])
+
+    assert cc.plot.temporal_coverage() is not None
+
+
 def test_save_and_load_round_trips_reach_gtype_raw_data(reach_comparer, tmp_path):
     """Reach-gtype comparers must survive a save()/load() round trip too."""
     cc = ms.ComparerCollection([reach_comparer])
