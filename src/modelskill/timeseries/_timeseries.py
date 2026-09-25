@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from ..types import GeometryType
+from ..types import GeometryType, network_gtype
 from ..quantity import Quantity
 from ._coords import NETWORK_LOCATION_COORDS, _coordinate_values
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
@@ -103,7 +103,7 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
 
     # Validate coordinates: x,y spatial, node-based, or reach-based (with or without chainage)
     has_spatial_coords = "x" in ds.coords and "y" in ds.coords
-    has_network_coords = GeometryType.from_network_coords(ds) is not None
+    has_network_coords = network_gtype(ds) is not None
 
     if not has_spatial_coords and not has_network_coords:
         raise ValueError(

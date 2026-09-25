@@ -8,7 +8,7 @@ import xarray as xr
 
 import mikeio
 
-from ..types import GeometryType, PointType
+from ..types import GeometryType, PointType, network_gtype
 from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _normalize_time_to_ns, _validate_data_var_name
@@ -168,7 +168,7 @@ def _include_attributes(
 ) -> xr.Dataset:
     ds = ds.copy()
 
-    ds.attrs["gtype"] = str(GeometryType.from_network_coords(ds) or GeometryType.POINT)
+    ds.attrs["gtype"] = str(network_gtype(ds) or GeometryType.POINT)
 
     ds[name].attrs["long_name"] = quantity.name
     ds[name].attrs["units"] = quantity.unit

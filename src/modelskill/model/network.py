@@ -13,7 +13,7 @@ from modelskill.timeseries._coords import NetworkCoords
 from ._base import SelectedItems
 from ..obs import NodeObservation, ReachObservation, _at_from_coords
 from ..quantity import Quantity
-from ..types import GeometryType
+from ..types import network_gtype
 
 if TYPE_CHECKING:
     from mikeio1d.network import Address, Location, Network
@@ -65,7 +65,7 @@ class NodeModelResult(TimeSeries):
                 f"location, got {type(data).__name__}. A model result for a "
                 "network location comes from NetworkModelResult.extract()."
             )
-        if GeometryType.from_network_coords(data) is None:
+        if network_gtype(data) is None:
             raise ValueError(
                 "'NodeModelResult' needs data carrying a 'node' coordinate, or a "
                 "'reach' coordinate for a reach or a break point. A model result "
