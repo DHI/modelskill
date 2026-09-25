@@ -72,14 +72,14 @@ def node_series(network, quantity="WaterLevel", nodes=None) -> pd.DataFrame:
     """
     if nodes is None:
         ends = (
-            node.id
+            node_id
             for reach in network.reaches.values()
-            for node in (reach.start, reach.end)
+            for node_id in (reach.start, reach.end)
         )
         nodes = [
             node_id
             for node_id in dict.fromkeys(ends)
-            if quantity in network.resolve(node_id)["quantities"]
+            if quantity in network.resolve(node_id).quantities
         ]
     df = network.read([(node_id, quantity) for node_id in nodes])
     df.columns = list(nodes)

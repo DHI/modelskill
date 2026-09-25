@@ -85,7 +85,7 @@ class TestNetworkModelResult:
         """Test initialization with a Network object"""
         nmr = NetworkModelResult(sample_network, item="WaterLevel")
 
-        assert nmr.period == sample_network.period()
+        assert nmr.period == sample_network.period
 
     def test_quantity_name_survives_to_the_model_result(self, sample_network):
         """The network knows its quantity by name even without a unit."""
@@ -223,7 +223,7 @@ class TestNodeModelResult:
 
         extracted = nmr.extract(obs)
 
-        assert extracted.node_index == sample_network.resolve("1")["node"]
+        assert extracted.node_index == sample_network.resolve("1").node
 
     def test_a_result_built_without_the_graph_integer_has_none(
         self, sample_network, sample_node_data
@@ -805,7 +805,7 @@ class TestResultFile:
         extracted = mr.extract(obs)
 
         assert extracted.node == case.node
-        assert extracted.node_index == mr.network.resolve(case.node)["node"]
+        assert extracted.node_index == mr.network.resolve(case.node).node
 
     def test_a_break_point_extracts_at_the_networks_own_distance(self, case):
         mr = NetworkModelResult(case.path, item=case.reach_item)

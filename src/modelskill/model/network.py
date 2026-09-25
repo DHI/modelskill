@@ -20,7 +20,7 @@ from ..quantity import Quantity
 from ..types import GeometryType
 
 if TYPE_CHECKING:
-    from mikeio1d.network import Network
+    from mikeio1d.network import Location, Network
 
 
 def _network_class() -> type[Network]:
@@ -206,9 +206,7 @@ class NetworkModelResult:
     Notes
     -----
     The network is used as given, not copied, so ``mr.network`` is the caller's
-    object. It reads from its result file on every :meth:`extract`, so it must
-    not be released (:meth:`mikeio1d.network.Network.release`) while the model
-    result is in use.
+    object. It reads from its result file on every :meth:`extract`.
 
     See Also
     --------
@@ -266,7 +264,7 @@ class NetworkModelResult:
         tuple[datetime, datetime]
             Start and end of the result file's time axis.
         """
-        return self.network.period()
+        return self.network.period
 
     def extract(
         self,
@@ -332,7 +330,7 @@ class NetworkModelResult:
         # order the network happened to list them in.
         return self._read_at(self._resolve(min(points, key=lambda p: p[1])))
 
-    def _resolve(self, address: str | tuple[str, float]) -> dict[str, Any]:
+    def _resolve(self, address: str | tuple[str, float]) -> Location:
         found = self.network.resolve(address)
         if found is not None:
             return found
@@ -356,13 +354,13 @@ class NetworkModelResult:
             f"{', '.join(repr(point[1]) for point in nearest)}."
         )
 
-    def _read_at(self, found: dict[str, Any]) -> NodeModelResult:
+    def _read_at(self, found: Location) -> NodeModelResult:
         # The location is the network's own spelling of it rather than the
         # observation's, so a distance given as 24.5001 is recorded as 24.5.
-        address = found["address"]
+        address = found.address
         item = self.sel_items.values
 
-        readable = [q for q in self.sel_items.all if q in found["quantities"]]
+        readable = [q for q in self.sel_items.all if q in found.quantities]
         df = self.network.read([(address, q) for q in readable])
         df.columns = pd.Index(readable)
         # An auxiliary item this location does not carry is missing here, as it
@@ -381,7 +379,7 @@ class NetworkModelResult:
         return NodeModelResult._from_network(
             xr.Dataset.from_dataframe(df),
             location=address,
-            node_index=int(found["node"]),
+            node_index=found.node,
             name=self.name,
             item=item,
             quantity=self.quantity,
