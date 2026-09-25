@@ -8,11 +8,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from modelskill.timeseries import (
-    TimeSeries,
-    _parse_network_breakpoint_input,
-    _parse_network_node_input,
-)
+from modelskill.timeseries import TimeSeries, _parse_point_input
+from modelskill.timeseries._coords import NetworkCoords
 from ._base import SelectedItems
 from ..obs import NodeObservation, ReachObservation, _at_from_coords
 from ..quantity import Quantity
@@ -120,25 +117,10 @@ class NodeModelResult(TimeSeries):
             the result at that location
         """
         if isinstance(location, tuple):
-            reach, distance = location
-            ds = _parse_network_breakpoint_input(
-                data,
-                name=name,
-                item=item,
-                quantity=quantity,
-                aux_items=aux_items,
-                reach=str(reach),
-                distance=distance,
-            )
-        else:
-            ds = _parse_network_node_input(
-                data,
-                name=name,
-                item=item,
-                quantity=quantity,
-                node=location,
-                aux_items=aux_items,
-            )
+            location = (str(location[0]), location[1])
+        ds = _parse_point_input(
+            data, name, item, quantity, aux_items, coords=NetworkCoords(location)
+        )
         return cls(ds.assign_coords(node_index=int(node_index)))
 
     @property

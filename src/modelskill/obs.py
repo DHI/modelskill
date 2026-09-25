@@ -33,10 +33,13 @@ from .timeseries import (
     _parse_xyz_point_input,
     _parse_track_input,
     _parse_vertical_input,
-    _parse_network_node_input,
-    _parse_network_breakpoint_input,
+    _parse_point_input,
 )
-from .timeseries._coords import _reject_conflicting_location, network_location
+from .timeseries._coords import (
+    NetworkCoords,
+    _reject_conflicting_location,
+    network_location,
+)
 
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
@@ -588,24 +591,9 @@ class NodeObservation(Observation):
         if self._is_input_validated(data):
             assert isinstance(data, xr.Dataset)
             _reject_conflicting_location(data, location, argument="at")
-        elif isinstance(location, tuple):
-            data = _parse_network_breakpoint_input(
-                data,
-                name=name,
-                item=item,
-                quantity=quantity,
-                aux_items=aux_items,
-                reach=location[0],
-                distance=location[1],
-            )
         else:
-            data = _parse_network_node_input(
-                data,
-                name=name,
-                item=item,
-                quantity=quantity,
-                node=location,
-                aux_items=aux_items,
+            data = _parse_point_input(
+                data, name, item, quantity, aux_items, coords=NetworkCoords(location)
             )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
@@ -802,14 +790,14 @@ class ReachObservation(Observation):
                 )
             _reject_conflicting_location(data, reach, argument="reach")
         else:
-            data = _parse_network_breakpoint_input(
+            # No distance: the observation holds for the whole reach.
+            data = _parse_point_input(
                 data,
-                name=name,
-                item=item,
-                quantity=quantity,
-                aux_items=aux_items,
-                reach=reach,
-                distance=None,
+                name,
+                item,
+                quantity,
+                aux_items,
+                coords=NetworkCoords((reach, None)),
             )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
