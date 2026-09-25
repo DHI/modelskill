@@ -213,7 +213,14 @@ class NetworkModelResult:
             extracted model result
         """
         if isinstance(observation, NodeObservation):
-            return self._read_at(self._resolve(observation.at))
+            found = self.network.resolve(observation.at)
+            if found is None:
+                raise ValueError(
+                    f"Location {observation.at!r} not found in the network. "
+                    "network.locations() lists the nodes and break points it has, "
+                    "and locations(reach=...) the break points along one reach."
+                )
+            return self._read_at(found)
         elif isinstance(observation, ReachObservation):
             return self._extract_reach(observation)
         else:
@@ -258,31 +265,9 @@ class NetworkModelResult:
 
         # Lowest distance first, so the breakpoint chosen does not depend on the
         # order the network happened to list them in.
-        return self._read_at(self._resolve(min(points, key=lambda p: p[1])))
-
-    def _resolve(self, address: str | tuple[str, float]) -> Location:
-        found = self.network.resolve(address)
-        if found is not None:
-            return found
-        if not isinstance(address, tuple):
-            raise ValueError(f"Location {address!r} not found in the network.")
-        reach_id, distance = address
-        if reach_id not in self.network.reaches:
-            raise ValueError(
-                f"Location {address!r} not found: reach {reach_id!r} is not in the "
-                "network."
-            )
-        # An error that lists every breakpoint of a long reach is unreadable, so
-        # the few nearest the distance asked for are named instead.
-        nearest = sorted(
-            self.network.locations(reach=reach_id),
-            key=lambda point: abs(point[1] - distance),
-        )[:5]
-        raise ValueError(
-            f"Location {address!r} not found. The breakpoints of reach "
-            f"{reach_id!r} nearest to it are at distances "
-            f"{', '.join(repr(point[1]) for point in nearest)}."
-        )
+        found = self.network.resolve(min(points, key=lambda p: p[1]))
+        assert found is not None  # a point locations() gave always resolves
+        return self._read_at(found)
 
     def _read_at(self, found: Location) -> NodeModelResult:
         # The location is the network's own spelling of it rather than the

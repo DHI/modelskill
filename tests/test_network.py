@@ -1011,15 +1011,6 @@ class TestNetworkModelResultAliasResolution:
         with pytest.raises(ValueError, match="not found"):
             nmr.extract(obs)
 
-    def test_a_missed_break_point_names_the_nearest_ones(
-        self, sample_network, sample_node_data
-    ):
-        nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
-        obs = NodeObservation(sample_node_data, at=(REACH, 999.0))
-
-        with pytest.raises(ValueError, match=str(DISTANCE)):
-            nmr.extract(obs)
-
     def test_extract_with_tuple_breakpoint(self, sample_network, sample_node_data):
         nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
         obs = NodeObservation(sample_node_data, at=BREAKPOINT)
