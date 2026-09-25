@@ -23,38 +23,36 @@ class XYZCoords:
         return {"x": self.x, "y": self.y, "z": self.z}
 
 
-class NodeCoords:
-    def __init__(self, node: str | None = None):
-        self.node = node if node is not None else np.nan
-
-    @property
-    def as_dict(self) -> dict:
-        return {"node": self.node}
-
-
-class ReachCoords:
-    """Coordinates for an observation along a network reach.
+class NetworkCoords:
+    """Coordinates for data at a location in a network.
 
     Parameters
     ----------
-    reach : str
-        Reach identifier.
-    distance : float or None, optional
-        Along-reach distance (chainage).  When ``None`` the observation is
-        reach-level (no specific chainage) and no ``distance`` coordinate is
-        stored in the dataset.
+    location : str or tuple of (str, float or None)
+        Where the data sits: a node name, a break point as
+        ``(reach, distance)``, or a whole reach as ``(reach, None)``. A whole
+        reach stores no ``distance`` coordinate, so the data can be matched to
+        any break point on the reach. Values are stored as given.
+
+    Raises
+    ------
+    ValueError
+        If ``location`` is None.
     """
 
-    def __init__(self, reach: str, distance: float | None = None):
-        self.reach = reach
-        self.distance = distance
+    def __init__(self, location: str | tuple[str, float | None]):
+        if location is None:
+            raise ValueError("'location' argument cannot be empty.")
+        self.location = location
 
     @property
     def as_dict(self) -> dict:
-        d: dict = {"reach": self.reach}
-        if self.distance is not None:
-            d["distance"] = self.distance
-        return d
+        if not isinstance(self.location, tuple):
+            return {"node": self.location}
+        reach, distance = self.location
+        if distance is None:
+            return {"reach": reach}
+        return {"reach": reach, "distance": distance}
 
 
 def _coordinate_values(ds: xr.Dataset, coord: str) -> Any:

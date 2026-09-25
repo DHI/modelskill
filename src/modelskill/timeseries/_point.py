@@ -12,7 +12,7 @@ from ..types import GeometryType, PointType
 from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _normalize_time_to_ns, _validate_data_var_name
-from ._coords import XYZCoords, NodeCoords, ReachCoords
+from ._coords import XYZCoords, NetworkCoords
 
 
 @dataclass
@@ -145,7 +145,7 @@ def _convert_to_dataset(
 def _include_coords(
     ds: xr.Dataset,
     *,
-    coords: XYZCoords | NodeCoords | ReachCoords | None = None,
+    coords: XYZCoords | NetworkCoords | None = None,
 ) -> xr.Dataset:
     ds = ds.copy()
     if coords is not None:
@@ -242,7 +242,7 @@ def _parse_point_input(
     quantity: Quantity | None,
     aux_items: Sequence[int | str] | None,
     *,
-    coords: XYZCoords | NodeCoords | ReachCoords,
+    coords: XYZCoords | NetworkCoords,
 ) -> xr.Dataset:
     """Convert accepted input data to an xr.Dataset."""
 

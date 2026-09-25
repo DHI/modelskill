@@ -5,7 +5,7 @@ import xarray as xr
 
 from ..quantity import Quantity
 from ..types import PointType
-from ._coords import NodeCoords, ReachCoords
+from ._coords import NetworkCoords
 from ._point import _parse_point_input
 
 
@@ -14,12 +14,10 @@ def _parse_network_node_input(
     name: str | None,
     item: str | int | None,
     quantity: Quantity | None,
-    node: str | None,
+    node: str,
     aux_items: Sequence[int | str] | None,
 ) -> xr.Dataset:
-    if node is None:
-        raise ValueError("'node' argument cannot be empty.")
-    coords = NodeCoords(node=node)
+    coords = NetworkCoords(node)
     ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds
 
@@ -40,6 +38,6 @@ def _parse_network_breakpoint_input(
     ``distance`` coordinate is stored and the result can be matched to any
     breakpoint on the reach.
     """
-    coords = ReachCoords(reach=reach, distance=distance)
+    coords = NetworkCoords((reach, distance))
     ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds
