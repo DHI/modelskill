@@ -7,10 +7,6 @@ import mikeio
 import modelskill as ms
 from modelskill.comparison._comparison import ItemSelection
 from modelskill.model.dfsu import DfsuModelResult
-try:
-    from modelskill.network import _make_basic_network
-except ImportError:
-    pass
 
 
 @pytest.fixture
@@ -339,35 +335,46 @@ class TestVerticalObservation:
 # Network-related fixtures
 @pytest.fixture
 def network():
-    """Network fixture with 3 nodes"""
-    pytest.importorskip("networkx")
-    time = pd.date_range("2017-10-27", periods=20, freq="h")
-    np.random.seed(42)
-    data = np.random.normal(1.5, 0.3, (20, 3))
-    return _make_basic_network(["100", "200", "300"], time, data)
+    """A MIKE urban result, whose nodes carry WaterLevel."""
+    pytest.importorskip("mikeio1d.network")
+    from tests.network_helpers import open_network
+
+    return open_network()
 
 
 @pytest.fixture
-def network2():
-    """Second network fixture with offset data for multi-model tests"""
-    pytest.importorskip("networkx")
-    time = pd.date_range("2017-10-27", periods=20, freq="h")
-    np.random.seed(42)
-    data = np.random.normal(1.5, 0.3, (20, 3)) + 0.1
-    return _make_basic_network(["100", "200", "300"], time, data)
+def network2(tmp_path):
+    """The same result shifted by 0.1, for the multi-model tests.
+
+    Two model results have to differ before a crossed model column can show.
+    """
+    pytest.importorskip("mikeio1d.network")
+    from tests.network_helpers import modified_network
+
+    return modified_network(tmp_path, offset=0.1)
+
+
+@pytest.fixture
+def model_time(network):
+    """The result file's own time axis, which an observation has to overlap."""
+    from tests.network_helpers import node_series
+
+    return node_series(network, nodes=["100"]).index
 
 
 @pytest.fixture
 def network_mr(network):
     """NetworkModelResult fixture"""
-    return ms.NetworkModelResult(network, name="Network_Model")
+    return ms.NetworkModelResult(network, item="WaterLevel", name="Network_Model")
 
 
 @pytest.fixture
-def node_obs1(network):
+def node_obs1(model_time):
     """NodeObservation for node '100'"""
-    node_id = network.find(node="100")
-    time = pd.date_range("2017-10-27", periods=18, freq="h")
+    node_id = "100"
+    # On the model's own time axis, trimmed: an observation is matched only
+    # where it overlaps the model.
+    time = model_time[:18]
     # Add some noise to make it different from model
     np.random.seed(123)
     data = np.random.normal(1.4, 0.2, len(time))
@@ -376,10 +383,10 @@ def node_obs1(network):
 
 
 @pytest.fixture
-def node_obs2(network):
-    """NodeObservation for node '200'"""
-    node_id = network.find(node="200")
-    time = pd.date_range("2017-10-27", periods=15, freq="h")
+def node_obs2(model_time):
+    """NodeObservation for node '101'"""
+    node_id = "101"
+    time = model_time[:15]
     np.random.seed(456)
     data = np.random.normal(1.6, 0.25, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
@@ -387,31 +394,31 @@ def node_obs2(network):
 
 
 @pytest.fixture
-def node_obs_invalid(network):
+def node_obs_invalid(model_time):
     """NodeObservation for a node that doesn't exist in the network"""
-    time = pd.date_range("2017-10-27", periods=10, freq="h")
+    time = model_time[:10]
     data = np.random.normal(1.5, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
-    return ms.NodeObservation(df, at=999, name="Node_999_Obs")
+    return ms.NodeObservation(df, at="999", name="Node_999_Obs")
 
 
 @pytest.fixture
 def network_mr1(network):
     """First NetworkModelResult fixture"""
-    return ms.NetworkModelResult(network, name="Network_1")
+    return ms.NetworkModelResult(network, item="WaterLevel", name="Network_1")
 
 
 @pytest.fixture
 def network_mr2(network2):
     """Second NetworkModelResult fixture with offset data"""
-    return ms.NetworkModelResult(network2, name="Network_2")
+    return ms.NetworkModelResult(network2, item="WaterLevel", name="Network_2")
 
 
 @pytest.fixture
-def node_obs_gaps(network):
+def node_obs_gaps(model_time):
     """NodeObservation with time gaps"""
-    node_id = network.find(node="100")
-    time = pd.date_range("2017-10-27", periods=10, freq="2h")  # Different frequency
+    node_id = "100"
+    time = model_time[::2][:10]  # Every other step of the model's
     data = np.random.normal(1.5, 0.2, len(time))
     df = pd.DataFrame({"WaterLevel": data}, index=time)
     return ms.NodeObservation(df, at=node_id, name="Node_100_Gaps")
@@ -420,7 +427,7 @@ def node_obs_gaps(network):
 @pytest.fixture
 def network_mr_gaps(network):
     """NetworkModelResult for gap testing"""
-    return ms.NetworkModelResult(network, name="Network_Gaps")
+    return ms.NetworkModelResult(network, item="WaterLevel", name="Network_Gaps")
 
 
 @pytest.fixture
@@ -1007,6 +1014,31 @@ def test_match_node_obs_with_network_model(node_obs1, network_mr):
     assert cmp.mod_names == ["Network_Model"]
 
 
+def test_match_reach_obs_with_network_model():
+    """A reach observation matches any breakpoint along the reach."""
+    pytest.importorskip("mikeio1d.network")
+    from tests.network_helpers import REACH, REACH_ITEM, breakpoint_series, open_network
+
+    network = open_network()
+    network_mr = ms.NetworkModelResult(network, item=REACH_ITEM, name="Network_Model")
+
+    np.random.seed(123)
+    obs_time = breakpoint_series(network).index[:18]
+    df = pd.DataFrame(
+        {REACH_ITEM: np.random.normal(1.4, 0.2, len(obs_time))}, index=obs_time
+    )
+    obs = ms.ReachObservation(df, reach=REACH, name="Reach_Obs")
+
+    cmp = ms.match(obs, network_mr)
+
+    assert cmp.n_models == 1
+    assert cmp.n_points == 18
+    assert cmp.name == "Reach_Obs"
+    assert cmp.gtype == "reach"
+    assert cmp.reach == REACH
+    assert cmp.mod_names == ["Network_Model"]
+
+
 def test_match_multiple_node_obs_with_network(node_obs1, node_obs2, network_mr):
     cc = ms.match([node_obs1, node_obs2], network_mr)
     assert cc.n_models == 1
@@ -1027,7 +1059,7 @@ def test_match_node_obs_with_multiple_network_models(
 
 
 def test_match_network_invalid_node_error(node_obs_invalid, network_mr):
-    with pytest.raises(ValueError, match="Node 999 not found"):
+    with pytest.raises(ValueError, match="not found"):
         ms.match(node_obs_invalid, network_mr)
 
 
@@ -1064,7 +1096,8 @@ def test_network_match_multi_obs_multi_model_comprehensive(
 def test_network_match_error_non_node_observation(network_mr, point_obs_error):
     """Test that non-NodeObservation raises appropriate error"""
     with pytest.raises(
-        TypeError, match="NetworkModelResult supports NodeObservation and ReachObservation"
+        TypeError,
+        match="NetworkModelResult supports NodeObservation and ReachObservation",
     ):
         ms.match(point_obs_error, network_mr)
 

@@ -38,7 +38,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --group test --group networks --no-dev 
+        run: uv sync --group test --group network --no-dev 
 
       - name: Install pandas 2.x
         if: matrix.pandas-version == 'pandas2'
@@ -57,7 +57,7 @@ jobs:
       - name: Test
         run: just test
 
-  build-no-networks:
+  build-no-network:
     runs-on: ubuntu-latest
 
     steps:
@@ -71,7 +71,7 @@ jobs:
           python-version: "3.12"
           enable-cache: true
 
-      - name: Install dependencies (without networks)
+      - name: Install dependencies (without network)
         run: uv sync --group test --no-dev
 
       - name: Test

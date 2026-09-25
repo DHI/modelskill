@@ -43,7 +43,11 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-networks = ["mikeio1d", "networkx"]
+# networkx and xarray arrive through mikeio1d's own network extra, which
+# carries the topology layer this package builds on (ADR-013).
+# Pinned to the issue-250 branch until it is released; go back to a released
+# version before PR 702 merges.
+network = ["mikeio1d[network] @ git+https://github.com/DHI/mikeio1d@issue-250"]
 
 [dependency-groups]
 dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2", "netCDF4", "dask"]
@@ -62,7 +66,7 @@ test = [
 
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
 
-networks = ["mikeio1d>=1.2.1", "networkx"]
+network = ["mikeio1d[network] @ git+https://github.com/DHI/mikeio1d@issue-250"]
 
 [project.urls]
 "Homepage" = "https://github.com/DHI/modelskill"

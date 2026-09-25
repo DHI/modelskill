@@ -1,104 +1,114 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from datetime import datetime
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Sequence
 
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 import xarray as xr
 
-from modelskill.timeseries import TimeSeries, _parse_network_node_input
+from modelskill.timeseries import TimeSeries, _parse_point_input
+from modelskill.timeseries._coords import NetworkCoords
 from ._base import SelectedItems
-from ..obs import NodeObservation, ReachObservation
+from ..obs import NodeObservation, ReachObservation, _at_from_coords
 from ..quantity import Quantity
-from ..types import PointType
+from ..types import network_gtype
 
 if TYPE_CHECKING:
-    from modelskill.network import Network
+    from mikeio1d.network import Address, Location, Network
+
+
+def _network_class() -> type[Network]:
+    # Imported here, not at module scope, so this module stays importable
+    # without the optional network dependencies (ADR-010).
+    try:
+        from mikeio1d.network import Network
+    except ImportError as err:
+        raise ImportError(
+            "NetworkModelResult needs the network topology layer from mikeio1d, "
+            "which the 'network' extra installs: pip install modelskill[network]"
+        ) from err
+    return Network
 
 
 class NodeModelResult(TimeSeries):
-    """Model result for a single network node.
+    """Model result at one network location.
 
-    Construct a NodeModelResult from timeseries data for a specific node.
-    This is a simple timeseries class designed for network node data.
+    What :meth:`NetworkModelResult.extract` returns: the timeseries of a single
+    node or break point, carrying in its coordinates the location it was taken
+    from. Extract one from a :class:`NetworkModelResult` rather than building it
+    directly, since a location is named by the network it belongs to.
 
     Parameters
     ----------
-    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
-        filename (.dfs0 or .nc) or object with the data
-    name : str, optional
-        The name of the model result,
-        by default None (will be set to file name or item name)
-    node : int, optional
-        node ID (integer), by default None
-    item : str | int | None, optional
-        If multiple items/arrays are present in the input an item
-        must be given (as either an index or a string), by default None
-    quantity : Quantity, optional
-        Model quantity, for MIKE files this is inferred from the EUM information
-    aux_items : list[int | str], optional
-        Auxiliary items, by default None
+    data : xr.Dataset
+        Timeseries for one location, carrying a ``node`` coordinate, or a
+        ``reach`` coordinate with ``distance`` for a break point.
 
-    Examples
+    Raises
+    ------
+    TypeError
+        If data is not an xarray.Dataset.
+    ValueError
+        If data carries no network location.
+
+    See Also
     --------
-    >>> import modelskill as ms
-    >>> mr = ms.NodeModelResult(data, node=123, name="Node_123")
-    >>> mr2 = ms.NodeModelResult(df, item="Water Level", node=456)
+    NetworkModelResult.extract : Extract a model result at a node or a reach.
     """
 
-    def __init__(
-        self,
-        data: PointType,
-        node: int,
-        *,
-        name: str | None = None,
-        item: str | int | None = None,
-        quantity: Quantity | None = None,
-        aux_items: Sequence[int | str] | None = None,
-    ):
-        if not self._is_input_validated(data):
-            data = _parse_network_node_input(
-                data,
-                name=name,
-                item=item,
-                quantity=quantity,
-                node=node,
-                aux_items=aux_items,
-            )
-
+    def __init__(self, data: xr.Dataset) -> None:
         if not isinstance(data, xr.Dataset):
-            raise ValueError("'NodeModelResult' requires xarray.Dataset")
-        if data.coords.get("node") is None:
-            raise ValueError("'node' coordinate not found in data")
+            raise TypeError(
+                "'NodeModelResult' takes an xarray.Dataset carrying its own "
+                f"location, got {type(data).__name__}. A model result for a "
+                "network location comes from NetworkModelResult.extract()."
+            )
+        if network_gtype(data) is None:
+            raise ValueError(
+                "'NodeModelResult' needs data carrying a 'node' coordinate, or a "
+                "'reach' coordinate for a reach or a break point. A model result "
+                "for a network location comes from NetworkModelResult.extract()."
+            )
+        # Mark the kind on our own copy. The dataset handed in may belong to an
+        # observation, and a shallow copy rebuilds each variable's attrs, so
+        # reading it here does not turn that observation into a model result.
+        data = data.copy()
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
 
     @property
-    def node(self) -> int:
-        """Node ID of model result"""
-        node_val = self.data.coords["node"]
-        return int(node_val.item())
+    def at(self) -> str | tuple[str, float]:
+        """Where this result was extracted: a node name, or a ``(reach_id, distance)`` breakpoint."""
+        return _at_from_coords(self.data)
 
-    def _create_new_instance(self, data: xr.Dataset) -> NodeModelResult:
-        """Extract node from data and create new instance"""
-        node = int(data.coords["node"].item())
-        return self.__class__(data, node=node)
+    @property
+    def node(self) -> Any:
+        """Name of the node this result was extracted at, or None for a break point."""
+        return self._coordinate_values("node")
+
+    def _location_repr(self) -> str | None:
+        return f"Location: {self.at}"
 
 
 class NetworkModelResult:
     """Model result for network data with time and node dimensions.
 
-    Construct a NetworkModelResult from a Network object containing
-    timeseries data for each node. Users must provide exact node IDs
-    (integers obtained via ``Network.find()``) when creating observations —
-    no spatial interpolation is performed.
+    Construct one from a result file, or from a :class:`mikeio1d.network.Network`
+    already built. Observations name the location they sit at, and no spatial
+    interpolation is performed.
+
+    Nothing is read when the model result is built. :meth:`extract` reads the
+    series of the one location an observation names, so matching a handful of
+    sensors against a large model reads a handful of locations.
 
     Parameters
     ----------
-    data : Network
-        Network-like object with a ``to_dataset()`` method (e.g. :class:`modelskill.network.Network`).
+    data : Network, str or Path
+        Path to a ``.res1d``, ``.res11`` or ``.res`` result file, or a
+        :class:`mikeio1d.network.Network`.
     name : str, optional
         The name of the model result,
         by default None (will be set to first data variable name)
@@ -113,56 +123,78 @@ class NetworkModelResult:
     Examples
     --------
     >>> import modelskill as ms
-    >>> from modelskill.network import Network
-    >>> network = Network(reaches)  # reaches is a list[NetworkReach]
-    >>> mr = ms.NetworkModelResult(network, name="MyModel")
-    >>> obs = ms.NodeObservation(data, node=network.find(node="node_A"))
+    >>> mr = ms.NetworkModelResult("model.res1d", item="WaterLevel")
+    >>> obs = ms.NodeObservation(data, at="node_A")
     >>> extracted = mr.extract(obs)
+
+    Open the network yourself to name EPANET companion files:
+
+    >>> from mikeio1d.network import Network
+    >>> network = Network.open("model.res", companions=["model.resx", "model.inp"])
+    >>> mr = ms.NetworkModelResult(network, item="Head", name="MyModel")
+
+    Notes
+    -----
+    The network is used as given, not copied, so ``mr.network`` is the caller's
+    object. It reads from its result file on every :meth:`extract`.
+
+    See Also
+    --------
+    mikeio1d.network.Network.open : Read a network from a result file.
     """
 
     def __init__(
         self,
-        data: Network,
+        data: Network | str | Path,
         *,
         name: str | None = None,
         item: str | int | None = None,
         quantity: Quantity | None = None,
         aux_items: Sequence[int | str] | None = None,
     ):
-        self.network = data.copy()
+        network_class = _network_class()
+        if isinstance(data, (str, Path)):
+            self.network = network_class.open(data)
+        elif isinstance(data, network_class):
+            self.network = data
+        else:
+            raise TypeError(
+                "NetworkModelResult takes a mikeio1d.network.Network or a path to a "
+                f"result file, got {type(data).__name__}"
+            )
 
-        ds = self.network.to_dataset()
-        sel_items = SelectedItems.parse(
-            list(ds.data_vars), item=item, aux_items=aux_items
-        )
+        # What the network can read somewhere, which it knows without reading.
+        units = self.network.quantities
+        sel_items = SelectedItems.parse(list(units), item=item, aux_items=aux_items)
         name = name or sel_items.values
 
-        self.data = ds[sel_items.all]
         self.name = name
         self.sel_items = sel_items
 
         if quantity is None:
-            da = self.data[sel_items.values]
-            quantity = Quantity.from_cf_attrs(da.attrs)
+            # A result file names its quantity and, mostly, its unit. Where it
+            # gives no unit the name is still worth keeping, so the unit is left
+            # empty rather than the quantity undefined.
+            quantity = Quantity(
+                name=str(sel_items.values), unit=units[sel_items.values] or ""
+            )
         self.quantity = quantity
-
-        # Mark data variables as model data
-        self.data[sel_items.values].attrs["kind"] = "model"
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>: {self.name}"
 
-    _CHAINAGE_TOLERANCE = 1e-3  # Tolerance in source-network distance units (e.g., meters if chainage is in meters).
-
     @property
-    def time(self) -> pd.DatetimeIndex:
-        """Return the time coordinate as a pandas.DatetimeIndex."""
-        return pd.DatetimeIndex(self.data.time.to_index())
+    def period(self) -> tuple[datetime, datetime]:
+        """First and last timestep of the result file.
 
-    @property
-    def nodes(self) -> npt.NDArray[np.intp]:
-        """Return the node IDs as a numpy array of integers."""
-        return self.data.node.values
+        Read from the file header, so no timeseries is read.
+
+        Returns
+        -------
+        tuple[datetime, datetime]
+            Start and end of the result file's time axis.
+        """
+        return self.network.period
 
     def extract(
         self,
@@ -173,7 +205,7 @@ class NetworkModelResult:
         Parameters
         ----------
         observation : NodeObservation or ReachObservation
-            observation with node ID or reach ID
+            observation naming a node, a breakpoint, or a reach
 
         Returns
         -------
@@ -181,7 +213,15 @@ class NetworkModelResult:
             extracted model result
         """
         if isinstance(observation, NodeObservation):
-            return self._extract_node(observation)
+            found = self.network.resolve(observation.at)
+            if found is None:
+                raise ValueError(
+                    f"Location {observation.at!r} not found in the network. "
+                    "network.locations() lists the nodes and break points it has, "
+                    "and locations(reach=...) the break points along one reach."
+                )
+            [df] = self._read([found])
+            return self._to_result(found.address, df)
         elif isinstance(observation, ReachObservation):
             return self._extract_reach(observation)
         else:
@@ -189,137 +229,89 @@ class NetworkModelResult:
                 f"NetworkModelResult supports NodeObservation and ReachObservation, got {type(observation).__name__}"
             )
 
-    def _extract_node(self, observation: NodeObservation) -> NodeModelResult:
-        node_id = self._resolve_alias(observation.at)
-
-        available_nodes = set(self.data.node.values)
-        if node_id not in available_nodes:
-            raise ValueError(
-                f"Node {node_id} exists in the network topology but its timeseries was not loaded. "
-                f"Re-create the NetworkModelResult with the relevant nodes populated, "
-                f"e.g. Network.from_mike(path, nodes=[...])."
-            )
-
-        return NodeModelResult(
-            data=self.data.sel(node=node_id).drop_vars("node"),
-            node=node_id,
-            name=self.name,
-            item=self.sel_items.values,
-            quantity=self.quantity,
-            aux_items=self.sel_items.aux,
-        )
-
     def _extract_reach(self, observation: ReachObservation) -> NodeModelResult:
-        # Extract model result from an arbitrary breakpoint belonging to the reach.
-
-        # Searches the alias map for breakpoints whose reach component matches
-        # ``observation.reach``, then returns the first one that has data in the
-        # dataset.  Raises if no breakpoint with data is found or if the quantity
-        # is not present for any breakpoint of that reach.
-
+        # A reach observation matches any breakpoint along the reach, so long as
+        # they agree. The network says which breakpoints carry the quantity, and
+        # only those are read, all in one read.
         item = self.sel_items.values
         reach_id = observation.reach
 
-        try:
-            reach = self.network._reaches[reach_id]
-        except KeyError:
-            raise ValueError(f"Reach {reach_id} not found in network.")
-
-        # This only searches intermediate breakpoints since reach-level data is not
-        # expected in nodes.
-
-        available_nodes = {int(node_id) for node_id in self.data.node.values}
-        found_ds = None
-        found_int_id: int | None = None
-        missing_node_data = False
-        for breakpoint in reach.breakpoints:
-            if breakpoint.data is None:
-                continue
-            if item not in breakpoint.data.columns:
-                continue
-
-            int_id = self.network.find(
-                reach=breakpoint.id[0], distance=breakpoint.distance
-            )
-            if int_id not in available_nodes:
-                missing_node_data = True
-                continue
-
-            ds = self.data.sel(node=int_id).drop_vars("node")
-            if found_ds is not None:
-                da1, da2 = xr.align(ds[item], found_ds[item], join="inner")
-                if not np.allclose(da1.values, da2.values, equal_nan=True):
-                    raise ValueError(
-                        "Not all data in breakpoints are equivalent. "
-                        "Select a specific node instead of the reach."
-                    )
-            else:
-                found_ds = ds
-                found_int_id = int_id
-
-        if found_ds is not None and found_int_id is not None:
-            return NodeModelResult(
-                data=found_ds,
-                node=found_int_id,
-                name=self.name,
-                item=item,
-                quantity=self.quantity,
-                aux_items=self.sel_items.aux,
-            )
-        if missing_node_data:
+        # locations() raises a KeyError naming the reach if the network has none
+        # such, and every point it gives resolves.
+        found = [
+            self.network.resolve(point)
+            for point in self.network.locations(reach=reach_id, quantity=item)
+        ]
+        if not found:
             raise ValueError(
-                f"Reach '{reach_id}' has breakpoint data for quantity "
-                f"'{item}', but matching breakpoint nodes are "
-                "missing from the model dataset. Re-create the NetworkModelResult "
-                "with the relevant reaches populated."
+                f"Reach '{reach_id}' was found in the network but none of its "
+                f"breakpoints carry quantity '{item}'. Choose a reach that has "
+                "this quantity, or a model result for a quantity this reach has."
             )
 
-        raise ValueError(
-            f"Reach '{reach_id}' was found in the network but none of its "
-            f"breakpoints have data loaded for quantity '{self.sel_items.values}'. "
-            f"Re-create the NetworkModelResult with the relevant reaches populated."
+        # A breakpoint can name a quantity and hold nothing for it.
+        with_data = [
+            (location, df)
+            for location, df in zip(found, self._read(found))
+            if df[item].notna().any()
+        ]
+        if not with_data:
+            raise ValueError(
+                f"Reach '{reach_id}' has breakpoints that name quantity "
+                f"'{item}', but none of them carry values for it in this model "
+                "result."
+            )
+        values = np.column_stack([df[item].to_numpy() for _, df in with_data])
+        if not np.allclose(values, values[:, :1], equal_nan=True):
+            raise ValueError(
+                "Not all data in breakpoints are equivalent. "
+                "Select a specific node instead of the reach."
+            )
+
+        # Lowest distance first, so the breakpoint chosen does not depend on the
+        # order the network happened to list them in.
+        location, df = min(with_data, key=lambda pair: pair[0].address[1])
+        return self._to_result(location.address, df)
+
+    def _read(self, found: Sequence[Location]) -> list[pd.DataFrame]:
+        # One read for every location, each giving a frame of the selected items.
+        # An auxiliary item a location does not carry is missing there, as it
+        # would be anywhere else it is not measured.
+        keys = [
+            (n, q)
+            for n, location in enumerate(found)
+            for q in self.sel_items.all
+            if q in location.quantities
+        ]
+        df = self.network.read([(found[n].address, q) for n, q in keys])
+        df.columns = pd.MultiIndex.from_tuples(keys, names=[None, None])
+        df = df.reindex(
+            columns=pd.MultiIndex.from_product([range(len(found)), self.sel_items.all])
+        ).rename_axis("time")
+        return [df[n] for n in range(len(found))]
+
+    def _to_result(self, address: Address, df: pd.DataFrame) -> NodeModelResult:
+        # The address is the network's own spelling of it rather than the
+        # observation's, so a distance given as 24.5001 is recorded as 24.5.
+        item = self.sel_items.values
+        # MIKE 1D stores quantities at different grid points, so a breakpoint
+        # carrying Discharge may carry no WaterLevel; and a location can name a
+        # quantity and hold nothing for it.
+        if not df[item].notna().any():
+            raise ValueError(
+                f"{address!r} was found in the network but has no data for "
+                f"quantity '{item}'. Choose a location that has this quantity, or a "
+                "model result for a quantity this location has."
+            )
+
+        if isinstance(address, tuple):
+            address = (str(address[0]), address[1])
+        ds = _parse_point_input(
+            xr.Dataset.from_dataframe(df),
+            self.name,
+            item,
+            self.quantity,
+            self.sel_items.aux,
+            coords=NetworkCoords(address),
         )
-
-    def _resolve_alias(self, alias: int | str | tuple[str, float]) -> int:
-        # Resolve a node alias to an internal node ID.
-
-        # Breakpoint tuple aliases are matched first by exact key lookup and then
-        # by reach ID and distance within ``_CHAINAGE_TOLERANCE``. If multiple
-        # candidates are within tolerance, the closest distance is selected; ties
-        # are broken by choosing the smallest node ID. Distance units are the
-        # same as the network chainage units.
-
-        if isinstance(alias, int):
-            if alias not in self.data.node:
-                raise ValueError(
-                    f"Node {alias} not found. Available: {list(self.nodes[:5])}..."
-                )
-            return alias
-        else:
-            if alias in self.network._alias_map:
-                return self.network._alias_map[alias]
-
-            if isinstance(alias, tuple):
-                # Handle tolerances
-                reach_id, distance = alias
-                candidates: list[tuple[float, int]] = []
-                for key, node_id in self.network._alias_map.items():
-                    if isinstance(key, tuple) and key[0] == reach_id:
-                        diff = abs(key[1] - distance)
-                        if diff <= self._CHAINAGE_TOLERANCE:
-                            candidates.append((diff, node_id))
-                if candidates:
-                    return min(
-                        candidates, key=lambda candidate: (candidate[0], candidate[1])
-                    )[1]
-
-            available = list(self.network._alias_map.keys())[:5]
-            if isinstance(alias, tuple):
-                raise ValueError(
-                    f"Breakpoint {alias} not found in network. "
-                    f"Available aliases (first 5): {available}"
-                )
-            raise ValueError(
-                f"Node alias '{alias}' not found in network. "
-                f"Available aliases (first 5): {available}"
-            )
+        return NodeModelResult(ds)
