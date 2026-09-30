@@ -127,10 +127,10 @@ class NetworkModelResult:
     >>> obs = ms.NodeObservation(data, at="node_A")
     >>> extracted = mr.extract(obs)
 
-    Open the network yourself to name EPANET companion files:
+    Open the network yourself to name an EPANET .resx companion:
 
     >>> from mikeio1d.network import Network
-    >>> network = Network.open("model.res", companions=["model.resx", "model.inp"])
+    >>> network = Network.open("model.res", companions=["model.resx"])
     >>> mr = ms.NetworkModelResult(network, item="Head", name="MyModel")
 
     Notes
