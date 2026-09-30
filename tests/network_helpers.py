@@ -68,19 +68,11 @@ def node_series(network, quantity="WaterLevel", nodes=None) -> pd.DataFrame:
 
     Restricted to `nodes` when given, since a result file holds more of them than
     a test wants to reason about, and the order is the one asked for. Otherwise
-    every reach end carrying the quantity, in the order the reaches list them.
+    every node carrying the quantity, in the order the network lists them.
     """
     if nodes is None:
-        ends = (
-            node_id
-            for reach in network.reaches.values()
-            for node_id in (reach.start, reach.end)
-        )
-        nodes = [
-            node_id
-            for node_id in dict.fromkeys(ends)
-            if quantity in network.resolve(node_id).quantities
-        ]
+        # Break points carry the quantity too, and are named by (reach, position).
+        nodes = [a for a in network.addresses(quantity=quantity) if isinstance(a, str)]
     df = network.read([(node_id, quantity) for node_id in nodes])
     df.columns = list(nodes)
     return df
