@@ -27,7 +27,7 @@ from tests.network_helpers import (
     BREAKPOINT,
     EPANET,
     NODE_IDS,
-    DISTANCE,
+    POSITION,
     breakpoint_series,
     REACH,
     REACH_ITEM,
@@ -704,7 +704,7 @@ class ResultFile:
     """A result file, and locations in it worth scoring.
 
     A named node carries `node_item`; `reach` carries `reach_item` along its
-    break points, one of which sits at `distance`.
+    break points, one of which sits at `position`.
     """
 
     path: str
@@ -712,7 +712,7 @@ class ResultFile:
     node: str
     reach_item: str
     reach: str
-    distance: float
+    position: float
 
 
 @pytest.mark.skipif(
@@ -727,7 +727,7 @@ class ResultFile:
             node="1",
             reach_item="Discharge",
             reach="100l1",
-            distance=23.8413574216414,
+            position=23.8413574216414,
         ),
         # EPANET results are read together with the .resx companion sitting
         # beside them, which mikeio1d finds from the .res path itself.
@@ -737,7 +737,7 @@ class ResultFile:
             node="10",
             reach_item="Flow",
             reach="10",
-            distance=0.0,
+            position=0.0,
         ),
     ],
     ids=["res1d", "epanet"],
@@ -788,15 +788,15 @@ class TestResultFile:
 
         assert extracted.node == case.node
 
-    def test_a_break_point_extracts_at_the_networks_own_distance(self, case):
+    def test_a_break_point_extracts_at_the_networks_own_position(self, case):
         mr = NetworkModelResult(case.path, item=case.reach_item)
         obs = NodeObservation(
-            self._observation_for(mr, case.reach_item), at=(case.reach, case.distance)
+            self._observation_for(mr, case.reach_item), at=(case.reach, case.position)
         )
 
         extracted = mr.extract(obs)
 
-        assert extracted.at == (case.reach, case.distance)
+        assert extracted.at == (case.reach, case.position)
 
     def test_a_reach_extracts_to_one_of_its_break_points(self, case):
         mr = NetworkModelResult(case.path, item=case.reach_item, name="network_model")
@@ -807,9 +807,9 @@ class TestResultFile:
         extracted = mr.extract(obs)
 
         assert extracted.name == "network_model"
-        reach, distance = extracted.at
+        reach, position = extracted.at
         assert reach == case.reach
-        assert distance == pytest.approx(case.distance)
+        assert position == pytest.approx(case.position)
 
 
 @pytest.mark.skipif(
@@ -883,7 +883,7 @@ def test_extract_breakpoint_without_data_for_the_quantity_raises_valueerror(
 
 
 class TestNodeObservationAliases:
-    """NodeObservation accepts a node name or a (reach, distance) tuple."""
+    """NodeObservation accepts a node name or a (reach, position) tuple."""
 
     @pytest.mark.parametrize("at", [42, np.int64(42)])
     def test_an_integer_is_refused(self, sample_node_data, at):
@@ -948,7 +948,7 @@ class TestReuseOfAValidatedDataset:
         with pytest.raises(ValueError, match="already sits at"):
             NodeObservation(obs.data, at="456")
 
-    def test_a_break_point_rebuilt_at_its_own_distance_is_accepted(
+    def test_a_break_point_rebuilt_at_its_own_position_is_accepted(
         self, sample_node_data
     ):
         obs = NodeObservation(sample_node_data, at=("r1", 50.0), item="WaterLevel")
@@ -997,7 +997,7 @@ class TestReuseOfAValidatedDataset:
 
 
 class TestNetworkModelResultAliasResolution:
-    """extract() resolves a node name or a (reach, distance) pair to a location."""
+    """extract() resolves a node name or a (reach, position) pair to a location."""
 
     def test_the_network_is_kept_as_given(self, sample_network):
         nmr = NetworkModelResult(sample_network, item="WaterLevel")
@@ -1033,11 +1033,11 @@ class TestNetworkModelResultAliasResolution:
         self, sample_network, sample_node_data
     ):
         nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
-        obs = NodeObservation(sample_node_data, at=(REACH, DISTANCE + 5e-4))
+        obs = NodeObservation(sample_node_data, at=(REACH, POSITION + 5e-4))
 
         extracted = nmr.extract(obs)
 
-        # The distance recorded is the network's own, not the one typed.
+        # The position recorded is the network's own, not the one typed.
         assert extracted.at == BREAKPOINT
 
     def test_extract_with_tuple_breakpoint_outside_tolerance_raises(
@@ -1131,12 +1131,12 @@ class TestLocationIdentity:
         assert cmp.gtype == "node"
         assert cmp.node is None
         assert cmp.reach == REACH
-        assert cmp.distance == pytest.approx(DISTANCE)
+        assert cmp.position == pytest.approx(POSITION)
 
     def test_a_matched_reach_reports_the_breakpoint_it_was_read_from(
         self, sample_network, sample_node_data
     ):
-        """The observation is reach-level, so gtype stays 'reach'; distance says
+        """The observation is reach-level, so gtype stays 'reach'; position says
         which breakpoint the model data was taken from."""
         nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
         obs = ms.ReachObservation(sample_node_data, reach=REACH, name="Reach")
@@ -1145,7 +1145,7 @@ class TestLocationIdentity:
 
         assert cmp.gtype == "reach"
         assert cmp.reach == REACH
-        assert cmp.distance == pytest.approx(DISTANCE)
+        assert cmp.position == pytest.approx(POSITION)
 
 
 class TestObservationFactory:

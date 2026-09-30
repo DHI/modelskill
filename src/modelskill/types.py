@@ -84,14 +84,14 @@ def network_gtype(ds: xr.Dataset) -> GeometryType | None:
     >>> from modelskill.types import network_gtype
     >>> network_gtype(xr.Dataset(coords={"node": "123"}))
     <GeometryType.NODE: 'node'>
-    >>> network_gtype(xr.Dataset(coords={"reach": "r1", "distance": 24.5}))
+    >>> network_gtype(xr.Dataset(coords={"reach": "r1", "position": 24.5}))
     <GeometryType.NODE: 'node'>
     >>> network_gtype(xr.Dataset(coords={"reach": "r1"}))
     <GeometryType.REACH: 'reach'>
     >>> network_gtype(xr.Dataset(coords={"x": 0.0, "y": 0.0})) is None
     True
     """
-    if "node" in ds.coords or {"reach", "distance"} <= set(ds.coords):
+    if "node" in ds.coords or {"reach", "position"} <= set(ds.coords):
         return GeometryType.NODE
     if "reach" in ds.coords:
         return GeometryType.REACH

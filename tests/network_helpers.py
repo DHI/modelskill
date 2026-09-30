@@ -34,10 +34,10 @@ EPANET_NODES = ["11", "12"]
 
 REACH = "100l1"
 REACH_ITEM = "Discharge"
-DISTANCE = 23.8413574216414
+POSITION = 23.8413574216414
 """Where REACH keeps its one REACH_ITEM gridpoint; its neighbours carry WaterLevel."""
 
-BREAKPOINT = (REACH, DISTANCE)
+BREAKPOINT = (REACH, POSITION)
 
 
 def open_network(path: str = RES1D) -> Network:

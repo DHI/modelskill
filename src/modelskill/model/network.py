@@ -44,7 +44,7 @@ class NodeModelResult(TimeSeries):
     ----------
     data : xr.Dataset
         Timeseries for one location, carrying a ``node`` coordinate, or a
-        ``reach`` coordinate with ``distance`` for a break point.
+        ``reach`` coordinate with ``position`` for a break point.
 
     Raises
     ------
@@ -81,7 +81,7 @@ class NodeModelResult(TimeSeries):
 
     @property
     def at(self) -> str | tuple[str, float]:
-        """Where this result was extracted: a node name, or a ``(reach_id, distance)`` breakpoint."""
+        """Where this result was extracted: a node name, or a ``(reach_id, position)`` breakpoint."""
         return _at_from_coords(self.data)
 
     @property
@@ -268,7 +268,7 @@ class NetworkModelResult:
                 "Select a specific node instead of the reach."
             )
 
-        # Lowest distance first, so the breakpoint chosen does not depend on the
+        # Lowest position first, so the breakpoint chosen does not depend on the
         # order the network happened to list them in.
         location, df = min(with_data, key=lambda pair: pair[0].address[1])
         return self._to_result(location.address, df)
@@ -292,7 +292,7 @@ class NetworkModelResult:
 
     def _to_result(self, address: Address, df: pd.DataFrame) -> NodeModelResult:
         # The address is the network's own spelling of it rather than the
-        # observation's, so a distance given as 24.5001 is recorded as 24.5.
+        # observation's, so a position given as 24.5001 is recorded as 24.5.
         item = self.sel_items.values
         # MIKE 1D stores quantities at different grid points, so a breakpoint
         # carrying Discharge may carry no WaterLevel; and a location can name a

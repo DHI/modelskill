@@ -652,7 +652,7 @@ class Comparer:
 
     @property
     def at(self) -> str | tuple[str, float] | None:
-        """Where a node comparer sits: a node name, or a ``(reach_id, distance)`` breakpoint.
+        """Where a node comparer sits: a node name, or a ``(reach_id, position)`` breakpoint.
 
         None for a comparer that is not at a network node.
         """
@@ -669,9 +669,9 @@ class Comparer:
         return self._coordinate_values("reach")
 
     @property
-    def distance(self) -> Any:
-        """along-reach distance of a breakpoint"""
-        return self._coordinate_values("distance")
+    def position(self) -> Any:
+        """along-reach position of a breakpoint"""
+        return self._coordinate_values("position")
 
     def _coordinate_values(self, coord: str) -> Any:
         """Get coordinate values if they exist, otherwise return None"""

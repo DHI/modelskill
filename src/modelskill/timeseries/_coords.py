@@ -30,8 +30,8 @@ class NetworkCoords:
     ----------
     location : str or tuple of (str, float or None)
         Where the data sits: a node name, a break point as
-        ``(reach, distance)``, or a whole reach as ``(reach, None)``. A whole
-        reach stores no ``distance`` coordinate, so the data can be matched to
+        ``(reach, position)``, or a whole reach as ``(reach, None)``. A whole
+        reach stores no ``position`` coordinate, so the data can be matched to
         any break point on the reach. Values are stored as given.
 
     Raises
@@ -49,10 +49,10 @@ class NetworkCoords:
     def as_dict(self) -> dict:
         if not isinstance(self.location, tuple):
             return {"node": self.location}
-        reach, distance = self.location
-        if distance is None:
+        reach, position = self.location
+        if position is None:
             return {"reach": reach}
-        return {"reach": reach, "distance": distance}
+        return {"reach": reach, "position": position}
 
 
 def _coordinate_values(ds: xr.Dataset, coord: str) -> Any:
@@ -70,14 +70,14 @@ def _coordinate_values(ds: xr.Dataset, coord: str) -> Any:
 #: Scalar coordinates that say where a network timeseries sits, rather than what
 #: it holds. They are dropped on the way to a dataframe, where they would
 #: otherwise become columns.
-NETWORK_LOCATION_COORDS = ("node", "reach", "distance")
+NETWORK_LOCATION_COORDS = ("node", "reach", "position")
 
 
 def network_location(ds: xr.Dataset) -> Any:
     """Where a network timeseries sits, as the network that produced it named it.
 
-    Returns a node name for a node, a ``(reach, distance)`` pair for a
-    breakpoint, a reach name when no distance was given, and None for data that
+    Returns a node name for a node, a ``(reach, position)`` pair for a
+    breakpoint, a reach name when no position was given, and None for data that
     carries no network location. The value is returned as recorded, so a comparer
     saved by an older version gives back the integer it stored.
     """
@@ -85,9 +85,9 @@ def network_location(ds: xr.Dataset) -> Any:
         return _network_scalar(ds, "node")
     if "reach" in ds.coords:
         reach = _network_scalar(ds, "reach")
-        if "distance" not in ds.coords:
+        if "position" not in ds.coords:
             return reach
-        return (reach, _network_scalar(ds, "distance"))
+        return (reach, _network_scalar(ds, "position"))
     return None
 
 
@@ -104,7 +104,7 @@ def _reject_conflicting_location(ds: xr.Dataset, named: Any, *, argument: str) -
     alongside it would be dropped without a word.
 
     The comparison is a plain one rather than a lookup: an observation has no
-    network when it is built, so it cannot snap a near-miss distance the way
+    network when it is built, so it cannot snap a near-miss position the way
     :meth:`~modelskill.model.network.NetworkModelResult.extract` does.
 
     Parameters
@@ -114,7 +114,7 @@ def _reject_conflicting_location(ds: xr.Dataset, named: Any, *, argument: str) -
         location coordinates.
     named : str or tuple of (str, float)
         The location the caller named: a node name, a reach name, or a
-        ``(reach, distance)`` break point.
+        ``(reach, position)`` break point.
     argument : str
         Name of the keyword the location came from, for the error message.
 
@@ -142,7 +142,7 @@ def _reject_conflicting_location(ds: xr.Dataset, named: Any, *, argument: str) -
 def _same_location(carried: Any, named: Any) -> bool:
     """Whether two network locations name the same place.
 
-    Break point distances are compared closely rather than exactly, so that a
+    Break point positions are compared closely rather than exactly, so that a
     location read off a dataset and handed straight back still agrees with
     itself.
     """

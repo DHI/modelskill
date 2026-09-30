@@ -108,7 +108,7 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     if not has_spatial_coords and not has_network_coords:
         raise ValueError(
             "data must have either x,y coordinates, a node coordinate, "
-            "reach+distance coordinates, or a reach coordinate"
+            "reach+position coordinates, or a reach coordinate"
         )
 
     if has_spatial_coords and "z" not in ds.coords:
@@ -356,7 +356,7 @@ class TimeSeries:
         elif self.gtype == str(GeometryType.VERTICAL):
             return self.data.drop_vars(["x", "y"]).to_dataframe()
         elif self.gtype in (str(GeometryType.NODE), str(GeometryType.REACH)):
-            # A breakpoint carries reach and distance rather than node, so drop
+            # A breakpoint carries reach and position rather than node, so drop
             # whichever of them this one has.
             return self.data.drop_vars(
                 NETWORK_LOCATION_COORDS, errors="ignore"

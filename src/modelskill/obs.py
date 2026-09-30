@@ -46,7 +46,7 @@ from .timeseries._coords import (
 Serializable = Union[str, int, float]
 
 # Where a node observation sits: the name the network gave the node, or a
-# breakpoint given as (reach_id, distance) along a reach.
+# breakpoint given as (reach_id, position) along a reach.
 NodeLocation = Union[str, tuple[str, float]]
 
 
@@ -512,7 +512,7 @@ class NodeObservation(Observation):
     The ``at`` parameter accepts two forms:
 
     * **str** — the node's name in the model (e.g. a Res1D node name).
-    * **tuple[str, float]** — a breakpoint, as ``(reach_id, distance)`` along a
+    * **tuple[str, float]** — a breakpoint, as ``(reach_id, position)`` along a
       reach.
 
     Both are resolved against the network when the observation is matched.
@@ -521,7 +521,7 @@ class NodeObservation(Observation):
         "Node" in this API follows the broad graph sense: it covers both
         junctions (named connection points) and chainage points (breakpoints
         along a reach).  MIKE 1D users who distinguish *node* (junction) from
-        *gridpoint* sharply can use the ``(reach_id, distance)`` tuple form to
+        *gridpoint* sharply can use the ``(reach_id, position)`` tuple form to
         target a specific chainage point, or :class:`ReachObservation` when
         the quantity is uniform across the whole reach and any breakpoint will do.
 
@@ -536,7 +536,7 @@ class NodeObservation(Observation):
         Observation location. Accepted forms:
 
         * **str** — the node's name in the model (e.g. a Res1D node name).
-        * **tuple[str, float]** — a breakpoint, as ``(reach_id, distance)``.
+        * **tuple[str, float]** — a breakpoint, as ``(reach_id, position)``.
     item : (int, str), optional
         index or name of the wanted item/column, by default None
         if data contains more than one item, item must be given
@@ -560,7 +560,7 @@ class NodeObservation(Observation):
     >>> # String alias resolved at match time
     >>> o3 = ms.NodeObservation(data, at="node_A")
     >>>
-    >>> # Breakpoint as (reach_id, distance) tuple
+    >>> # Breakpoint as (reach_id, position) tuple
     >>> o4 = ms.NodeObservation(data, at=("reach_1", 24.5))
     >>>
     >>> # Multiple node observations from separate data sources
@@ -581,7 +581,7 @@ class NodeObservation(Observation):
     ) -> None:
         if isinstance(at, (int, np.integer)) and not isinstance(at, bool):
             raise TypeError(
-                "'at' takes a node name or a (reach, distance) pair, not an integer. "
+                "'at' takes a node name or a (reach, position) pair, not an integer. "
                 "The integers a Network hands out are an internal index; "
                 'network.to_networkx().nodes[<int>]["address"] gives the name back.'
             )
@@ -600,7 +600,7 @@ class NodeObservation(Observation):
 
     @property
     def at(self) -> str | tuple[str, float]:
-        """Observation location: a node name, or a ``(reach_id, distance)`` breakpoint."""
+        """Observation location: a node name, or a ``(reach_id, position)`` breakpoint."""
         return _at_from_coords(self.data)
 
     @property
@@ -672,7 +672,7 @@ class NodeObservation(Observation):
         nodes : dict[str | tuple[str, float], PointType | str | int]
             Mapping of location -> data source or column selector. A location
             takes either of the forms accepted by ``at``: a node name, or a
-            ``(reach_id, distance)`` breakpoint.
+            ``(reach_id, position)`` breakpoint.
 
             Note that a location can appear only once, so this form cannot
             express several observations at the same node.
@@ -790,7 +790,7 @@ class ReachObservation(Observation):
                 )
             _reject_conflicting_location(data, reach, argument="reach")
         else:
-            # No distance: the observation holds for the whole reach.
+            # No position: the observation holds for the whole reach.
             data = _parse_point_input(
                 data,
                 name,

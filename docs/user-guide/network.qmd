@@ -89,7 +89,7 @@ The `at=` argument takes either of two forms, depending on what you have at hand
 
 ::: {.callout-note}
 ## MIKE 1D vocabulary vs the modelskill API
-In MIKE 1D, "nodes" are the named connection points in the 1D network (manholes, junctions, outfalls) while "reaches" are the pipe or channel segments that connect them.  The modelskill API uses `NodeObservation` more broadly: the `at=` argument accepts either the node's name **or** a `(reach_id, distance)` break point tuple that identifies a specific chainage along a reach.  If you only need a reach-level quantity (uniform across the reach), use `ReachObservation` with `reach=` instead.
+In MIKE 1D, "nodes" are the named connection points in the 1D network (manholes, junctions, outfalls) while "reaches" are the pipe or channel segments that connect them.  The modelskill API uses `NodeObservation` more broadly: the `at=` argument accepts either the node's name **or** a `(reach_id, position)` break point tuple that identifies a specific chainage along a reach.  If you only need a reach-level quantity (uniform across the reach), use `ReachObservation` with `reach=` instead.
 :::
 
 #### Option A — the node's name
@@ -108,9 +108,9 @@ cc.skill()
 Resolution happens inside `ms.match()`.  A name the network does not hold raises a `ValueError`.
 :::
 
-#### Option B — breakpoint by `(reach, distance)` tuple
+#### Option B — breakpoint by `(reach, position)` tuple
 
-When your observation sits at a chainage along a reach rather than at a named junction node, you can use the `at` argument and pass a `(reach_id, distance)` tuple.  The `NetworkModelResult` looks up the corresponding breakpoint at match time:
+When your observation sits at a chainage along a reach rather than at a named junction node, you can use the `at` argument and pass a `(reach_id, position)` tuple.  The `NetworkModelResult` looks up the corresponding breakpoint at match time:
 
 ```{python}
 obs_bp = ms.NodeObservation(path_to_sensor_data_1, at=("94l1", 42.57))
@@ -124,7 +124,7 @@ The tuple form is resolved during matching, as `network.resolve(("94l1", 42.57))
 ::: {.callout-note}
 ## Chainage tolerance
 
-Break point distances are matched within the tolerance mikeio1d uses to decide two chainages are the same place, so small floating-point discrepancies between the distance you type and the value stored in the network are handled gracefully.  If no break point falls within it, a `ValueError` names the break points of that reach nearest to the distance given, and one is raised too when the break point exists but carries no data for the quantity you are scoring - MIKE 1D stores water level and discharge at alternating grid points along a reach.
+Break point positions are matched within the tolerance mikeio1d uses to decide two chainages are the same place, so small floating-point discrepancies between the position you type and the value stored in the network are handled gracefully.  If no break point falls within it, a `ValueError` names the break points of that reach nearest to the position given, and one is raised too when the break point exists but carries no data for the quantity you are scoring - MIKE 1D stores water level and discharge at alternating grid points along a reach.
 :::
 
 ### 3. Using ReachObservation for reach-uniform quantities
@@ -147,7 +147,7 @@ cc_q.skill()
 ```
 
 ::: {.callout-note}
-Use `ReachObservation` when your measured quantity is representative of the whole reach (e.g. discharge, which is constant along a reach in steady flow).  If you need to compare a quantity that varies spatially along the reach (e.g. water level at a specific chainage), use a `NodeObservation` with a `(reach, distance)` tuple instead (see [Option B](#option-b-breakpoint-by-reach-distance-tuple) above).
+Use `ReachObservation` when your measured quantity is representative of the whole reach (e.g. discharge, which is constant along a reach in steady flow).  If you need to compare a quantity that varies spatially along the reach (e.g. water level at a specific chainage), use a `NodeObservation` with a `(reach, position)` tuple instead (see [Option B](#option-b-breakpoint-by-reach-position-tuple) above).
 :::
 
 ## See also
