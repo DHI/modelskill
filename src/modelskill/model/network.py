@@ -16,7 +16,7 @@ from ..quantity import Quantity
 from ..types import network_gtype
 
 if TYPE_CHECKING:
-    from mikeio1d.network import Address, Location, Network
+    from mikeio1d.network import Address, Network, NetworkLocation
 
 
 def _network_class() -> type[Network]:
@@ -217,8 +217,8 @@ class NetworkModelResult:
             if found is None:
                 raise ValueError(
                     f"Location {observation.at!r} not found in the network. "
-                    "network.locations() lists the nodes and break points it has, "
-                    "and locations(reach=...) the break points along one reach."
+                    "network.addresses() lists the nodes and break points it has, "
+                    "and addresses(reach=...) the break points along one reach."
                 )
             [df] = self._read([found])
             return self._to_result(found.address, df)
@@ -236,11 +236,11 @@ class NetworkModelResult:
         item = self.sel_items.values
         reach_id = observation.reach
 
-        # locations() raises a KeyError naming the reach if the network has none
+        # addresses() raises a KeyError naming the reach if the network has none
         # such, and every point it gives resolves.
         found = [
             self.network.resolve(point)
-            for point in self.network.locations(reach=reach_id, quantity=item)
+            for point in self.network.addresses(reach=reach_id, quantity=item)
         ]
         if not found:
             raise ValueError(
@@ -273,7 +273,7 @@ class NetworkModelResult:
         location, df = min(with_data, key=lambda pair: pair[0].address[1])
         return self._to_result(location.address, df)
 
-    def _read(self, found: Sequence[Location]) -> list[pd.DataFrame]:
+    def _read(self, found: Sequence[NetworkLocation]) -> list[pd.DataFrame]:
         # One read for every location, each giving a frame of the selected items.
         # An auxiliary item a location does not carry is missing there, as it
         # would be anywhere else it is not measured.
