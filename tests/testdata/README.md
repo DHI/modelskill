@@ -11,19 +11,17 @@ These network files come from
 | File | Format | Used for |
 |---|---|---|
 | `network_cali.res11` | MIKE 11 | nothing here any more — see below |
-| `epanet.res` | EPANET | nothing here any more — see below |
+| `epanet.res` | EPANET | network tests with several quantities per node |
 | `epanet.resx` | EPANET (MIKE+) | extra node quantities, merged onto the `.res` network |
-| `epanet.inp` | EPANET input | nothing: mikeio1d reads pipe lengths from the `.res` and refuses an `.inp` companion |
 | `swmm.out` | SWMM | nothing here any more — see below |
 
 Reading these formats moved to mikeio1d with the rest of the topology layer
 (ADR-013), and the tests that covered it moved with it. The files are kept because
-mikeio1d has the same copies and modelskill may want EPANET-side coverage of its
-own; nothing in this repository reads them today except `network.res1d`.
+mikeio1d has the same copies. Of them, only `epanet.res` and `epanet.resx` are
+read here, besides `network.res1d`.
 
-`epanet.resx` and `epanet.inp` pair with `epanet.res`: same run, same IDs. The
-`.resx` node and reach IDs are a strict subset of the `.res` ones, and the `.inp`
-`[PIPES]` IDs cover every `.res` reach except the pump.
+`epanet.resx` pairs with `epanet.res`: same run, same IDs. The `.resx` node and
+reach IDs are a strict subset of the `.res` ones.
 
 `swmm.out` is kept without its `.inp` on purpose: the refusal it used to pin is
 mikeio1d's now, and the file is the fixture that refusal needs.
