@@ -729,8 +729,8 @@ class ResultFile:
             reach="100l1",
             distance=23.8413574216414,
         ),
-        # EPANET results are read together with the .inp and .resx companions
-        # sitting beside them, which mikeio1d finds from the .res path itself.
+        # EPANET results are read together with the .resx companion sitting
+        # beside them, which mikeio1d finds from the .res path itself.
         ResultFile(
             path="./tests/testdata/epanet.res",
             node_item="Head",

@@ -21,7 +21,7 @@ RES1D = str(_TESTDATA / "network.res1d")
 """A MIKE urban result: WaterLevel on every node, Discharge on one gridpoint per reach."""
 
 EPANET = str(_TESTDATA / "epanet.res")
-"""A link-node result, read with the .inp and .resx beside it.
+"""A link-node result, read with the .resx beside it.
 
 Its nodes each carry several quantities, which no node of RES1D does.
 """

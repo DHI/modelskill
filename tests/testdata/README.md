@@ -13,7 +13,7 @@ These network files come from
 | `network_cali.res11` | MIKE 11 | nothing here any more — see below |
 | `epanet.res` | EPANET | nothing here any more — see below |
 | `epanet.resx` | EPANET (MIKE+) | extra node quantities, merged onto the `.res` network |
-| `epanet.inp` | EPANET input | real pipe lengths, which the `.res` does not carry |
+| `epanet.inp` | EPANET input | nothing: mikeio1d reads pipe lengths from the `.res` and refuses an `.inp` companion |
 | `swmm.out` | SWMM | nothing here any more — see below |
 
 Reading these formats moved to mikeio1d with the rest of the topology layer
