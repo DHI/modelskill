@@ -1,7 +1,6 @@
 """Test network models and observations"""
 
 # ruff: noqa: E402
-import sys
 from dataclasses import dataclass
 
 import pytest
@@ -720,9 +719,6 @@ class ResultFile:
     position: float
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
-)
 @pytest.mark.parametrize(
     "case",
     [
@@ -817,9 +813,6 @@ class TestResultFile:
         assert position == pytest.approx(case.position)
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
-)
 def test_extract_reach_observation_non_equivalent_breakpoints_raises(sample_node_data):
     path_to_file = "./tests/testdata/network.res1d"
     network = Network.open(path_to_file)
@@ -847,9 +840,6 @@ def test_extract_reach_whose_breakpoints_carry_no_values_raises_valueerror(
         nmr.extract(obs)
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
-)
 def test_extract_reach_whose_breakpoints_do_not_carry_the_quantity_raises_valueerror(
     sample_node_data,
 ):
@@ -871,9 +861,6 @@ def test_extract_reach_not_in_the_network_raises_keyerror(
         nmr.extract(obs)
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 15), reason="mikeio1d requires Python < 3.15"
-)
 def test_extract_breakpoint_without_data_for_the_quantity_raises_valueerror(
     sample_node_data,
 ):
