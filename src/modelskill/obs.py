@@ -773,7 +773,7 @@ class ReachObservation(Observation):
     extracted from the breakpoints on that reach that carry the quantity
     and hold data for it. When there are several, they must agree, and
     the one with the lowest position is used. The comparer sits on the
-    reach; ``cmp.raw_mod_data[<model>].at`` gives the breakpoint read.
+    reach; ``mr.extract(obs).at`` gives the breakpoint read.
 
     Parameters
     ----------

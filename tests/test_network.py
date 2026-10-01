@@ -1075,8 +1075,9 @@ class TestLocationIdentity:
     def test_a_snapped_chainage_stays_on_the_comparer_as_typed(
         self, sample_network, sample_node_data
     ):
-        """position_tol snaps the model onto a breakpoint; the comparer keeps the
-        chainage the user gave, so several models with different grids share it."""
+        """position_tol snaps the model onto a breakpoint; the comparer and its
+        raw model result keep the chainage the user gave, so several models with
+        different grids share it."""
         typed = (REACH, POSITION - 3.0)
         nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
         obs = ms.NodeObservation(sample_node_data, at=typed, position_tol=5.0)
@@ -1084,7 +1085,7 @@ class TestLocationIdentity:
         cmp = ms.match(obs, nmr)
 
         assert cmp.at == typed
-        assert cmp.raw_mod_data["Network_Model"].at == BREAKPOINT
+        assert cmp.raw_mod_data["Network_Model"].at == typed
 
     def test_a_matched_breakpoint_records_its_chainage(
         self, sample_network, sample_node_data
@@ -1099,11 +1100,11 @@ class TestLocationIdentity:
         assert cmp.reach == REACH
         assert cmp.position == pytest.approx(POSITION)
 
-    def test_a_matched_reach_sits_on_the_reach_and_its_model_at_the_breakpoint(
+    def test_a_matched_reach_and_its_model_sit_on_the_reach(
         self, sample_network, sample_node_data
     ):
-        """The comparer sits where the observation sits, the whole reach; the
-        model result says which breakpoint it was read from."""
+        """The comparer and its raw model result sit where the observation
+        sits, the whole reach, whichever breakpoint the model was read from."""
         nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
         obs = ms.ReachObservation(sample_node_data, reach=REACH, name="Reach")
 
@@ -1113,7 +1114,7 @@ class TestLocationIdentity:
         assert cmp.gtype == "reach"
         assert cmp.reach == REACH
         assert cmp.position is None
-        assert cmp.raw_mod_data["Network_Model"].at == (REACH, pytest.approx(POSITION))
+        assert cmp.raw_mod_data["Network_Model"].at == REACH
 
     @pytest.mark.parametrize(
         "make_obs, item, location",

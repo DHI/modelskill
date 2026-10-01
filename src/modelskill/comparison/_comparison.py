@@ -668,8 +668,9 @@ class Comparer:
         """Where a network comparer sits: the observation's location.
 
         A node name, a ``(reach_id, position)`` breakpoint, or a reach name.
-        None for a comparer that is not in a network. Where each model was
-        read is on ``raw_mod_data[<model>].at``.
+        None for a comparer that is not in a network. Its raw model results
+        sit there too; where a model was read is
+        ``NetworkModelResult.extract(obs).at``.
         """
         return _at_from_coords(self.data) if self.gtype in ("node", "reach") else None
 
