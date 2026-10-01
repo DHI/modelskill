@@ -136,7 +136,7 @@ The comparer keeps the chainage you gave; `cc.raw_mod_data["MyModel"].at` gives 
 
 Some physical quantities — such as **discharge in a pipe** — are conceptually uniform across the whole reach, even though the model stores values at individual breakpoints along the reach. `ReachObservation` lets you associate a timeseries with a named reach without having to identify a specific breakpoint.
 
-When matched against a `NetworkModelResult`, modelskill extracts model data from the breakpoints on the given reach that carry the quantity and hold data for it. When there are several, they must carry equivalent values, and the one with the lowest position is used.
+When matched against a `NetworkModelResult`, modelskill extracts model data from the breakpoints on the given reach that carry the quantity and hold data for it. When there are several, they must carry equivalent values, and the one with the lowest position is used. The comparer sits on the reach, so `cc.at` is the reach name; `cc.raw_mod_data["MyModel"].at` gives the break point the model was read at.
 
 ```{python}
 obs_q = ms.ReachObservation(path_to_sensor_data_4, reach="116l1", name="Q_116l1")
