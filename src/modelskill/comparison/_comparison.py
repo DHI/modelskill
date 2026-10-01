@@ -665,11 +665,13 @@ class Comparer:
 
     @property
     def at(self) -> str | tuple[str, float] | None:
-        """Where a node comparer sits: a node name, or a ``(reach_id, position)`` breakpoint.
+        """Where a network comparer sits: the observation's location.
 
-        None for a comparer that is not at a network node.
+        A node name, a ``(reach_id, position)`` breakpoint, or a reach name.
+        None for a comparer that is not in a network. Where each model was
+        read is on ``raw_mod_data[<model>].at``.
         """
-        return _at_from_coords(self.data) if self.gtype == "node" else None
+        return _at_from_coords(self.data) if self.gtype in ("node", "reach") else None
 
     @property
     def node(self) -> Any:
@@ -683,7 +685,7 @@ class Comparer:
 
     @property
     def position(self) -> Any:
-        """along-reach position of a breakpoint"""
+        """Along-reach position of the observation's breakpoint, or None for a node or a reach"""
         return self._coordinate_values("position")
 
     def _coordinate_values(self, coord: str) -> Any:

@@ -495,7 +495,8 @@ class VerticalObservation(Observation):
 def _at_from_coords(ds: xr.Dataset) -> str | tuple[str, float]:
     """The location in the form ``NodeObservation`` takes it.
 
-    Unlike :func:`~modelskill.timeseries._coords.network_location`, which
+    A node name, a ``(reach_id, position)`` breakpoint, or the reach name for
+    data that holds for a whole reach. Unlike :func:`~modelskill.timeseries._coords.network_location`, which
     reports the location as recorded, this coerces to the types the ``at``
     argument is declared with.
     """
@@ -771,7 +772,8 @@ class ReachObservation(Observation):
     :class:`~modelskill.model.network.NetworkModelResult` the data is
     extracted from the breakpoints on that reach that carry the quantity
     and hold data for it. When there are several, they must agree, and
-    the one with the lowest position is used.
+    the one with the lowest position is used. The comparer sits on the
+    reach; ``cmp.raw_mod_data[<model>].at`` gives the breakpoint read.
 
     Parameters
     ----------
@@ -834,6 +836,11 @@ class ReachObservation(Observation):
             )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
+
+    @property
+    def at(self) -> str:
+        """Observation location: the reach name."""
+        return str(_at_from_coords(self.data))
 
     @property
     def reach(self) -> str:

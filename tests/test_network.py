@@ -1174,6 +1174,30 @@ class TestLocationIdentity:
         assert obs.at == mod.at == cmp.at == at
         assert obs.node == mod.node == cmp.node == node
 
+    def test_a_reach_observation_and_comparer_agree_on_location(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
+        obs = ms.ReachObservation(sample_node_data, reach=REACH, name="Reach")
+
+        cmp = ms.match(obs, nmr)
+
+        assert obs.at == cmp.at == REACH
+
+    def test_a_snapped_chainage_stays_on_the_comparer_as_typed(
+        self, sample_network, sample_node_data
+    ):
+        """position_tol snaps the model onto a breakpoint; the comparer keeps the
+        chainage the user gave, so several models with different grids share it."""
+        typed = (REACH, POSITION - 3.0)
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
+        obs = ms.NodeObservation(sample_node_data, at=typed, position_tol=5.0)
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.at == typed
+        assert cmp.raw_mod_data["Network_Model"].at == BREAKPOINT
+
     def test_a_matched_breakpoint_records_its_chainage(
         self, sample_network, sample_node_data
     ):
