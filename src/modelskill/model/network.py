@@ -94,7 +94,7 @@ class NodeModelResult(TimeSeries):
 
 
 class NetworkModelResult:
-    """Model result for network data with time and node dimensions.
+    """Model result for a network of nodes and reaches.
 
     Construct one from a result file, or from a :class:`mikeio1d.network.Network`
     already built. Observations name the location they sit at, and no spatial
@@ -111,7 +111,7 @@ class NetworkModelResult:
         :class:`mikeio1d.network.Network`.
     name : str, optional
         The name of the model result,
-        by default None (will be set to first data variable name)
+        by default None (will be set to the item name)
     item : str | int | None, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
