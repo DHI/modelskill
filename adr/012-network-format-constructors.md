@@ -6,10 +6,12 @@
 
 ## Narrowed by ADR-013
 
-The constructors, the companion arguments, the extension tables, the coverage test and the
-`.inp` reader are mikeio1d's. It replaced `from_mike` and `from_epanet` with one
-`Network.open` that reads the extension. Naming a constructor after the product that wrote
-the file is still the rule, and mikeio1d applies it.
+The constructors, the companion arguments, the extension tables and the coverage test are
+mikeio1d's. It replaced `from_mike` and `from_epanet` with one `Network.open` that reads
+the extension. Naming a constructor after the product that wrote the file is still the
+rule, and mikeio1d applies it.
+
+EPANET reach lengths now come from the `.res`, so no `.inp` is read.
 
 `NetworkModelResult` hands a path to mikeio1d. The refusal messages for `.out`, `.resx`
 and the formats without a fixture are written there.

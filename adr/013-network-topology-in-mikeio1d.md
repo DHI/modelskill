@@ -20,7 +20,7 @@ mikeio1d gains an optional network module that builds and owns `Network`. models
 
 | Owner | Pieces |
 |---|---|
-| mikeio1d | abstract types and `BasicNode`/`BasicReach`, the `Res1D` adapter, `Network.open`, the `.resx` and `.inp` companions, the extension policy tables, graph construction with its length and boundary semantics, the alias map, `find`, `recall`, `to_dataframe`, `to_dataset` |
+| mikeio1d | abstract types and `BasicNode`/`BasicReach`, the `Res1D` adapter, `Network.open`, the `.resx` companion, the extension policy tables, graph construction with its length and boundary semantics, the alias map, `find`, `recall`, `to_dataframe`, `to_dataset` |
 | modelskill | `NetworkModelResult`, `NodeModelResult`, `NodeObservation`, `ReachObservation`, matching |
 
 `NetworkModelResult` takes a `Network` the upstream module built, or a path it hands to that module. The module is an extra there, carrying networkx and xarray, so `to_dataset()` ships with the class.
@@ -51,6 +51,7 @@ adapter for a plug point with no second implementation.
 
 - ADR-012 is narrowed: the constructors, the companion arguments, the extension tables and the coverage test become mikeio1d's. Naming a constructor after the product that wrote the file is still the
   rule, and mikeio1d applies it.
+- The EPANET `.inp` companion and its parser did not move. mikeio1d reads EPANET reach lengths from the `.res`, so no `.inp` is read.
 - ADR-010's open question about version constraints for optional dependencies is answered for this feature: the `network` extra pins a minimum mikeio1d, and network support requires whatever Python
   that release requires.
 - A hand-built network needs mikeio1d installed, since `BasicNode`/`BasicReach` move too. That costs a .NET dependency for users who touch no MIKE file, which only matters for tests and for a backend
