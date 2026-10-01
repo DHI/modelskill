@@ -39,6 +39,7 @@ from .obs import (
     ReachObservation,
 )
 from .timeseries import TimeSeries
+from .timeseries._coords import NETWORK_LOCATION_COORDS
 from .types import Period
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
@@ -444,12 +445,12 @@ def _match_space_time(
                         "max_model_gap is not yet supported for VerticalModelResult / VerticalObservation matching"
                     )
                 aligned = vmr.align(observation)
-            case NodeModelResult() as nmr, NodeObservation():
-                # mr is the extracted NodeModelResult
-                aligned = align_data(nmr.data, observation, max_gap=max_model_gap)
-            case NodeModelResult() as nmr, ReachObservation():
-                # ReachObservation is extracted to a NodeModelResult (any breakpoint on the reach)
-                aligned = align_data(nmr.data, observation, max_gap=max_model_gap)
+            case NodeModelResult() as nmr, NodeObservation() | ReachObservation():
+                # The comparer sits where the observation sits; where each model
+                # was read stays on its raw_mod_data.
+                aligned = align_data(
+                    nmr.data, observation, max_gap=max_model_gap
+                ).drop_vars(NETWORK_LOCATION_COORDS, errors="ignore")
             case _:
                 raise TypeError(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"

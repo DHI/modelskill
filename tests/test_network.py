@@ -1187,11 +1187,11 @@ class TestLocationIdentity:
         assert cmp.reach == REACH
         assert cmp.position == pytest.approx(POSITION)
 
-    def test_a_matched_reach_reports_the_breakpoint_it_was_read_from(
+    def test_a_matched_reach_sits_on_the_reach_and_its_model_at_the_breakpoint(
         self, sample_network, sample_node_data
     ):
-        """The observation is reach-level, so gtype stays 'reach'; position says
-        which breakpoint the model data was taken from."""
+        """The comparer sits where the observation sits, the whole reach; the
+        model result says which breakpoint it was read from."""
         nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
         obs = ms.ReachObservation(sample_node_data, reach=REACH, name="Reach")
 
@@ -1199,7 +1199,8 @@ class TestLocationIdentity:
 
         assert cmp.gtype == "reach"
         assert cmp.reach == REACH
-        assert cmp.position == pytest.approx(POSITION)
+        assert cmp.position is None
+        assert cmp.raw_mod_data["Network_Model"].at == (REACH, pytest.approx(POSITION))
 
     @pytest.mark.parametrize(
         "make_obs, item, location",

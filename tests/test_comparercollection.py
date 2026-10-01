@@ -510,6 +510,7 @@ def test_save_and_load_round_trips_reach_gtype_raw_data(reach_comparer, tmp_path
 
     assert cc2[0].gtype == "reach"
     assert cc2[0].reach == reach_comparer.reach
+    assert cc2[0].position is None
     assert len(cc2[0].raw_mod_data["Network_Model"]) == len(
         reach_comparer.raw_mod_data["Network_Model"]
     )

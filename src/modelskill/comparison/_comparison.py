@@ -1419,7 +1419,9 @@ class Comparer:
                 #  rename time to unique name
                 ts_mod.data = ts_mod.data.rename({"time": "_time_raw_" + key})
                 # da = ds_mod.to_xarray()[key]
-                ds["_raw_" + key] = ts_mod.data[key]
+                ds["_raw_" + key] = ts_mod.data[key].drop_vars(
+                    NETWORK_LOCATION_COORDS, errors="ignore"
+                )
 
         ds.to_netcdf(filename)
 
