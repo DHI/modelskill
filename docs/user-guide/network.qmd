@@ -123,14 +123,14 @@ The tuple form is resolved during matching, as `network.resolve(("117l1", 48.7))
 ::: {.callout-note}
 ## Chainage tolerance
 
-Break point positions are matched within the tolerance mikeio1d uses to decide two chainages are the same place, so small floating-point discrepancies between the position you type and the value stored in the network are handled gracefully.  If no break point falls within it, a `ValueError` names the break points of that reach nearest to the position given, and one is raised too when the break point exists but carries no data for the quantity you are scoring - MIKE 1D stores water level and discharge at alternating grid points along a reach.
+Break point positions are matched within the tolerance mikeio1d uses to decide two chainages are the same place, so small floating-point discrepancies between the position you type and the value stored in the network are handled gracefully.  If no break point falls within it, a `ValueError` says the location is not found and points to `network.addresses(reach=...)`, which lists the break points along that reach. One is raised too when the break point exists but carries no data for the quantity you are scoring - MIKE 1D stores water level and discharge at alternating grid points along a reach.
 :::
 
 ### 3. Using ReachObservation for reach-uniform quantities
 
 Some physical quantities — such as **discharge in a pipe** — are conceptually uniform across the whole reach, even though the model stores values at individual breakpoints along the reach. `ReachObservation` lets you associate a timeseries with a named reach without having to identify a specific breakpoint.
 
-When matched against a `NetworkModelResult`, modelskill automatically extracts model data from an arbitrary breakpoint that belongs to the given reach and verifies that all breakpoints on the reach carry equivalent values.
+When matched against a `NetworkModelResult`, modelskill extracts model data from the breakpoints on the given reach that carry the quantity and hold data for it. When there are several, they must carry equivalent values, and the one with the lowest position is used.
 
 ```{python}
 obs_q = ms.ReachObservation(path_to_sensor_data_4, reach="116l1", name="Q_116l1")

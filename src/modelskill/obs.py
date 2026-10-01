@@ -738,7 +738,9 @@ class ReachObservation(Observation):
     nodes/breakpoints.  A ReachObservation associates a timeseries with a
     named reach; when matched against a
     :class:`~modelskill.model.network.NetworkModelResult` the data is
-    extracted from an arbitrary breakpoint that belongs to that reach.
+    extracted from the breakpoints on that reach that carry the quantity
+    and hold data for it. When there are several, they must agree, and
+    the one with the lowest position is used.
 
     Parameters
     ----------
