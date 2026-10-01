@@ -225,14 +225,26 @@ class NetworkModelResult:
             # which matters on a staggered grid. Resolving again without it
             # tells a location that lacks the item from one that is not there.
             item = self.sel_items.values
-            found = self.network.resolve(observation.at, quantity=item)
-            if found is None and self.network.resolve(observation.at) is not None:
+            tol = observation.position_tol
+            found = self.network.resolve(
+                observation.at, position_tol=tol, quantity=item
+            )
+            if (
+                found is None
+                and self.network.resolve(observation.at, position_tol=tol) is not None
+            ):
                 raise _no_data_error(observation.at, item)
             if found is None:
+                hint = (
+                    " NodeObservation(position_tol=...) widens how far a position "
+                    "may be from a break point."
+                    if isinstance(observation.at, tuple)
+                    else ""
+                )
                 raise ValueError(
                     f"Location {observation.at!r} not found in the network. "
                     "network.addresses() lists the nodes and break points it has, "
-                    "and addresses(reach=...) the break points along one reach."
+                    "and addresses(reach=...) the break points along one reach." + hint
                 )
             [df] = self._read([found])
             return self._to_result(found.address, df)

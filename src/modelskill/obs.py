@@ -550,6 +550,16 @@ class NodeObservation(Observation):
         list of names or indices of auxiliary items, by default None
     attrs : dict, optional
         additional attributes to be added to the data, by default None
+    position_tol : float, optional
+        How far the position in ``at`` may be from a model breakpoint and
+        still match it. The nearest breakpoint inside it that carries the
+        model result's item is used. By default None, which absorbs only
+        rounding (mikeio1d's 1e-3). Ignored for a node name.
+
+    Raises
+    ------
+    ValueError
+        If ``position_tol`` is negative or not finite.
 
     Examples
     --------
@@ -562,6 +572,9 @@ class NodeObservation(Observation):
     >>>
     >>> # Breakpoint as (reach_id, position) tuple
     >>> o4 = ms.NodeObservation(data, at=("reach_1", 24.5))
+    >>>
+    >>> # A measured chainage, snapped onto the nearest breakpoint within 0.5
+    >>> o5 = ms.NodeObservation(data, at=("reach_1", 24.0), position_tol=0.5)
     >>>
     >>> # Multiple node observations from separate data sources
     >>> obs = ms.NodeObservation.from_multiple(nodes={"123": df1, "456": df2})
@@ -578,7 +591,14 @@ class NodeObservation(Observation):
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
+        position_tol: float | None = None,
     ) -> None:
+        if position_tol is not None and not (
+            np.isfinite(position_tol) and position_tol >= 0
+        ):
+            raise ValueError(
+                f"position_tol must be a finite, non-negative number, got {position_tol!r}"
+            )
         if isinstance(at, (int, np.integer)) and not isinstance(at, bool):
             raise TypeError(
                 "'at' takes a node name or a (reach, position) pair, not an integer. "
@@ -597,6 +617,7 @@ class NodeObservation(Observation):
             )
         assert isinstance(data, xr.Dataset)
         super().__init__(data=data, weight=weight, attrs=attrs)
+        self.position_tol = position_tol
 
     @property
     def at(self) -> str | tuple[str, float]:
@@ -613,7 +634,9 @@ class NodeObservation(Observation):
 
     def _create_new_instance(self, data: xr.Dataset) -> Self:
         """Reconstruct instance from a dataset slice."""
-        return self.__class__(data, at=_at_from_coords(data))
+        return self.__class__(
+            data, at=_at_from_coords(data), position_tol=self.position_tol
+        )
 
     @overload
     @classmethod
@@ -625,6 +648,7 @@ class NodeObservation(Observation):
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
+        position_tol: float | None = None,
     ) -> list[NodeObservation]: ...
 
     @overload
@@ -636,6 +660,7 @@ class NodeObservation(Observation):
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
+        position_tol: float | None = None,
     ) -> list[NodeObservation]:
         pass
 
@@ -648,6 +673,7 @@ class NodeObservation(Observation):
         quantity: Quantity | None = None,
         aux_items: list[int | str] | None = None,
         attrs: dict | None = None,
+        position_tol: float | None = None,
     ) -> list[NodeObservation]:
         """Create multiple NodeObservation objects.
 
@@ -682,6 +708,9 @@ class NodeObservation(Observation):
             Auxiliary items, by default None.
         attrs : dict | None, optional
             Additional attributes, by default None.
+        position_tol : float, optional
+            Tolerance for every breakpoint position, as in ``NodeObservation``,
+            by default None.
 
         Returns
         -------
@@ -712,6 +741,7 @@ class NodeObservation(Observation):
                     quantity=quantity,
                     aux_items=aux_items,
                     attrs=attrs,
+                    position_tol=position_tol,
                 )
                 for data_i, node_i in zip(data_sources, node_ids)
             ]
@@ -725,6 +755,7 @@ class NodeObservation(Observation):
                     quantity=quantity,
                     aux_items=aux_items,
                     attrs=attrs,
+                    position_tol=position_tol,
                 )
                 for node_i, item_i in zip(node_ids, node_items)
             ]

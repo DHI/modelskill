@@ -924,6 +924,18 @@ class TestNodeObservationAliases:
         assert trimmed.at == ("reach_1", 24.5)
         assert len(trimmed) == len(obs) - 1
 
+    def test_a_position_tol_survives_trimming(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5), position_tol=2.0)
+
+        trimmed = obs.trim(start_time=obs.time[1], end_time=obs.time[-1])
+
+        assert trimmed.position_tol == 2.0
+
+    @pytest.mark.parametrize("tol", [-1.0, np.inf, np.nan])
+    def test_an_invalid_position_tol_is_refused(self, sample_node_data, tol):
+        with pytest.raises(ValueError, match="position_tol"):
+            NodeObservation(sample_node_data, at=("reach_1", 24.5), position_tol=tol)
+
     def test_a_named_node_observation_survives_trimming(self, sample_node_data):
         obs = NodeObservation(sample_node_data, at="node_A")
 
@@ -1052,6 +1064,43 @@ class TestNetworkModelResultAliasResolution:
         obs = NodeObservation(sample_node_data, at=(REACH, 50.0 + 2e-3))
 
         with pytest.raises(ValueError, match="not found"):
+            nmr.extract(obs)
+
+    def test_extract_with_a_wider_position_tol_snaps_to_the_breakpoint(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
+        obs = NodeObservation(
+            sample_node_data, at=(REACH, POSITION - 3.0), position_tol=5.0
+        )
+
+        extracted = nmr.extract(obs)
+
+        assert extracted.at == BREAKPOINT
+
+    def test_extract_snaps_past_a_closer_breakpoint_that_lacks_the_item(
+        self, sample_network, sample_node_data
+    ):
+        """WaterLevel and Discharge alternate along a reach, so the nearest
+        breakpoint to a chainage may not carry the item being scored."""
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
+        obs = NodeObservation(
+            sample_node_data, at=(REACH, POSITION + 6.0), position_tol=20.0
+        )
+
+        extracted = nmr.extract(obs)
+
+        assert extracted.at == sample_network.addresses(reach=REACH)[-1]
+
+    def test_extract_outside_a_wider_position_tol_raises(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
+        obs = NodeObservation(
+            sample_node_data, at=(REACH, POSITION - 3.0), position_tol=1.0
+        )
+
+        with pytest.raises(ValueError, match="not found.*position_tol"):
             nmr.extract(obs)
 
     def test_extract_tuple_alias_wrong_key_raises(
