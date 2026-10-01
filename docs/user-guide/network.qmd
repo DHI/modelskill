@@ -29,6 +29,7 @@ uv add modelskill[network]
 path_to_res1d = "../../tests/testdata/network.res1d"
 path_to_sensor_data_1 = "../../tests/testdata/network_sensor_1.csv"
 path_to_sensor_data_2 = "../../tests/testdata/network_sensor_2.csv"
+path_to_sensor_data_4 = "../../tests/testdata/network_sensor_4.csv"
 ```
 
 A **network** is a 1D pipe or river network read as a graph: nodes hold timeseries
@@ -96,10 +97,9 @@ In MIKE 1D, "nodes" are the named connection points in the 1D network (manholes,
 Pass the node's name in the model, e.g. the Res1D node name. It is resolved against the network at match time:
 
 ```{python}
-obs_1 = ms.NodeObservation(path_to_sensor_data_1, at="78")
-obs_2 = ms.NodeObservation(path_to_sensor_data_2, at="46")
+obs_1 = ms.NodeObservation(path_to_sensor_data_1, at="98")
 
-cc = ms.match(obs=[obs_1, obs_2], mod=mr)
+cc = ms.match(obs=obs_1, mod=mr)
 cc.skill()
 ```
 
@@ -112,13 +112,13 @@ Resolution happens inside `ms.match()`.  A name the network does not hold raises
 When your observation sits at a chainage along a reach rather than at a named junction node, you can use the `at` argument and pass a `(reach_id, position)` tuple.  The `NetworkModelResult` looks up the corresponding breakpoint at match time:
 
 ```{python}
-obs_bp = ms.NodeObservation(path_to_sensor_data_1, at=("94l1", 42.57))
+obs_bp = ms.NodeObservation(path_to_sensor_data_2, at=("117l1", 48.7))
 
 cc = ms.match(obs=obs_bp, mod=mr)
 cc.skill()
 ```
 
-The tuple form is resolved during matching, as `network.resolve(("94l1", 42.57))` would resolve it.
+The tuple form is resolved during matching, as `network.resolve(("117l1", 48.7))` would resolve it.
 
 ::: {.callout-note}
 ## Chainage tolerance
@@ -133,7 +133,7 @@ Some physical quantities — such as **discharge in a pipe** — are conceptuall
 When matched against a `NetworkModelResult`, modelskill automatically extracts model data from an arbitrary breakpoint that belongs to the given reach and verifies that all breakpoints on the reach carry equivalent values.
 
 ```{python}
-obs_q = ms.ReachObservation(path_to_sensor_data_1, reach="94l1", name="Q_94l1")
+obs_q = ms.ReachObservation(path_to_sensor_data_4, reach="116l1", name="Q_116l1")
 obs_q
 ```
 
