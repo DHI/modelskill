@@ -48,8 +48,7 @@ Reading the file and building the graph is [mikeio1d](https://github.com/DHI/mik
 job, not modelskill's. `Network.open` reads MIKE 1D (`.res1d`), MIKE 11 (`.res11`)
 and EPANET (`.res`) results, finds the EPANET companion files, and says so when a
 format cannot be turned into a network. See its documentation for the companions,
-and for `resolve` and each graph node's `address`, which translate between the names
-the model uses and the graph's own integers.
+and for `resolve`, which looks up a location by the name the model gives it.
 
 modelskill takes the file path directly, and opens it for you:
 
