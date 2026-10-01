@@ -32,6 +32,14 @@ def _network_class() -> type[Network]:
     return Network
 
 
+def _no_data_error(address: Address, item: str) -> ValueError:
+    return ValueError(
+        f"{address!r} was found in the network but has no data for "
+        f"quantity '{item}'. Choose a location that has this quantity, or a "
+        "model result for a quantity this location has."
+    )
+
+
 class NodeModelResult(TimeSeries):
     """Model result at one network location.
 
@@ -213,7 +221,13 @@ class NetworkModelResult:
             extracted model result
         """
         if isinstance(observation, NodeObservation):
-            found = self.network.resolve(observation.at)
+            # Resolving with the item snaps onto a breakpoint that carries it,
+            # which matters on a staggered grid. Resolving again without it
+            # tells a location that lacks the item from one that is not there.
+            item = self.sel_items.values
+            found = self.network.resolve(observation.at, quantity=item)
+            if found is None and self.network.resolve(observation.at) is not None:
+                raise _no_data_error(observation.at, item)
             if found is None:
                 raise ValueError(
                     f"Location {observation.at!r} not found in the network. "
@@ -298,11 +312,7 @@ class NetworkModelResult:
         # carrying Discharge may carry no WaterLevel; and a location can name a
         # quantity and hold nothing for it.
         if not df[item].notna().any():
-            raise ValueError(
-                f"{address!r} was found in the network but has no data for "
-                f"quantity '{item}'. Choose a location that has this quantity, or a "
-                "model result for a quantity this location has."
-            )
+            raise _no_data_error(address, item)
 
         if isinstance(address, tuple):
             address = (str(address[0]), address[1])
