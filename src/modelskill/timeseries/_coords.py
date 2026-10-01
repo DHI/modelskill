@@ -78,8 +78,7 @@ def network_location(ds: xr.Dataset) -> Any:
 
     Returns a node name for a node, a ``(reach, position)`` pair for a
     breakpoint, a reach name when no position was given, and None for data that
-    carries no network location. The value is returned as recorded, so a comparer
-    saved by an older version gives back the integer it stored.
+    carries no network location. The value is returned as recorded.
     """
     if "node" in ds.coords:
         return _network_scalar(ds, "node")
