@@ -33,7 +33,7 @@ DEFAULT_COLORS = [
 def _validate_data_var_name(name: str) -> str:
     if not isinstance(name, str):
         raise TypeError("name must be a string")
-    RESERVED_NAMES = ["x", "y", "z", "time"]
+    RESERVED_NAMES = ["x", "y", "z", "time", *NETWORK_LOCATION_COORDS]
     if name in RESERVED_NAMES:
         raise ValueError(
             f"name '{name}' is reserved and cannot be used! Please choose another name."

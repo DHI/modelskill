@@ -6,7 +6,7 @@ import pandas as pd
 import xarray as xr
 from collections.abc import Hashable, Iterable
 
-_RESERVED_NAMES = ["Observation", "time", "x", "y", "z"]
+_RESERVED_NAMES = ["Observation", "time", "x", "y", "z", "node", "reach", "position"]
 
 POS_COORDINATE_NAME_MAPPING = {
     "lon": "x",

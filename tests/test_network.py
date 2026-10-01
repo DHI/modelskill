@@ -242,6 +242,11 @@ class TestNodeObservation:
         assert len(obs.time) == len(sample_node_data)
         assert isinstance(obs.time, pd.DatetimeIndex)
 
+    @pytest.mark.parametrize("name", ["node", "reach", "position"])
+    def test_a_network_coordinate_name_is_reserved(self, sample_node_data, name):
+        with pytest.raises(ValueError, match="reserved"):
+            NodeObservation(sample_node_data, at="123", name=name, item="WaterLevel")
+
     def test_init_with_series(self, sample_series):
         """Test initialization with pandas Series"""
         obs = NodeObservation(sample_series, at="456", name="Node_456")
