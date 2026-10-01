@@ -1147,6 +1147,32 @@ class TestLocationIdentity:
         assert cmp.reach == REACH
         assert cmp.position == pytest.approx(POSITION)
 
+    @pytest.mark.parametrize(
+        "make_obs, item, location",
+        [
+            (lambda d: ms.NodeObservation(d, at="1"), "WaterLevel", "Location: 1"),
+            (
+                lambda d: ms.NodeObservation(d, at=BREAKPOINT),
+                REACH_ITEM,
+                f"Location: {BREAKPOINT}",
+            ),
+            (
+                lambda d: ms.ReachObservation(d, reach=REACH),
+                REACH_ITEM,
+                f"Location: {REACH}",
+            ),
+        ],
+        ids=["named node", "break point", "reach"],
+    )
+    def test_comparer_repr_shows_its_location(
+        self, sample_network, sample_node_data, make_obs, item, location
+    ):
+        nmr = NetworkModelResult(sample_network, item=item, name="Network_Model")
+
+        cmp = ms.match(make_obs(sample_node_data), nmr)
+
+        assert location in repr(cmp).splitlines()
+
 
 class TestObservationFactory:
     """ms.observation() routes the network keywords to the right class."""

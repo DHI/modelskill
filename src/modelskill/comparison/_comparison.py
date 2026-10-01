@@ -555,9 +555,22 @@ class Comparer:
             # FIXME: Consider changes needed for vertical
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
+    def _location_repr(self) -> str | None:
+        """The location line for ``__repr__``, or None when there is nothing to say."""
+        if self.gtype == str(GeometryType.NODE):
+            return f"Location: {self.at}"
+        if self.gtype == str(GeometryType.REACH):
+            return f"Location: {self.reach}"
+        if self.gtype == str(GeometryType.POINT):
+            if self.x is not None and self.y is not None:
+                return f"Location: {self.x}, {self.y}"
+        return None
+
     def __repr__(self):
-        out = [
-            "<Comparer>",
+        out = ["<Comparer>"]
+        if (location := self._location_repr()) is not None:
+            out.append(location)
+        out += [
             f"Quantity: {self.quantity}",
             f"Observation: {self.name}, n_points={self.n_points}",
             "Model(s):",
