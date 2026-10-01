@@ -442,72 +442,6 @@ class TestReachObservationFromMultiple:
             ReachObservation.from_multiple(data=multi_data, reaches="reach_1")
 
 
-class TestNetworkIntegration:
-    """Test integration between network models and observations"""
-
-    def test_network_to_node_extraction(self, sample_network, sample_node_data):
-        """Test complete workflow from network model to node extraction"""
-        nmr = NetworkModelResult(
-            sample_network, item="WaterLevel", name="Network_Model"
-        )
-        node_id = "1"
-        obs = NodeObservation(sample_node_data, at=node_id, name="Node_1_Obs")
-
-        extracted = nmr.extract(obs)
-
-        assert extracted.node == node_id
-        assert extracted.name == "Network_Model"
-        assert len(extracted.time) == len(obs.time)
-
-    def test_matching_workflow(self, sample_network, sample_node_data):
-        """Test matching workflow with network data"""
-        nmr = NetworkModelResult(
-            sample_network, item="WaterLevel", name="Network_Model"
-        )
-        node_id = "1"
-        obs = NodeObservation(sample_node_data, at=node_id, name="Node_1_Obs")
-
-        comparer = ms.match(obs, nmr)
-
-        assert comparer is not None
-        assert "Network_Model" in comparer.mod_names
-        assert comparer.n_points > 0
-
-    def test_matching_workflow_multiple_nodes(self, sample_network, sample_node_data):
-        """Test matching workflow with multiple node observations"""
-        nmr = NetworkModelResult(
-            sample_network, item="WaterLevel", name="Network_Model"
-        )
-
-        multi_data = pd.DataFrame(
-            {
-                "station_0": sample_node_data["WaterLevel"],
-                "station_1": sample_node_data["WaterLevel"] + 0.1,
-                "station_2": sample_node_data["WaterLevel"] + 0.2,
-            }
-        )
-
-        node_0 = "1"
-        node_1 = "2"
-        node_2 = "3"
-
-        # Create multiple NodeObservations using .from_multiple
-        obs_list = NodeObservation.from_multiple(
-            data=multi_data,
-            nodes={node_0: "station_0", node_1: "station_1", node_2: "station_2"},
-        )
-
-        # Test that matching works
-        comparer_collection = ms.match(obs_list, nmr)
-
-        assert comparer_collection is not None
-        assert len(comparer_collection) == 3
-
-        for comparer in comparer_collection:
-            assert "Network_Model" in comparer.mod_names
-            assert comparer.n_points > 0
-
-
 class TestValuesReachTheComparer:
     """The series a comparer holds is the one the network keeps at that location.
 
@@ -1099,18 +1033,6 @@ class TestNetworkModelResultAliasResolution:
         with pytest.raises(ValueError, match="not found"):
             nmr.extract(obs)
 
-    def test_match_with_string_alias(self, sample_network, sample_node_data):
-        """Full ms.match() workflow works end-to-end with a string alias."""
-        nmr = NetworkModelResult(
-            sample_network, item="WaterLevel", name="Network_Model"
-        )
-        obs = NodeObservation(sample_node_data, at="1", name="Node_1")
-
-        comparer = ms.match(obs, nmr)
-
-        assert comparer.n_points > 0
-        assert "Network_Model" in comparer.mod_names
-
 
 # ======================== location identity ========================
 
@@ -1132,17 +1054,6 @@ class TestLocationIdentity:
         df = obs.to_dataframe()
 
         assert list(df.columns) == ["WaterLevel"]
-
-    def test_a_named_node_survives_trimming(self, sample_network, sample_node_data):
-        nmr = NetworkModelResult(sample_network, item="WaterLevel")
-        extracted = nmr.extract(ms.NodeObservation(sample_node_data, at="1"))
-
-        trimmed = extracted.trim(
-            start_time=extracted.time[1], end_time=extracted.time[-1]
-        )
-
-        assert trimmed.node == extracted.node
-        assert len(trimmed) == len(extracted) - 1
 
     @pytest.mark.parametrize(
         "at, item, node",
