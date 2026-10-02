@@ -9,7 +9,7 @@ A model result can either be a simple point/track, or spatial field (e.g. 2d dfs
 * SpatialField (extractable)
     - [`GridModelResult`](`modelskill.GridModelResult`) - a spatial field from a dfs2/nc file or a Xarray Dataset
     - [`DfsuModelResult`](`modelskill.DfsuModelResult`) - a spatial field from a dfsu file
-    - [`NetworkModelResult`](`modelskill.NetworkModelResult`) - a network field from xarray Dataset with time and node coordinates
+    - [`NetworkModelResult`](`modelskill.NetworkModelResult`) - a 1D network result from a res1d/res11/res file or a mikeio1d Network
 
 A model result can be created by explicitly invoking one of the above classes or using the [`model_result()`](`modelskill.model_result`) function which will return the appropriate type based on the input data (if possible).
 """

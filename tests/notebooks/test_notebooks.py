@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
@@ -7,8 +8,11 @@ from nbconvert.preprocessors import CellExecutionError
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.join(_TEST_DIR, "../..")
-SKIP_LIST = ["Download", "Metocean_track_comparison_global", "Metrics_widget", "Collection_systems_network"]
-# We skip Collection_systems_network.ipynb since it uses Network.from_mike() which uses pythonnet and, currently, it does not support python 3.14
+SKIP_LIST = ["Download", "Metocean_track_comparison_global", "Metrics_widget"]
+if sys.version_info >= (3, 15):
+    # Collection_systems_network.ipynb reads a res1d through mikeio1d, whose
+    # pythonnet has no 3.15 wheel.
+    SKIP_LIST.append("Collection_systems_network")
 
 
 def _process_notebook(notebook_filename, notebook_path="notebooks"):

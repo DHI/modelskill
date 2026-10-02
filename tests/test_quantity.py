@@ -7,6 +7,14 @@ def test_str():
     assert str(wh) == "Significant wave height [m]"
 
 
+def test_str_without_unit():
+    assert str(ms.Quantity(name="Discharge", unit="")) == "Discharge"
+
+
+def test_str_undefined():
+    assert str(ms.Quantity.undefined()) == "Undefined"
+
+
 def test_from_EUMType_string():
     with pytest.warns(match="unit"):
         # mikeio.EUMType.Significant_wave_height

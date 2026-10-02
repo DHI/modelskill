@@ -39,6 +39,7 @@ from .obs import (
     ReachObservation,
 )
 from .timeseries import TimeSeries
+from .timeseries._coords import NETWORK_LOCATION_COORDS
 from .types import Period
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
@@ -360,7 +361,7 @@ def _match_single_obs(
         if is_field or is_dummy:
             matching_obs = m.extract(obs, spatial_method=spatial_method)
         elif is_network:
-            matching_obs = m.extract(obs)
+            matching_obs = _at_observation(m.extract(obs), obs)
         else:
             matching_obs = m
 
@@ -407,6 +408,18 @@ def _check_timezone_compatibility(
             )
 
 
+def _at_observation(mr: NodeModelResult, obs: TimeSeries) -> NodeModelResult:
+    """The extracted model result, placed where the observation sits.
+
+    A comparer has one location, the observation's: with several models, each
+    may be read at a different breakpoint. Where a model was read is
+    ``NetworkModelResult.extract(obs).at``.
+    """
+    location = {c: obs.data[c] for c in NETWORK_LOCATION_COORDS if c in obs.data.coords}
+    data = mr.data.drop_vars(NETWORK_LOCATION_COORDS, errors="ignore")
+    return NodeModelResult(data.assign_coords(location))
+
+
 def _match_space_time(
     observation: Observation,
     raw_mod_data: Mapping[
@@ -444,11 +457,7 @@ def _match_space_time(
                         "max_model_gap is not yet supported for VerticalModelResult / VerticalObservation matching"
                     )
                 aligned = vmr.align(observation)
-            case NodeModelResult() as nmr, NodeObservation():
-                # mr is the extracted NodeModelResult
-                aligned = align_data(nmr.data, observation, max_gap=max_model_gap)
-            case NodeModelResult() as nmr, ReachObservation():
-                # ReachObservation is extracted to a NodeModelResult (any breakpoint on the reach)
+            case NodeModelResult() as nmr, NodeObservation() | ReachObservation():
                 aligned = align_data(nmr.data, observation, max_gap=max_model_gap)
             case _:
                 raise TypeError(

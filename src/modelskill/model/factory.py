@@ -10,6 +10,7 @@ from .track import TrackModelResult
 from .vertical import VerticalModelResult
 from .dfsu import DfsuModelResult
 from .grid import GridModelResult
+from .network import NetworkModelResult
 
 
 from ..types import GeometryType, DataInputType
@@ -20,6 +21,7 @@ _modelresult_lookup = {
     GeometryType.VERTICAL: VerticalModelResult,
     GeometryType.UNSTRUCTURED: DfsuModelResult,
     GeometryType.GRID: GridModelResult,
+    GeometryType.NETWORK: NetworkModelResult,
 }
 
 
@@ -27,7 +29,8 @@ def model_result(
     data: DataInputType,
     *,
     aux_items: list[int | str] | None = None,
-    gtype: Literal["point", "track", "vertical", "unstructured", "grid"] | None = None,
+    gtype: Literal["point", "track", "vertical", "unstructured", "grid", "network"]
+    | None = None,
     **kwargs: Any,
 ) -> (
     PointModelResult
@@ -35,6 +38,7 @@ def model_result(
     | VerticalModelResult
     | DfsuModelResult
     | GridModelResult
+    | NetworkModelResult
 ):
     """A factory function for creating an appropriate object based on the data input.
 
@@ -44,7 +48,7 @@ def model_result(
         The data to be used for creating the ModelResult object.
     aux_items : list[int | str] | None
         Auxiliary items, by default None
-    gtype : Literal["point", "track", "vertical", "unstructured", "grid"] | None
+    gtype : Literal["point", "track", "vertical", "unstructured", "grid", "network"] | None
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
         Additional keyword arguments to be passed to the ModelResult constructor.
@@ -72,6 +76,9 @@ def model_result(
 
 
 def _guess_gtype(data: Any) -> GeometryType:
+    if _is_network(data):
+        return GeometryType.NETWORK
+
     if hasattr(data, "geometry"):
         geom_str = repr(data.geometry).lower()
         if "flex" in geom_str:
@@ -96,6 +103,8 @@ def _guess_gtype(data: Any) -> GeometryType:
             return GeometryType.GRID
         elif file_ext == ".dfs2":
             return GeometryType.GRID
+        elif file_ext in (".res1d", ".res11", ".res"):
+            return GeometryType.NETWORK
         else:
             raise ValueError(
                 "Could not guess gtype from file extension, please specify gtype, e.g. gtype='track'"
@@ -114,3 +123,12 @@ def _guess_gtype(data: Any) -> GeometryType:
     raise ValueError(
         f"Geometry type (gtype) could not be guessed from this type of data: {type(data)}. Please specify gtype, e.g. gtype='track'"
     )
+
+
+def _is_network(data: Any) -> bool:
+    # mikeio1d is optional (ADR-010): without it, nothing is a Network.
+    try:
+        from mikeio1d.network import Network
+    except ImportError:
+        return False
+    return isinstance(data, Network)
