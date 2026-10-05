@@ -45,7 +45,7 @@ result file  →  NetworkModelResult  →  match()  →  Comparer
 
 ## Where the network comes from
 
-Reading the file and building the graph is [mikeio1d](https://github.com/DHI/mikeio1d)'s
+Reading the file and building the graph is [mikeio1d](https://dhi.github.io/mikeio1d/user-guide/network.html#reading-a-network-as-a-graph)'s
 job, not modelskill's. `Network.open` reads MIKE 1D (`.res1d`), MIKE 11 (`.res11`)
 and EPANET (`.res`) results, finds the EPANET companion files, and says so when a
 format cannot be turned into a network. See its documentation for the companions,
