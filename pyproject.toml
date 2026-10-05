@@ -8,7 +8,7 @@ wheel-exclude = ["**/.mypy_cache**", "**/.mypy_cache/**"]
 
 [project]
 name = "modelskill"
-version = "1.4.0a3"
+version = "1.4.0"
 dependencies = [
     "numpy  > 1.24.4",
     "pandas >= 1.4, < 3.0", # TODO remove upper limit
@@ -25,6 +25,9 @@ dependencies = [
 authors = [
     { name = "Jesper Sandvig Mariegaard", email = "jem@dhigroup.com" },
     { name = "Henrik Andersson", email = "jan@dhigroup.com" },
+    { name = "Ryan Walter Murray", email = "rywm@dhigroup.com" },
+    { name = "Lars Jonasson", email = "lajo@dhigroup.com" },
+    { name = "Jaume Palmer Real", email = "japr@dhigroup.com" },
 ]
 description = "Compare results from simulations with observations."
 license = "MIT"
