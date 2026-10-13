@@ -66,6 +66,8 @@ website:
           text: Gridded NetCDF ModelResult
         - href: examples/Prematched_with_auxiliary.qmd
           text: Prematched with auxiliary
+        - href: examples/Forecast_lead_time.qmd
+          text: Forecast skill by lead time
         - href: examples/Skill_vs_dummy.qmd
           text: Compare with dummy results
         - href: examples/Metrics_custom_metric.qmd
