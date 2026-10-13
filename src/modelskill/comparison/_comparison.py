@@ -44,6 +44,7 @@ from ..timeseries._timeseries import (
 )
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
+from .._deprecation import _deprecate_positional_args
 
 from ._utils import (
     _add_spatial_grid_to_df,
@@ -907,6 +908,7 @@ class Comparer:
             elif isinstance(other, ComparerCollection):
                 return ComparerCollection([self, *other])
 
+    @_deprecate_positional_args
     def sel(
         self,
         model: IdxOrNameTypes | None = None,
@@ -1217,6 +1219,7 @@ class Comparer:
         score = {str(k): float(v) for k, v in ser.items()}
         return score
 
+    @_deprecate_positional_args
     def gridded_skill(
         self,
         bins: int = 5,
