@@ -1,7 +1,7 @@
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
-# Run all checks: lint, typecheck, test, doctest
-check: lint typecheck test doctest
+# Run all checks: lint, private-access, typecheck, test, doctest
+check: lint private-access typecheck test doctest
 
 # Build package (after typecheck and test)
 build: typecheck test
@@ -9,15 +9,19 @@ build: typecheck test
 
 # Lint with ruff
 lint:
-    uv run ruff check src
+    uv run ruff check src tools
 
 # Auto-fix formatting
 format:
-    uv run ruff format src
+    uv run ruff format src tools
 
 # Run tests
 test:
     uv run pytest --disable-warnings
+
+# Report private attribute access on third-party objects
+private-access:
+    uv run python tools/check_third_party_private_access.py
 
 # Type check with mypy
 typecheck:
