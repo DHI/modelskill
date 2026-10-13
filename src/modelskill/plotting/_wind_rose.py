@@ -116,10 +116,10 @@ def _dirhist2d(
     mask = data[:, 0] >= vmin
     calm = len(data[~mask]) / len(data)
     n = len(data)
-    counts, _, _ = np.histogram2d(  # type: ignore
+    counts, _, _ = np.histogram2d(
         data[mask][:, 0],
         data[mask][:, 1],
-        bins=[ui, thetai],  # type: ignore
+        bins=[ui, thetai],
     )
     density = counts / n
     return DirectionalHistogram(
@@ -552,7 +552,7 @@ def _add_legend_to_ax(
             -0.06,
             0.1,
             0.8,
-        )  # type: ignore
+        )
         loc = "lower left"
     else:
         bbox_to_anchor = (-0.13, -0.06, 0.1, 0.8)

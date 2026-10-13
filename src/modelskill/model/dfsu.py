@@ -112,7 +112,7 @@ class DfsuModelResult(SpatialField):
         return pd.DatetimeIndex(self.data.time)
 
     def _in_domain(self, x: float, y: float) -> bool:
-        return self.data.geometry.contains([x, y])  # type: ignore
+        return self.data.geometry.contains([x, y])
 
     def extract(
         self, observation: Observation, spatial_method: str | None = None
@@ -269,7 +269,7 @@ class DfsuModelResult(SpatialField):
             if isinstance(self.data, mikeio.Dataset):
                 ds_model = self.data.isel(element=elemids)
             else:  # Dfsu
-                ds_model = self.data.read(elements=elemids, items=self.sel_items.all)  # type: ignore
+                ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
         else:
             if z is not None:
                 raise NotImplementedError(
