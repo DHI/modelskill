@@ -963,6 +963,23 @@ def test_match_raises_clear_error_on_tz_aware_vs_naive_mismatch():
         ms.match(obs, mr)
 
 
+def test_match_raises_clear_error_when_model_result_is_empty():
+    """An empty extraction (e.g. point outside domain or dry) must raise a clear error, not a bare assert."""
+    obs = ms.PointObservation(
+        data=pd.Series(
+            [1.0, 2.0, 3.0], index=pd.date_range("2020-01-01", periods=3, freq="h")
+        ),
+        name="Station",
+    )
+    mr = ms.PointModelResult(
+        data=pd.Series([], dtype=float, index=pd.DatetimeIndex([])),
+        name="Model",
+    )
+
+    with pytest.raises(ValueError, match="'Model' has no data.*'Station'"):
+        ms.match(obs, mr)
+
+
 def test_multiple_models_same_name(tmp_path: Path) -> None:
     obs = ms.PointObservation(
         "tests/testdata/SW/HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA"

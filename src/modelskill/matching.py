@@ -382,8 +382,6 @@ def _match_single_obs(
 
 
 def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
-    assert all([len(x) > 0 for x in idxs]), "All datetime indices must be non-empty"
-
     starts = [x[0] for x in idxs]
     ends = [x[-1] for x in idxs]
 
@@ -405,6 +403,22 @@ def _check_timezone_compatibility(
                 f"Timezone mismatch between observation '{observation.name}' "
                 f"(tz={obs_tz}) and model result '{name}' (tz={mr_tz}). "
                 "Both must be either timezone-aware or timezone-naive."
+            )
+
+
+def _check_model_results_not_empty(
+    observation: Observation,
+    raw_mod_data: Mapping[
+        str,
+        PointModelResult | TrackModelResult | VerticalModelResult | NodeModelResult,
+    ],
+) -> None:
+    for name, mr in raw_mod_data.items():
+        if len(mr.time) == 0:
+            raise ValueError(
+                f"Model result '{name}' has no data at observation '{observation.name}'. "
+                "Check that the observation is inside the model domain and that the "
+                "model has valid values there (e.g. the location is not dry)."
             )
 
 
@@ -431,6 +445,7 @@ def _match_space_time(
     obs_no_overlap: Literal["ignore", "error", "warn"],
 ) -> xr.Dataset | None:
     _check_timezone_compatibility(observation, raw_mod_data)
+    _check_model_results_not_empty(observation, raw_mod_data)
 
     idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
