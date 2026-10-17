@@ -74,6 +74,19 @@ def test_kge_climatology_model():
     assert mtr.kling_gupta_efficiency(obs, mod) == pytest.approx(-0.41, abs=1e-2)
 
 
+@pytest.mark.parametrize("metric", [mtr.nse, mtr.r2])
+@pytest.mark.parametrize(
+    "model", [[1.0, 2.0, np.nan, np.nan], [np.nan, np.nan, np.nan, np.nan]]
+)
+def test_nse_r2_nan_in_model_series(metric: Callable, model: list) -> None:
+    # pandas Series must give the same result as NumPy arrays (NaN), not 1.0
+    obs = pd.Series([1.0, 2.0, 3.0, 4.0])
+    mod = pd.Series(model)
+
+    assert np.isnan(metric(obs.to_numpy(), mod.to_numpy()))
+    assert np.isnan(metric(obs, mod))
+
+
 def test_nse_suboptimal():
     obs = np.array([1.0, 0.5, 0])
     mod = np.array([1.0, 0.0, 0.5])

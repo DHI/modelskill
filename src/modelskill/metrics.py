@@ -251,6 +251,9 @@ def nash_sutcliffe_efficiency(obs: ArrayLike, model: ArrayLike) -> Any:
 
     Nash, J. E.; Sutcliffe, J. V. (1970). "River flow forecasting through conceptual models part I — A discussion of principles". Journal of Hydrology. 10 (3): 282–290. <https://doi.org/10.1016/0022-1694(70)90255-6>
     """
+    # np.sum on a pandas Series skips NaN, so convert to get NaN like the other metrics
+    obs = np.asarray(obs)
+    model = np.asarray(model)
     assert obs.size == model.size
 
     if len(obs) == 0:
@@ -331,6 +334,9 @@ def r2(obs: ArrayLike, model: ArrayLike) -> Any:
     >>> r2(obs,model)
     np.float64(0.6379999999999998)
     """
+    # np.sum on a pandas Series skips NaN, so convert to get NaN like the other metrics
+    obs = np.asarray(obs)
+    model = np.asarray(model)
     assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
