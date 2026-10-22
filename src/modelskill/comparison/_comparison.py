@@ -883,6 +883,11 @@ class Comparer:
     ) -> Comparer | ComparerCollection:
         """Merge another Comparer or ComparerCollection with this one into a new object.
 
+        When both are Comparers of the same observation, the result keeps only the
+        time steps where the observation and every model have a value, as `match()`
+        does for several models. Adding a model with a shorter period therefore
+        reduces the points the other models are scored on.
+
         Parameters
         ----------
         other : Comparer or ComparerCollection
@@ -897,7 +902,11 @@ class Comparer:
         if isinstance(other, Comparer) and (self.name == other.name):
             raw_mod_data = self.raw_mod_data.copy()
             raw_mod_data.update(other.raw_mod_data)  # TODO!
-            matched = self.data.merge(other.data).dropna(dim="time")
+            merged = self.data.merge(other.data)
+            obs_and_models = merged.filter_by_attrs(
+                kind=lambda k: k in ("observation", "model")
+            ).data_vars
+            matched = merged.dropna(dim="time", subset=obs_and_models)
             cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
             return cmp

@@ -99,3 +99,28 @@ def test_merge_same_model(o123, mrmike):
     assert cc12.n_points == cc1.n_points
     assert cc12[0].data.time.to_index().is_unique
     assert cc1.score() == cc12.score()
+
+
+def test_merge_keeps_time_steps_where_only_aux_is_missing():
+    time = pd.date_range("2020", periods=4, freq="h")
+    df1 = pd.DataFrame(
+        {"obs": [0.0, 1, 2, 3], "m1": [1.0, 2, 3, 4], "aux": [1.0, None, 1, 1]},
+        index=time,
+    )
+    cmp1 = ms.from_matched(df1, obs_item="obs", mod_items=["m1"], aux_items=["aux"])
+    df2 = pd.DataFrame({"obs": [0.0, 1, 2, 3], "m2": [2.0, 3, 4, 5]}, index=time)
+    cmp2 = ms.from_matched(df2, obs_item="obs", mod_items=["m2"])
+
+    merged = cmp1.merge(cmp2)
+
+    assert merged.n_points == 4
+    assert merged.mod_names == ["m1", "m2"]
+
+
+def test_merge_keeps_only_time_steps_where_all_models_have_values():
+    time = pd.date_range("2020", periods=4, freq="h")
+    df1 = pd.DataFrame({"obs": [0.0, 1, 2, 3], "m1": [1.0, 2, 3, 4]}, index=time)
+    cmp1 = ms.from_matched(df1, obs_item="obs", mod_items=["m1"])
+    cmp2 = ms.from_matched(df1.rename(columns={"m1": "m2"}).iloc[:2], obs_item="obs")
+
+    assert cmp1.merge(cmp2).n_points == 2
