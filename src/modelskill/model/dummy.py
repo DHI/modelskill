@@ -22,7 +22,12 @@ class DummyModelResult:
     name : str, optional
         The name of the model result, by default 'dummy'
     strategy : str, optional
-        The strategy to use, 'mean' uses the mean of the observation, 'constant' uses the value given in data, by default 'constant'
+        The strategy to use, by default 'constant'
+
+        - 'mean': the mean of the observation values that are compared. In `match()`
+          this is the mean over the time steps shared with the other models, so the
+          dummy has r2 = 0. For a long-term mean, pass it as `data`.
+        - 'constant': the value given in `data`
 
     Examples
     --------

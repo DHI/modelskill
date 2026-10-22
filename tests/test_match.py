@@ -918,11 +918,30 @@ def test_compare_model_vs_dummy_for_track(mr1, o3):
 
     cmp2 = ms.match(obs=o3, mod=[mr1, mr])
 
-    # not identical to above since it is evaluated on a subset of the data
-    assert cmp2.score()["dummy"] == pytest.approx(1.225945)
+    # the mean is taken over the subset compared with SW_1, so r2 is still 0
+    assert cmp2.score(metric="r2")["dummy"] == pytest.approx(0.0)
 
     # better than dummy 🙂
     assert cmp2.score()["SW_1"] == pytest.approx(0.3524703)
+
+
+def test_dummy_mean_is_mean_of_compared_observations():
+    time = pd.date_range("2020-01-01", periods=10, freq="h")
+    obs = ms.PointObservation(
+        pd.Series(np.arange(10.0), index=time), name="obs", x=0.0, y=0.0
+    )
+    # model covers only the last 4 time steps
+    mod = ms.PointModelResult(
+        pd.Series(np.arange(6.0, 10.0) + 0.5, index=time[6:]), name="mod"
+    )
+    dummy = ms.DummyModelResult(name="dummy", strategy="mean")
+
+    cmp = ms.match(obs=obs, mod=[mod, dummy])
+
+    assert cmp.n_points == 4
+    assert cmp.data["dummy"].values == pytest.approx([7.5] * 4)
+    assert cmp.score(metric="r2")["dummy"] == pytest.approx(0.0)
+    assert cmp.raw_mod_data["dummy"].values == pytest.approx([7.5] * 10)
 
 
 def test_match_obs_model_pos_args_wrong_order_helpful_error_message():
