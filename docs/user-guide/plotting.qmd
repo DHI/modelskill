@@ -135,12 +135,12 @@ The radial distance from the point to the observation point is the standard devi
 
 ## Directional data (e.g. wind or currents)
 
-Directional data can be plotted using the [`wind_rose`](`modelskill.plotting.wind_rose`). The function takes an array-like structure with speed and direction as columns (from one or two sources) and plots a wind rose:
+Directional data can be plotted using the [`wind_rose`](`modelskill.plotting.wind_rose`). The function takes an array-like structure with speed and direction as columns (from one or two sources) and plots a wind rose. With two sources, the first pair is labelled "Measurement" and the second "Model" (see `labels`):
 
 ```{python}
 import mikeio
 ds = mikeio.read("../data/wave_dir.dfs0")
-df = ds[[0,2,1,3]].to_dataframe()
+df = ds[[1,3,0,2]].to_dataframe()  # measured speed, direction, then model
 df.round(2).head()
 ```
 
