@@ -18,6 +18,7 @@
    just --list       # Show all available recipes
    ```
 6. Make a pull request with a clear summary of the changes
+7. Sign the [DHI Contribution License Agreement](https://github.com/DHI/.github/blob/main/CLA.md) by commenting on the pull request as instructed by the CLA bot. You sign once for all DHI open-source repositories.
 
 ## Building documentation locally
 
