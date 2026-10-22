@@ -1,6 +1,6 @@
 # ModelSkill
 
-Vocabulary for evaluating how well a model reproduces observations. File-format and mesh terms follow [mikeio's glossary](https://github.com/DHI/mikeio/blob/main/CONTEXT.md); where the two overlap, mikeio's wording wins.
+Vocabulary for evaluating how well a model reproduces observations. File-format and mesh terms follow [mikeio's glossary](https://github.com/DHI/mikeio/blob/main/GLOSSARY.md); where the two overlap, mikeio's wording wins. Observation shapes map to the [CF discrete sampling geometries](https://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#discrete-sampling-geometries).
 
 ## Language
 
@@ -32,10 +32,12 @@ _Avoid_: null model, dummy model
 The spatial shape of an observation or model result; it decides which observations and model results can be matched.
 
 **Point**:
-A fixed (x, y) location with one z, holding a timeseries. e.g. a tide gauge.
+A timeseries at one fixed station; the position is given once for the whole series. e.g. a tide gauge. CF `timeSeries`; not CF `point`, which means unconnected values.
+_Avoid_: station (a station can hold several points)
 
 **Track**:
-A moving (x, y) location with one z, holding a timeseries. e.g. a satellite altimeter.
+Values along a path; each value carries its own position and time, and two values may share a time. e.g. a satellite altimeter pass. CF `trajectory`.
+_Avoid_: moving point
 
 **Grid**:
 A regular, axis-aligned spatial extent with a value at each cell per timestep. Model results only.
@@ -45,8 +47,8 @@ An unstructured spatial extent of nodes and elements with a value per element pe
 _Avoid_: unstructured grid
 
 **Vertical**:
-A fixed (x, y) location with values varying in z and time: a water column at one station. e.g. a CTD cast.
-_Avoid_: profile, water column, depth profile
+Values along z, repeated over time at one fixed station. e.g. CTD casts at a monitoring station. CF `timeSeriesProfile`.
+_Avoid_: profile (CF: a single cast), water column, depth profile
 
 **Network**:
 Nodes connected by reaches, as in a river or pipe model. Values sit at named locations; nothing is interpolated in space.
@@ -66,7 +68,7 @@ _Avoid_: breakpoint, chainage point
 ### Data shapes
 
 **Timeseries**:
-Values in time at one location, fixed (point) or moving (track). One variable at a time.
+Values in time at one fixed station (a point). One variable at a time.
 
 **Field**:
 Values over a spatial extent (grid or flexible mesh) at each timestep. Matching extracts a timeseries from a field at each observation location.
