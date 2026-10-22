@@ -1173,14 +1173,15 @@ class Comparer:
 
     def score(
         self,
-        metric: str | Callable = mtr.rmse,
+        metric: str | Callable | None = None,
     ) -> Dict[str, float]:
         """Model skill score
 
         Parameters
         ----------
-        metric : list, optional
+        metric : str or callable, optional
             a single metric from modelskill.metrics, by default rmse
+            (c_rmse for a directional quantity)
 
         Returns
         -------
@@ -1202,7 +1203,10 @@ class Comparer:
         >>> cmp.score(metric="mape")
         {'mod': 11.567399646108198}
         """
-        metric = _parse_metric(metric)[0]
+        directional = self.quantity.is_directional
+        if metric is None:
+            metric = mtr.c_rmse if directional else mtr.rmse
+        metric = _parse_metric(metric, directional=directional)[0]
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
@@ -1283,7 +1287,7 @@ class Comparer:
 
         cmp = self
 
-        metrics = _parse_metric(metrics)
+        metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
         if cmp.n_points == 0:
             raise ValueError("No data to compare")
 

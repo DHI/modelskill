@@ -723,6 +723,11 @@ class ComparerPlotter:
         -----
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
+        if self.is_directional:
+            raise ValueError(
+                "A Taylor diagram uses linear standard deviation and correlation, "
+                "which are not defined for a directional quantity."
+            )
         cmp = self.comparer
 
         # TODO consider if this round-trip  via mtr is necessary to get the std:s

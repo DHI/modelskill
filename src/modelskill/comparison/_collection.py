@@ -418,6 +418,16 @@ class ComparerCollection(Mapping):
 
         return ComparerCollection(cmps_with_data)
 
+    def _is_directional(self) -> bool:
+        directional = {cmp.quantity.is_directional for cmp in self}
+        if len(directional) > 1:
+            raise ValueError(
+                "The collection mixes directional and non-directional quantities, "
+                "which need different metrics. Select one quantity first, "
+                "e.g. cc.sel(quantity=...)."
+            )
+        return directional.pop() if directional else False
+
     def skill(
         self,
         by: str | Iterable[str] | None = None,
@@ -482,7 +492,7 @@ class ComparerCollection(Mapping):
         """
         cc = self
 
-        pmetrics = _parse_metric(metrics)
+        pmetrics = _parse_metric(metrics, directional=self._is_directional())
 
         agg_cols = _parse_groupby(by, n_mod=cc.n_models, n_qnt=cc.n_quantities)
         agg_cols, attrs_keys = self._attrs_keys_in_by(agg_cols)
@@ -634,7 +644,7 @@ class ComparerCollection(Mapping):
         """
         cmp = self
 
-        metrics = _parse_metric(metrics)
+        metrics = _parse_metric(metrics, directional=self._is_directional())
 
         df = cmp._to_long_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
@@ -724,7 +734,7 @@ class ComparerCollection(Mapping):
             case _:
                 raise ValueError("Invalid weights specification")
 
-        pmetrics = _parse_metric(metrics)
+        pmetrics = _parse_metric(metrics, directional=self._is_directional())
         skilldf = (
             self.skill(metrics=pmetrics)
             .to_dataframe()
@@ -761,7 +771,7 @@ class ComparerCollection(Mapping):
 
     def score(
         self,
-        metric: str | Callable = mtr.rmse,
+        metric: str | Callable | None = None,
         weights: str | list[float] | dict[str, float] | None = None,
     ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
@@ -779,8 +789,9 @@ class ComparerCollection(Mapping):
             - "points": giving all points equal weight,
             - list of weights e.g. [0.3, 0.3, 0.4] per observation,
             - dictionary of observations with special weigths, others will be set to 1.0
-        metric : list, optional
+        metric : str or callable, optional
             a single metric from modelskill.metrics, by default rmse
+            (c_rmse for a directional quantity)
 
         Returns
         -------
@@ -809,7 +820,10 @@ class ComparerCollection(Mapping):
         {'mod': 8.414442957854142}
         """
 
-        metric = _parse_metric(metric)[0]
+        directional = self._is_directional()
+        if metric is None:
+            metric = mtr.c_rmse if directional else mtr.rmse
+        metric = _parse_metric(metric, directional=directional)[0]
 
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")

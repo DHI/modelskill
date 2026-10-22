@@ -1201,7 +1201,28 @@ def _parse_metric(
         else:
             raise TypeError(f"metric {m} must be a string or callable")
 
+    if directional:
+        for m in parsed_metrics:
+            _check_circular(m)
+
     return parsed_metrics
+
+
+def _check_circular(metric: Callable) -> None:
+    # A user-defined metric may well handle angles; only built-ins are known not to.
+    name = metric.__name__
+    if metric.__module__ != __name__ or name.startswith("c_"):
+        return
+    circular = f"c_{name}"
+    hint = (
+        f"Use '{circular}' instead."
+        if hasattr(sys.modules[__name__], circular)
+        else f"Use one of the circular metrics: {', '.join(m.__name__ for m in default_circular_metrics)}."
+    )
+    raise ValueError(
+        f"'{name}' treats values as linear, but the quantity is directional, "
+        f"so 359° vs 1° would count as 358° apart. {hint}"
+    )
 
 
 def is_best(metric: str, expected: str | int) -> bool:

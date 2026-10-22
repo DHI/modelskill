@@ -500,6 +500,12 @@ class ComparerCollectionPlotter:
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
 
+        if self.cc._is_directional():
+            raise ValueError(
+                "A Taylor diagram uses linear standard deviation and correlation, "
+                "which are not defined for a directional quantity."
+            )
+
         if (not aggregate_observations) and (not normalize_std):
             raise ValueError(
                 "aggregate_observations=False is only possible if normalize_std=True!"
