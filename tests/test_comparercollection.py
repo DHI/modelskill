@@ -451,6 +451,106 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
     assert cc2["fake point obs"].raw_mod_data["m1"].name == "m1"
 
 
+@pytest.fixture
+def node_comparer() -> modelskill.comparison.Comparer:
+    """A comparer built by matching a NodeObservation against a NetworkModelResult (node gtype)."""
+    pytest.importorskip("mikeio1d.network")
+    from tests.network_helpers import NODE_IDS, node_series, open_network
+
+    network = open_network()
+    node_id = NODE_IDS[0]
+    values = node_series(network, nodes=NODE_IDS)[[node_id]]
+
+    nmr = ms.NetworkModelResult(network, item="WaterLevel", name="Network_Model")
+    obs = ms.NodeObservation(values, at=node_id, item=node_id, name="Node_Obs")
+
+    return ms.match(obs, nmr)
+
+
+@pytest.fixture
+def reach_comparer() -> modelskill.comparison.Comparer:
+    """A comparer built by matching a ReachObservation (reach gtype)."""
+    pytest.importorskip("mikeio1d.network")
+    from tests.network_helpers import REACH, REACH_ITEM, breakpoint_series, open_network
+
+    network = open_network()
+    values = breakpoint_series(network)
+
+    nmr = ms.NetworkModelResult(network, item=REACH_ITEM, name="Network_Model")
+    obs = ms.ReachObservation(values, reach=REACH, name="Reach_Obs")
+
+    return ms.match(obs, nmr)
+
+
+def test_save_and_load_round_trips_node_gtype_raw_data(node_comparer, tmp_path):
+    """Node-gtype comparers must survive a save()/load() round trip like point comparers do."""
+    cc = ms.ComparerCollection([node_comparer])
+    fn = tmp_path / "test_cc_node.msk"
+    cc.save(fn)
+
+    cc2 = ms.load(fn)
+
+    assert cc2[0].gtype == "node"
+    assert len(cc2[0].raw_mod_data["Network_Model"]) == len(
+        node_comparer.raw_mod_data["Network_Model"]
+    )
+    # The node was addressed by name, and the name is what comes back: reloading
+    # must not depend on the integer the network happened to hand out.
+    assert cc2[0].node == node_comparer.node
+    assert cc2[0].raw_mod_data["Network_Model"].node == node_comparer.node
+
+
+def test_save_and_load_round_trips_reach_gtype_raw_data(reach_comparer, tmp_path):
+    """Reach-gtype comparers must survive a save()/load() round trip too."""
+    cc = ms.ComparerCollection([reach_comparer])
+    fn = tmp_path / "test_cc_reach.msk"
+    cc.save(fn)
+
+    cc2 = ms.load(fn)
+
+    assert cc2[0].gtype == "reach"
+    assert cc2[0].reach == reach_comparer.reach
+    assert cc2[0].position is None
+    assert (
+        cc2[0].raw_mod_data["Network_Model"].at
+        == reach_comparer.raw_mod_data["Network_Model"].at
+    )
+    assert len(cc2[0].raw_mod_data["Network_Model"]) == len(
+        reach_comparer.raw_mod_data["Network_Model"]
+    )
+
+
+def test_to_dataframe_on_a_node_comparer(node_comparer):
+    df = node_comparer.to_dataframe()
+
+    assert list(df.columns) == ["Observation", "Network_Model"]
+    assert df.index.name == "time"
+
+
+def test_to_dataframe_on_a_reach_comparer(reach_comparer):
+    """The location coordinates are dropped, as they are for every other gtype."""
+    df = reach_comparer.to_dataframe()
+
+    assert list(df.columns) == ["Observation", "Network_Model"]
+    assert df.index.name == "time"
+
+
+def test_skill_on_a_node_comparer(node_comparer):
+    sk = node_comparer.skill()
+
+    assert sk.to_dataframe().shape[0] == 1
+    assert "Node_Obs" in sk.index
+
+
+def test_plot_a_node_comparer(node_comparer):
+    assert node_comparer.plot.timeseries() is not None
+    assert node_comparer.plot.scatter() is not None
+
+
+def test_plot_a_reach_comparer(reach_comparer):
+    assert reach_comparer.plot.timeseries() is not None
+
+
 # ======================== plotting ========================
 
 

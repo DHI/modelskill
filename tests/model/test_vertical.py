@@ -29,25 +29,6 @@ def vertical_model_df() -> pd.DataFrame:
 
 
 @pytest.fixture
-def vertical_model_df_duplicates() -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "z": [-5.0, -5.0, -4.0, -4.0, -3.0],
-            "Salinity": [30.0, 300.0, 31.0, 310.0, 32.0],
-        },
-        index=pd.to_datetime(
-            [
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 01:00:00",
-            ]
-        ),
-    )
-
-
-@pytest.fixture
 def vertical_model_df_aux() -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -136,37 +117,22 @@ class TestVerticalModelResult:
         with pytest.raises(ValueError, match="name 'z' is reserved "):
             _ = ms.VerticalModelResult(ds_test)
 
-    # ===============
-    # test arguments options for handling duplicates
-    # ===============
-    @pytest.mark.parametrize(
-        "keep_duplicates,expected_removed,expected_z,expected_values",
-        [
-            ("first", 2, [-5.0, -4.0, -3.0], [30.0, 31.0, 32.0]),
-            ("last", 2, [-5.0, -4.0, -3.0], [300.0, 310.0, 32.0]),
-            (False, 4, [-3.0], [32.0]),
-        ],
-    )
-    def test_vertical_model_keep_duplicates_modes(
-        self,
-        vertical_model_df_duplicates,
-        keep_duplicates,
-        expected_removed,
-        expected_z,
-        expected_values,
-    ):
-        with pytest.warns(UserWarning, match=f"Removed {expected_removed} duplicate"):
-            mr = ms.VerticalModelResult(
-                vertical_model_df_duplicates,
+    def test_duplicate_time_z_pairs_raises(self):
+        df = pd.DataFrame(
+            {
+                "z": [-5.0, -4.0, -4.0],
+                "Salinity": [30.0, 31.0, 31.5],
+            },
+            index=[pd.Timestamp("2019-01-01")] * 3,
+        )
+        with pytest.raises(ValueError, match="duplicate \\(time, z\\) entries"):
+            ms.VerticalModelResult(
+                df,
                 item="Salinity",
                 z_item="z",
                 x=12.0,
                 y=55.0,
-                keep_duplicates=keep_duplicates,
             )
-
-        assert list(mr.data["z"].values) == expected_z
-        assert list(mr.data[mr.name].values) == expected_values
 
     # aux items
     def test_vertical_model_aux_items_preserved_and_tagged(self, vertical_model_df_aux):
@@ -263,7 +229,7 @@ class TestVerticalModelResult:
         # ===
 
         # expected element depths from dfsu geometry
-        element_depths_expected = dfsu_col.geometry.calc_ze(dfsu_col._zn)
+        element_depths_expected = dfsu_col.z.elements
 
         # element depths at first timestep from VerticalModelResult
         element_depths_t0 = vmr.data.sel(time=vmr.data.time.values[0]).z.values
@@ -272,6 +238,40 @@ class TestVerticalModelResult:
 
         assert np.allclose(element_depths_t0, element_depths_expected[0, :])
         assert np.allclose(element_depths_tend, element_depths_expected[-1, :])
+
+    def test_extract_from_dfsu_file_matches_dataset(self, dfsu_fpath, dfsu_ds):
+        # A dfsu file takes the Dfsu3D branch, which reads only the observation
+        # column; a Dataset takes the sel(x, y) branch. Both must give the same
+        # z and values.
+        dfsu_mr = ms.DfsuModelResult(dfsu_fpath, item=0, name="test")
+        assert isinstance(dfsu_mr.data, mikeio.dfsu.Dfsu3D)
+
+        dummy_obs = pd.DataFrame(
+            {"z": [-5.0, -4.0, -3.0], "salt": [30.0, 31.0, 32.0]},
+            index=pd.to_datetime(["2022-06-14 00:00:00"] * 3),
+        )
+        XPOS = 6.575e5
+        YPOS = 6.55e6
+        vo = ms.VerticalObservation(dummy_obs, x=XPOS, y=YPOS, item="salt", z_item="z")
+
+        vmr = dfsu_mr.extract(vo, spatial_method="contained")
+        vmr_from_ds = ms.DfsuModelResult(dfsu_ds, item=0, name="test").extract(
+            vo, spatial_method="contained"
+        )
+
+        assert np.allclose(vmr.data.z.values, vmr_from_ds.data.z.values)
+        assert np.allclose(vmr.data["test"].values, vmr_from_ds.data["test"].values)
+
+        # ...and against the dfsu column itself, so both branches breaking the
+        # same way is still a failure
+        dfsu_col = dfsu_ds.sel(x=XPOS, y=YPOS)
+        item_name = dfsu_ds.items[0].name
+        assert np.allclose(vmr.data.z.values, dfsu_col.z.elements.flatten())
+        assert np.allclose(
+            vmr.data["test"].values, dfsu_col[item_name].to_numpy().flatten()
+        )
+        assert vmr.x == pytest.approx(dfsu_col.geometry.element_coordinates[0, 0])
+        assert vmr.y == pytest.approx(dfsu_col.geometry.element_coordinates[0, 1])
 
     @pytest.mark.parametrize("spatial_method", ["nearest", "inverse_distance"])
     def test_extract_from_dfsu_unsupported_spatial_methods_raise(

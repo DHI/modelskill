@@ -6,11 +6,14 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: astral-sh/ruff-action@v2
         with:
           version: 0.6.2
@@ -20,14 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.14"]
+        python-version: ["3.12", "3.14"]
         pandas-version: ["pandas2", "pandas3"]  # TODO: drop pandas2 once 3.x is well-established
-        exclude:
-          - python-version: "3.10"
-            pandas-version: "pandas3"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: extractions/setup-just@v3
 
@@ -38,7 +38,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --group test --group networks --no-dev
+        run: uv sync --group test --group network --no-dev 
 
       - name: Install pandas 2.x
         if: matrix.pandas-version == 'pandas2'
@@ -57,21 +57,21 @@ jobs:
       - name: Test
         run: just test
 
-  build-no-networks:
+  build-no-network:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: extractions/setup-just@v3
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.10"
+          python-version: "3.12"
           enable-cache: true
 
-      - name: Install dependencies (without networks)
+      - name: Install dependencies (without network)
         run: uv sync --group test --no-dev
 
       - name: Test

@@ -1,120 +1,66 @@
 """Test network models and observations"""
 
 # ruff: noqa: E402
-import sys
+from dataclasses import dataclass
+
 import pytest
 
-pytest.importorskip("networkx")
+pytest.importorskip("mikeio1d.network")
 
 import pandas as pd
 import xarray as xr
 import numpy as np
+import mikeio1d
 import modelskill as ms
-from modelskill.model.network import (
+from mikeio1d.network import Network
+from modelskill import (
     NetworkModelResult,
-    NodeModelResult,
+    NodeObservation,
+    Quantity,
+    ReachObservation,
 )
-from modelskill.network import (
-    Network,
-    BasicNode,
-    BasicReach,
+
+from modelskill.model.network import NodeModelResult
+
+from tests.network_helpers import (
+    BREAKPOINT,
+    EPANET,
+    NODE_IDS,
+    POSITION,
+    breakpoint_series,
+    REACH,
+    REACH_ITEM,
+    modified_network,
+    node_series,
+    open_network,
 )
-from modelskill.obs import NodeObservation
-from modelskill.quantity import Quantity
-
-
-def _make_network(node_ids, time, data, quantity="WaterLevel"):
-    nodes = [
-        BasicNode(nid, pd.DataFrame({quantity: data[:, i]}, index=time))
-        for i, nid in enumerate(node_ids)
-    ]
-    reaches = [
-        BasicReach(f"r{i}", nodes[i], nodes[i + 1], length=100.0)
-        for i in range(len(nodes) - 1)
-    ]
-    return Network(reaches)
-
-
-@pytest.fixture
-def sample_network_data():
-    """Sample network data as xr.Dataset"""
-    time = pd.date_range("2010-01-01", periods=10, freq="h")
-    nodes = [123, 456, 789]
-
-    # Create sample data
-    np.random.seed(42)  # For reproducible tests
-    data = np.random.randn(len(time), len(nodes))
-
-    ds = xr.Dataset(
-        {
-            "WaterLevel": (["time", "node"], data),
-        },
-        coords={
-            "time": time,
-            "node": nodes,
-        },
-    )
-    ds["WaterLevel"].attrs["units"] = "m"
-    ds["WaterLevel"].attrs["long_name"] = "Water Level"
-
-    return ds
 
 
 @pytest.fixture
 def sample_network():
-    """Sample Network with 3 nodes (WaterLevel quantity)"""
-    time = pd.date_range("2010-01-01", periods=10, freq="h")
-    np.random.seed(42)
-    data = np.random.randn(10, 3)
-    return _make_network(["123", "456", "789"], time, data)
+    """A MIKE urban result: WaterLevel on its nodes, Discharge on gridpoints.
+
+    A MIKE reach keeps Discharge on one interior gridpoint and WaterLevel on the
+    ones either side, so the break point at BREAKPOINT holds a series neither of
+    the reach's nodes has, and it is the only break point of REACH that does.
+    """
+    return open_network()
 
 
 @pytest.fixture
 def sample_network_multivars():
-    """Sample Network with 2 nodes and 2 quantities (WaterLevel + Discharge)"""
-    time = pd.date_range("2010-01-01", periods=10, freq="h")
-    np.random.seed(42)
-    raw = np.random.randn(10, 2)
-    nodes = [
-        BasicNode(
-            nid,
-            pd.DataFrame(
-                {"WaterLevel": raw[:, i], "Discharge": raw[:, i] * 10},
-                index=time,
-            ),
-        )
-        for i, nid in enumerate(["123", "456"])
-    ]
-    reaches = [BasicReach("r1", nodes[0], nodes[1], length=100.0)]
-    return Network(reaches)
+    """An EPANET result, whose every node carries several quantities at once."""
+    return open_network(EPANET)
 
 
 @pytest.fixture
-def dataset_without_node():
-    time = pd.date_range("2010-01-01", periods=10, freq="h")
+def sample_node_data(sample_network):
+    """Sample node observation data, on the result file's own time axis.
 
-    # Create sample data
-    np.random.seed(42)  # For reproducible tests
-    data = np.random.randn(len(time))
-
-    ds = xr.Dataset(
-        {
-            "WaterLevel": (["time"], data),
-        },
-        coords={
-            "time": time,
-        },
-    )
-    ds["WaterLevel"].attrs["units"] = "m"
-    ds["WaterLevel"].attrs["long_name"] = "Water Level"
-
-    return ds
-
-
-@pytest.fixture
-def sample_node_data():
-    """Sample node observation data"""
-    time = pd.date_range("2010-01-01", periods=10, freq="h")
+    An observation is only matched where it overlaps the model, so it has to be
+    stamped with the times the file has rather than a round decade of its own.
+    """
+    time = node_series(sample_network, nodes=NODE_IDS).index
 
     # Create sample data with some variation
     np.random.seed(42)
@@ -136,26 +82,51 @@ class TestNetworkModelResult:
 
     def test_init_with_network(self, sample_network):
         """Test initialization with a Network object"""
-        nmr = NetworkModelResult(sample_network)
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
 
-        assert len(nmr.time) == 10
-        assert isinstance(nmr.time, pd.DatetimeIndex)
-        assert len(nmr.nodes) == 3
+        assert nmr.period == sample_network.period
+
+    def test_quantity_name_survives_to_the_model_result(self, sample_network):
+        """The network knows its quantity by name even without a unit."""
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
+
+        assert nmr.quantity.name == "WaterLevel"
+        assert nmr.quantity != Quantity.undefined()
+
+    def test_the_unit_comes_from_the_result_file(self, sample_network):
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
+
+        assert nmr.quantity == Quantity(name="WaterLevel", unit="m")
+
+    def test_quantity_carries_into_extracted_node(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
+        extracted = nmr.extract(NodeObservation(sample_node_data, at="1"))
+
+        assert extracted.quantity.name == "WaterLevel"
+
+    def test_explicit_quantity_wins(self, sample_network):
+        given = Quantity(name="Water Level", unit="meter")
+        nmr = NetworkModelResult(sample_network, item="WaterLevel", quantity=given)
+
+        assert nmr.quantity == given
 
     def test_init_with_name(self, sample_network):
         """Test initialization with explicit name"""
-        nmr = NetworkModelResult(sample_network, name="Test_Network")
+        nmr = NetworkModelResult(sample_network, item="WaterLevel", name="Test_Network")
         assert nmr.name == "Test_Network"
 
-    def test_init_with_item_selection(self, sample_network_multivars):
+    def test_init_with_item_selection(self, sample_network_multivars, sample_node_data):
         """Test initialization with specific item selection"""
         nmr = NetworkModelResult(
-            sample_network_multivars, item="WaterLevel", name="Network_WL"
+            sample_network_multivars, item="Head", name="Network_WL"
         )
+        extracted = nmr.extract(NodeObservation(sample_node_data, at="11"))
 
         assert nmr.name == "Network_WL"
-        assert "WaterLevel" in nmr.data.data_vars
-        assert "Discharge" not in nmr.data.data_vars
+        assert nmr.quantity.name == "Head"
+        assert extracted.quantity.name == "Head"
 
     def test_init_fails_with_unsupported_type(self):
         """Test that passing a non-Network object raises an error"""
@@ -164,7 +135,7 @@ class TestNetworkModelResult:
 
     def test_repr(self, sample_network):
         """Test string representation"""
-        nmr = NetworkModelResult(sample_network, name="Test_Network")
+        nmr = NetworkModelResult(sample_network, item="WaterLevel", name="Test_Network")
         repr_str = repr(nmr)
 
         assert "NetworkModelResult" in repr_str
@@ -172,27 +143,26 @@ class TestNetworkModelResult:
 
     def test_extract_valid_node(self, sample_network, sample_node_data):
         """Test extraction of a valid node"""
-        nmr = NetworkModelResult(sample_network)
-        node_id = sample_network.find(node="123")
-        obs = NodeObservation(sample_node_data, at=node_id, name="Node_123")
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
+        node_id = "1"
+        obs = NodeObservation(sample_node_data, at=node_id, name="Node_1")
 
         extracted = nmr.extract(obs)
 
-        assert isinstance(extracted, NodeModelResult)
         assert extracted.node == node_id
-        assert len(extracted.time) == 10
+        assert len(extracted.time) == len(sample_node_data)
 
     def test_extract_invalid_node(self, sample_network, sample_node_data):
         """Test extraction of a node not present in the network"""
-        nmr = NetworkModelResult(sample_network)
-        obs = NodeObservation(sample_node_data, at=999, name="Node_999")
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
+        obs = NodeObservation(sample_node_data, at="999", name="Node_999")
 
-        with pytest.raises(ValueError, match="Node 999 not found"):
+        with pytest.raises(ValueError, match="not found"):
             nmr.extract(obs)
 
     def test_extract_wrong_observation_type(self, sample_network):
         """Test extraction with wrong observation type"""
-        nmr = NetworkModelResult(sample_network)
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
 
         df = pd.DataFrame(
             {"WL": [1, 2, 3]}, index=pd.date_range("2010-01-01", periods=3, freq="h")
@@ -200,9 +170,49 @@ class TestNetworkModelResult:
         obs = ms.PointObservation(df, x=0.0, y=0.0)
 
         with pytest.raises(
-            TypeError, match="NetworkModelResult supports NodeObservation and ReachObservation"
+            TypeError,
+            match="NetworkModelResult supports NodeObservation and ReachObservation",
         ):
             nmr.extract(obs)
+
+
+class TestNodeModelResult:
+    """A model result at one network location, as extract() hands it back."""
+
+    def test_a_dataframe_is_refused(self, sample_node_data):
+        with pytest.raises(TypeError, match="takes an xarray.Dataset"):
+            NodeModelResult(sample_node_data)
+
+    def test_data_located_by_x_and_y_is_refused(self, sample_node_data):
+        ds = xr.Dataset(
+            {"WaterLevel": ("time", sample_node_data["WaterLevel"].to_numpy())},
+            coords={"time": sample_node_data.index, "x": 0.0, "y": 0.0},
+        )
+
+        with pytest.raises(ValueError, match="needs data carrying a 'node' coordinate"):
+            NodeModelResult(ds)
+
+    def test_a_dataset_carrying_a_node_is_accepted(
+        self, sample_network, sample_node_data
+    ):
+        extracted = NetworkModelResult(
+            sample_network, item="WaterLevel", name="Network_Model"
+        ).extract(NodeObservation(sample_node_data, at="1"))
+
+        rebuilt = NodeModelResult(extracted.data)
+
+        assert rebuilt.node == "1"
+        assert rebuilt.data["Network_Model"].attrs["kind"] == "model"
+
+    def test_reading_an_observations_data_leaves_the_observation_alone(
+        self, sample_node_data
+    ):
+        """A result marks its own copy, so the observation stays an observation."""
+        obs = NodeObservation(sample_node_data, at="123", item="WaterLevel")
+
+        NodeModelResult(obs.data)
+
+        assert obs.data["WaterLevel"].attrs["kind"] == "observation"
 
 
 class TestNodeObservation:
@@ -223,26 +233,31 @@ class TestNodeObservation:
         """Test initialization with pandas DataFrame"""
 
         obs = NodeObservation(
-            sample_node_data, at=123, name="Sensor_1", item="WaterLevel"
+            sample_node_data, at="123", name="Sensor_1", item="WaterLevel"
         )
 
-        assert obs.at == 123
+        assert obs.at == "123"
         assert obs.name == "Sensor_1"
-        assert len(obs.time) == 10
+        assert len(obs.time) == len(sample_node_data)
         assert isinstance(obs.time, pd.DatetimeIndex)
+
+    @pytest.mark.parametrize("name", ["node", "reach", "position"])
+    def test_a_network_coordinate_name_is_reserved(self, sample_node_data, name):
+        with pytest.raises(ValueError, match="reserved"):
+            NodeObservation(sample_node_data, at="123", name=name, item="WaterLevel")
 
     def test_init_with_series(self, sample_series):
         """Test initialization with pandas Series"""
-        obs = NodeObservation(sample_series, at=456, name="Node_456")
+        obs = NodeObservation(sample_series, at="456", name="Node_456")
 
-        assert obs.at == 456
+        assert obs.at == "456"
         assert obs.name == "Node_456"
-        assert len(obs.time) == 10
+        assert len(obs.time) == len(sample_series)
 
     def test_node_attrs(self, sample_node_data):
         """Test attrs property"""
         attrs = {"source": "test", "version": "1.0"}
-        obs = NodeObservation(sample_node_data, at=123, attrs=attrs, weight=2.5)
+        obs = NodeObservation(sample_node_data, at="123", attrs=attrs, weight=2.5)
 
         assert obs.attrs["source"] == "test"
         assert obs.attrs["version"] == "1.0"
@@ -253,7 +268,7 @@ class TestNodeObservation:
         """Test that from_multiple returns a list of NodeObservation objects"""
         obs_list = NodeObservation.from_multiple(
             data=multi_data,
-            nodes={123: "station_0", 456: "station_1", 789: "station_2"},
+            nodes={"123": "station_0", "456": "station_1", "789": "station_2"},
         )
 
         assert len(obs_list) == 3
@@ -262,17 +277,17 @@ class TestNodeObservation:
     def test_node_ids_are_assigned_correctly(self, multi_data):
         obs_list = NodeObservation.from_multiple(
             data=multi_data,
-            nodes={123: "station_0", 456: "station_1", 789: "station_2"},
+            nodes={"123": "station_0", "456": "station_1", "789": "station_2"},
         )
 
-        assert obs_list[0].node == 123
-        assert obs_list[1].node == 456
-        assert obs_list[2].node == 789
+        assert obs_list[0].node == "123"
+        assert obs_list[1].node == "456"
+        assert obs_list[2].node == "789"
 
     def test_names_derived_from_column_names(self, multi_data):
         obs_list = NodeObservation.from_multiple(
             data=multi_data,
-            nodes={123: "station_0", 456: "station_1", 789: "station_2"},
+            nodes={"123": "station_0", "456": "station_1", "789": "station_2"},
         )
 
         assert obs_list[0].name == "station_0"
@@ -288,12 +303,12 @@ class TestNodeObservation:
             coords={"time": sample_node_data.index},
         )
         obs_list = NodeObservation.from_multiple(
-            data=ds, nodes={123: "station_0", 456: "station_1"}
+            data=ds, nodes={"123": "station_0", "456": "station_1"}
         )
 
         assert len(obs_list) == 2
-        assert obs_list[0].node == 123
-        assert obs_list[1].node == 456
+        assert obs_list[0].node == "123"
+        assert obs_list[1].node == "456"
 
     def test_nodes_must_be_dict(self, multi_data):
         with pytest.raises(TypeError, match="'nodes' must be a dict"):
@@ -303,7 +318,7 @@ class TestNodeObservation:
         attrs = {"source": "sensor_array", "version": 2}
         obs_list = NodeObservation.from_multiple(
             data=multi_data,
-            nodes={1: "station_0", 2: "station_1", 3: "station_2"},
+            nodes={"1": "station_0", "2": "station_1", "3": "station_2"},
             attrs=attrs,
         )
 
@@ -313,38 +328,38 @@ class TestNodeObservation:
 
     def test_init_from_csv(self):
         obs = NodeObservation(
-            "tests/testdata/network_sensor_1.csv", at=1, item="water_level@sens1"
+            "tests/testdata/network_sensor_1.csv", at="1", item="water_level@sens1"
         )
 
-        assert obs.at == 1
+        assert obs.at == "1"
         assert len(obs.time) == 110
         assert isinstance(obs.time, pd.DatetimeIndex)
 
     def test_from_multiple_csvs_via_dict(self):
         obs_list = NodeObservation.from_multiple(
             nodes={
-                1: "tests/testdata/network_sensor_1.csv",
-                2: "tests/testdata/network_sensor_2.csv",
-                3: "tests/testdata/network_sensor_3.csv",
+                "1": "tests/testdata/network_sensor_1.csv",
+                "2": "tests/testdata/network_sensor_2.csv",
+                "3": "tests/testdata/network_sensor_3.csv",
             }
         )
 
         assert len(obs_list) == 3
         assert all(isinstance(obs, NodeObservation) for obs in obs_list)
-        assert obs_list[0].node == 1
-        assert obs_list[1].node == 2
-        assert obs_list[2].node == 3
+        assert obs_list[0].node == "1"
+        assert obs_list[1].node == "2"
+        assert obs_list[2].node == "3"
         for obs in obs_list:
             assert len(obs.time) > 0
 
     def test_nodes_dict_maps_node_to_item(self, multi_data):
         obs_list = NodeObservation.from_multiple(
-            data=multi_data, nodes={123: "station_0", 456: "station_1"}
+            data=multi_data, nodes={"123": "station_0", "456": "station_1"}
         )
 
         assert len(obs_list) == 2
-        assert obs_list[0].node == 123
-        assert obs_list[1].node == 456
+        assert obs_list[0].node == "123"
+        assert obs_list[1].node == "456"
         assert obs_list[0].name == "station_0"
         assert obs_list[1].name == "station_1"
 
@@ -354,318 +369,564 @@ class TestNodeObservation:
 
     def test_single_node_dict(self, sample_node_data):
         obs_list = NodeObservation.from_multiple(
-            data=sample_node_data, nodes={123: "WaterLevel"}
+            data=sample_node_data, nodes={"123": "WaterLevel"}
         )
 
         assert len(obs_list) == 1
         assert isinstance(obs_list[0], NodeObservation)
-        assert obs_list[0].node == 123
+        assert obs_list[0].node == "123"
+
+    def test_nodes_keys_accept_aliases(self, multi_data):
+        obs_list = NodeObservation.from_multiple(
+            data=multi_data, nodes={"node_A": "station_0", "node_B": "station_1"}
+        )
+
+        assert [obs.at for obs in obs_list] == ["node_A", "node_B"]
+
+    def test_nodes_keys_accept_breakpoints(self, multi_data):
+        obs_list = NodeObservation.from_multiple(
+            data=multi_data,
+            nodes={("reach_1", 24.5): "station_0", ("reach_1", 50.0): "station_1"},
+        )
+
+        assert [obs.at for obs in obs_list] == [("reach_1", 24.5), ("reach_1", 50.0)]
 
 
-class TestNodeModelResult:
-    """Test NodeModelResult class"""
-
-    @pytest.mark.parametrize("fixture_name", ["sample_node_data", "sample_series"])
-    def test_init_(self, request, fixture_name):
-        """Test initialization with pandas DataFrame"""
-        data = request.getfixturevalue(fixture_name)
-        nmr = NodeModelResult(data, node=123, name="Node_123_Model")
-
-        assert nmr.node == 123
-        assert nmr.name == "Node_123_Model"
-        assert len(nmr.time) == 10
-
-
-class TestNetworkIntegration:
-    """Test integration between network models and observations"""
-
-    def test_network_to_node_extraction(self, sample_network, sample_node_data):
-        """Test complete workflow from network model to node extraction"""
-        nmr = NetworkModelResult(sample_network, name="Network_Model")
-        node_id = sample_network.find(node="123")
-        obs = NodeObservation(sample_node_data, at=node_id, name="Node_123_Obs")
-
-        extracted = nmr.extract(obs)
-
-        assert isinstance(extracted, NodeModelResult)
-        assert extracted.node == node_id
-        assert extracted.name == "Network_Model"
-        assert len(extracted.time) == len(obs.time)
-
-    def test_matching_workflow(self, sample_network, sample_node_data):
-        """Test matching workflow with network data"""
-        nmr = NetworkModelResult(sample_network, name="Network_Model")
-        node_id = sample_network.find(node="123")
-        obs = NodeObservation(sample_node_data, at=node_id, name="Node_123_Obs")
-
-        comparer = ms.match(obs, nmr)
-
-        assert comparer is not None
-        assert "Network_Model" in comparer.mod_names
-        assert comparer.n_points > 0
-
-    def test_matching_workflow_multiple_nodes(self, sample_network, sample_node_data):
-        """Test matching workflow with multiple node observations"""
-        nmr = NetworkModelResult(sample_network, name="Network_Model")
-
-        multi_data = pd.DataFrame(
+class TestReachObservationFromMultiple:
+    @pytest.fixture
+    def multi_data(self, sample_node_data):
+        return pd.DataFrame(
             {
-                "station_0": sample_node_data["WaterLevel"],
-                "station_1": sample_node_data["WaterLevel"] + 0.1,
-                "station_2": sample_node_data["WaterLevel"] + 0.2,
+                "station_0": sample_node_data["WaterLevel"].values,
+                "station_1": sample_node_data["WaterLevel"].values + 0.1,
+            },
+            index=sample_node_data.index,
+        )
+
+    def test_returns_list_of_reach_observations(self, multi_data):
+        obs_list = ReachObservation.from_multiple(
+            data=multi_data, reaches={"reach_1": "station_0", "reach_2": "station_1"}
+        )
+
+        assert len(obs_list) == 2
+        assert all(isinstance(obs, ReachObservation) for obs in obs_list)
+        assert [obs.reach for obs in obs_list] == ["reach_1", "reach_2"]
+        assert [obs.name for obs in obs_list] == ["station_0", "station_1"]
+
+    def test_separate_data_sources(self):
+        obs_list = ReachObservation.from_multiple(
+            reaches={
+                "reach_1": "tests/testdata/network_sensor_1.csv",
+                "reach_2": "tests/testdata/network_sensor_2.csv",
             }
         )
 
-        node_0 = sample_network.find(node="123")
-        node_1 = sample_network.find(node="456")
-        node_2 = sample_network.find(node="789")
+        assert [obs.reach for obs in obs_list] == ["reach_1", "reach_2"]
+        assert all(len(obs.time) > 0 for obs in obs_list)
 
-        # Create multiple NodeObservations using .from_multiple
-        obs_list = NodeObservation.from_multiple(
+    def test_attrs_propagated(self, multi_data):
+        obs_list = ReachObservation.from_multiple(
             data=multi_data,
-            nodes={node_0: "station_0", node_1: "station_1", node_2: "station_2"},
+            reaches={"reach_1": "station_0"},
+            attrs={"source": "sensor_array"},
         )
 
-        # Test that matching works
-        comparer_collection = ms.match(obs_list, nmr)
+        assert obs_list[0].attrs["source"] == "sensor_array"
 
-        assert comparer_collection is not None
-        assert len(comparer_collection) == 3
+    def test_reaches_none_raises(self, multi_data):
+        with pytest.raises(ValueError, match="'reaches' argument is required"):
+            ReachObservation.from_multiple(data=multi_data, reaches=None)
 
-        for comparer in comparer_collection:
-            assert "Network_Model" in comparer.mod_names
-            assert comparer.n_points > 0
+    def test_reaches_must_be_dict(self, multi_data):
+        with pytest.raises(TypeError, match="'reaches' must be a dict"):
+            ReachObservation.from_multiple(data=multi_data, reaches="reach_1")
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
+class TestValuesReachTheComparer:
+    """The series a comparer holds is the one the network keeps at that location.
+
+    The observation is built from the model's own data, so an exact match is the
+    expected outcome and any mix-up between locations, quantities or models shows
+    up as a non-zero score.
+    """
+
+    def test_extract_returns_the_nodes_own_series(self, sample_network):
+        values = node_series(sample_network, nodes=NODE_IDS)
+        nmr = NetworkModelResult(
+            sample_network, item="WaterLevel", name="Network_Model"
+        )
+        obs = NodeObservation(values, at="2", item="2")
+
+        extracted = nmr.extract(obs)
+
+        assert extracted.to_dataframe()["Network_Model"].to_numpy() == pytest.approx(
+            values["2"].to_numpy()
+        )
+
+    def test_a_matched_node_scores_zero_against_its_own_series(self, sample_network):
+        values = node_series(sample_network, nodes=NODE_IDS)
+        nmr = NetworkModelResult(
+            sample_network, item="WaterLevel", name="Network_Model"
+        )
+        obs = NodeObservation(values, at="2", item="2", name="Node_2_Obs")
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.n_points == len(values)
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+    def test_every_node_of_a_collection_keeps_its_own_series(self, sample_network):
+        """One observation per node, each read from that node's own column."""
+        values = node_series(sample_network, nodes=NODE_IDS)
+        nmr = NetworkModelResult(
+            sample_network, item="WaterLevel", name="Network_Model"
+        )
+        obs_list = NodeObservation.from_multiple(
+            data=values, nodes={nid: nid for nid in values.columns}
+        )
+
+        cc = ms.match(obs_list, nmr)
+
+        assert len(cc) == 3
+        for cmp in cc:
+            assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+    def test_two_networks_keep_their_series_apart(self, sample_network, tmp_path):
+        """The second network is the first shifted by 0.1.
+
+        A crossed model column would put that shift on the wrong name.
+        """
+        values = node_series(sample_network, nodes=NODE_IDS)
+        shifted = modified_network(tmp_path, offset=0.1)
+        obs = NodeObservation(values, at="2", item="2", name="Node_2_Obs")
+
+        cmp = ms.match(
+            obs,
+            [
+                NetworkModelResult(sample_network, item="WaterLevel", name="Network_1"),
+                NetworkModelResult(shifted, item="WaterLevel", name="Network_2"),
+            ],
+        )
+
+        bias = cmp.score(metric="bias")
+        assert bias["Network_1"] == pytest.approx(0.0, abs=1e-9)
+        assert bias["Network_2"] == pytest.approx(0.1, abs=1e-4)
+
+    def test_a_matched_breakpoint_scores_zero_against_its_own_series(
+        self, sample_network
+    ):
+        """The break point's data sits on neither of the reach's nodes."""
+        values = breakpoint_series(sample_network)
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
+        obs = NodeObservation(values, at=BREAKPOINT, name="BP_Obs")
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.n_points == len(values)
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0, abs=1e-9)
+
+    def test_a_matched_reach_scores_zero_against_its_breakpoints_series(
+        self, sample_network
+    ):
+        values = breakpoint_series(sample_network)
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
+        obs = ReachObservation(values, reach=REACH, name="Reach_Obs")
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.n_points == len(values)
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0, abs=1e-9)
+
+    def test_the_selected_item_brings_its_own_values(self, sample_network_multivars):
+        """Discharge is ten times WaterLevel here, so the selected column cannot
+        pass for the one left behind."""
+        discharge = node_series(sample_network_multivars, "Pressure")
+        nmr = NetworkModelResult(
+            sample_network_multivars, item="Pressure", name="Network_Model"
+        )
+        obs = NodeObservation(discharge, at="11", item="11")
+
+        extracted = nmr.extract(obs)
+
+        assert extracted.to_dataframe()["Network_Model"].to_numpy() == pytest.approx(
+            discharge["11"].to_numpy()
+        )
+
+    def test_a_matched_item_scores_zero_against_its_own_series(
+        self, sample_network_multivars
+    ):
+        discharge = node_series(sample_network_multivars, "Pressure")
+        nmr = NetworkModelResult(
+            sample_network_multivars, item="Pressure", name="Network_Model"
+        )
+        obs = NodeObservation(discharge, at="11", item="11", name="Node_11_Obs")
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+    def test_an_observations_aux_item_brings_its_own_values(self, sample_network):
+        """An auxiliary column of the observation reaches the comparer intact."""
+        water_level = node_series(sample_network, nodes=NODE_IDS)
+        nmr = NetworkModelResult(
+            sample_network, item="WaterLevel", name="Network_Model"
+        )
+        sensor = pd.DataFrame(
+            {
+                "WaterLevel": water_level["1"],
+                "battery": np.arange(len(water_level), dtype=float),
+            }
+        )
+        obs = NodeObservation(
+            sensor, at="1", item="WaterLevel", aux_items=["battery"], name="Node_1"
+        )
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.data["battery"].attrs["kind"] == "aux"
+        assert cmp.data["battery"].to_numpy() == pytest.approx(
+            sensor["battery"].to_numpy()
+        )
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+    def test_a_reach_observations_aux_item_brings_its_own_values(self, sample_network):
+        """The break point path carries the observation's auxiliaries too."""
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
+        model = breakpoint_series(sample_network)["Discharge"]
+        sensor = pd.DataFrame(
+            {
+                "Discharge": model.to_numpy(),
+                "battery": np.arange(len(model), dtype=float),
+            },
+            index=model.index,
+        )
+        obs = ms.ReachObservation(
+            sensor,
+            reach=REACH,
+            item="Discharge",
+            aux_items=["battery"],
+            name="Reach_100l1",
+        )
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.data["battery"].attrs["kind"] == "aux"
+        assert cmp.data["battery"].to_numpy() == pytest.approx(
+            sensor["battery"].to_numpy()
+        )
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0, abs=1e-9)
+
+    def test_an_aux_item_brings_its_own_values(self, sample_network_multivars):
+        """The aux item rides alongside the scored one, and holds its own series."""
+        water_level = node_series(sample_network_multivars, "Head")
+        discharge = node_series(sample_network_multivars, "Pressure")
+        nmr = NetworkModelResult(
+            sample_network_multivars,
+            item="Head",
+            aux_items=["Pressure"],
+            name="Network_Model",
+        )
+        obs = NodeObservation(water_level, at="11", item="11", name="Node_11_Obs")
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.data["Pressure"].attrs["kind"] == "aux"
+        assert cmp.data["Pressure"].to_numpy() == pytest.approx(
+            discharge["11"].to_numpy()
+        )
+        assert cmp.score()["Network_Model"] == pytest.approx(0.0)
+
+
+@dataclass(frozen=True)
+class ResultFile:
+    """A result file, and locations in it worth scoring.
+
+    A named node carries `node_item`; `reach` carries `reach_item` along its
+    break points, one of which sits at `position`.
+    """
+
+    path: str
+    node_item: str
+    node: str
+    reach_item: str
+    reach: str
+    position: float
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        ResultFile(
+            path="./tests/testdata/network.res1d",
+            node_item="WaterLevel",
+            node="1",
+            reach_item="Discharge",
+            reach="100l1",
+            position=23.8413574216414,
+        ),
+        # EPANET results are read together with the .resx companion sitting
+        # beside them, which mikeio1d finds from the .res path itself.
+        ResultFile(
+            path="./tests/testdata/epanet.res",
+            node_item="Head",
+            node="10",
+            reach_item="Flow",
+            reach="10",
+            position=0.0,
+        ),
+    ],
+    ids=["res1d", "epanet"],
 )
-def test_open_res1d():
-    path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
-    assert network.graph.number_of_nodes() == 259
+class TestResultFile:
+    """The formats NetworkModelResult claims to open, opened."""
+
+    @staticmethod
+    def _observation_for(mr, item):
+        """Data shaped for `mr`, to name a location with. Its values go unused."""
+        time = pd.date_range(*mr.period, periods=10)
+        return pd.DataFrame({item: np.arange(len(time), dtype=float)}, index=time)
+
+    def test_a_model_result_can_be_built_from_a_result_file(self, case):
+        mr = NetworkModelResult(case.path, item=case.node_item)
+
+        assert mr.quantity.name == case.node_item
+        assert mr.period[0] < mr.period[1]
+
+    def test_model_result_recognises_the_result_file(self, case):
+        mr = ms.model_result(case.path, item=case.node_item)
+
+        assert isinstance(mr, NetworkModelResult)
+
+    def test_a_model_result_carries_the_files_own_values(self, case):
+        """Checked against mikeio1d's own read of the file.
+
+        That read goes straight to the result file, not through the Network the
+        model result is built on, so the two agreeing pins the whole way in.
+        """
+        expected = mikeio1d.open(case.path).nodes.read()[
+            f"{case.node_item}:{case.node}"
+        ]
+        mr = NetworkModelResult(case.path, item=case.node_item, name="Network_Model")
+        obs = NodeObservation(expected, at=case.node, name="Node_Obs")
+
+        extracted = mr.extract(obs)
+
+        assert extracted.to_dataframe()["Network_Model"].to_numpy() == pytest.approx(
+            expected.to_numpy()
+        )
+
+    def test_a_named_node_extracts_at_that_node(self, case):
+        mr = NetworkModelResult(case.path, item=case.node_item)
+        obs = NodeObservation(self._observation_for(mr, case.node_item), at=case.node)
+
+        extracted = mr.extract(obs)
+
+        assert extracted.node == case.node
+
+    def test_a_break_point_extracts_at_the_networks_own_position(self, case):
+        mr = NetworkModelResult(case.path, item=case.reach_item)
+        obs = NodeObservation(
+            self._observation_for(mr, case.reach_item), at=(case.reach, case.position)
+        )
+
+        extracted = mr.extract(obs)
+
+        assert extracted.at == (case.reach, case.position)
+
+    def test_a_reach_extracts_to_one_of_its_break_points(self, case):
+        mr = NetworkModelResult(case.path, item=case.reach_item, name="network_model")
+        obs = ms.ReachObservation(
+            self._observation_for(mr, case.reach_item), reach=case.reach
+        )
+
+        extracted = mr.extract(obs)
+
+        assert extracted.name == "network_model"
+        reach, position = extracted.at
+        assert reach == case.reach
+        assert position == pytest.approx(case.position)
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_extract_reach_observation_happy_path(sample_node_data):
-    path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
-    nmr = NetworkModelResult(network, item="Discharge", name="network_model")
-    obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
-    obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
-
-    extracted = nmr.extract(obs)
-
-    assert isinstance(extracted, NodeModelResult)
-    assert extracted.name == "network_model"
-    assert extracted.node in nmr.nodes
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
 def test_extract_reach_observation_non_equivalent_breakpoints_raises(sample_node_data):
     path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
+    network = Network.open(path_to_file)
     nmr = NetworkModelResult(network, item="Discharge")
     obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
     obs = ms.ReachObservation(obs_data, reach="113l1", item="Discharge")
 
-    with pytest.raises(
-        ValueError, match="Not all data in breakpoints are equivalent"
-    ):
+    with pytest.raises(ValueError, match="Not all data in breakpoints are equivalent"):
         nmr.extract(obs)
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_extract_reach_observation_with_reaches_not_populated_raises_valueerror(
+def test_extract_reach_whose_breakpoints_carry_no_values_raises_valueerror(
+    sample_node_data, tmp_path
+):
+    """A break point can name a quantity and hold nothing for it.
+
+    The sibling case, a reach whose break points never named the quantity, is
+    covered by the test below; the network is what tells the two apart.
+    """
+    blank = modified_network(tmp_path, blank=True)
+    nmr = NetworkModelResult(blank, item="WaterLevel")
+    obs = ms.ReachObservation(sample_node_data, reach=REACH, item="WaterLevel")
+
+    with pytest.raises(ValueError, match="none of them carry values for it"):
+        nmr.extract(obs)
+
+
+def test_extract_reach_whose_breakpoints_do_not_carry_the_quantity_raises_valueerror(
     sample_node_data,
 ):
-    path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file, reaches=[])
+    """Head is an EPANET node quantity, so no break point of a pipe carries it."""
+    nmr = NetworkModelResult(EPANET, item="Head")
+    obs = ms.ReachObservation(sample_node_data, reach="10", item="WaterLevel")
+
+    with pytest.raises(ValueError, match="none of its breakpoints carry quantity"):
+        nmr.extract(obs)
+
+
+def test_extract_reach_not_in_the_network_raises_keyerror(
+    sample_network, sample_node_data
+):
+    nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
+    obs = ms.ReachObservation(sample_node_data, reach="no_such_reach")
+
+    with pytest.raises(KeyError, match="no_such_reach"):
+        nmr.extract(obs)
+
+
+def test_extract_breakpoint_without_data_for_the_quantity_raises_valueerror(
+    sample_node_data,
+):
+    """MIKE 1D stores WaterLevel and Discharge at alternating grid points, so a
+    breakpoint that exists can still hold nothing for the selected quantity."""
+    network = Network.open("./tests/testdata/network.res1d")
     nmr = NetworkModelResult(network, item="WaterLevel")
-    obs = ms.ReachObservation(sample_node_data, reach="100l1", item="WaterLevel")
+    obs = ms.NodeObservation(sample_node_data, at=("94l1", 21.285), item="WaterLevel")
 
-    with pytest.raises(ValueError, match="none of its breakpoints have data loaded"):
+    with pytest.raises(ValueError, match="no data for quantity 'WaterLevel'"):
         nmr.extract(obs)
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_extract_reach_observation_breakpoint_node_missing_raises_valueerror(
-    sample_node_data,
-):
-    path_to_file = "./tests/testdata/network.res1d"
-    network = Network.from_res1d(path_to_file)
-    nmr = NetworkModelResult(network, item="Discharge")
-    obs_data = sample_node_data.rename(columns={"WaterLevel": "Discharge"})
-    baseline_obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
-    node_id = nmr.extract(baseline_obs).node
-    remaining_nodes = []
-    for node in nmr.data.node.values:
-        node_int = int(node)
-        if node_int != node_id:
-            remaining_nodes.append(node_int)
-    nmr.data = nmr.data.sel(node=remaining_nodes)
-
-    obs = ms.ReachObservation(obs_data, reach="100l1", item="Discharge")
-
-    with pytest.raises(ValueError, match="matching breakpoint nodes are missing"):
-        nmr.extract(obs)
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_from_res1d_nodes_filter_creates_full_network():
-    """When nodes is specified, the full network topology is created."""
-    path_to_file = "./tests/testdata/network.res1d"
-    full_network = Network.from_res1d(path_to_file)
-
-    selected_nodes = ["1", "108"]
-    partial_network = Network.from_res1d(path_to_file, nodes=selected_nodes)
-
-    # Full topology is preserved
-    assert (
-        partial_network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
-    )
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_from_res1d_nodes_filter_only_selected_have_data():
-    """When nodes is specified, only selected nodes contain non-empty data."""
-    path_to_file = "./tests/testdata/network.res1d"
-
-    selected_nodes = ["1", "108"]
-    network = Network.from_res1d(path_to_file, nodes=selected_nodes, reaches=[])
-    g = network.graph.copy()
-
-    n_nodes = network.graph.number_of_nodes()
-    assert sum([g.nodes[n]["data"].empty for n in g.nodes]) == n_nodes - 2
-    for n in selected_nodes:
-        assert not g.nodes[network.find(n)]["data"].empty
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_from_res1d_nodes_single_string():
-    """nodes argument accepts a single string (not just a list)."""
-    path_to_file = "./tests/testdata/network.res1d"
-    full_network = Network.from_res1d(path_to_file)
-
-    network = Network.from_res1d(path_to_file, nodes="108", reaches=[])
-    g = network.graph.copy()
-
-    assert g.number_of_nodes() == full_network.graph.number_of_nodes()
-
-    nodes_with_data = [n for n in g.nodes if not g.nodes[n]["data"].empty]
-    nodes_with_data = [network.recall(n)["node"] for n in nodes_with_data]
-    assert nodes_with_data == ["108"]
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_dataframe_from_partial_network():
-    """nodes argument accepts a single string (not just a list)."""
-    path_to_file = "./tests/testdata/network.res1d"
-    selected_nodes = ["108", "101"]
-    network = Network.from_res1d(path_to_file, nodes=selected_nodes, reaches=[])
-    nodes_in_df = network.to_dataframe().droplevel(axis=1, level=1).columns
-
-    assert set(nodes_in_df) == set([network.find(n) for n in selected_nodes])
-
-
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="mikeio1d requires Python < 3.14"
-)
-def test_from_res1d_empty_nodes_and_reaches_keeps_topology_and_empty_outputs():
-    path_to_file = "./tests/testdata/network.res1d"
-    full_network = Network.from_res1d(path_to_file)
-    network = Network.from_res1d(path_to_file, nodes=[], reaches=[])
-
-    assert network.graph.number_of_nodes() == full_network.graph.number_of_nodes()
-
-    df = network.to_dataframe()
-    assert df.empty
-    assert isinstance(df.columns, pd.MultiIndex)
-    assert df.columns.names == ["node", "quantity"]
-    assert df.index.name == "time"
-
-    ds = network.to_dataset()
-    assert isinstance(ds, xr.Dataset)
-    assert len(ds.data_vars) == 0
-
-
-# ---------------------------------------------------------------------------
-# NodeObservation — alias / breakpoint node forms
-# ---------------------------------------------------------------------------
 
 
 class TestNodeObservationAliases:
-    """NodeObservation accepts int, str alias, and (reach, distance) tuple."""
+    """NodeObservation accepts a node name or a (reach, position) tuple."""
 
-    def test_integer_node_unchanged(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, at=42)
-        assert obs.at == 42
-        assert isinstance(obs.at, int)
-
-    def test_integer_node_coord(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, at=42)
-        assert "node" in obs.data.coords
-        assert int(obs.data.coords["node"].item()) == 42
+    @pytest.mark.parametrize("at", [42, np.int64(42)])
+    def test_an_integer_is_refused(self, sample_node_data, at):
+        with pytest.raises(TypeError, match="not an integer"):
+            NodeObservation(sample_node_data, at=at)
 
     def test_string_alias_stored(self, sample_node_data):
         obs = NodeObservation(sample_node_data, at="node_A", name="test")
         assert obs.at == "node_A"
         assert isinstance(obs.at, str)
+        assert obs.gtype == "node"
 
-    def test_string_alias_has_node_coord(self, sample_node_data):
+    def test_a_named_node_knows_its_node(self, sample_node_data):
         obs = NodeObservation(sample_node_data, at="node_A")
-        assert "node" in obs.data.coords
-        assert obs.data.coords["node"].item() == "node_A"
-
-    def test_string_alias_gtype_is_node(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, at="node_A")
-        assert obs.data.attrs["gtype"] == "node"
+        assert obs.node == "node_A"
 
     def test_tuple_node_stored(self, sample_node_data):
         obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
         assert obs.at == ("reach_1", 24.5)
         assert isinstance(obs.at, tuple)
+        assert obs.gtype == "node"
 
-    def test_tuple_node_gtype_is_node(self, sample_node_data):
+    def test_a_breakpoint_has_no_node_name(self, sample_node_data):
+        """`node` names a junction; a breakpoint is placed along a reach instead."""
         obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
-        assert obs.data.attrs["gtype"] == "node"
+        assert obs.node is None
 
-    def test_tuple_node_has_reach_distance_coords(self, sample_node_data):
+    def test_a_breakpoint_survives_trimming(self, sample_node_data):
         obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
-        assert "reach" in obs.data.coords
-        assert "distance" in obs.data.coords
-        assert str(obs.data.coords["reach"].item()) == "reach_1"
-        assert float(obs.data.coords["distance"].item()) == pytest.approx(24.5)
 
-    def test_tuple_node_has_no_node_coord(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
-        assert "node" not in obs.data.coords
+        trimmed = obs.trim(start_time=obs.time[1], end_time=obs.time[-1])
 
-    def test_tuple_node_roundtrip_via_create_new_instance(self, sample_node_data):
-        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5))
-        obs2 = obs._create_new_instance(obs.data)
-        assert obs2.at == ("reach_1", 24.5)
+        assert trimmed.at == ("reach_1", 24.5)
+        assert len(trimmed) == len(obs) - 1
 
-    def test_string_roundtrip_via_create_new_instance(self, sample_node_data):
+    def test_a_position_tol_survives_trimming(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at=("reach_1", 24.5), position_tol=2.0)
+
+        trimmed = obs.trim(start_time=obs.time[1], end_time=obs.time[-1])
+
+        assert trimmed.position_tol == 2.0
+
+    @pytest.mark.parametrize("tol", [-1.0, np.inf, np.nan])
+    def test_an_invalid_position_tol_is_refused(self, sample_node_data, tol):
+        with pytest.raises(ValueError, match="position_tol"):
+            NodeObservation(sample_node_data, at=("reach_1", 24.5), position_tol=tol)
+
+    def test_a_named_node_observation_survives_trimming(self, sample_node_data):
         obs = NodeObservation(sample_node_data, at="node_A")
-        obs2 = obs._create_new_instance(obs.data)
-        assert obs2.at == "node_A"
+
+        trimmed = obs.trim(start_time=obs.time[1], end_time=obs.time[-1])
+
+        assert trimmed.at == "node_A"
+        assert len(trimmed) == len(obs) - 1
+
+
+class TestReuseOfAValidatedDataset:
+    """Data that has been through modelskill already knows where it sits.
+
+    The constructors cannot re-place it, so a location that disagrees with the
+    one the data carries is refused rather than dropped.
+    """
+
+    def test_the_location_the_data_carries_is_accepted(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at="123", item="WaterLevel")
+
+        rebuilt = NodeObservation(obs.data, at="123")
+
+        assert rebuilt.at == "123"
+
+    def test_a_conflicting_node_is_refused(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at="123", item="WaterLevel")
+
+        with pytest.raises(ValueError, match="already sits at"):
+            NodeObservation(obs.data, at="456")
+
+    def test_a_break_point_rebuilt_at_its_own_position_is_accepted(
+        self, sample_node_data
+    ):
+        obs = NodeObservation(sample_node_data, at=("r1", 50.0), item="WaterLevel")
+
+        rebuilt = NodeObservation(obs.data, at=("r1", 50.0))
+
+        assert rebuilt.at == ("r1", 50.0)
+
+    def test_a_conflicting_break_point_is_refused(self, sample_node_data):
+        obs = NodeObservation(sample_node_data, at=("r1", 50.0), item="WaterLevel")
+
+        with pytest.raises(ValueError, match="already sits at"):
+            NodeObservation(obs.data, at=("r1", 75.0))
+
+    def test_data_with_no_network_location_is_refused(self, sample_node_data):
+        """A point observation knows where it sits, but not as a network does."""
+        obs = ms.PointObservation(sample_node_data, x=0.0, y=0.0, item="WaterLevel")
+
+        with pytest.raises(ValueError, match="no network location"):
+            NodeObservation(obs.data, at="123")
+
+    def test_the_reach_the_data_carries_is_accepted(self, sample_node_data):
+        obs = ReachObservation(sample_node_data, reach="r1", item="WaterLevel")
+
+        rebuilt = ReachObservation(obs.data, reach="r1")
+
+        assert rebuilt.reach == "r1"
+
+    def test_a_conflicting_reach_is_refused(self, sample_node_data):
+        obs = ReachObservation(sample_node_data, reach="r1", item="WaterLevel")
+
+        with pytest.raises(ValueError, match="already sits at"):
+            ReachObservation(obs.data, reach="r2")
+
+    def test_a_break_points_data_is_not_reach_level(self, sample_node_data):
+        """A chainage is a narrower claim than the reach it lies on."""
+        obs = NodeObservation(sample_node_data, at=("r1", 50.0), item="WaterLevel")
+
+        with pytest.raises(ValueError, match="chainage"):
+            ReachObservation(obs.data, reach="r1")
 
 
 # ---------------------------------------------------------------------------
@@ -674,114 +935,269 @@ class TestNodeObservationAliases:
 
 
 class TestNetworkModelResultAliasResolution:
-    """NetworkModelResult.extract() resolves str and tuple aliases via alias_map."""
+    """extract() resolves a node name or a (reach, position) pair to a location."""
 
-    def test_network_stored(self, sample_network):
-        nmr = NetworkModelResult(sample_network)
-        assert hasattr(nmr, "network")
-        assert "123" in nmr.network._alias_map
-        assert "456" in nmr.network._alias_map
-        assert "789" in nmr.network._alias_map
+    def test_the_network_is_kept_as_given(self, sample_network):
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
+
+        assert nmr.network is sample_network
 
     def test_extract_with_string_alias(self, sample_network, sample_node_data):
-        nmr = NetworkModelResult(sample_network)
-        obs = NodeObservation(sample_node_data, at="123", name="Node_123")
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
+        obs = NodeObservation(sample_node_data, at="1", name="Node_1")
+
         extracted = nmr.extract(obs)
-        expected_id = sample_network.find(node="123")
-        assert isinstance(extracted, NodeModelResult)
-        assert extracted.node == expected_id
+
+        assert extracted.node == "1"
 
     def test_extract_string_alias_wrong_key_raises(
         self, sample_network, sample_node_data
     ):
-        nmr = NetworkModelResult(sample_network)
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
         obs = NodeObservation(sample_node_data, at="nonexistent_node")
+
         with pytest.raises(ValueError, match="not found"):
             nmr.extract(obs)
 
     def test_extract_with_tuple_breakpoint(self, sample_network, sample_node_data):
-        """Tuple alias is resolved via _alias_map (mapping injected for this test)."""
-        nmr = NetworkModelResult(sample_network)
-        existing_int = int(sample_network.find(node="123"))
-        nmr.network._alias_map[("reach_test", 10.0)] = existing_int
-        obs = NodeObservation(sample_node_data, at=("reach_test", 10.0))
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
+        obs = NodeObservation(sample_node_data, at=BREAKPOINT)
+
         extracted = nmr.extract(obs)
-        assert extracted.node == existing_int
+
+        assert extracted.at == BREAKPOINT
 
     def test_extract_with_tuple_breakpoint_tolerance(
         self, sample_network, sample_node_data
     ):
-        nmr = NetworkModelResult(sample_network)
-        existing_int = int(sample_network.find(node="123"))
-        base_distance = 10.0
-        tol = NetworkModelResult._CHAINAGE_TOLERANCE
-        nmr.network._alias_map[("reach_test", base_distance)] = existing_int
-        obs = NodeObservation(
-            sample_node_data, at=("reach_test", base_distance + tol / 2)
-        )
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
+        obs = NodeObservation(sample_node_data, at=(REACH, POSITION + 5e-4))
+
         extracted = nmr.extract(obs)
-        assert extracted.node == existing_int
+
+        # The position recorded is the network's own, not the one typed.
+        assert extracted.at == BREAKPOINT
 
     def test_extract_with_tuple_breakpoint_outside_tolerance_raises(
         self, sample_network, sample_node_data
     ):
-        nmr = NetworkModelResult(sample_network)
-        existing_int = int(sample_network.find(node="123"))
-        base_distance = 10.0
-        tol = NetworkModelResult._CHAINAGE_TOLERANCE
-        nmr.network._alias_map[("reach_test", base_distance)] = existing_int
-        obs = NodeObservation(
-            sample_node_data, at=("reach_test", base_distance + tol + 1e-4)
-        )
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
+        obs = NodeObservation(sample_node_data, at=(REACH, 50.0 + 2e-3))
+
         with pytest.raises(ValueError, match="not found"):
             nmr.extract(obs)
 
-    def test_extract_with_tuple_breakpoint_uses_closest_within_tolerance(
+    def test_extract_with_a_wider_position_tol_snaps_to_the_breakpoint(
         self, sample_network, sample_node_data
     ):
-        nmr = NetworkModelResult(sample_network)
-        base_distance = 10.0
-        tol = NetworkModelResult._CHAINAGE_TOLERANCE
-        node_a = int(sample_network.find(node="123"))
-        node_b = int(sample_network.find(node="456"))
-        nmr.network._alias_map[("reach_test", base_distance + 2e-4)] = node_a
-        nmr.network._alias_map[("reach_test", base_distance + 8e-4)] = node_b
-
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
         obs = NodeObservation(
-            sample_node_data, at=("reach_test", base_distance + tol * 0.6)
+            sample_node_data, at=(REACH, POSITION - 3.0), position_tol=5.0
         )
-        extracted = nmr.extract(obs)
-        assert extracted.node == node_b
 
-    def test_extract_with_tuple_breakpoint_tie_uses_smallest_node_id(
+        extracted = nmr.extract(obs)
+
+        assert extracted.at == BREAKPOINT
+
+    def test_extract_snaps_past_a_closer_breakpoint_that_lacks_the_item(
         self, sample_network, sample_node_data
     ):
-        nmr = NetworkModelResult(sample_network)
-        base_distance = 10.0
-        tol = NetworkModelResult._CHAINAGE_TOLERANCE
-        node_a = int(sample_network.find(node="123"))
-        node_b = int(sample_network.find(node="456"))
-        nmr.network._alias_map[("reach_test", base_distance + 4e-4)] = node_a
-        nmr.network._alias_map[("reach_test", base_distance + 8e-4)] = node_b
-
+        """WaterLevel and Discharge alternate along a reach, so the nearest
+        breakpoint to a chainage may not carry the item being scored."""
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
         obs = NodeObservation(
-            sample_node_data, at=("reach_test", base_distance + tol * 0.6)
+            sample_node_data, at=(REACH, POSITION + 6.0), position_tol=20.0
         )
+
         extracted = nmr.extract(obs)
-        assert extracted.node == min(node_a, node_b)
+
+        assert extracted.at == sample_network.addresses(reach=REACH)[-1]
+
+    def test_extract_outside_a_wider_position_tol_raises(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM)
+        obs = NodeObservation(
+            sample_node_data, at=(REACH, POSITION - 3.0), position_tol=1.0
+        )
+
+        with pytest.raises(ValueError, match="not found.*position_tol"):
+            nmr.extract(obs)
 
     def test_extract_tuple_alias_wrong_key_raises(
         self, sample_network, sample_node_data
     ):
-        nmr = NetworkModelResult(sample_network)
+        nmr = NetworkModelResult(sample_network, item="WaterLevel")
         obs = NodeObservation(sample_node_data, at=("nonexistent_reach", 0.0))
+
         with pytest.raises(ValueError, match="not found"):
             nmr.extract(obs)
 
-    def test_match_with_string_alias(self, sample_network, sample_node_data):
-        """Full ms.match() workflow works end-to-end with a string alias."""
-        nmr = NetworkModelResult(sample_network, name="Network_Model")
-        obs = NodeObservation(sample_node_data, at="123", name="Node_123")
-        comparer = ms.match(obs, nmr)
-        assert comparer.n_points > 0
-        assert "Network_Model" in comparer.mod_names
+
+# ======================== location identity ========================
+
+
+class TestLocationIdentity:
+    """A network timeseries is identified by the name its network gave it."""
+
+    def test_breakpoint_observation_converts_to_a_dataframe(self, sample_node_data):
+        obs = ms.NodeObservation(sample_node_data, at=("r1", 24.5), item="WaterLevel")
+
+        df = obs.to_dataframe()
+
+        assert list(df.columns) == ["WaterLevel"]
+        assert len(df) == len(sample_node_data)
+
+    def test_reach_observation_converts_to_a_dataframe(self, sample_node_data):
+        obs = ms.ReachObservation(sample_node_data, reach="r1", item="WaterLevel")
+
+        df = obs.to_dataframe()
+
+        assert list(df.columns) == ["WaterLevel"]
+
+    @pytest.mark.parametrize(
+        "at, item, node",
+        [("1", "WaterLevel", "1"), (BREAKPOINT, REACH_ITEM, None)],
+        ids=["named node", "break point"],
+    )
+    def test_observation_model_result_and_comparer_agree_on_location(
+        self, sample_network, sample_node_data, at, item, node
+    ):
+        nmr = NetworkModelResult(sample_network, item=item, name="Network_Model")
+        obs = ms.NodeObservation(sample_node_data, at=at, name="Obs")
+
+        cmp = ms.match(obs, nmr)
+        mod = cmp.raw_mod_data["Network_Model"]
+
+        assert obs.at == mod.at == cmp.at == at
+        assert obs.node == mod.node == cmp.node == node
+
+    def test_a_snapped_chainage_stays_on_the_comparer_as_typed(
+        self, sample_network, sample_node_data
+    ):
+        """position_tol snaps the model onto a breakpoint; the comparer and its
+        raw model result keep the chainage the user gave, so several models with
+        different grids share it."""
+        typed = (REACH, POSITION - 3.0)
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
+        obs = ms.NodeObservation(sample_node_data, at=typed, position_tol=5.0)
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.at == typed
+        assert cmp.raw_mod_data["Network_Model"].at == typed
+
+    def test_a_matched_breakpoint_records_its_chainage(
+        self, sample_network, sample_node_data
+    ):
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
+        obs = ms.NodeObservation(sample_node_data, at=BREAKPOINT, name="BP")
+
+        cmp = ms.match(obs, nmr)
+
+        assert cmp.gtype == "node"
+        assert cmp.node is None
+        assert cmp.reach == REACH
+        assert cmp.position == pytest.approx(POSITION)
+
+    def test_a_matched_reach_and_its_model_sit_on_the_reach(
+        self, sample_network, sample_node_data
+    ):
+        """The comparer and its raw model result sit where the observation
+        sits, the whole reach, whichever breakpoint the model was read from."""
+        nmr = NetworkModelResult(sample_network, item=REACH_ITEM, name="Network_Model")
+        obs = ms.ReachObservation(sample_node_data, reach=REACH, name="Reach")
+
+        cmp = ms.match(obs, nmr)
+
+        assert obs.at == cmp.at == REACH
+        assert cmp.gtype == "reach"
+        assert cmp.reach == REACH
+        assert cmp.position is None
+        assert cmp.raw_mod_data["Network_Model"].at == REACH
+
+    @pytest.mark.parametrize(
+        "make_obs, item, location",
+        [
+            (lambda d: ms.NodeObservation(d, at="1"), "WaterLevel", "Location: 1"),
+            (
+                lambda d: ms.NodeObservation(d, at=BREAKPOINT),
+                REACH_ITEM,
+                f"Location: {BREAKPOINT}",
+            ),
+            (
+                lambda d: ms.ReachObservation(d, reach=REACH),
+                REACH_ITEM,
+                f"Location: {REACH}",
+            ),
+        ],
+        ids=["named node", "break point", "reach"],
+    )
+    def test_comparer_repr_shows_its_location(
+        self, sample_network, sample_node_data, make_obs, item, location
+    ):
+        nmr = NetworkModelResult(sample_network, item=item, name="Network_Model")
+
+        cmp = ms.match(make_obs(sample_node_data), nmr)
+
+        assert location in repr(cmp).splitlines()
+
+
+class TestObservationFactory:
+    """ms.observation() routes the network keywords to the right class."""
+
+    def test_at_gives_a_node_observation(self, sample_node_data):
+        obs = ms.observation(sample_node_data, at="123", item="WaterLevel")
+
+        assert isinstance(obs, ms.NodeObservation)
+        assert obs.at == "123"
+
+    def test_a_breakpoint_tuple_gives_a_node_observation(self, sample_node_data):
+        obs = ms.observation(sample_node_data, at=("r1", 24.5), item="WaterLevel")
+
+        assert isinstance(obs, ms.NodeObservation)
+        assert obs.at == ("r1", 24.5)
+
+    def test_reach_gives_a_reach_observation(self, sample_node_data):
+        obs = ms.observation(sample_node_data, reach="r1", item="WaterLevel")
+
+        assert isinstance(obs, ms.ReachObservation)
+        assert obs.reach == "r1"
+
+    @pytest.mark.parametrize(
+        "gtype,kwargs,expected",
+        [
+            ("node", {"at": "123"}, ms.NodeObservation),
+            ("reach", {"reach": "r1"}, ms.ReachObservation),
+        ],
+    )
+    def test_gtype_can_be_named_outright(
+        self, sample_node_data, gtype, kwargs, expected
+    ):
+        obs = ms.observation(sample_node_data, gtype=gtype, item="WaterLevel", **kwargs)
+
+        assert isinstance(obs, expected)
+
+
+class TestModelResultFactory:
+    """ms.model_result() builds a NetworkModelResult from a Network."""
+
+    def test_a_network_gives_a_network_model_result(self, sample_network):
+        mr = ms.model_result(sample_network, item="WaterLevel")
+
+        assert isinstance(mr, NetworkModelResult)
+
+    def test_gtype_can_be_named_outright(self, sample_network):
+        mr = ms.model_result(sample_network, gtype="network", item="WaterLevel")
+
+        assert isinstance(mr, NetworkModelResult)
+
+
+def test_a_reach_observation_keeps_its_weight_and_attrs(sample_node_data):
+    obs = ReachObservation(
+        sample_node_data, reach="r1", weight=2.5, attrs={"source": "test"}
+    )
+
+    assert obs.weight == 2.5
+    assert obs.attrs["source"] == "test"
+    assert obs.quantity == Quantity.undefined()

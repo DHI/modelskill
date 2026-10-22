@@ -48,6 +48,7 @@ website:
         - user-guide/selecting-data.qmd
         - user-guide/plotting.qmd
         - user-guide/statistics.qmd
+        - user-guide/metrics.qmd
         - section: "Extensions"
           contents:
             - user-guide/network.qmd
@@ -83,6 +84,7 @@ website:
             - api/TrackObservation.qmd
             - api/NodeObservation.qmd
             - api/ReachObservation.qmd
+            - api/VerticalObservation.qmd
         - section: "Model Result"
           href: api/model.qmd
           contents:
@@ -93,6 +95,7 @@ website:
             - api/GridModelResult.qmd
             - api/DummyModelResult.qmd
             - api/NetworkModelResult.qmd
+            - api/VerticalModelResult.qmd
         - section: "Matching"
           contents:
             - api/match.qmd
@@ -106,9 +109,13 @@ website:
               href: api/comparison.ComparerPlotter.qmd
             - api/ComparerCollection.qmd
             - text: "ComparerCollectionPlotter"
-              href: api/comparison.ComparerCollectionPlotter.qmd            
+              href: api/comparison.ComparerCollectionPlotter.qmd
+            - text: "VerticalAccessor"
+              href: api/comparison.VerticalAccessor.qmd
+            - text: "VerticalPlotter"
+              href: api/comparison.VerticalPlotter.qmd
         - section: "Skill"
-          contents:            
+          contents:
             - api/SkillTable.qmd
             - text: "SkillArray"
               href: api/skill.SkillArray.qmd
@@ -118,6 +125,10 @@ website:
               href: api/skill_grid.SkillGrid.qmd
             - text: "SkillGridArray"
               href: api/skill_grid.SkillGridArray.qmd
+            - text: "SkillProfile"
+              href: api/skill_profile.SkillProfile.qmd
+            - text: "SkillProfileArray"
+              href: api/skill_profile.SkillProfileArray.qmd
         - text: "Plotting"
           href: api/plotting.qmd
           contents:
@@ -172,6 +183,7 @@ quartodoc:
         - TrackObservation
         - NodeObservation
         - ReachObservation
+        - VerticalObservation
     - title: Model Result
       desc: ""
       contents:
@@ -184,6 +196,7 @@ quartodoc:
         - GridModelResult
         - DummyModelResult
         - NetworkModelResult
+        - VerticalModelResult
     - title: Matching
       desc: Matching functions
       contents:
@@ -198,6 +211,7 @@ quartodoc:
         - name: Comparer
           members:
             - plot
+            - vertical
             - skill
             - gridded_skill
             - score
@@ -228,6 +242,8 @@ quartodoc:
             - save
             - load
         - name: comparison.ComparerCollectionPlotter
+        - name: comparison.VerticalAccessor
+        - name: comparison.VerticalPlotter
 
     - title: Skill
       desc: ""
@@ -237,6 +253,8 @@ quartodoc:
         - name: skill.SkillArrayPlotter
         - name: skill_grid.SkillGrid
         - name: skill_grid.SkillGridArray
+        - name: skill_profile.SkillProfile
+        - name: skill_profile.SkillProfileArray
     
     - title: Plotting
       desc: ""
@@ -269,6 +287,7 @@ quartodoc:
             - c_mae
             - c_mean_absolute_error
             - mape
+            - mean_absolute_percentage_error
             - cc
             - corrcoef
             - rho

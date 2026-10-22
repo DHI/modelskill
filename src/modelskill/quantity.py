@@ -47,6 +47,10 @@ class Quantity:
     is_directional: bool = False
 
     def __str__(self):
+        if not self.name and not self.unit:
+            return "Undefined"
+        if not self.unit:
+            return self.name
         return f"{self.name} [{self.unit}]"
 
     def __repr__(self):

@@ -27,7 +27,7 @@ jobs:
     - name: Set up uv
       uses: astral-sh/setup-uv@v6
       with:
-        python-version: "3.13"  # Need to use 3.13 for docs build due to pythonnet dependency not yet supporting 3.14
+        python-version: "3.14"  # mikeio1d needs Python < 3.15, so the docs build cannot go higher
         enable-cache: true
 
     - name: Set up Quarto
@@ -36,7 +36,7 @@ jobs:
         version: "1.8.27"
 
     - name: Install dependencies
-      run: uv sync --group dev --group docs --group networks
+      run: uv sync --group dev --group docs --group network
 
     - name: Build documentation
       run: just docs

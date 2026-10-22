@@ -72,6 +72,55 @@ cmp.plot.scatter();
 ```
 
 
+## Vertical profiles
+
+A [](`~modelskill.Comparer`) holding vertical profile data (`gtype="vertical"`)
+has an extra `vertical` accessor with depth-aware plots, available through
+[`cmp.vertical.plot`](`modelskill.comparison.VerticalPlotter`).
+
+The `profile` plot shows model and observed values against depth. It is meant
+for a single point in time, so select a time first:
+
+```{python}
+vo = ms.VerticalObservation("../data/vertical/VerticalProfile_obs1.dfs0",
+                            item="Salinity", z_item="z", x=657500, y=6553600)
+mr3d = ms.DfsuModelResult("../data/vertical/sigma_z_coast.dfsu", item="Salinity")
+vcmp = ms.match(vo, mr3d)
+
+vcmp.sel(time="2022-06-15").vertical.plot.profile();
+```
+
+The model is drawn as a line (the full modelled column) and the observations as
+markers. Pass `show_matched_model=True` to also mark the model values
+interpolated to the observation depths. `vertical.plot()` is a shorthand for
+`vertical.plot.profile()`.
+
+The `hovmoller` plot shows the whole comparison as a function of depth and time,
+with the model as a filled contour and the observations overlaid as markers:
+
+```{python}
+vcmp.vertical.plot.hovmoller(figsize=(12, 4));
+```
+
+With more than one model result, the model to contour must be named explicitly,
+e.g. `vcmp.vertical.plot.hovmoller(model="m1")`.
+
+Skill computed in depth bins with
+[`vertical.skill()`](`modelskill.comparison.VerticalAccessor.skill`) returns a
+[](`~modelskill.skill_profile.SkillProfile`), whose metrics can be plotted as a
+horizontal bar plot per depth bin:
+
+```{python}
+sk = vcmp.vertical.skill(bins=4)
+sk.rmse.plot();
+```
+
+The bins can also be given explicitly, e.g. `bins=[-20, -15, -10, -5, 0]`.
+
+Note that all the ordinary Comparer plots shown above work on vertical data too;
+they simply ignore the depth dimension.
+
+
 ## Taylor diagrams
 
 A Taylor diagram shows how well a model result matches an observation in terms of correlation, standard deviation and root mean squared error. The `taylor` plot can be accessed through the Comparer [`plot`](`modelskill.comparison.ComparerPlotter`) accessor or the ComparerCollection [`plot`](`modelskill.comparison.ComparerCollectionPlotter`) accessor:

@@ -56,7 +56,10 @@ Installation: `pip install modelskill modelskill-network`
 
 **Open Questions:**
 - Should `modelskill[all]` install all optional model types?
-- How to handle version constraints for optional dependencies?
+- How to handle version constraints for optional dependencies? Answered for network
+  support by [ADR-013](013-network-topology-in-mikeio1d.md): the `network` extra names a
+  minimum mikeio1d, because the topology layer ships there. Network support requires
+  whatever Python that release requires.
 - Should optional dependencies be tested in CI for every commit or separately?
 
 ## Status Notes

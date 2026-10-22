@@ -312,6 +312,8 @@ def test_rename_fails_reserved_names(pt_df):
         cmp.rename({"m1": "z"})
     with pytest.raises(ValueError, match="reserved names!"):
         cmp.rename({"m1": "Observation"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cmp.rename({"m1": "node"})
 
 
 def test_matched_df_illegal_items(pt_df):

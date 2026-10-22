@@ -53,13 +53,14 @@ cmp = ms.match(o, [m1, m2])
 
 The [](`~modelskill.Comparer.sel`) method allows you to select data based on specific criteria such as time, model name, or spatial area. It returns a new `Comparer` object with the selected data. This method is highly versatile and supports multiple selection parameters, which can be combined.
 
-**Syntax:** `Comparer.sel(model=None, time=None, area=None)`
+**Syntax:** `Comparer.sel(model=None, time=None, area=None, z=None)`
 
 | Parameter    | Type                        | Description                                             | Default |
 |--------------|-----------------------------|---------------------------------------------------------|---------|
 | `model`      | str, int, or list           | Model name or index. Selects specific models.           | None    |
 | `time`       | str, datetime, or slice     | Specific time or range for selection.                  | None    |
 | `area`       | list of float or Polygon    | Bounding box [x0, y0, x1, y1] or a polygon area filter. | None    |
+| `z`          | float or slice              | Depth or depth range (vertical data only).              | None    |
 
 **Example 1: Selecting data by time**
 ```{python}
@@ -84,6 +85,43 @@ cmp_area = cmp.sel(area=[4.0, 52.5, 5.0, 53.0])
 
 This filters the data within the bounding box defined by `[x0, y0, x1, y1]`.
 
+**Example 4: Selecting by depth**
+
+For vertical profile data (`gtype="vertical"`), `sel()` additionally accepts a
+`z` argument, given either as a single depth or as a slice:
+
+```{python}
+#| code-fold: true
+#| code-summary: "Vertical observation and model data"
+vo = ms.VerticalObservation("../data/vertical/VerticalProfile_obs1.dfs0",
+                            item="Salinity", z_item="z", x=657500, y=6553600)
+mr3d = ms.DfsuModelResult("../data/vertical/sigma_z_coast.dfsu", item="Salinity")
+vcmp = ms.match(vo, mr3d)
+```
+
+```{python}
+vcmp.sel(z=slice(-10, 0))
+```
+
+A slice keeps all observation depths within the range. A single value instead
+selects the nearest depth:
+
+```{python}
+vcmp.sel(z=-2)
+```
+
+Selections can be combined and given a descriptive name, which is convenient
+when comparing skill between depth ranges:
+
+```{python}
+cmp_surface = vcmp.sel(z=slice(-10, 0)).rename({vcmp.name: "surface"})
+cmp_deep = vcmp.sel(z=slice(None, -10)).rename({vcmp.name: "deep"})
+ms.ComparerCollection([cmp_surface, cmp_deep]).skill()
+```
+
+`z` also works on a [](`~modelskill.ComparerCollection`), and depth can equally
+be filtered with `query()`, e.g. `vcmp.query("z > -10")`.
+
 ### `where()` method
 
 The [](`~modelskill.Comparer.where`) method is used to filter data conditionally. It works similarly to `xarray`'s `where` method and returns a new `Comparer` object with values satisfying a given condition. Other values will be masked (set to `NaN`).
@@ -94,14 +132,14 @@ The [](`~modelskill.Comparer.where`) method is used to filter data conditionally
 |-----------|------------------------------|-----------------------------------------------|
 | `cond`    | bool, np.ndarray, or xr.DataArray | Condition to filter values (True or False). |
 
-**Example 4: Filtering data conditionally**
+**Example 5: Filtering data conditionally**
 ```{python}
 cmp.where(cmp.data.Observation > 3)
 ```
 
 This filters out any rows where the observation values are not greater than 3.
 
-**Example 5: Multiple conditions**
+**Example 6: Multiple conditions**
 ```{python}
 cmp.where((cmp.data.m1 < 2.9) & (cmp.data.Observation > 3))
 ```
@@ -120,7 +158,7 @@ The [](`~modelskill.Comparer.query`) method uses a [](`pandas.DataFrame.query`)-
 |-----------|--------|---------------------------------------------|
 | `query`   | str    | Query string for filtering data.           |
 
-**Example 6: Querying data**
+**Example 7: Querying data**
 ```{python}
 cmp.query("Observation > 3.0 and m1 < 2.9")
 ```
@@ -143,14 +181,14 @@ sk = cmp.skill(metrics=["rmse", "mae", "si"])
 sk
 ```
 
-**Example 7: Select model**
+**Example 8: Select model**
 ```{python}
 sk.sel(model='m1')
 ```
 
 Here, `sk` contains skill scores for all models, and `sk_m1` filters the results to include only model "m1". Observations can be selected in the same way.
 
-**Example 8: Querying skill scores**
+**Example 9: Querying skill scores**
 ```{python}
 sk_high_rmse = sk.query("rmse > 0.3")
 sk_high_rmse
@@ -158,7 +196,7 @@ sk_high_rmse
 
 This filters the `SkillTable` to include only rows where the root mean square error (RMSE) exceeds 0.3.
 
-**Example 9: Accessing and visualizing specific metrics**
+**Example 10: Accessing and visualizing specific metrics**
 ```{python}
 sk_rmse = sk.rmse
 sk_rmse

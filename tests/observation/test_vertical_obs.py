@@ -16,25 +16,6 @@ def _vertical_df() -> pd.DataFrame:
 
 
 @pytest.fixture
-def _vertical_df_duplicates() -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "z": [-5.0, -5.0, -4.0, -4.0, -3.0],
-            "value": [1.0, 10.0, 2.0, 20.0, 7.0],
-        },
-        index=pd.to_datetime(
-            [
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 00:00:00",
-                "2019-01-01 01:00:00",
-            ]
-        ),
-    )
-
-
-@pytest.fixture
 def _vertical_df_aux() -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -114,7 +95,7 @@ class TestVerticalObservation:
         fn = Path("tests/testdata/vertical/VerticalProfile_obs1.dfs0")
         assert isinstance(ms.observation(fn, z_item="z"), ms.VerticalObservation)
 
-    def test_duplicated_time_z_pairs(self):
+    def test_duplicate_time_z_pairs_raises(self):
         df = pd.DataFrame(
             {
                 "z": [-5.0, -4.0, -4.0],
@@ -122,7 +103,7 @@ class TestVerticalObservation:
             },
             index=[pd.Timestamp("2019-01-01")] * 3,
         )
-        with pytest.warns(UserWarning, match="Removed 1 duplicate"):
+        with pytest.raises(ValueError, match="duplicate \\(time, z\\) entries"):
             ms.VerticalObservation(
                 df,
                 item="value",
@@ -130,49 +111,6 @@ class TestVerticalObservation:
                 x=12.0,
                 y=55.0,
             )
-
-    def test_keep_duplicates_last_is_applied(self, _vertical_df_duplicates):
-        with pytest.warns(UserWarning, match="Removed 2 duplicate"):
-            obs = ms.VerticalObservation(
-                _vertical_df_duplicates,
-                item="value",
-                z_item="z",
-                x=12.0,
-                y=55.0,
-                keep_duplicates="last",
-            )
-
-        assert list(obs.data["z"].values) == [-5.0, -4.0, -3.0]
-        assert list(obs.data["value"].values) == [10.0, 20.0, 7.0]
-
-    @pytest.mark.parametrize(
-        "keep_duplicates,expected_removed,expected_z,expected_values",
-        [
-            ("first", 2, [-5.0, -4.0, -3.0], [1.0, 2.0, 7.0]),
-            ("last", 2, [-5.0, -4.0, -3.0], [10.0, 20.0, 7.0]),
-            (False, 4, [-3.0], [7.0]),
-        ],
-    )
-    def test_keep_duplicates_modes(
-        self,
-        _vertical_df_duplicates,
-        keep_duplicates,
-        expected_removed,
-        expected_z,
-        expected_values,
-    ):
-        with pytest.warns(UserWarning, match=f"Removed {expected_removed} duplicate"):
-            obs = ms.VerticalObservation(
-                _vertical_df_duplicates,
-                item="value",
-                z_item="z",
-                x=12.0,
-                y=55.0,
-                keep_duplicates=keep_duplicates,
-            )
-
-        assert list(obs.data["z"].values) == expected_z
-        assert list(obs.data["value"].values) == expected_values
 
     def test_single_item_input_raises(self):
         df = pd.DataFrame(

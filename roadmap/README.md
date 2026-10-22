@@ -14,7 +14,7 @@ For questions or feature requests, please open a [GitHub Discussion](https://git
 ## Delivered
 
 
-- **[Baseline Model Comparisons](features/baseline-comparisons.md)** — Compare any model against synthetic baselines (mean, persistence) to quantify the added value of a simulation.
+- **[Baseline Model Comparisons](features/baseline-comparisons.md)** — Compare any model against synthetic baselines (mean, constant) to quantify the added value of a simulation.
 - **[Custom Metrics](features/custom-metrics.md)** — Define domain-specific quality metrics that integrate fully into all skill tables and reports.
 - **[Spatial and Temporal Skill Aggregation](features/skill-aggregation.md)** — Assess model performance by geographic region, time period, season, or any custom grouping to identify where and when a model performs well or poorly.
 

@@ -20,7 +20,6 @@ from typing import (
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
-from scipy import stats
 
 from .settings import options
 
@@ -483,7 +482,7 @@ def scatter_index2(obs: ArrayLike, model: ArrayLike) -> Any:
     {\sum_{i=1}^n obs_i^2}}
     $$
 
-    Range: [0, 100]; Best: 0
+    Range: $[0, \infty)$; Best: 0
     """
     assert obs.size == model.size
     if len(obs) == 0:
@@ -506,8 +505,10 @@ def explained_variance(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""EV: Explained variance
 
      EV is the explained variance and measures the proportion
-     [0 - 1] to which the model accounts for the variation
-     (dispersion) of the observations.
+     to which the model accounts for the variation (dispersion)
+     of the observations. A perfect match gives 1; a model that
+     explains less variance than the observed mean gives a
+     negative value.
 
      In cases with no bias, EV is equal to r2
 
@@ -518,7 +519,7 @@ def explained_variance(obs: ArrayLike, model: ArrayLike) -> Any:
     (obs_i - \overline{obs})^2}
     $$
 
-    Range: [0, 1]; Best: 1
+    Range: $(-\infty, 1]$; Best: 1
 
     See Also
     --------
@@ -590,6 +591,9 @@ def peak_ratio(
     # Use total_seconds() to handle any datetime precision (ns, us, ms, s)
     dt = time[1:] - time[:-1]
     dt_seconds = dt.total_seconds().values
+    # Lazy import: scipy.stats is heavy and only used by a few metrics, not on package import
+    from scipy import stats
+
     dt_mode_seconds = float(stats.mode(dt_seconds, keepdims=False)[0])
     N_years = dt_mode_seconds / 24 / 3600 / 365.25 * len(time)
     peak_index, AAP_ = _partial_duration_series(
@@ -958,7 +962,7 @@ def c_max_error(obs: ArrayLike, model: ArrayLike) -> Any:
 
     Notes
     -----
-    Range: $[0, \\infty)$; Best: 0
+    Range: $[0, 180]$; Best: 0
 
     Returns
     -------
