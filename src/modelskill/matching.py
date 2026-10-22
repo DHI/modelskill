@@ -378,6 +378,16 @@ def _match_single_obs(
         return None
     matched_data.attrs["weight"] = obs.weight
 
+    # The dummy is extracted from the whole observation, but its mean must be the
+    # mean of what is compared, which is known only after matching.
+    obs_mean = float(matched_data["Observation"].mean())
+    for m in models:
+        if isinstance(m, DummyModelResult) and m.strategy == "mean":
+            matched_data[m.name] = matched_data[m.name].copy(
+                data=np.full(matched_data[m.name].shape, obs_mean)
+            )
+            raw_mod_data[m.name].data[m.name][:] = obs_mean
+
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
 
