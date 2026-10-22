@@ -311,7 +311,9 @@ def kge(obs: ArrayLike, model: ArrayLike) -> Any:
 def r2(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Coefficient of determination (R2)
 
-    Pronounced 'R-squared'; the proportion of the variation in the dependent variable that is predictable from the independent variable(s), i.e. the proportion of explained variance.
+    Same value as Nash-Sutcliffe efficiency and scikit-learn's `r2_score`.
+    Not squared Pearson correlation (`cc**2`): r2 penalises bias and amplitude
+    errors, and is negative when the model is worse than the observed mean.
 
     $$
     R^2 = 1 - \frac{\sum_{i=1}^n (model_i - obs_i)^2}
@@ -320,9 +322,10 @@ def r2(obs: ArrayLike, model: ArrayLike) -> Any:
 
     Range: $(-\infty, 1]$; Best: 1
 
-    Notes
-    -----
-    r2 = nash_sutcliffe_efficiency(nse)
+    See Also
+    --------
+    nash_sutcliffe_efficiency
+    cc
 
     Examples
     --------
