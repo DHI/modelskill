@@ -15,7 +15,7 @@ ModelSkill is primarily used for [MIKE](https://www.dhigroup.com/technologies/mi
 ## Requirements
 
 * Windows or Linux operating system
-* Python x64 3.12 - 3.14
+* Python x64 3.13 - 3.15
 
 ## Installation
 
@@ -70,7 +70,7 @@ See the [user guide](https://dhi.github.io/modelskill/user-guide/getting-started
 
 ## Testing
 
-ModelSkill is tested extensively, with an overall statement coverage of ~90%. The test suite runs on every pull request against Python 3.12 and 3.14, and on a schedule on both Linux and Windows.
+ModelSkill is tested extensively, with an overall statement coverage of ~90%. The test suite runs on every pull request against Python 3.13, 3.14 and 3.15, and on a schedule on both Linux and Windows.
 
 ```bash
 uv run pytest --cov=modelskill

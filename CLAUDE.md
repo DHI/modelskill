@@ -188,4 +188,4 @@ Plots support both matplotlib (static) and plotly (interactive) backends.
 - Type checking with mypy ignores errors in `metrics.py` module (see pyproject.toml)
 - Notebooks in `notebooks/` are excluded from pytest by default (pytest.ini)
 - Documentation uses Quarto with quartodoc for API reference generation
-- Python 3.10+ required; supports through 3.13
+- Python 3.13+ required; supports through 3.15
