@@ -17,7 +17,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.12", "3.14"]
+        python-version: ["3.12", "3.14", "3.15"]
+        deps: [core, network]
 
     steps:
     - uses: actions/checkout@v4
@@ -30,7 +31,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         enable-cache: true
     - name: Install dependencies
-      run: uv sync --group test --no-dev
+      run: uv sync --group test --no-dev ${{ matrix.deps == 'network' && '--group network' || '' }}
 
     - name: Test
       run: just test

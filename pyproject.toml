@@ -11,7 +11,7 @@ name = "modelskill"
 version = "1.4.0"
 dependencies = [
     "numpy  > 1.24.4",
-    "pandas >= 1.4, < 3.0", # TODO remove upper limit
+    "pandas >= 1.4",
     "mikeio >= 3.2",
     "matplotlib",
     "xarray",
@@ -42,6 +42,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Scientific/Engineering",
 ]
 
