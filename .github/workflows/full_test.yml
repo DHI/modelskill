@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.12", "3.14", "3.15"]
+        python-version: ["3.13", "3.14", "3.15"]
         pandas-version: ["pandas2", "pandas3"]  # TODO: drop pandas2 once 3.x is well-established
         exclude:
           - python-version: "3.15"  # pandas 2 has no Python 3.15 wheels
@@ -71,7 +71,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           enable-cache: true
 
       - name: Install dependencies (without network)
